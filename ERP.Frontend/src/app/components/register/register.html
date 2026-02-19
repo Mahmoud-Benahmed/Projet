@@ -10,7 +10,7 @@
       <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
 
         <!-- Email -->
-        <mat-form-field appearance="outline" class="w-100">
+        <mat-form-field appearance="outline">
           <mat-label>Email</mat-label>
           <input matInput
                  type="email"
@@ -24,34 +24,50 @@
           <mat-error *ngIf="emailInput.errors?.['email']">Email invalide</mat-error>
         </mat-form-field>
 
-        <!-- Password -->
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Mot de passe</mat-label>
-          <input matInput
-                 [type]="showPassword ? 'text' : 'password'"
-                 name="password"
-                 [(ngModel)]="credentials.password"
-                 required
-                 minlength="8"
-                 #passwordInput="ngModel"/>
-          <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
-            <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="passwordInput.errors?.['required']">Mot de passe requis</mat-error>
-          <mat-error *ngIf="passwordInput.errors?.['minlength']">Minimum 8 caractères</mat-error>
-        </mat-form-field>
+        <div class="password-group">
+          <mat-form-field appearance="outline">
+            <mat-label>Mot de passe</mat-label>
 
-        <button mat-stroked-button
-                type="button"
-                class="w-100 mb-2"
-                (click)="generatePassword()">
-          <mat-icon>auto_fix_high</mat-icon>
-          Générer un mot de passe
-        </button>
+            <input matInput
+                  [type]="showPassword ? 'text' : 'password'"
+                  name="password"
+                  [(ngModel)]="credentials.password"
+                  required
+                  minlength="8"
+                  #passwordInput="ngModel"/>
+
+            <mat-icon matPrefix>lock</mat-icon>
+
+            <button mat-icon-button
+                    matSuffix
+                    type="button"
+                    (click)="togglePasswordVisibility()">
+              <mat-icon>
+                {{ showPassword ? 'visibility' : 'visibility_off' }}
+              </mat-icon>
+            </button>
+
+            <mat-error *ngIf="passwordInput.errors?.['required']">
+              Mot de passe requis
+            </mat-error>
+
+            <mat-error *ngIf="passwordInput.errors?.['minlength']">
+              Minimum 8 caractères
+            </mat-error>
+
+          </mat-form-field>
+
+          <button mat-stroked-button
+                  type="button"
+                  (click)="generatePassword()">
+            <mat-icon>auto_fix_high</mat-icon>
+            Générer un mot de passe
+          </button>
+        </div>
+
 
         <!-- Role -->
-        <mat-form-field appearance="outline" class="w-100">
+        <mat-form-field appearance="outline">
           <mat-label>Rôle</mat-label>
           <mat-select name="role"
                       [(ngModel)]="credentials.role"
@@ -82,8 +98,19 @@
                 color="primary"
                 type="submit"
                 class="w-100 mt-2"
-                [disabled]="!registerForm.valid">
-          Créer un compte
+                [disabled]="!registerForm.valid || isLoading">
+            @if(isLoading) {
+              <div class="btn-loading">
+                <mat-progress-spinner
+                  diameter="20"
+                  mode="indeterminate"
+                  color="accent">
+                </mat-progress-spinner>
+                Création de compte...
+              </div>
+            } @else {
+              Créer un compte
+            }
         </button>
 
       </form>

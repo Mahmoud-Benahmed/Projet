@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { InfoModalComponent } from '../info-modal/info-modal';
 
 @Component({
   selector: 'app-login',
@@ -18,22 +21,29 @@ import { MatIconModule } from '@angular/material/icon';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatDialogModule
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
-export class LoginComponent implements OnDestroy {
+export class LoginComponent implements OnInit, OnDestroy {
 
   credentials = { email: '', password: '' };
-  errorMessage = '';
   showPassword = false;
+  isLoading = false;
   private errorTimeout: any = null;
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    if(this.authService.isLoggedIn()) {
+    if (this.authService.isLoggedIn()) {
       const role = this.authService.getRole();
       if (role === 'SystemAdmin') {
         this.router.navigate(['/register']);
@@ -48,38 +58,46 @@ export class LoginComponent implements OnDestroy {
   }
 
   onSubmit(): void {
-      this.authService.login(this.credentials).subscribe({
-        next: (response) => {
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
-          localStorage.setItem('expiresAt', response.expiresAt);
-          const role = this.authService.getRole();
-          if (role === 'SystemAdmin') {
-            this.router.navigate(['/register']);
-          } else {
-            this.router.navigate(['/home']);
-          }
-
-        },
-        error: (error) => {
-          this.showErrorMsg(error.error?.message || 'Login failed. Please check your credentials.');
-          console.log(error.error?.message || error);
-
+    this.isLoading = true;
+    this.authService.login(this.credentials).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        this.cdr.detectChanges(); // ← add this
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        localStorage.setItem('expiresAt', response.expiresAt);
+        const role = this.authService.getRole();
+        if (role === 'SystemAdmin') {
+          this.router.navigate(['/register']);
+        } else {
+          this.router.navigate(['/home']);
         }
-      });
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.cdr.detectChanges(); // ← add this
+
+        // skip if already handled by interceptor
+        if (error.status === 0) return;
+
+
+        this.dialog.open(InfoModalComponent, {
+          width: '400px',
+          data: {
+            title: 'Erreur de connexion',
+            message: error.error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
+            confirmText: 'OK',
+            showCancel: false,
+            icon: 'warning',
+            iconColor: 'danger'
+          }
+        });
+      }
+    });
   }
 
   goToSignup(): void {
     this.router.navigate(['/register']);
-  }
-
-  showErrorMsg(message: string): void {
-    if (this.errorTimeout) clearTimeout(this.errorTimeout);
-    this.errorMessage = message;
-    this.errorTimeout = setTimeout(() => {
-      this.errorMessage = '';
-      this.errorTimeout = null;
-    }, 3000);
   }
 
   ngOnDestroy(): void {
