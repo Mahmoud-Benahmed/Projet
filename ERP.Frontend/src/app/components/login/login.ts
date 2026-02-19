@@ -76,6 +76,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isLoading = false;
         this.cdr.detectChanges(); // ← add this
+
+        // skip if already handled by interceptor
+        if (error.status === 0) return;
+
         this.dialog.open(InfoModalComponent, {
           width: '400px',
           data: {
