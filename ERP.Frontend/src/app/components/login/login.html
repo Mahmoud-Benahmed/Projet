@@ -50,12 +50,14 @@
         [disabled]="!loginForm.valid || isLoading">
 
         @if(isLoading) {
-          <mat-progress-spinner
-            diameter="20"
-            mode="indeterminate"
-            color="accent">
-          </mat-progress-spinner>
-          Connexion...
+          <div class="btn-loading">
+            <mat-progress-spinner
+              diameter="20"
+              mode="indeterminate"
+              color="accent">
+            </mat-progress-spinner>
+            Connexion...
+          </div>
         } @else {
           Se connecter
         }

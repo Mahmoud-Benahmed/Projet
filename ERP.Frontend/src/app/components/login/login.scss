@@ -3,7 +3,8 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #4682B4;
+  background: linear-gradient(90deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
   padding: 20px;
 }
 
@@ -29,8 +30,17 @@ button[mat-raised-button] {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;  // ← ensure full width
+  margin: 0 auto; // ← center horizontally
 
   mat-progress-spinner {
     display: inline-flex;
   }
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
