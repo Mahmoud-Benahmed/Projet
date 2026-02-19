@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { InfoModalComponent } from '../info-modal/info-modal';
+import { MatDialog } from '@angular/material/dialog';
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 @Component({
   selector: 'app-register',
@@ -20,8 +23,9 @@ import { MatSelectModule } from '@angular/material/select';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule
-  ],
+    MatSelectModule,
+    MatProgressSpinner
+],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
@@ -32,6 +36,7 @@ export class RegisterComponent implements OnDestroy {
   successMessage = '';
   showPassword = false;
   private errorTimeout: any = null;
+  isLoading:boolean = false;
 
   roles = [
     { value: 'Accountant', label: 'Accountant' },
@@ -40,51 +45,51 @@ export class RegisterComponent implements OnDestroy {
     { value: 'SystemAdmin', label: 'System Admin' }
   ];
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private router: Router,
+              private authService: AuthService,
+              private cdr: ChangeDetectorRef,
+              private dialog: MatDialog) {}
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
   onSubmit(): void {
+    this.isLoading = true;
     this.authService.register(this.credentials).subscribe({
       next: () => {
-        this.showSuccessMsg('Account created successfully! Redirecting to home...');
+        this.isLoading = false;
+        this.cdr.detectChanges(); // ← add this
+
         setTimeout(() => this.router.navigate(['/home']), 2000);
       },
-      error: (error) => {
-        const errors = error.error?.errors;
-        if (errors) {
-          // flatten all error messages from all fields
-          this.showErrorMsg(
-            Object.values(errors)
-              .flat()
-              .join('\n')
-          );
-        } else {
-          this.showErrorMsg(error.error?.message || error.error?.title || 'Registration failed.');
-        }
-      }
+      error: (error) =>
+            {
+              this.isLoading = false;
+              this.cdr.detectChanges(); // ← add this
+
+              // skip if already handled by interceptor
+              if (error.status === 0) return;
+              console.log(error);
+
+
+              this.dialog.open(InfoModalComponent, {
+                width: '400px',
+                data: {
+                  title: 'Erreur d\'enregistrement',
+                  message: error.error.message || 'L\'enregistrement a échoué. Veuillez vérifier vos informations.',
+                  confirmText: 'OK',
+                  showCancel: false,
+                  icon: 'warning',
+                  iconColor: 'warn'
+                }
+              });
+            }
     });
   }
 
   goToLogin(): void {
     this.router.navigate(['/login']);
-  }
-
-  showErrorMsg(message: string): void {
-    if (this.errorTimeout) clearTimeout(this.errorTimeout);
-    this.errorMessage = message;
-    this.successMessage = '';
-    this.errorTimeout = setTimeout(() => {
-      this.errorMessage = '';
-      this.errorTimeout = null;
-    }, 3000);
-  }
-
-  showSuccessMsg(message: string): void {
-    this.successMessage = message;
-    this.errorMessage = '';
   }
 
   ngOnDestroy(): void {
