@@ -17,53 +17,8 @@ export interface ModalData {
 @Component({
   selector: 'app-info-modal',
   imports: [MatDialogModule, MatButtonModule, MatIconModule, CommonModule],
-  template: `
-    <div class="modal-header">
-      @if(data.icon) {
-        <mat-icon [color]="data.iconColor || 'primary'">{{ data.icon }}</mat-icon>
-      }
-      <h2 mat-dialog-title>{{ data.title }}</h2>
-    </div>
-
-    <mat-dialog-content>
-      <p>{{ data.message }}</p>
-    </mat-dialog-content>
-
-    <mat-dialog-actions align="end">
-      @if(data.showCancel !== false) {
-        <button mat-button (click)="cancel()">
-          {{ data.cancelText || 'Annuler' }}
-        </button>
-      }
-      <button mat-raised-button color="primary" (click)="confirm()">
-        {{ data.confirmText || 'Confirmer' }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    .modal-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 16px 24px 0;
-
-      mat-icon {
-        font-size: 28px;
-        width: 28px;
-        height: 28px;
-      }
-
-      h2 {
-        margin: 0;
-        padding: 0;
-      }
-    }
-
-    mat-dialog-content p {
-      color: #555;
-      line-height: 1.6;
-    }
-  `]
+  templateUrl: './info-modal.html',
+  styleUrl: './info-modal.scss'
 })
 export class InfoModalComponent {
   constructor(
