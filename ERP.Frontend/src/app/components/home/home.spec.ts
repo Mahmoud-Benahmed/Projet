@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { InfoModal } from './info-modal';
+import { Home } from './home';
 
-describe('InfoModal', () => {
-  let component: InfoModal;
-  let fixture: ComponentFixture<InfoModal>;
+describe('Home', () => {
+  let component: Home;
+  let fixture: ComponentFixture<Home>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [InfoModal]
+      imports: [Home]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(InfoModal);
+    fixture = TestBed.createComponent(Home);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
