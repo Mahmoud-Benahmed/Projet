@@ -80,15 +80,16 @@ export class LoginComponent implements OnInit, OnDestroy {
         // skip if already handled by interceptor
         if (error.status === 0) return;
 
+
         this.dialog.open(InfoModalComponent, {
           width: '400px',
           data: {
             title: 'Erreur de connexion',
-            message: error.error?.message || 'Login failed. Please check your credentials.',
+            message: error.error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
             confirmText: 'OK',
             showCancel: false,
             icon: 'warning',
-            iconColor: 'warn'
+            iconColor: 'danger'
           }
         });
       }
