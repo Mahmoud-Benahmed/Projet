@@ -7,4 +7,5 @@
   <Folder Name="/src/Services/AuthService/">
     <Project Path="ERP.AuthService/ERP.AuthService.csproj" />
   </Folder>
+  <Project Path="ERP.Gateway/ERP.Gateway.csproj" Id="52856135-4d4e-43d2-8bc7-6285ae5e42f7" />
 </Solution>
