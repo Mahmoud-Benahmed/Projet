@@ -42,19 +42,25 @@
           <mat-error *ngIf="passwordInput.errors?.['minlength']">Minimum 8 caractères</mat-error>
         </mat-form-field>
 
-        <!-- Error message -->
-        <div *ngIf="errorMessage" class="error-alert">
-          {{ errorMessage }}
-        </div>
-
         <!-- Submit -->
         <button mat-raised-button
-                color="primary"
-                type="submit"
-                class="w-100 mt-2"
-                [disabled]="!loginForm.valid">
+        color="primary"
+        type="submit"
+        class="w-100 mt-2"
+        [disabled]="!loginForm.valid || isLoading">
+
+        @if(isLoading) {
+          <mat-progress-spinner
+            diameter="20"
+            mode="indeterminate"
+            color="accent">
+          </mat-progress-spinner>
+          Connexion...
+        } @else {
           Se connecter
-        </button>
+        }
+
+      </button>
 
       </form>
     </mat-card-content>
