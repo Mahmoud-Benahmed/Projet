@@ -1,0 +1,70 @@
+<div class="login-container">
+  <mat-card class="login-card">
+
+    <mat-card-header>
+      <mat-card-title>Connexion</mat-card-title>
+      <mat-card-subtitle>Accédez à votre compte</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+
+        <!-- Email -->
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Email</mat-label>
+          <input matInput
+                type="email"
+                name="email"
+                [(ngModel)]="credentials.email"
+                required
+                email
+                #emailInput="ngModel"/>
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
+          <mat-error *ngIf="emailInput.errors?.['email']">Email invalide</mat-error>
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Mot de passe</mat-label>
+          <input matInput
+                [type]="showPassword ? 'text' : 'password'"
+                name="password"
+                [(ngModel)]="credentials.password"
+                required
+                minlength="8"
+                #passwordInput="ngModel"/>
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+            <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="passwordInput.errors?.['required']">Mot de passe requis</mat-error>
+          <mat-error *ngIf="passwordInput.errors?.['minlength']">Minimum 8 caractères</mat-error>
+        </mat-form-field>
+
+        <!-- Submit -->
+        <button mat-raised-button
+        color="primary"
+        type="submit"
+        class="w-100 mt-2"
+        [disabled]="!loginForm.valid || isLoading">
+
+        @if(isLoading) {
+          <div class="btn-loading">
+            <mat-progress-spinner
+              diameter="20"
+              mode="indeterminate"
+              color="accent">
+            </mat-progress-spinner>
+            Connexion...
+          </div>
+        } @else {
+          Se connecter
+        }
+
+      </button>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
