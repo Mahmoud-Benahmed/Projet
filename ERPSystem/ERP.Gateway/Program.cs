@@ -39,6 +39,18 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
+    // 🔥 GLOBAL limiter
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            "global", // single shared partition
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 15,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Existing LoginPolicy
     options.AddPolicy("LoginPolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "global",
@@ -49,6 +61,7 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
+    // Existing UserPolicy
     options.AddPolicy("UserPolicy", context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
@@ -59,14 +72,16 @@ builder.Services.AddRateLimiter(options =>
             userId ?? "anonymous",
             _ => new SlidingWindowRateLimiterOptions
             {
-                PermitLimit = 50,
+                PermitLimit = 10,
                 Window = TimeSpan.FromMinutes(1),
                 SegmentsPerWindow = 6,
                 QueueLimit = 0
             });
     });
+
     options.RejectionStatusCode = 429;
 });
+
 
 //////////////////////////////////////////////////
 // CORS

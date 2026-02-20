@@ -10,15 +10,16 @@ namespace ERP.AuthService.Domain
         [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid Id { get; private set; }
 
-        public string Email { get; set; }= "";
+        public string Email { get; set; }= default!;
 
-        public string PasswordHash { get; set; }= "";
+        public string PasswordHash { get; set; }= default!;
 
         public bool MustChangePassword { get; private set; } = true;
 
         public bool IsActive { get; private set; } = true;
 
         public DateTime CreatedAt { get; private set; }
+        public DateTime UpdatedAt { get; private set; }
 
         public DateTime? LastLoginAt { get; private set; }
 
@@ -49,16 +50,19 @@ namespace ERP.AuthService.Domain
             if (!Enum.IsDefined(typeof(UserRole), role))
                 throw new ArgumentException($"Invalid role: {role}");
             Role = role;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Deactivate()
         {
             IsActive = false;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Activate()
         {
             IsActive = true;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void ChangePassword(string newPasswordHash)
@@ -68,6 +72,7 @@ namespace ERP.AuthService.Domain
 
             PasswordHash = newPasswordHash;
             MustChangePassword = false;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void ForcePasswordChange()
