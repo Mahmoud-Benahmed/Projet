@@ -6,5 +6,8 @@
             : base($"User with email '{email}' was not found.")
         {
         }
+
+        public UserNotFoundException(Guid id)
+            : base($"User with id '{id}' was not found.") { }
     }
 }

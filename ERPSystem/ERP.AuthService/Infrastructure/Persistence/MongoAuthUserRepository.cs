@@ -32,5 +32,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
         public async Task UpdateAsync(AuthUser user)
             => await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security;
 
@@ -16,6 +17,7 @@ namespace ERP.AuthService.Controllers
         {
             _authService = authService;
         }
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
@@ -95,6 +97,37 @@ namespace ERP.AuthService.Controllers
             catch(UnauthorizedAccessException e)
             {
                 return Unauthorized(new { message = e.Message });
+            }
+        }
+
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var requesterId = User.FindFirst("sub")?.Value;
+
+            if (requesterId is null || !Guid.TryParse(requesterId, out var id))
+                return Unauthorized(new { message = "Invalid token." });
+
+            try
+            {
+                await _authService.ChangePasswordAsync(
+                    id,
+                    request.CurrentPassword,
+                    request.NewPassword);
+
+                return NoContent();
+            }
+            catch (UserNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidCredentialsException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

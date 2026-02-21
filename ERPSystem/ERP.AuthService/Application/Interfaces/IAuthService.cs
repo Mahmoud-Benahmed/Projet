@@ -12,5 +12,7 @@ namespace ERP.AuthService.Application.Interfaces
         Task<AuthResponse> RefreshTokenAsync(string refreshToken);
 
         Task RevokeRefreshTokenAsync(string refreshToken);
+
+        Task ChangePasswordAsync(Guid id, string currentPassword, string newPassword);
     }
 }

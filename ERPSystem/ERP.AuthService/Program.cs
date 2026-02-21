@@ -5,13 +5,14 @@ using ERP.AuthService.Infrastructure.Configuration;
 using ERP.AuthService.Infrastructure.Persistence;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +49,52 @@ builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 
 //////////////////////////////////////////////////
+// JWT Parsing (no validation, gateway already did it)
+//////////////////////////////////////////////////
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        // ← fix 1: manually read token from header
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+                if (authHeader.StartsWith("Bearer "))
+                    context.Token = authHeader["Bearer ".Length..].Trim();
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine("❌ Auth failed: " + context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("✅ Token validated");
+                return Task.CompletedTask;
+            }
+        };
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+            ValidateIssuerSigningKey = false,
+            // ← fix 2: use JsonWebToken not JwtSecurityToken
+            SignatureValidator = (token, _) =>
+                new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token),
+            RoleClaimType = "role",
+            NameClaimType = "sub"
+        };
+    });
+builder.Services.AddAuthorization();
+
+//////////////////////////////////////////////////
 // Dependency Injection
 //////////////////////////////////////////////////
 
@@ -59,14 +106,23 @@ builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(
 
 var app = builder.Build();
 
+
+app.UseAuthentication(); // ← add before UseAuthorization
+app.UseAuthorization();  // ← add before MapControllers
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("Auth header in AuthService: " +
+        context.Request.Headers["Authorization"]);
+    await next();
+});
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.MapControllers();
-
 app.Run();

@@ -9,6 +9,5 @@ namespace ERP.AuthService.Application.Interfaces
         Task<AuthUser?> GetByIdAsync(Guid id);
         Task UpdateAsync(AuthUser user);
         Task<bool> ExistsByEmailAsync(string email);
-
     }
 }

@@ -59,6 +59,8 @@ namespace ERP.AuthService.Application.Services
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
 
+            user.RecordLogin();
+            _userRepository.UpdateAsync(user);
             return await GenerateAuthResponseAsync(user);
         }
 
@@ -118,6 +120,30 @@ namespace ERP.AuthService.Application.Services
                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
             await RevokeRefreshTokenAsyncPrivate(token);
+        }
+
+        public async Task ChangePasswordAsync(Guid id, string currentPassword, string newPassword)
+        {
+            if (currentPassword.Equals(newPassword))
+                throw new ArgumentException("New password must be different from current password.");
+
+            var user = await _userRepository.GetByIdAsync(id) ??
+                throw new UserNotFoundException(id);
+
+            // ← verify current password before allowing change
+            var result = _passwordHasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                currentPassword);
+
+            if (result == PasswordVerificationResult.Failed)
+                throw new InvalidCredentialsException();
+
+            // ← hash the new password before storing
+            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
+            user.ChangePassword(hashedNewPassword);
+
+            await _userRepository.UpdateAsync(user);
         }
 
         private async Task<AuthResponse> GenerateAuthResponseAsync(AuthUser user)

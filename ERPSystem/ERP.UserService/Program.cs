@@ -1,7 +1,9 @@
 using ERP.UserService.Application.Services;
 using ERP.UserService.Infrastructure.Persistence;
 using ERP.UserService.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -14,12 +16,43 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
+// JWT Parsing (no validation, gateway already did it)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+                if (authHeader.StartsWith("Bearer "))
+                    context.Token = authHeader["Bearer ".Length..].Trim();
+                return Task.CompletedTask;
+            }
+        };
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false,
+            ValidateIssuerSigningKey = false,
+            SignatureValidator = (token, _) =>
+                new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token),
+            RoleClaimType = "role",
+            NameClaimType = "sub"
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 // Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Middleware
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -28,17 +61,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Logging Authorization header for debugging (optional)
-app.Use(async (context, next) =>
-{
-    Console.WriteLine("Authorization header: " + context.Request.Headers["Authorization"]);
-    await next();
-});
-
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
-// No JWT authentication here, the gateway already validated the token
+app.UseAuthentication(); // ← must be before UseAuthorization
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
