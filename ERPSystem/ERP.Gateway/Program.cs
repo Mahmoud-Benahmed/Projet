@@ -6,6 +6,9 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+//////////////////////////////////////////////////
+// JWT Authentication
+//////////////////////////////////////////////////
 
 builder.Services.AddAuthentication(options =>
 {
@@ -16,8 +19,7 @@ builder.Services.AddAuthentication(options =>
     options.MapInboundClaims = false;
 
     var signingKey = new SymmetricSecurityKey(
-    Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
-
+        Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
     signingKey.KeyId = "erp-key-1";
 
     options.TokenValidationParameters = new TokenValidationParameters
@@ -30,32 +32,6 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = config["Jwt:Audience"],
         IssuerSigningKey = signingKey,
         RoleClaimType = "role"
-    };
-
-    // ← add this
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogError("❌ Auth failed: {error}", context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var role = context.Principal?.FindFirst("role")?.Value;
-            logger.LogInformation("✅ Token valid - role: {role}", role);
-            return Task.CompletedTask;
-        },
-        OnForbidden = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var claims = context.HttpContext.User.Claims
-                .Select(c => $"{c.Type}: {c.Value}");
-            logger.LogWarning("⛔ Forbidden - claims: {claims}", string.Join(", ", claims));
-            return Task.CompletedTask;
-        }
     };
 });
 
@@ -150,18 +126,6 @@ builder.Services.AddReverseProxy()
     .LoadFromConfig(config.GetSection("ReverseProxy"));
 
 var app = builder.Build();
-
-//////////////////////////////////////////////////
-// Logging Middleware
-//////////////////////////////////////////////////
-
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Incoming {method} {path}", context.Request.Method, context.Request.Path);
-    await next();
-    logger.LogInformation("Response {status}", context.Response.StatusCode);
-});
 
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();

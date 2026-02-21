@@ -60,11 +60,9 @@ namespace ERP.AuthService.Application.Services
                 throw new InvalidCredentialsException();
 
             user.RecordLogin();
-            _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateAsync(user);
             return await GenerateAuthResponseAsync(user);
         }
-
-
 
 
         public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
@@ -130,7 +128,7 @@ namespace ERP.AuthService.Application.Services
             var user = await _userRepository.GetByIdAsync(id) ??
                 throw new UserNotFoundException(id);
 
-            // ← verify current password before allowing change
+            // verify current password before allowing change
             var result = _passwordHasher.VerifyHashedPassword(
                 user,
                 user.PasswordHash,
@@ -139,7 +137,7 @@ namespace ERP.AuthService.Application.Services
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
 
-            // ← hash the new password before storing
+            // hash the new password before storing
             var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
             user.ChangePassword(hashedNewPassword);
 

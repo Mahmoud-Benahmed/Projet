@@ -1,7 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security;
 
