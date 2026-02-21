@@ -6,30 +6,6 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-//////////////////////////////////////////////////
-// JWT Authentication
-//////////////////////////////////////////////////
-
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//}).AddJwtBearer(options =>
-//{
-//    options.TokenValidationParameters = new TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidateAudience = true,
-//        ValidateLifetime = true,
-//        ValidateIssuerSigningKey = true,
-//        ValidIssuer = config["Jwt:Issuer"],
-//        ValidAudience = config["Jwt:Audience"],
-//        IssuerSigningKey = new SymmetricSecurityKey(
-//            Encoding.UTF8.GetBytes(config["Jwt:Secret"]!)),
-//        RoleClaimType = "role"
-//    };
-//});
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -42,7 +18,7 @@ builder.Services.AddAuthentication(options =>
     var signingKey = new SymmetricSecurityKey(
     Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
 
-    signingKey.KeyId = "erp-key-1"; // ← must match AuthService
+    signingKey.KeyId = "erp-key-1";
 
     options.TokenValidationParameters = new TokenValidationParameters
     {

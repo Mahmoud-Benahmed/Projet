@@ -36,7 +36,7 @@ public class GlobalExceptionMiddleware
                 (404, "USER_001", exception.Message),
 
             UserProfileAlreadyExistsException =>
-                (409, "USER_002", exception.Message),
+                    (409, "USER_002", exception.Message),
 
             // =========================
             // Domain Exceptions
