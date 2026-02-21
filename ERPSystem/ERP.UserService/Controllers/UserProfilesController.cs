@@ -1,5 +1,6 @@
 ﻿using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.UserService.Controllers;
@@ -19,6 +20,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     // CREATE
     // =========================
+
     [HttpPost]
     [ProducesResponseType(typeof(UserProfileResponseDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreateUserProfileDto dto)
@@ -56,6 +58,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     // GET ALL
     // =========================
+
     [HttpGet]
     [ProducesResponseType(typeof(List<UserProfileResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
@@ -78,6 +81,7 @@ public class UserProfilesController : ControllerBase
         return Ok(result);
     }
 
+
     [HttpGet("active")]
     [ProducesResponseType(typeof(PagedResultDto<UserProfileResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActiveUsers(
@@ -95,6 +99,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     // ACTIVATE
     // =========================
+
     [HttpPatch("{id:guid}/activate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Activate(Guid id)
@@ -102,6 +107,7 @@ public class UserProfilesController : ControllerBase
         await _service.ActivateAsync(id);
         return NoContent();
     }
+
 
     [HttpGet("deactivated")]
     [ProducesResponseType(typeof(PagedResultDto<UserProfileResponseDto>), StatusCodes.Status200OK)]
@@ -120,6 +126,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     // DEACTIVATE
     // =========================
+
     [HttpPatch("{id:guid}/deactivate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Deactivate(Guid id)
@@ -131,6 +138,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     // DELETE
     // =========================
+    [Authorize(Roles = "SystemAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id)

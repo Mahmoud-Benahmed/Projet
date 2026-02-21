@@ -5,6 +5,7 @@
         Accountant,     // 0
         SalesManager,   // 1
         StockManager,   // 2
-        SystemAdmin     // 3
+        HRManager,      // 3
+        SystemAdmin     // 4
     }
 }

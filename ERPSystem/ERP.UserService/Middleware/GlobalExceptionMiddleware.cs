@@ -63,7 +63,7 @@ public class GlobalExceptionMiddleware
             // Fallback
             // =========================
             _ =>
-                (500, "SERVER_ERROR", "An unexpected error occurred")
+                (500, "SERVER_ERROR", exception.Message)
         };
 
         var problem = new ProblemDetails

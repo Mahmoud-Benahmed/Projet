@@ -26,6 +26,8 @@ namespace ERP.AuthService.Infrastructure.Security
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Secret));
 
+            key.KeyId = "erp-key-1"; // ← add this
+
             var credentials = new SigningCredentials(
                 key,
                 SecurityAlgorithms.HmacSha256);

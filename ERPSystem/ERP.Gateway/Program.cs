@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -11,26 +10,99 @@ var config = builder.Configuration;
 // JWT Authentication
 //////////////////////////////////////////////////
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+//builder.Services.AddAuthentication(options =>
+//{
+//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+//}).AddJwtBearer(options =>
+//{
+//    options.TokenValidationParameters = new TokenValidationParameters
+//    {
+//        ValidateIssuer = true,
+//        ValidateAudience = true,
+//        ValidateLifetime = true,
+//        ValidateIssuerSigningKey = true,
+//        ValidIssuer = config["Jwt:Issuer"],
+//        ValidAudience = config["Jwt:Audience"],
+//        IssuerSigningKey = new SymmetricSecurityKey(
+//            Encoding.UTF8.GetBytes(config["Jwt:Secret"]!)),
+//        RoleClaimType = "role"
+//    };
+//});
+
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.MapInboundClaims = false;
+
+    var signingKey = new SymmetricSecurityKey(
+    Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
+
+    signingKey.KeyId = "erp-key-1"; // ← must match AuthService
+
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = config["Jwt:Issuer"],
+        ValidAudience = config["Jwt:Audience"],
+        IssuerSigningKey = signingKey,
+        RoleClaimType = "role"
+    };
+
+    // ← add this
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = config["Jwt:Issuer"],
-            ValidAudience = config["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(config["Jwt:Secret"]!))
-        };
-    });
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("❌ Auth failed: {error}", context.Exception.Message);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var role = context.Principal?.FindFirst("role")?.Value;
+            logger.LogInformation("✅ Token valid - role: {role}", role);
+            return Task.CompletedTask;
+        },
+        OnForbidden = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var claims = context.HttpContext.User.Claims
+                .Select(c => $"{c.Type}: {c.Value}");
+            logger.LogWarning("⛔ Forbidden - claims: {claims}", string.Join(", ", claims));
+            return Task.CompletedTask;
+        }
+    };
+});
+
+//////////////////////////////////////////////////
+// Authorization
+//////////////////////////////////////////////////
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("JwtPolicy", policy =>
         policy.RequireAuthenticatedUser());
+
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireRole("SystemAdmin"));
+
+    options.AddPolicy("AdminOrHR", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireRole("SystemAdmin", "HRManager"));
+
+    options.AddPolicy("HROnly", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireRole("HRManager"));
 });
 
 //////////////////////////////////////////////////
@@ -39,10 +111,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
-    // 🔥 GLOBAL limiter
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            "global", // single shared partition
+            "global",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 15,
@@ -50,7 +121,6 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    // Existing LoginPolicy
     options.AddPolicy("LoginPolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "global",
@@ -61,7 +131,6 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    // Existing UserPolicy
     options.AddPolicy("UserPolicy", context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
@@ -81,7 +150,6 @@ builder.Services.AddRateLimiter(options =>
 
     options.RejectionStatusCode = 429;
 });
-
 
 //////////////////////////////////////////////////
 // CORS
@@ -114,23 +182,15 @@ var app = builder.Build();
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-
-    logger.LogInformation("Incoming {method} {path}",
-        context.Request.Method,
-        context.Request.Path);
-
+    logger.LogInformation("Incoming {method} {path}", context.Request.Method, context.Request.Path);
     await next();
-
-    logger.LogInformation("Response {status}",
-        context.Response.StatusCode);
+    logger.LogInformation("Response {status}", context.Response.StatusCode);
 });
 
 app.UseCors("AllowFrontend");
-
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapReverseProxy();
 
 app.Run();

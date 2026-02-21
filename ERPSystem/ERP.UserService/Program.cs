@@ -4,32 +4,41 @@ using ERP.UserService.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
-// Add services to the container.
+// Database
 builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
 
+// Services
 builder.Services.AddScoped<UserProfileService>();
-
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
+// Controllers & Swagger
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Middleware
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Logging Authorization header for debugging (optional)
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("Authorization header: " + context.Request.Headers["Authorization"]);
+    await next();
+});
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// No JWT authentication here, the gateway already validated the token
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
