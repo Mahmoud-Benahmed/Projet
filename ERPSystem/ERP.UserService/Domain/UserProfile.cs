@@ -52,14 +52,16 @@ public class UserProfile
 
     public void Activate()
     {
-        if (IsActive) return;
+        if (IsActive)
+            throw new UserActiveException("User already active");
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Deactivate()
     {
-        if (!IsActive) return;
+        if (!IsActive)
+            throw new UserNotActiveException("User already NOT active");
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }

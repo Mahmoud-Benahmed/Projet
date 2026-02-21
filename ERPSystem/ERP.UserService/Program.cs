@@ -1,5 +1,6 @@
 using ERP.UserService.Application.Services;
 using ERP.UserService.Infrastructure.Persistence;
+using ERP.UserService.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseAuthorization();
 

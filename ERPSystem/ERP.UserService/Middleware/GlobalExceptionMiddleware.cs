@@ -44,17 +44,20 @@ public class GlobalExceptionMiddleware
             UserNotActiveException =>
                 (403, "USER_003", "User profile is not active"),
 
+            UserActiveException =>
+                (403, "USER_004", "User profile is active"),
+
             InvalidUserProfileException =>
-                (400, "USER_004", exception.Message),
+                (400, "USER_005", exception.Message),
 
             // =========================
             // Security
             // =========================
             UnauthorizedAccessException =>
-                (401, "USER_005", exception.Message),
+                (401, "USER_006", exception.Message),
 
             SecurityException =>
-                (401, "USER_006", "Security violation detected"),
+                (401, "USER_007", "Security violation detected"),
 
             // =========================
             // Fallback
