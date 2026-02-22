@@ -1,4 +1,5 @@
 ﻿using ERP.UserService.Application.DTOs;
+using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,9 @@ namespace ERP.UserService.Controllers;
 [Produces("application/json")]
 public class UserProfilesController : ControllerBase
 {
-    private readonly UserProfileService _service;
+    private readonly IUserProfileService _service;
 
-    public UserProfilesController(UserProfileService service)
+    public UserProfilesController(IUserProfileService service)
     {
         _service = service;
     }
@@ -27,11 +28,10 @@ public class UserProfilesController : ControllerBase
     {
         var result = await _service.CreateProfileAsync(dto);
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = result.Id },
-            result);
+        return CreatedAtAction(nameof(GetById),new { id = result.Id },result);
     }
+
+
 
     // =========================
     // GET BY ID
@@ -44,6 +44,8 @@ public class UserProfilesController : ControllerBase
         return Ok(result);
     }
 
+
+
     // =========================
     // GET BY AUTH USER ID
     // =========================
@@ -54,6 +56,8 @@ public class UserProfilesController : ControllerBase
         var result = await _service.GetByAuthUserIdAsync(authUserId);
         return Ok(result);
     }
+
+
 
     // =========================
     // GET ALL
@@ -68,19 +72,28 @@ public class UserProfilesController : ControllerBase
     }
 
 
+
     // =========================
     // COMPLETE PROFILE
     // =========================
     [HttpPut("{authUserId:guid}/complete")]
     [ProducesResponseType(typeof(UserProfileResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CompleteProfile(
-        Guid authUserId,
-        [FromBody] CompleteProfileDto dto)
+    Guid authUserId,
+    [FromBody] CompleteProfileDto dto)
     {
+        var requesterId = User.FindFirst("sub")?.Value;
+
+        if (requesterId is null || !Guid.TryParse(requesterId, out var id))
+            return Unauthorized(new { message = "Invalid token." });
+
+        // only the user himself or SystemAdmin can complete the profile
+        if (id != authUserId && !User.IsInRole("SystemAdmin"))
+            return Forbid();
+
         var result = await _service.CompleteProfileAsync(authUserId, dto);
         return Ok(result);
     }
-
 
     [HttpGet("active")]
     [ProducesResponseType(typeof(PagedResultDto<UserProfileResponseDto>), StatusCodes.Status200OK)]

@@ -1,6 +1,7 @@
 ﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces;
+using ERP.AuthService.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Security;
 
@@ -10,9 +11,9 @@ namespace ERP.AuthService.Controllers
     [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthUserService _authService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthUserService authService)
         {
             _authService = authService;
         }
@@ -99,7 +100,9 @@ namespace ERP.AuthService.Controllers
             }
         }
 
-        [HttpPut("change-password")]
+
+
+        [HttpPut("change-password/profile")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var requesterId = User.FindFirst("sub")?.Value;
@@ -109,7 +112,7 @@ namespace ERP.AuthService.Controllers
 
             try
             {
-                await _authService.ChangePasswordAsync(
+                await _authService.ChangeAuthPasswordAsync(
                     id,
                     request.CurrentPassword,
                     request.NewPassword);
@@ -127,6 +130,29 @@ namespace ERP.AuthService.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
+        [HttpPut("change-password/{userId:guid}")]
+        public async Task<IActionResult> AdminChangePassword(Guid userId, [FromBody] AdminChangeProfileRequest request)
+        {
+            var adminIdClaim = User.FindFirst("sub")?.Value;
+            if (adminIdClaim is null || !Guid.TryParse(adminIdClaim, out var adminId))
+                return Unauthorized(new { message = "Invalid token." });
+
+            var roles = User.FindAll("role").Select(c => c.Value);
+            if (!roles.Contains("SystemAdmin"))
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Only admins can change passwords." });
+
+            try
+            {
+                await _authService.ChangePasswordByAdminAsync(userId, request.NewPassword, adminId);
+                return NoContent();
+            }
+            catch (UserNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
         }
     }

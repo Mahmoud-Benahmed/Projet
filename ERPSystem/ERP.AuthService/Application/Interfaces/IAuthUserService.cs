@@ -3,16 +3,13 @@ using ERP.AuthService.Domain;
 
 namespace ERP.AuthService.Application.Interfaces
 {
-    public interface IAuthService
+    public interface IAuthUserService
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
-
         Task<AuthResponse> LoginAsync(LoginRequest request);
-
         Task<AuthResponse> RefreshTokenAsync(string refreshToken);
-
         Task RevokeRefreshTokenAsync(string refreshToken);
-
-        Task ChangePasswordAsync(Guid id, string currentPassword, string newPassword);
+        Task ChangeAuthPasswordAsync(Guid id, string currentPassword, string newPassword);
+        Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId);
     }
 }

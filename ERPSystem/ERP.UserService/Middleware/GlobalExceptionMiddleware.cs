@@ -50,6 +50,9 @@ public class GlobalExceptionMiddleware
             InvalidUserProfileException =>
                 (400, "USER_005", exception.Message),
 
+            ArgumentException =>
+                (400, "USER_008", exception.Message),
+
             // =========================
             // Security
             // =========================

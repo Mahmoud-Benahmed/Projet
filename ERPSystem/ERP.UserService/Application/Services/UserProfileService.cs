@@ -2,9 +2,10 @@
 
 using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Exceptions;
+using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Domain;
 
-public class UserProfileService
+public class UserProfileService: IUserProfileService
 {
     private readonly IUserProfileRepository _repository;
 
@@ -31,6 +32,8 @@ public class UserProfileService
         return MapToDto(profile);
     }
 
+
+
     // =========================
     // READ - BY ID
     // =========================
@@ -41,6 +44,8 @@ public class UserProfileService
 
         return MapToDto(profile);
     }
+
+
 
     // =========================
     // READ - BY AUTH USER ID
@@ -54,6 +59,8 @@ public class UserProfileService
         return MapToDto(profile);
     }
 
+
+
     // =========================
     // READ - ALL
     // =========================
@@ -65,6 +72,8 @@ public class UserProfileService
             .Select(MapToDto)
             .ToList();
     }
+
+
 
     public async Task<PagedResultDto<UserProfileResponseDto>>
     GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize)
@@ -80,6 +89,8 @@ public class UserProfileService
             pageNumber,
             pageSize);
     }
+
+
 
     // =========================
     // UPDATE - COMPLETE PROFILE
@@ -99,6 +110,9 @@ public class UserProfileService
         return MapToDto(profile);
     }
 
+
+
+
     // =========================
     // UPDATE - ACTIVATE
     // =========================
@@ -111,6 +125,8 @@ public class UserProfileService
 
         await _repository.SaveChangesAsync();
     }
+
+
 
     // =========================
     // UPDATE - DEACTIVATE
@@ -125,6 +141,8 @@ public class UserProfileService
         await _repository.SaveChangesAsync();
     }
 
+
+
     // =========================
     // DELETE (Soft delete recommended)
     // =========================
@@ -137,6 +155,8 @@ public class UserProfileService
 
         await _repository.SaveChangesAsync();
     }
+
+
 
     // =========================
     // MAPPING

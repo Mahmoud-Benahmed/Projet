@@ -5,7 +5,6 @@ namespace ERP.AuthService.Application.DTOs
     public record ChangePasswordRequest
     (
         [Required]
-        [MinLength(8)]
         string CurrentPassword,
 
         [Required]

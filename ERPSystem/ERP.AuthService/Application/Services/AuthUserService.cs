@@ -2,20 +2,23 @@
 using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Domain;
+using ERP.UserService.Application.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 
 
 namespace ERP.AuthService.Application.Services
 {
-    public class AuthService : IAuthService
+    public class AuthUserService: IAuthUserService
     {
         private readonly IAuthUserRepository _userRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IJwtTokenGenerator _jwtGenerator;
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
 
-        public AuthService(
+        public AuthUserService(
             IAuthUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtGenerator,
@@ -95,6 +98,60 @@ namespace ERP.AuthService.Application.Services
         }
 
 
+        public async Task RevokeRefreshTokenAsync(string refreshToken)
+        {
+            var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
+               ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+
+            await RevokeRefreshTokenAsyncPrivate(token);
+        }
+
+        public async Task ChangeAuthPasswordAsync(Guid id, string currPassword, string newPassword)
+        {
+            var user = await _userRepository.GetByIdAsync(id) 
+                        ?? throw new UserNotFoundException(id);
+            
+            
+            if (CryptographicOperations.FixedTimeEquals(
+                                Encoding.UTF8.GetBytes(currPassword),
+                                Encoding.UTF8.GetBytes(newPassword))
+                )
+            {
+                throw new ArgumentException("The new password cannot be the same as the current password.");
+            }
+
+
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currPassword);
+
+            if (result == PasswordVerificationResult.Failed)
+                throw new InvalidCredentialsException();
+
+            var newHashedPassword = _passwordHasher.HashPassword(user, newPassword);
+            user.ChangePassword(newHashedPassword);
+            
+            await _userRepository.UpdateAsync(user);
+        }
+
+        public async Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId)
+        {
+
+            var admin = await _userRepository.GetByIdAsync(adminId)
+                        ?? throw new Exception("Internal server error");
+
+            if (!admin.Role.Equals(UserRole.SystemAdmin))
+                throw new UnauthorizedOperationException("Only admins can change passwords.");
+
+            var user = await _userRepository.GetByIdAsync(userId)
+                       ?? throw new UserNotFoundException(userId);
+
+            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
+            
+            user.ChangePassword(hashedNewPassword);
+
+            await _userRepository.UpdateAsync(user);
+        }
+
+
         private async Task RevokeRefreshTokenAsyncPrivate(RefreshToken token)
         {
             var user = await _userRepository.GetByIdAsync(token.UserId);
@@ -110,38 +167,6 @@ namespace ERP.AuthService.Application.Services
 
             token.Revoke();
             await _refreshTokenRepository.UpdateAsync(token);
-        }
-
-        public async Task RevokeRefreshTokenAsync(string refreshToken)
-        {
-            var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
-               ?? throw new UnauthorizedAccessException("Invalid refresh token.");
-
-            await RevokeRefreshTokenAsyncPrivate(token);
-        }
-
-        public async Task ChangePasswordAsync(Guid id, string currentPassword, string newPassword)
-        {
-            if (currentPassword.Equals(newPassword))
-                throw new ArgumentException("New password must be different from current password.");
-
-            var user = await _userRepository.GetByIdAsync(id) ??
-                throw new UserNotFoundException(id);
-
-            // verify current password before allowing change
-            var result = _passwordHasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                currentPassword);
-
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
-
-            // hash the new password before storing
-            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
-            user.ChangePassword(hashedNewPassword);
-
-            await _userRepository.UpdateAsync(user);
         }
 
         private async Task<AuthResponse> GenerateAuthResponseAsync(AuthUser user)

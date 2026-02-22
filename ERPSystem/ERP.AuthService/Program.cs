@@ -81,13 +81,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOrHR", policy =>
+        policy.RequireRole("Admin", "HR"));
+});
 
 //////////////////////////////////////////////////
 // Dependency Injection
 //////////////////////////////////////////////////
-
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthUserService, AuthUserService>();
 builder.Services.AddScoped<IAuthUserRepository, MongoAuthUserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, MongoRefreshTokenRepository>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

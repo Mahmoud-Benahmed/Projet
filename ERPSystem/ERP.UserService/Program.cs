@@ -1,3 +1,4 @@
+using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Application.Services;
 using ERP.UserService.Infrastructure.Persistence;
 using ERP.UserService.Middleware;
@@ -13,7 +14,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
 
 // Services
-builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
 // JWT Parsing (no validation, gateway already did it)
@@ -61,8 +62,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseAuthentication(); // ← must be before UseAuthorization
 app.UseAuthorization();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 app.Run();

@@ -1,5 +1,6 @@
 ﻿using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Domain;
+using ERP.UserService.Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.NetworkInformation;
 using System.Security;
@@ -34,11 +35,12 @@ namespace ERP.AuthService.Middleware
             {
                 EmailAlreadyExistsException => (400, "AUTH_001", "Email already exists"),
                 InvalidCredentialsException => (401, "AUTH_002", "Invalid credentials"),
+                UnauthorizedOperationException => (403, "AUTH_006", "Operation not authorized"),
                 UserInactiveException => (403, "AUTH_003", "User account is inactive"),
                 TokenAlreadyRevokedException => (400, "AUTH_004", "Refresh token already revoked"),
                 UnauthorizedAccessException => (401, "AUTH_005", exception.Message),
                 SecurityException => (401, "AUTH_006", "Security violation detected"),
-                _ => (500, "SERVER_ERROR", "An unexpected error occurred")
+                _ => (500, "SERVER_ERROR",exception.Message)
             };
 
             var problem = new ProblemDetails
