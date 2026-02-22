@@ -16,7 +16,7 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     const userRole = auth.getRole();
     if (!userRole || !requiredRoles.includes(userRole)) {
       if (userRole === 'SystemAdmin') {
-        router.navigate(['/register']);
+        router.navigate(['/users']);
       } else {
         router.navigate(['/home']);
       }

@@ -10,7 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { InfoModalComponent } from '../info-modal/info-modal';
+import { ModalComponent } from '../modal/modal';
 
 @Component({
   selector: 'app-login',
@@ -68,7 +68,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         localStorage.setItem('expiresAt', response.expiresAt);
         const role = this.authService.getRole();
         if (role === 'SystemAdmin') {
-          this.router.navigate(['/register']);
+          this.router.navigate(['/users']);
         } else {
           this.router.navigate(['/home']);
         }
@@ -81,7 +81,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         if (error.status === 0) return;
 
 
-        this.dialog.open(InfoModalComponent, {
+        this.dialog.open(ModalComponent, {
           width: '400px',
           data: {
             title: 'Erreur de connexion',

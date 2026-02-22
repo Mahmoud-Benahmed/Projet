@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { MatDialog } from '@angular/material/dialog';
-import { InfoModalComponent } from '../components/info-modal/info-modal';
+import { ModalComponent } from '../components/modal/modal';
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -23,7 +23,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       // server unreachable
       if (error.status === 0) {
-        dialog.open(InfoModalComponent, {
+        dialog.open(ModalComponent, {
           width: '400px',
           data: {
             title: 'Serveur inaccessible',

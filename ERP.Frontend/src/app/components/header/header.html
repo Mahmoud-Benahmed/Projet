@@ -1,0 +1,81 @@
+<mat-toolbar class="header">
+
+  <!-- LEFT: Logo + Nav -->
+  <div class="header__left">
+
+    <div class="header__logo">
+      <mat-icon class="header__logo-icon">hub</mat-icon>
+      <span class="header__logo-text">ERP<span class="header__logo-accent">Suite</span></span>
+    </div>
+
+    <mat-divider vertical class="header__divider"></mat-divider>
+
+    <nav class="header__nav">
+      <a
+        *ngFor="let link of navLinks"
+        [routerLink]="link.route"
+        routerLinkActive="nav-link--active"
+        class="nav-link"
+        [matTooltip]="link.label">
+        <mat-icon class="nav-link__icon">{{ link.icon }}</mat-icon>
+        <span class="nav-link__label">{{ link.label }}</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- RIGHT: Actions + Avatar -->
+  <div class="header__right">
+
+    <!-- Notifications -->
+    <button mat-icon-button
+            class="icon-btn"
+            matTooltip="Notifications"
+            [matBadge]="notificationCount"
+            matBadgeColor="warn"
+            [matBadgeHidden]="notificationCount === 0">
+      <mat-icon>notifications_none</mat-icon>
+    </button>
+
+    <!-- User menu -->
+    <button mat-button [matMenuTriggerFor]="userMenu" class="avatar-btn">
+      <div class="avatar">{{ initials }}</div>
+      <div class="avatar-info">
+        <span class="avatar-info__name">{{ userName }}</span>
+        <span class="avatar-info__role">{{ userRole }}</span>
+      </div>
+      <mat-icon class="avatar-chevron">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" class="user-menu" xPosition="before">
+      <div class="menu-header">
+        <div class="menu-avatar">{{ initials }}</div>
+        <div>
+          <p class="menu-header__name">{{ userName }}</p>
+          <p class="menu-header__email">{{ userEmail }}</p>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <button mat-menu-item routerLink="/profile">
+        <mat-icon>manage_accounts</mat-icon>
+        My Profile
+      </button>
+
+      <button mat-menu-item routerLink="/change-password">
+        <mat-icon>lock_reset</mat-icon>
+        Change Password
+      </button>
+
+      <mat-divider></mat-divider>
+
+      <button mat-menu-item class="logout-item" (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        Sign Out
+      </button>
+    </mat-menu>
+
+  </div>
+
+</mat-toolbar>

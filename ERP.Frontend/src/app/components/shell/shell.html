@@ -1,0 +1,10 @@
+<app-header
+  [userName]="currentUser.fullName"
+  [userEmail]="currentUser.email"
+  [userRole]="currentUser.role"
+  (logoutClicked)="onLogout()">
+</app-header>
+
+<main class="shell-content">
+  <router-outlet></router-outlet>
+</main>

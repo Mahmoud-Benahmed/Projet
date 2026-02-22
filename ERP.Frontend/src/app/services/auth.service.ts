@@ -3,21 +3,36 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
+import { AdminChangePasswordRequest, ChangePasswordRequest, LoginRequest, RegisterRequest } from '../interfaces/AuthDto';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private baseUrl = `${environment.apiUrl}/auth`;
+  private baseUrl = `${environment.apiUrl}${environment.authUrl}`;
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  login(credentials: {email: string, password: string}): Observable<any> {
+  login(credentials: LoginRequest): Observable<any> {
     return this.http.post<any>(this.baseUrl + '/login', credentials);
   }
 
-  register(credentials: {email: string, password: string, role: string}): Observable<any> {
+  register(credentials: RegisterRequest): Observable<any> {
     return this.http.post<any>(this.baseUrl + '/register', credentials);
+  }
+
+  // =========================
+  // CHANGE PASSWORD (Self)
+  // =========================
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/change-password/profile`, request);
+  }
+
+  // =========================
+  // CHANGE PASSWORD (Admin)
+  // =========================
+  adminChangePassword(userId: string, request: AdminChangePasswordRequest): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/change-password/${userId}`, request);
   }
 
   revokeToken(token: string): Observable<any> {
@@ -31,6 +46,7 @@ export class AuthService {
   getRefreshToken(): string | null {
     return localStorage.getItem('refreshToken');
   }
+
 
   private decodeAccessToken(): any {
     const token = this.getAccessToken();
@@ -47,6 +63,7 @@ export class AuthService {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('expiresAt');
+    localStorage.removeItem('fullName');
   }
 
   logout(): void {

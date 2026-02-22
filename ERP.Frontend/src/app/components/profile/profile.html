@@ -1,0 +1,228 @@
+<div class="profile-shell">
+
+  <!-- ── LOADING ── -->
+  <div class="loading-state" *ngIf="isLoading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Loading profile…</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading && profile">
+
+    <!-- ── HERO CARD ── -->
+    <mat-card class="hero-card">
+      <mat-card-content>
+
+        <div class="hero-card__layout">
+
+          <!-- Avatar -->
+          <div class="hero-avatar">
+            <span class="hero-avatar__initials">{{ initials }}</span>
+            <span class="hero-avatar__status"
+                  [class.hero-avatar__status--active]="profile.isActive"
+                  [class.hero-avatar__status--inactive]="!profile.isActive"
+                  [matTooltip]="profile.isActive ? 'Active' : 'Inactive'">
+            </span>
+          </div>
+
+          <!-- Identity -->
+          <div class="hero-identity">
+            <h1 class="hero-identity__name">
+              {{ profile.fullName ?? 'No name set' }}
+            </h1>
+            <p class="hero-identity__email">{{ profile.email }}</p>
+
+            <div class="hero-identity__chips">
+              <mat-chip class="chip chip--role">
+                <mat-icon matChipAvatar>shield</mat-icon>
+                {{ role ?? 'User' }}
+              </mat-chip>
+
+              <mat-chip
+                [class.chip--complete]="profile.isProfileCompleted"
+                [class.chip--incomplete]="!profile.isProfileCompleted">
+                <mat-icon matChipAvatar>
+                  {{ profile.isProfileCompleted ? 'verified' : 'pending' }}
+                </mat-icon>
+                {{ profile.isProfileCompleted ? 'Profile Complete' : 'Incomplete Profile' }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="hero-actions">
+            <button mat-stroked-button
+                    class="edit-btn"
+                    (click)="startEditing()"
+                    *ngIf="!isEditing">
+              <mat-icon>edit</mat-icon>
+              Edit Profile
+            </button>
+
+            <a mat-stroked-button routerLink="/change-password" class="password-btn">
+              <mat-icon>lock_reset</mat-icon>
+              Change Password
+            </a>
+          </div>
+
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+
+    <div class="content-grid">
+
+      <!-- ── INFO CARD ── -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title class="card-title">
+            <mat-icon>person</mat-icon>
+            Personal Information
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-divider></mat-divider>
+
+        <mat-card-content>
+
+          <!-- VIEW MODE -->
+          <div class="info-list" *ngIf="!isEditing">
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>badge</mat-icon> Full Name
+              </span>
+              <span class="info-row__value">{{ profile.fullName ?? '—' }}</span>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>email</mat-icon> Email
+              </span>
+              <span class="info-row__value mono">{{ profile.email }}</span>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>phone</mat-icon> Phone
+              </span>
+              <span class="info-row__value">{{ profile.phone ?? '—' }}</span>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>calendar_today</mat-icon> Member Since
+              </span>
+              <span class="info-row__value">{{ memberSince }}</span>
+            </div>
+
+            <mat-divider *ngIf="profile.updatedAt"></mat-divider>
+
+            <div class="info-row" *ngIf="profile.updatedAt">
+              <span class="info-row__label">
+                <mat-icon>update</mat-icon> Last Updated
+              </span>
+              <span class="info-row__value">
+                {{ profile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
+              </span>
+            </div>
+
+          </div>
+
+          <!-- EDIT MODE -->
+          <form class="edit-form" *ngIf="isEditing">
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Full Name</mat-label>
+              <input matInput [(ngModel)]="editForm.fullName" name="fullName" required />
+              <mat-icon matPrefix>badge</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Phone</mat-label>
+              <input matInput [(ngModel)]="editForm.phone" name="phone" required />
+              <mat-icon matPrefix>phone</mat-icon>
+            </mat-form-field>
+
+            <div class="edit-form__actions">
+              <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
+                Cancel
+              </button>
+              <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving">
+                <mat-spinner diameter="16" *ngIf="isSaving"></mat-spinner>
+                <mat-icon *ngIf="!isSaving">check</mat-icon>
+                {{ isSaving ? 'Saving…' : 'Save Changes' }}
+              </button>
+            </div>
+
+          </form>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ── ACCOUNT CARD ── -->
+      <mat-card class="account-card">
+        <mat-card-header>
+          <mat-card-title class="card-title">
+            <mat-icon>manage_accounts</mat-icon>
+            Account Details
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-divider></mat-divider>
+
+        <mat-card-content>
+          <div class="info-list">
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>fingerprint</mat-icon> Profile ID
+              </span>
+              <span class="info-row__value mono small">{{ profile.id }}</span>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>key</mat-icon> Auth ID
+              </span>
+              <span class="info-row__value mono small">{{ profile.authUserId }}</span>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="info-row">
+              <span class="info-row__label">
+                <mat-icon>toggle_on</mat-icon> Status
+              </span>
+              <span class="info-row__value">
+                <span class="status-dot" [class.status-dot--active]="profile.isActive"></span>
+                {{ profile.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+
+          </div>
+        </mat-card-content>
+
+        <!-- Quick link to change password -->
+        <mat-divider></mat-divider>
+        <mat-card-actions class="card-actions">
+          <a mat-button routerLink="/change-password" class="action-link">
+            <mat-icon>lock</mat-icon>
+            Change Password
+          </a>
+        </mat-card-actions>
+
+      </mat-card>
+
+    </div>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,278 @@
+// ── TOKENS ────────────────────────────────────────
+$surface:     #0f1117;
+$surface-2:   #181c27;
+$border:      rgba(255, 255, 255, 0.07);
+$text-dark:#343434;
+$text-light : #ede7e7;
+$text-muted:  #6b7280;
+$accent:      #4f8ef7;
+$accent-glow: rgba(79, 142, 247, 0.15);
+$danger:      #f87171;
+
+// ── TOOLBAR ───────────────────────────────────────
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 60px !important;
+  background: rgba($surface-2, 0.92) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid $border;
+  padding: 0 24px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 1px 24px rgba(0, 0, 0, 0.4);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__divider {
+    height: 24px !important;
+    border-color: $border !important;
+    margin: 0 4px;
+  }
+}
+
+// ── LOGO ──────────────────────────────────────────
+.header__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+
+  &-icon {
+    color: $accent;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  &-text {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: $text-light;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  &-accent {
+    color: $accent;
+  }
+}
+
+// ── NAV ───────────────────────────────────────────
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+
+  &__icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: $text-light;
+  }
+
+  &--active {
+    background: $accent-glow !important;
+    color: $accent !important;
+  }
+}
+
+// ── ICON BUTTON ───────────────────────────────────
+.icon-btn {
+  color: $text-muted !important;
+  border-radius: 8px !important;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: $text-dark !important;
+  }
+
+  ::ng-deep .mat-badge-content {
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    top: 2px !important;
+    right: 2px !important;
+  }
+}
+
+// ── AVATAR BUTTON ─────────────────────────────────
+.avatar-btn {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px !important;
+  border-radius: 40px !important;
+  border: 1px solid $border !important;
+  background: $surface !important;
+  color: $text-dark !important;
+  height: 40px;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: rgba($accent, 0.4) !important;
+    background: rgba($accent, 0.05) !important;
+  }
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $accent, #7b5ea7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.avatar-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: $text-dark;
+  }
+
+  &__role {
+    font-size: 10px;
+    color: $accent;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+}
+
+.avatar-chevron {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: $text-muted;
+}
+
+// ── DROPDOWN MENU ─────────────────────────────────
+::ng-deep .user-menu {
+  .mat-mdc-menu-panel {
+    background: $surface-2;
+    border: 1px solid $border;
+    border-radius: 12px !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+    min-width: 220px !important;
+    overflow: hidden;
+  }
+
+  .mat-mdc-menu-item {
+    color: $text-dark;
+    font-size: 14px;
+    height: 44px;
+
+    .mat-icon {
+      color: $text-muted;
+      font-size: 18px;
+      margin-right: 10px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
+
+      .mat-icon { color: $accent; }
+    }
+  }
+
+  mat-divider {
+    border-color: $border !important;
+    margin: 4px 0;
+  }
+}
+
+// Menu header block
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 12px;
+
+  &__name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-dark;
+  }
+
+  &__email {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: $text-muted;
+  }
+}
+
+.menu-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $accent, #7b5ea7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logout-item {
+  ::ng-deep {
+    color: $danger !important;
+    .mat-icon { color: $danger !important; }
+  }
+
+  &:hover {
+    background: rgba($danger, 0.08) !important;
+  }
+}

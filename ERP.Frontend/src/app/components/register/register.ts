@@ -9,9 +9,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { InfoModalComponent } from '../info-modal/info-modal';
+import { ModalComponent } from '../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { RegisterRequest } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-register',
@@ -31,7 +32,7 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 })
 export class RegisterComponent implements OnDestroy {
 
-  credentials = { email: '', password: '', role: '' };
+  credentials: RegisterRequest = { email: '', password: '', role: '' };
   errorMessage = '';
   successMessage = '';
   showPassword = false;
@@ -48,7 +49,7 @@ export class RegisterComponent implements OnDestroy {
   constructor(private router: Router,
               private authService: AuthService,
               private cdr: ChangeDetectorRef,
-              private dialog: MatDialog) {}
+              private dialog: MatDialog,) {}
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
@@ -73,7 +74,7 @@ export class RegisterComponent implements OnDestroy {
               console.log(error);
 
 
-              this.dialog.open(InfoModalComponent, {
+              this.dialog.open(ModalComponent, {
                 width: '400px',
                 data: {
                   title: 'Erreur d\'enregistrement',
@@ -88,41 +89,16 @@ export class RegisterComponent implements OnDestroy {
     });
   }
 
+  generatePassword(){
+    this.credentials.password= generatePassword();
+    if(!this.showPassword) this.showPassword= true;
+  }
+
   goToLogin(): void {
     this.router.navigate(['/login']);
   }
 
   ngOnDestroy(): void {
     if (this.errorTimeout) clearTimeout(this.errorTimeout);
-  }
-
-  generatePassword(): void {
-    const chars = {
-      upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      lower: 'abcdefghijklmnopqrstuvwxyz',
-      numbers: '0123456789',
-      symbols: '!@#$%^&*'
-    };
-
-    const allChars = chars.upper + chars.lower + chars.numbers + chars.symbols;
-
-    // random length between 8 and 20
-    const length = Math.floor(Math.random() * (20 - 8 + 1)) + 8;
-
-    // guarantee at least one of each type
-    const password = [
-      chars.upper[Math.floor(Math.random() * chars.upper.length)],
-      chars.lower[Math.floor(Math.random() * chars.lower.length)],
-      chars.numbers[Math.floor(Math.random() * chars.numbers.length)],
-      chars.symbols[Math.floor(Math.random() * chars.symbols.length)],
-      // fill remaining characters randomly
-      ...Array.from({ length: length - 4 }, () => allChars[Math.floor(Math.random() * allChars.length)])
-    ]
-    // shuffle so the guaranteed chars aren't always at the start
-    .sort(() => Math.random() - 0.5)
-    .join('');
-
-    this.credentials.password = password;
-    this.showPassword = true; // show password so admin can see/copy it
   }
 }

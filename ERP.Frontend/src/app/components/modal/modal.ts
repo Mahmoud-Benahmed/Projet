@@ -3,26 +3,21 @@ import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
+import { ModalData } from '../../interfaces/ModalData';
 
-export interface ModalData {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-  showCancel?: boolean;
-  icon?: string;
-  iconColor?: 'primary' | 'warn' | 'accent';
-}
+
+
+
 
 @Component({
-  selector: 'app-info-modal',
+  selector: 'app-modal',
   imports: [MatDialogModule, MatButtonModule, MatIconModule, CommonModule],
-  templateUrl: './info-modal.html',
-  styleUrl: './info-modal.scss'
+  templateUrl: './modal.html',
+  styleUrl: './modal.scss'
 })
-export class InfoModalComponent {
+export class ModalComponent {
   constructor(
-    private dialogRef: MatDialogRef<InfoModalComponent>,
+    private dialogRef: MatDialogRef<ModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: ModalData
   ) {}
 
