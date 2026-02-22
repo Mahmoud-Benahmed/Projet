@@ -30,6 +30,14 @@ namespace ERP.AuthService.Application.Services
             _passwordHasher = passwordHasher;
         }
 
+        public async Task<AuthUserGetResponseDto> GetByIdAsync(Guid id)
+        {
+            var user= await _userRepository.GetByIdAsync(id)
+                      ?? throw new UserNotFoundException(id);
+
+            return MapToDto(user);
+        }
+
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             if (await _userRepository.ExistsByEmailAsync(request.Email))
@@ -191,6 +199,21 @@ namespace ERP.AuthService.Application.Services
                 accessToken,
                 refreshTokenValue,
                 expiresAt
+            );
+        }
+
+        private static AuthUserGetResponseDto MapToDto(AuthUser user)
+        {
+            return new AuthUserGetResponseDto
+            (
+                Id: user.Id,
+                Email: user.Email,
+                Role: user.Role,
+                MustChangePassword: user.MustChangePassword,
+                IsActive: user.IsActive,
+                CreatedAt: user.CreatedAt,
+                UpdatedAt: user.UpdatedAt,
+                LastLoginAt: user.LastLoginAt
             );
         }
 
