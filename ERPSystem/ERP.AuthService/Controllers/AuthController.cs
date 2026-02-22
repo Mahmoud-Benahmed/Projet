@@ -18,6 +18,13 @@ namespace ERP.AuthService.Controllers
             _authService = authService;
         }
 
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAuthUserById(Guid id)
+        {
+            var result = await _authService.GetByIdAsync(id);
+            return Ok(result);
+        }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
