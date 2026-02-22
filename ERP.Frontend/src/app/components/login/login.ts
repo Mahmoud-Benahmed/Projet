@@ -10,7 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ModalComponent } from '../modal/modal';
+import { AuthResponse } from '../../interfaces/AuthDto';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-login',
@@ -38,8 +39,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -62,10 +62,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.cdr.detectChanges(); // ← add this
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        localStorage.setItem('expiresAt', response.expiresAt);
+        this.authService.storeTokens(response);
         const role = this.authService.getRole();
         if (role === 'SystemAdmin') {
           this.router.navigate(['/users']);
@@ -75,23 +72,9 @@ export class LoginComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isLoading = false;
-        this.cdr.detectChanges(); // ← add this
-
         // skip if already handled by interceptor
         if (error.status === 0) return;
-
-
-        this.dialog.open(ModalComponent, {
-          width: '400px',
-          data: {
-            title: 'Erreur de connexion',
-            message: error.error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
-            confirmText: 'OK',
-            showCancel: false,
-            icon: 'warning',
-            iconColor: 'danger'
-          }
-        });
+        this.snackBar.open('Failed to login, please check your credentials.', 'Dismiss', { duration: 3000 });
       }
     });
   }

@@ -10,6 +10,12 @@ export interface UserProfileResponseDto {
   updatedAt?: string;
 }
 
+export interface FullProfile extends UserProfileResponseDto {
+  role: string;
+  mustChangePassword: boolean;
+  lastLoginAt: string | null;
+}
+
 export interface CreateUserProfileDto {
   authUserId: string;
   email: string;
@@ -25,4 +31,12 @@ export interface PagedResultDto<T> {
   totalCount: number;
   pageNumber: number;
   pageSize: number;
+}
+
+
+export interface UserStatsDto {
+  totalUsers: number;
+  activeUsers: number;
+  deactivatedUsers: number;
+  completedProfiles: number;
 }

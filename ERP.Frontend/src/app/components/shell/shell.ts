@@ -44,12 +44,7 @@ export class ShellComponent implements OnInit {
     })
   }
 
-  getFullName(){
-    return localStorage.getItem('fullName');
-  }
-
   onLogout(): void {
-    localStorage.removeItem('fullName');
     this.authService.logout();
   }
 }

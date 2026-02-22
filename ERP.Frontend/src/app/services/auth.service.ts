@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
-import { AdminChangePasswordRequest, ChangePasswordRequest, LoginRequest, RegisterRequest } from '../interfaces/AuthDto';
+import { AdminChangePasswordRequest, AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest } from '../interfaces/AuthDto';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +12,10 @@ export class AuthService {
   private baseUrl = `${environment.apiUrl}${environment.authUrl}`;
 
   constructor(private http: HttpClient, private router: Router) {}
+
+  getUserById(id: string): Observable<any>{
+    return this.http.get(this.baseUrl+`/${id}`);
+  }
 
   login(credentials: LoginRequest): Observable<any> {
     return this.http.post<any>(this.baseUrl + '/login', credentials);
@@ -48,6 +52,13 @@ export class AuthService {
   }
 
 
+
+  storeTokens(response: AuthResponse){
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        localStorage.setItem('expiresAt', response.expiresAt);
+  }
+
   private decodeAccessToken(): any {
     const token = this.getAccessToken();
     if (!token) return null;
@@ -63,7 +74,6 @@ export class AuthService {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('expiresAt');
-    localStorage.removeItem('fullName');
   }
 
   logout(): void {

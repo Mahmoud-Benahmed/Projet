@@ -14,7 +14,8 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { UsersService as UserProfileService } from '../../services/users.service';
 import { AuthService } from '../../services/auth.service';
-import { UserProfileResponseDto, CompleteProfileDto } from '../../interfaces/UserProfileDto';
+import { UserProfileResponseDto, CompleteProfileDto, FullProfile } from '../../interfaces/UserProfileDto';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-profile',
@@ -38,8 +39,7 @@ import { UserProfileResponseDto, CompleteProfileDto } from '../../interfaces/Use
   styleUrl: './profile.scss',
 })
 export class ProfileComponent implements OnInit {
-  profile: UserProfileResponseDto | null = null;
-  isLoading = true;
+  profile: FullProfile | null = null;  isLoading = true;
   isEditing = false;
   isSaving = false;
   role: string= '';
@@ -64,9 +64,19 @@ export class ProfileComponent implements OnInit {
     if (!authUserId) return;
 
     this.isLoading = true;
-    this.userProfileService.getByAuthUserId(authUserId).subscribe({
-      next: (profile) => {
-        this.profile = profile;
+
+    forkJoin({
+      authUser: this.authService.getUserById(authUserId),
+      profile: this.userProfileService.getByAuthUserId(authUserId),
+    }).subscribe({
+      next: ({ authUser, profile }) => {
+        // merge both responses into one object
+        this.profile = {
+          ...profile,
+          role: authUser.role,
+          mustChangePassword: authUser.mustChangePassword,
+          lastLoginAt: authUser.lastLoginAt,
+        };
         this.isLoading = false;
       },
       error: () => {
@@ -93,20 +103,23 @@ export class ProfileComponent implements OnInit {
     if (!this.profile) return;
     this.isSaving = true;
 
-    this.userProfileService
-      .completeProfile(this.profile.authUserId, this.editForm)
-      .subscribe({
-        next: (updated) => {
-          this.profile = updated;
+    this.userProfileService.completeProfile(this.profile.authUserId, this.editForm).subscribe({
+      next: (updated) => {
+          this.profile = {
+            ...updated,
+            role: this.profile!.role,
+            mustChangePassword: this.profile!.mustChangePassword,
+            lastLoginAt: this.profile!.lastLoginAt,
+          };
           this.isEditing = false;
           this.isSaving = false;
           this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
-        },
-        error: () => {
-          this.isSaving = false;
-          this.snackBar.open('Failed to update profile.', 'Dismiss', { duration: 3000 });
-        },
-      });
+      },
+      error: () => {
+          this.isLoading = false;
+          this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+      }
+    });
   }
 
   get initials(): string {
