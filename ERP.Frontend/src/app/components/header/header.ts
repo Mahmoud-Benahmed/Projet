@@ -8,12 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-export interface NavLink {
-  label: string;
-  route: string;
-  icon: string;
-}
+import { NavLink } from '../../interfaces/NavLink';
 
 @Component({
   selector: 'app-header',
@@ -35,18 +30,25 @@ export interface NavLink {
 export class HeaderComponent {
   @Input() userName: string = 'John Doe';
   @Input() userEmail: string = 'john@example.com';
-  @Input() userRole: string = 'SystemAdmin';
+  @Input() userRole: string = 'User';
   @Input() notificationCount: number = 3;
   @Output() logoutClicked = new EventEmitter<void>();
   @Output() sidenavToggle = new EventEmitter<void>();
 
-  navLinks: NavLink[] = [
-    { label: 'Users', route: '/users', icon: 'group' },
-    { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off' },
+  allNavLinks: NavLink[] = [
+    { label: 'Home', route: '/home', icon: 'home' },
+    { label: 'Users', route: '/users', icon: 'group', roles: ['SystemAdmin'] },
+    { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off', roles: ['SystemAdmin'] },
     { label: 'Settings', route: '/settings', icon: 'settings' },
   ];
 
-  
+  get navLinks(): NavLink[] {
+    return this.allNavLinks.filter(link =>
+      !link.roles || link.roles.includes(this.userRole)
+    );
+  }
+
+
   get initials(): string {
     return this.userName
       .split(' ')

@@ -1,0 +1,56 @@
+  <section class="stats-row">
+    @if(isLoading){
+      <div class="stats-loading">
+        <mat-spinner diameter="36"></mat-spinner>
+      </div>
+    }
+
+    <mat-card class="stat-card stat-card--active">
+      <mat-card-content>
+        <div class="stat-card__icon-wrap">
+          <mat-icon>group</mat-icon>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ stats.activeUsers }}</span>
+          <span class="stat-card__label">Active Users</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card stat-card--inactive">
+      <mat-card-content>
+        <div class="stat-card__icon-wrap">
+          <mat-icon>person_off</mat-icon>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ stats.deactivatedUsers }}</span>
+          <span class="stat-card__label">Deactivated</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card stat-card--completed">
+      <mat-card-content>
+        <div class="stat-card__icon-wrap">
+          <mat-icon>verified_user</mat-icon>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ stats.completedProfiles }}</span>
+          <span class="stat-card__label">Profiles Complete</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card stat-card--total">
+      <mat-card-content>
+        <div class="stat-card__icon-wrap">
+          <mat-icon>dataset</mat-icon>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ stats.totalUsers }}</span>
+          <span class="stat-card__label">Total Records</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </section>

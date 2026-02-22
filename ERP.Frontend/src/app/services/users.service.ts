@@ -6,6 +6,7 @@ import {
   CreateUserProfileDto,
   CompleteProfileDto,
   PagedResultDto,
+  UserStatsDto,
 } from '../interfaces/UserProfileDto';
 import { environment } from '../environment';
 
@@ -80,14 +81,8 @@ export class UsersService {
   // =========================
   // COMPLETE PROFILE
   // =========================
-  completeProfile(
-    authUserId: string,
-    dto: CompleteProfileDto
-  ): Observable<UserProfileResponseDto> {
-    return this.http.put<UserProfileResponseDto>(
-      `${this.baseUrl}/${authUserId}/complete`,
-      dto
-    );
+  completeProfile(authUserId: string, dto: CompleteProfileDto): Observable<UserProfileResponseDto> {
+    return this.http.put<UserProfileResponseDto>(`${this.baseUrl}/${authUserId}/complete`,dto);
   }
 
   // =========================
@@ -109,5 +104,10 @@ export class UsersService {
   // =========================
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+
+  getStats(): Observable<UserStatsDto> {
+    return this.http.get<UserStatsDto>(`${this.baseUrl}/stats`);
   }
 }

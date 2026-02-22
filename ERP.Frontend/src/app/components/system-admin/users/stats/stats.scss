@@ -1,0 +1,137 @@
+// ── TOKENS ────────────────────────────────────────
+$surface:       #0f1117;
+$surface-2:     #181c27;
+$surface-3:     #1e2336;
+$border:        rgba(255, 255, 255, 0.07);
+$text-primary:  #e8eaf0;
+$text-muted:    #6b7280;
+$accent:        #4f8ef7;
+$accent-glow:   rgba(79, 142, 247, 0.15);
+$success:       #34d399;
+$warn:          #fbbf24;
+$danger:        #f87171;
+$radius:        12px;
+$radius-sm:     8px;
+
+// ── STAT CARDS ────────────────────────────────────
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-card {
+  background: $surface-2 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius !important;
+  box-shadow: none !important;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px !important;
+  }
+
+  &__icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $text-muted;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+
+  // Variants
+  &--active {
+    border-color: rgba($accent, 0.3) !important;
+    .stat-card__icon-wrap {
+      background: $accent-glow;
+      mat-icon { color: $accent; }
+    }
+    .stat-card__value { color: $accent; }
+  }
+
+  &--inactive {
+    border-color: rgba($warn, 0.3) !important;
+    .stat-card__icon-wrap {
+      background: rgba($warn, 0.12);
+      mat-icon { color: $warn; }
+    }
+    .stat-card__value { color: $warn; }
+  }
+
+  &--completed {
+    border-color: rgba($success, 0.3) !important;
+    .stat-card__icon-wrap {
+      background: rgba($success, 0.12);
+      mat-icon { color: $success; }
+    }
+    .stat-card__value { color: $success; }
+  }
+
+  &--total {
+    border-color: $border !important;
+    .stat-card__icon-wrap {
+      background: rgba(255,255,255,0.05);
+      mat-icon { color: $text-muted; }
+    }
+    .stat-card__value { color: $text-primary; }
+  }
+}
+
+.stats-row {
+  position: relative; // 👈 needed for the overlay to position against
+}
+
+.stats-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 17, 23, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+
+  ::ng-deep circle {
+    stroke: #4f8ef7 !important;
+  }
+}

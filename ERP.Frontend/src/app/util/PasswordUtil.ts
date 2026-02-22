@@ -1,11 +1,11 @@
-interface PasswordValidationResult {
+export interface PasswordValidationResult {
   isValid: boolean;
   strength: "weak" | "fair" | "strong" | "very strong";
   errors: string[];
   score: number;
 }
 
-interface PasswordRules {
+export interface PasswordRules {
   minLength?: number;
   maxLength?: number;
   requireUppercase?: boolean;
@@ -25,7 +25,7 @@ const DEFAULT_RULES: PasswordRules = {
   disallowSpaces: true,
 };
 
-function checkPassword(
+export function checkPassword(
   password: string,
   rules: PasswordRules  = DEFAULT_RULES
 ): PasswordValidationResult {
@@ -107,7 +107,7 @@ function checkPassword(
   };
 }
 
-function generatePassword(): string {
+export function generatePassword(): string {
     const chars = {
       upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
       lower: 'abcdefghijklmnopqrstuvwxyz',

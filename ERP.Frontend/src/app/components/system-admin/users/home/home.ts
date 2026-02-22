@@ -19,6 +19,8 @@ import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../services/users.service';
 import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../../services/auth.service';
+import { Stats } from '../stats/stats';
 
 @Component({
   selector: 'app-home',
@@ -41,6 +43,7 @@ import { Router } from '@angular/router';
     MatBadgeModule,
     MatDividerModule,
     MatSnackBarModule,
+    Stats
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -68,22 +71,15 @@ export class UsersHomeComponent implements OnInit {
   isLoading = false;
   searchTerm = '';
 
-  // Stats
-  stats = {
-    totalActive: 0,
-    totalDeactivated: 0,
-    completedProfiles: 0,
-  };
-
   constructor(
     private userProfileService: UsersService,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadUsers();
-    this.loadStats();
   }
 
   loadUsers(): void {
@@ -104,18 +100,7 @@ export class UsersHomeComponent implements OnInit {
       });
   }
 
-  loadStats(): void {
-    this.userProfileService.getActiveUsers(1, 1).subscribe((r) => {
-      this.stats.totalActive = r.totalCount;
-      this.stats.completedProfiles = r.items.filter(
-        (u) => u.isProfileCompleted
-      ).length;
-    });
 
-    this.userProfileService.getDeactivatedUsers(1, 1).subscribe((r) => {
-      this.stats.totalDeactivated = r.totalCount;
-    });
-  }
 
   onPageChange(event: PageEvent): void {
     this.pageNumber = event.pageIndex + 1;
@@ -134,7 +119,6 @@ export class UsersHomeComponent implements OnInit {
           duration: 3000,
         });
         this.loadUsers();
-        this.loadStats();
       },
       error: () =>
         this.snackBar.open('Failed to deactivate user.', 'Dismiss', {
@@ -148,7 +132,6 @@ export class UsersHomeComponent implements OnInit {
       next: () => {
         this.snackBar.open(`User deleted.`, 'OK', { duration: 3000 });
         this.loadUsers();
-        this.loadStats();
       },
       error: () =>
         this.snackBar.open('Failed to delete user.', 'Dismiss', {
@@ -171,5 +154,9 @@ export class UsersHomeComponent implements OnInit {
 
   goToProfile(authUserId: string): void {
     this.router.navigate(['/users', authUserId]);
+  }
+
+  goToRegister(): void{
+    this.router.navigate(['/users/register'])
   }
 }

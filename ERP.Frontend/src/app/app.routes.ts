@@ -5,19 +5,22 @@ import { RegisterComponent } from './components/register/register';
 import { authGuard } from './services/auth.guard';
 import { UsersHomeComponent } from './components/system-admin/users/home/home';
 import { ShellComponent } from './components/shell/shell';
+import { ProfileComponent } from './components/profile/profile';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  {     path: 'login',              component: LoginComponent },
 
   {
-    path: '',
-    component: ShellComponent,
-    canActivate: [authGuard],
-    children: [
-      { path: 'register', component: RegisterComponent, canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
-      { path: 'users', component: UsersHomeComponent, canActivate: [authGuard] },
-      { path: 'home', component: HomeComponent, canActivate: [authGuard] },
+      path: '',                   component: ShellComponent,      canActivate: [authGuard],
+  children: [
+    { path: 'users',              component: UsersHomeComponent,  canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
+    { path: 'users/register',     component: RegisterComponent,   canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
+    { path: 'users/deactivated',  component: RegisterComponent,   canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
+    { path: 'users/:authUserId',  component: ProfileComponent,    canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
+    { path: 'profile',            component: ProfileComponent,    canActivate: [authGuard] },
+    { path: 'home',               component: HomeComponent,       canActivate: [authGuard] },
+    { path: '',                   redirectTo: 'home',             pathMatch: 'full' },
     ]
   },
-  { path: '**', redirectTo: 'login' }
+  {     path: '**',                 redirectTo: 'login' }
 ];

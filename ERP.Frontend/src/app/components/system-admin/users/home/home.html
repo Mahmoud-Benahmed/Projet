@@ -14,7 +14,7 @@
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
 
-      <button mat-flat-button color="primary" class="add-btn">
+      <button mat-flat-button color="primary" class="add-btn" (click)="goToRegister()">
         <mat-icon>person_add</mat-icon>
         Add User
       </button>
@@ -22,57 +22,7 @@
   </header>
 
   <!-- ── STAT CARDS ── -->
-  <section class="stats-row">
-
-    <mat-card class="stat-card stat-card--active">
-      <mat-card-content>
-        <div class="stat-card__icon-wrap">
-          <mat-icon>group</mat-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__value">{{ stats.totalActive }}</span>
-          <span class="stat-card__label">Active Users</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card stat-card--inactive">
-      <mat-card-content>
-        <div class="stat-card__icon-wrap">
-          <mat-icon>person_off</mat-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__value">{{ stats.totalDeactivated }}</span>
-          <span class="stat-card__label">Deactivated</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card stat-card--completed">
-      <mat-card-content>
-        <div class="stat-card__icon-wrap">
-          <mat-icon>verified_user</mat-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__value">{{ stats.completedProfiles }}</span>
-          <span class="stat-card__label">Profiles Complete</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="stat-card stat-card--total">
-      <mat-card-content>
-        <div class="stat-card__icon-wrap">
-          <mat-icon>dataset</mat-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__value">{{ stats.totalActive + stats.totalDeactivated }}</span>
-          <span class="stat-card__label">Total Records</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-  </section>
+<app-stats></app-stats>
 
   <!-- ── TABLE CARD ── -->
   <mat-card class="table-card">

@@ -32,6 +32,7 @@
                   [type]="showPassword ? 'text' : 'password'"
                   name="password"
                   [(ngModel)]="credentials.password"
+                  (ngModelChange)="onPasswordChange()"
                   required
                   minlength="8"
                   #passwordInput="ngModel"/>
@@ -56,6 +57,25 @@
             </mat-error>
 
           </mat-form-field>
+
+          <div class="password-meter" *ngIf="credentials.password">
+              <div class="password-meter__bars">
+                <div class="bar"
+                    *ngFor="let bar of [1,2,3,4]"
+                    [class.bar--filled]="getScore() >= bar"
+                    [ngClass]="getStrengthClass()">
+                </div>
+              </div>
+              <span class="password-meter__label" [ngClass]="getStrengthClass()">
+                {{ getStrengthLabel() }}
+              </span>
+            </div>
+
+            <div class="password-errors" *ngIf="passwordErrors.length > 0 && credentials.password">
+              <span *ngFor="let error of passwordErrors" class="password-error">
+                <mat-icon>error_outline</mat-icon>{{ error }}
+              </span>
+            </div>
 
           <button mat-stroked-button
                   type="button"
