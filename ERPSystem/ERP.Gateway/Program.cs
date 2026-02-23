@@ -91,7 +91,32 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 
+    options.AddPolicy("WritePolicy", context =>
+    {
+        var userId = context.User?.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst("sub")?.Value
+            : context.Connection.RemoteIpAddress?.ToString();
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            userId ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+
     options.RejectionStatusCode = 429;
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            """{"message": "Too many requests. Please wait before retrying."}""",
+            token);
+    };
 });
 
 //////////////////////////////////////////////////
