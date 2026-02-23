@@ -9,7 +9,7 @@ public class UserProfile
     public string? FullName { get; private set; }
     public string? Phone { get; private set; }
 
-    public bool IsActive { get; private set; }
+    public bool IsActive { get; private set; } = false;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -32,9 +32,6 @@ public class UserProfile
 
     public void CompleteProfile(string fullName, string phone)
     {
-        if (!IsActive)
-            throw new UserNotActiveException();
-
         if (string.IsNullOrWhiteSpace(fullName))
             throw new ArgumentException("Full name is required.");
 
@@ -44,6 +41,10 @@ public class UserProfile
         FullName = fullName;
         Phone = phone;
         UpdatedAt = DateTime.UtcNow;
+
+        // 🔥 Domain rule here
+        if (!IsActive)
+            Activate();
     }
 
     public bool IsProfileCompleted() =>
@@ -52,8 +53,11 @@ public class UserProfile
 
     public void Activate()
     {
+        if (!IsProfileCompleted())
+            throw new InvalidOperationException("Profile must be completed before activation.");
+
         if (IsActive)
-            throw new UserActiveException("User already active");
+            return;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -65,4 +69,5 @@ public class UserProfile
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
+
 }
