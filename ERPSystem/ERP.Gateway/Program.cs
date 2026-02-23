@@ -63,17 +63,40 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
-
-    options.AddPolicy("LoginPolicy", context =>
+<<<<<<< Updated upstream
+=======
+    // ── GLOBAL SAFETY NET ─────────────────────────────────
+    // High enough to not block normal usage, low enough to block abuse
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "global",
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = 200,          // per IP per minute
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
+>>>>>>> Stashed changes
 
+    // ── LOGIN — strict, per IP ────────────────────────────
+    // Brute-force protection: 5 attempts per 5 minutes
+    options.AddPolicy("LoginPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+<<<<<<< Updated upstream
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+=======
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(5),  // wider window than before
+>>>>>>> Stashed changes
+                QueueLimit = 0
+            }));
+
+    // ── AUTHENTICATED USER ACTIONS ────────────────────────
+    // Sliding window per user — handles bursts better than fixed
     options.AddPolicy("UserPolicy", context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
@@ -84,9 +107,31 @@ builder.Services.AddRateLimiter(options =>
             userId ?? "anonymous",
             _ => new SlidingWindowRateLimiterOptions
             {
+<<<<<<< Updated upstream
                 PermitLimit = 20,
+=======
+                PermitLimit = 60,           // 60 requests per minute per user
                 Window = TimeSpan.FromMinutes(1),
-                SegmentsPerWindow = 6,
+                SegmentsPerWindow = 6,      // checks every 10 seconds
+                QueueLimit = 0
+            });
+    });
+
+    // ── WRITE OPERATIONS — stricter ───────────────────────
+    // For endpoints like create, delete, change-password
+    options.AddPolicy("WritePolicy", context =>
+    {
+        var userId = context.User?.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst("sub")?.Value
+            : context.Connection.RemoteIpAddress?.ToString();
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            userId ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,           // 20 writes per minute per user
+>>>>>>> Stashed changes
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             });
     });
@@ -109,6 +154,10 @@ builder.Services.AddRateLimiter(options =>
 
     options.RejectionStatusCode = 429;
 
+<<<<<<< Updated upstream
+=======
+    // Return a clear message so the frontend can handle it
+>>>>>>> Stashed changes
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = 429;
