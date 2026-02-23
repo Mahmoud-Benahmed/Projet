@@ -198,6 +198,7 @@ namespace ERP.AuthService.Application.Services
             return new AuthResponse(
                 accessToken,
                 refreshTokenValue,
+                user.MustChangePassword,
                 expiresAt
             );
         }
