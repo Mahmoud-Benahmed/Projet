@@ -1,4 +1,5 @@
-﻿using ERP.UserService.Domain;
+﻿using ERP.UserService.Application.DTOs;
+using ERP.UserService.Domain;
 
 public interface IUserProfileRepository
 {
@@ -13,4 +14,6 @@ public interface IUserProfileRepository
 
     Task<(List<UserProfile> Items, int TotalCount)>
     GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
+
+    Task<UserStatsDto> GetStatsAsync();
 }
