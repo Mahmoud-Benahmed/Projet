@@ -23,3 +23,9 @@ export interface AuthResponse{
   refreshToken: string,
   expiresAt: string
 }
+
+
+export interface RoleDto{
+  value: string,
+  label: string
+}

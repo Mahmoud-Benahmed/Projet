@@ -50,6 +50,7 @@ import { Stats } from '../stats/stats';
 })
 export class UsersHomeComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(Stats) statsComponent!: Stats;
 
   displayedColumns: string[] = [
     'fullName',
@@ -92,6 +93,7 @@ export class UsersHomeComponent implements OnInit {
           this.totalCount = result.totalCount;
           this.dataSource.sort = this.sort;
           this.isLoading = false;
+          this.statsComponent.loadStats();
         },
         error: () => {
           this.isLoading = false;

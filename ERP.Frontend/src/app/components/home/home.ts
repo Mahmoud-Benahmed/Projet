@@ -17,11 +17,11 @@ export class HomeComponent implements OnInit {
 
 
   ngOnInit(): void {
-    if(!this.authService.isLoggedIn()) {
+    if(!this.authService.isLoggedIn!) {
       this.authService.logout();
     }
-      this.email= this.authService.getEmail();
-      this.role = this.authService.getRole();
+      this.email= this.authService.Email!;
+      this.role = this.authService.Role!;
   }
 
   logout(): void {

@@ -16,7 +16,8 @@
         [routerLink]="link.route"
         routerLinkActive="nav-link--active"
         class="nav-link"
-        [matTooltip]="link.label">
+        [matTooltip]="link.label"
+        [routerLinkActiveOptions]="{ exact: true }">
         <mat-icon class="nav-link__icon">{{ link.icon }}</mat-icon>
         <span class="nav-link__label">{{ link.label }}</span>
       </a>

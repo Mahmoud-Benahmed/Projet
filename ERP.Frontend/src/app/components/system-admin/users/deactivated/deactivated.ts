@@ -17,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UsersService } from '../../../../services/users.service';
 import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
+import { Stats } from "../stats/stats";
 
 @Component({
   selector: 'app-deactivated',
@@ -37,12 +38,15 @@ import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/U
     MatTooltipModule,
     MatDividerModule,
     MatSnackBarModule,
-  ],
+    Stats
+],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
 })
 export class DeactivatedComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(Stats) statsComponent!: Stats;
+
 
   displayedColumns: string[] = [
     'fullName',
@@ -80,6 +84,7 @@ export class DeactivatedComponent implements OnInit {
         this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
         this.isLoading = false;
+        this.statsComponent.loadStats();
       },
       error: () => {
         this.isLoading = false;

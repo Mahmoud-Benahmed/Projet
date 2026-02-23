@@ -3,13 +3,20 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
-import { AdminChangePasswordRequest, AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest } from '../interfaces/AuthDto';
+import { AdminChangePasswordRequest, AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest, RoleDto } from '../interfaces/AuthDto';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private baseUrl = `${environment.apiUrl}${environment.authUrl}`;
+  readonly roles: RoleDto[] = [
+    { value: 'Accountant', label: 'Accountant' },
+    { value: 'HRManager', label: 'HR Manager' },
+    { value: 'SalesManager', label: 'Sales Manager' },
+    { value: 'StockManager', label: 'Stock Manager' },
+    { value: 'SystemAdmin', label: 'System Admin' }
+  ];
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -95,22 +102,26 @@ export class AuthService {
     });
   }
 
-  isLoggedIn(): boolean {
+  get isLoggedIn(): boolean {
     const token = this.getAccessToken();
     const expiresAt = localStorage.getItem('expiresAt');
     if (!token || !expiresAt) return false;
     return new Date(expiresAt) > new Date();
   }
 
-  getRole(): string | null {
+  get Role(): string | null {
     return this.decodeAccessToken()?.role ?? null;
   }
 
-  getEmail(): string | null {
+  get Email(): string | null {
     return this.decodeAccessToken()?.email ?? null;
   }
 
-  getUserId(): string | null {
+  get UserId(): string | null {
     return this.decodeAccessToken()?.sub ?? null;
+  }
+
+  get hasRole(): boolean {
+    return this.roles.some(r => r.value === this.Role);
   }
 }

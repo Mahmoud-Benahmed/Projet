@@ -43,8 +43,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn()) {
-      const role = this.authService.getRole();
+    if (this.authService.isLoggedIn!) {
+      const role = this.authService.Role!;
       if (role === 'SystemAdmin') {
         this.router.navigate(['/register']);
       } else {
@@ -63,7 +63,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.isLoading = false;
         this.authService.storeTokens(response);
-        const role = this.authService.getRole();
+        const role = this.authService.Role!;
         if (role === 'SystemAdmin') {
           this.router.navigate(['/users']);
         } else {

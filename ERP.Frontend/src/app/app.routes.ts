@@ -14,14 +14,15 @@ export const routes: Routes = [
   {
       path: '',                   component: ShellComponent,      canActivate: [authGuard],
   children: [
+
+    { path: 'home',               component: HomeComponent,       canActivate: [authGuard] },
+    { path: 'profile',            component: ProfileComponent,    canActivate: [authGuard] },
     { path: 'users',              component: UsersHomeComponent,  canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
     { path: 'users/register',     component: RegisterComponent,   canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
     { path: 'users/deactivated',  component: DeactivatedComponent,   canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
     { path: 'users/:authUserId',  component: ProfileComponent,    canActivate: [authGuard],   data: { roles: ['SystemAdmin'] } },
-    { path: 'profile',            component: ProfileComponent,    canActivate: [authGuard] },
-    { path: 'home',               component: HomeComponent,       canActivate: [authGuard] },
     { path: '',                   redirectTo: 'home',             pathMatch: 'full' },
     ]
   },
-  {     path: '**',                 redirectTo: 'login' }
+  {     path: '**',                 redirectTo: 'home' }
 ];

@@ -14,13 +14,12 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.getAccessToken();
 
   const authReq = token ? req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`
-    }
+    setHeaders: { Authorization: `Bearer ${token}` }
   }) : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
+
       // server unreachable
       if (error.status === 0) {
         dialog.open(ModalComponent, {
@@ -36,8 +35,8 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         });
       }
 
-      // token expired
-      if (error.status === 401) {
+      // token expired — but not a password validation failure
+      if (error.status === 401 && !req.url.includes('change-password')) {
         auth.logout();
         router.navigate(['/login']);
       }

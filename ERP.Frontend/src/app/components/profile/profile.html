@@ -53,15 +53,19 @@
             <button mat-stroked-button
                     class="edit-btn"
                     (click)="startEditing()"
-                    *ngIf="!isEditing">
+                    *ngIf="!isEditing && canEditProfile">
               <mat-icon>edit</mat-icon>
               Edit Profile
             </button>
 
-            <a mat-stroked-button routerLink="/change-password" class="password-btn">
+            <!-- ✅ toggle the form instead of navigating away -->
+            <button mat-stroked-button
+                    class="password-btn"
+                    *ngIf="canEditProfile"
+                    (click)="togglePasswordForm()">
               <mat-icon>lock_reset</mat-icon>
               Change Password
-            </a>
+            </button>
           </div>
 
         </div>
@@ -154,8 +158,11 @@
                 Cancel
               </button>
               <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving">
-                <mat-spinner diameter="16" *ngIf="isSaving"></mat-spinner>
-                <mat-icon *ngIf="!isSaving">check</mat-icon>
+                @if(isSaving){
+                  <mat-spinner diameter="16" >
+                    <mat-icon>check</mat-icon>
+                  </mat-spinner>
+                }
                 {{ isSaving ? 'Saving…' : 'Save Changes' }}
               </button>
             </div>
@@ -178,51 +185,117 @@
 
         <mat-card-content>
           <div class="info-list">
-
             <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>fingerprint</mat-icon> Profile ID
-              </span>
+              <span class="info-row__label"><mat-icon>fingerprint</mat-icon> Profile ID</span>
               <span class="info-row__value mono small">{{ profile.id }}</span>
             </div>
-
             <mat-divider></mat-divider>
-
             <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>key</mat-icon> Auth ID
-              </span>
+              <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
               <span class="info-row__value mono small">{{ profile.authUserId }}</span>
             </div>
-
             <mat-divider></mat-divider>
-
             <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>toggle_on</mat-icon> Status
-              </span>
+              <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
               <span class="info-row__value">
                 <span class="status-dot" [class.status-dot--active]="profile.isActive"></span>
                 {{ profile.isActive ? 'Active' : 'Inactive' }}
               </span>
             </div>
-
+            <mat-divider></mat-divider>
+            <div class="info-row">
+              <span class="info-row__label"><mat-icon>login</mat-icon> Last Login</span>
+              <span class="info-row__value">
+                {{ profile.lastLoginAt ? (profile.lastLoginAt | date:'dd MMM yyyy, HH:mm') : '—' }}
+              </span>
+            </div>
           </div>
         </mat-card-content>
 
-        <!-- Quick link to change password -->
-        <mat-divider></mat-divider>
-        <mat-card-actions class="card-actions">
-          <a mat-button routerLink="/change-password" class="action-link">
-            <mat-icon>lock</mat-icon>
-            Change Password
-          </a>
-        </mat-card-actions>
+        <ng-container *ngIf="canEditProfile">
+            <mat-divider></mat-divider>
+
+            <div class="section-header" (click)="togglePasswordForm()">
+              <span class="section-header__title">
+                <mat-icon>lock_reset</mat-icon>
+                Change Password
+              </span>
+              <mat-icon class="section-header__chevron"
+                        [class.section-header__chevron--open]="showPasswordForm">
+                expand_more
+              </mat-icon>
+            </div>
+
+            <div class="form-collapse" [class.form-collapse--open]="showPasswordForm">
+              <form class="password-form" #passwordFormRef="ngForm">
+
+                @if(hasRole){
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>New Password</mat-label>
+                    <input matInput
+                          [type]="showNewPassword ? 'text' : 'password'"
+                          [(ngModel)]="adminChangePasswordForm.newPassword"
+                          name="newPassword" required minlength="8"
+                          #newPasswordInput="ngModel" />
+                    <mat-icon matPrefix>lock_open</mat-icon>
+                    <button mat-icon-button matSuffix type="button"
+                            (click)="showNewPassword = !showNewPassword">
+                      <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="newPasswordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
+                    <mat-error *ngIf="newPasswordInput.errors?.['sameAsOld']">Must differ from current password</mat-error>
+                  </mat-form-field>
+                }
+                @else{
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Current Password</mat-label>
+                    <input matInput
+                          [type]="showCurrentPassword ? 'text' : 'password'"
+                          [(ngModel)]="passwordForm.currentPassword"
+                          name="currentPassword" required />
+                    <mat-icon matPrefix>lock</mat-icon>
+                    <button mat-icon-button matSuffix type="button"
+                            (click)="showCurrentPassword = !showCurrentPassword">
+                      <mat-icon>{{ showCurrentPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+                    </button>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>New Password</mat-label>
+                    <input matInput
+                          [type]="showNewPassword ? 'text' : 'password'"
+                          [(ngModel)]="passwordForm.newPassword"
+                          name="newPassword" required minlength="8"
+                          [notSameAs]="passwordForm.currentPassword"
+                          #newPasswordInput="ngModel" />
+                    <mat-icon matPrefix>lock_open</mat-icon>
+                    <button mat-icon-button matSuffix type="button"
+                            (click)="showNewPassword = !showNewPassword">
+                      <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="newPasswordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
+                    <mat-error *ngIf="newPasswordInput.errors?.['sameAsOld']">Must differ from current password</mat-error>
+                  </mat-form-field>
+                }
+
+                <div class="password-form__actions">
+                  <button mat-button class="cancel-btn" type="button"
+                          (click)="togglePasswordForm()" [disabled]="isChangingPassword">
+                    Cancel
+                  </button>
+                  <button mat-flat-button class="save-btn" type="button"
+                          (click)="changePassword(passwordFormRef)"
+                          [disabled]="isChangingPassword || passwordFormRef.invalid">
+                    <mat-spinner diameter="16" *ngIf="isChangingPassword"></mat-spinner>
+                    <mat-icon *ngIf="!isChangingPassword">check</mat-icon>
+                    {{ isChangingPassword ? 'Saving…' : 'Update Password' }}
+                  </button>
+                </div>
+
+              </form>
+            </div>
+        </ng-container>
 
       </mat-card>
-
-    </div>
-
-  </ng-container>
 
 </div>

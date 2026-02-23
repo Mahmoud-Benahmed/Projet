@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,6 +16,9 @@ import { UsersService as UserProfileService } from '../../services/users.service
 import { AuthService } from '../../services/auth.service';
 import { UserProfileResponseDto, CompleteProfileDto, FullProfile } from '../../interfaces/UserProfileDto';
 import { forkJoin } from 'rxjs';
+import { NgForm } from '@angular/forms';
+import { NotSameAsDirective } from '../../util/NotSameAsDirective';
+import { AdminChangePasswordRequest, ChangePasswordRequest } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-profile',
@@ -34,6 +37,7 @@ import { forkJoin } from 'rxjs';
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
+    NotSameAsDirective
   ],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
@@ -43,31 +47,51 @@ export class ProfileComponent implements OnInit {
   isEditing = false;
   isSaving = false;
   role: string= '';
+  authUserId: string | null =null;
+
+  showPasswordForm = false;
+  isChangingPassword = false;
+  showCurrentPassword = false;
+  showNewPassword = false;
+
+  readonly allowedRoles: string[]= ['SystemAdmin', 'HRManager'];
+
+
+  adminChangePasswordForm: AdminChangePasswordRequest = {
+    newPassword: ''
+  };
+
+  passwordForm: ChangePasswordRequest = {
+    currentPassword: '',
+    newPassword: '',
+  };
 
   editForm: CompleteProfileDto = {
     fullName: '',
     phone: '',
   };
 
-  constructor(
-    private userProfileService: UserProfileService,
-    private authService: AuthService,
-    private snackBar: MatSnackBar
-  ) {}
+  constructor(private userProfileService: UserProfileService,
+              private authService: AuthService,
+              private snackBar: MatSnackBar,
+              private route: ActivatedRoute
+            ) {}
 
   ngOnInit(): void {
     this.loadProfile();
   }
 
   loadProfile(): void {
-    const authUserId = this.authService.getUserId();
-    if (!authUserId) return;
+    const routeId = this.route.snapshot.paramMap.get('authUserId');
+    this.authUserId = routeId ?? null;
+
+    if (this.authUserId === null ) return;
 
     this.isLoading = true;
 
     forkJoin({
-      authUser: this.authService.getUserById(authUserId),
-      profile: this.userProfileService.getByAuthUserId(authUserId),
+      authUser: this.authService.getUserById(this.authUserId),
+      profile: this.userProfileService.getByAuthUserId(this.authUserId),
     }).subscribe({
       next: ({ authUser, profile }) => {
         // merge both responses into one object
@@ -84,6 +108,52 @@ export class ProfileComponent implements OnInit {
         this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
       },
     });
+  }
+
+  togglePasswordForm(): void {
+    this.showPasswordForm = !this.showPasswordForm;
+    if (!this.showPasswordForm) {
+      // reset form when closing
+      this.passwordForm = { currentPassword: '', newPassword: '' };
+      this.showCurrentPassword = false;
+      this.showNewPassword = false;
+    }
+  }
+
+  changePassword(form: NgForm): void {
+    if (form.invalid) return;
+
+    this.isChangingPassword= true;
+
+    if(this.isOwnProfile){
+      this.authService.changePassword(this.passwordForm).subscribe({
+        next: () => {
+          this.isSaving= false;
+          this.togglePasswordForm();
+          this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
+        },
+        error: (err) => {
+          this.isSaving= false;
+          const message = err.error?.message || 'Failed to update password.';
+          this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+        },
+      });
+    }
+    else if(['SystemAdmin', 'HRManager'].includes(this.authService.Role!)){
+      this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({
+        next: () => {
+          this.isSaving= false;
+          this.togglePasswordForm();
+          this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
+        },
+        error: (err) => {
+          this.isSaving= false;
+          const message = err.error?.message || 'Failed to update password.';
+          this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+        },
+      });
+    }
+
   }
 
   startEditing(): void {
@@ -116,10 +186,23 @@ export class ProfileComponent implements OnInit {
           this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
       },
       error: () => {
-          this.isLoading = false;
+          this.isSaving = false;
           this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
       }
     });
+  }
+
+  get hasRole():boolean{
+    return this.allowedRoles.includes(this.authService.Role!);
+  }
+
+  get canEditProfile(): boolean{
+    return this.isOwnProfile || this.hasRole;
+  }
+
+  get isOwnProfile(): boolean {
+    const routeId = this.route.snapshot.paramMap.get('authUserId');
+    return routeId === this.authService.UserId;
   }
 
   get initials(): string {

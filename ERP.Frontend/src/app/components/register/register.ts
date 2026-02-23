@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { ModalComponent } from '../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { RegisterRequest } from '../../interfaces/AuthDto';
+import { RegisterRequest, RoleDto } from '../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../util/PasswordUtil';
 
 @HostBinding('class')
@@ -45,13 +45,6 @@ export class RegisterComponent implements OnDestroy {
   passwordErrors: string[] = [];
   passwordScore: number = 0;
   passwordStrength: string = '';
-
-  roles = [
-    { value: 'Accountant', label: 'Accountant' },
-    { value: 'SalesManager', label: 'Sales Manager' },
-    { value: 'StockManager', label: 'Stock Manager' },
-    { value: 'SystemAdmin', label: 'System Admin' }
-  ];
 
   constructor(private router: Router,
               private authService: AuthService,
@@ -140,6 +133,10 @@ export class RegisterComponent implements OnDestroy {
       'very strong': 'Très fort',
     };
     return map[this.passwordStrength] ?? '';
+  }
+
+  get roles(): RoleDto[]{
+    return this.authService.roles;
   }
 
   goToLogin(): void {
