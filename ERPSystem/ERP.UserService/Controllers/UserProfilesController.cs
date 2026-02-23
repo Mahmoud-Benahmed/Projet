@@ -159,4 +159,16 @@ public class UserProfilesController : ControllerBase
         await _service.DeleteAsync(id);
         return NoContent();
     }
+
+
+    // =========================
+    // STATS
+    // =========================
+    [HttpGet("stats")]
+    [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStats()
+    {
+        var result = await _service.GetStatsAsync();
+        return Ok(result);
+    }
 }

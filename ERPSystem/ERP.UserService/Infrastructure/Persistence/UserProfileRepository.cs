@@ -1,5 +1,6 @@
 ﻿using ERP.UserService.Domain;
 using Microsoft.EntityFrameworkCore;
+using ERP.UserService.Application.DTOs;
 
 namespace ERP.UserService.Infrastructure.Persistence;
 
@@ -59,6 +60,23 @@ public class UserProfileRepository : IUserProfileRepository
             .ToListAsync();
 
         return (items, totalCount);
+    }
+
+    public async Task<UserStatsDto> GetStatsAsync()
+    {
+        var total = await _context.UserProfiles.CountAsync();
+        var active = await _context.UserProfiles.CountAsync(u => u.IsActive);
+        var deactivated = await _context.UserProfiles.CountAsync(u => !u.IsActive);
+        var completed = await _context.UserProfiles.CountAsync(u =>
+                              u.FullName != null && u.Phone != null);
+
+        return new UserStatsDto
+        {
+            TotalUsers = total,
+            ActiveUsers = active,
+            DeactivatedUsers = deactivated,
+            CompletedProfiles = completed,
+        };
     }
 
 }

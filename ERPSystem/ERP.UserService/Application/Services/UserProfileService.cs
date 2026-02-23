@@ -159,6 +159,16 @@ public class UserProfileService: IUserProfileService
 
 
     // =========================
+    // STATS
+    // =========================
+    public async Task<UserStatsDto> GetStatsAsync()
+    {
+        return await _repository.GetStatsAsync();
+    }
+
+
+
+    // =========================
     // MAPPING
     // =========================
     private static UserProfileResponseDto MapToDto(UserProfile profile)

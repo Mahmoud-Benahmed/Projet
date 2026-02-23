@@ -13,5 +13,6 @@ namespace ERP.UserService.Application.Interfaces
         Task ActivateAsync(Guid id);
         Task DeactivateAsync(Guid id);
         Task DeleteAsync(Guid id);
+        Task<UserStatsDto> GetStatsAsync();
     }
 }
