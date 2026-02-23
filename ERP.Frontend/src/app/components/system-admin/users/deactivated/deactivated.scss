@@ -1,0 +1,276 @@
+// ── TOKENS ────────────────────────────────────────
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$border:       rgba(255, 255, 255, 0.07);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$success:      #34d399;
+$warn:         #fbbf24;
+$danger:       #f87171;
+$radius:       12px;
+$radius-sm:    8px;
+
+// ── SHELL ─────────────────────────────────────────
+.home-shell {
+  min-height: 100vh;
+  background: $surface;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: $text-primary;
+}
+
+// ── TOP BAR ───────────────────────────────────────
+.top-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  &__label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: $warn; // amber to signal deactivated context
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    color: $text-primary;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.search-field {
+  width: 260px;
+
+  ::ng-deep {
+    .mat-mdc-form-field-flex { background: $surface-2; border-radius: $radius-sm; }
+    .mat-mdc-text-field-wrapper { background: transparent; }
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: $border !important; }
+    input { color: $text-primary !important; caret-color: $accent; }
+    .mat-mdc-form-field-label { color: $text-muted !important; }
+    mat-icon { color: $text-muted; }
+  }
+}
+
+// ── EMPTY BANNER ──────────────────────────────────
+.empty-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: rgba($success, 0.08);
+  border: 1px solid rgba($success, 0.2);
+  border-radius: $radius;
+  color: $success;
+  font-size: 14px;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  p { margin: 0; }
+}
+
+// ── TABLE CARD ────────────────────────────────────
+.table-card {
+  background: $surface-2 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius !important;
+  box-shadow: none !important;
+  position: relative;
+  overflow: hidden;
+
+  mat-card-content { padding: 0 !important; overflow-x: auto; }
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba($surface-2, 0.8);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  ::ng-deep circle { stroke: $accent !important; }
+}
+
+.table--loading { opacity: 0.4; pointer-events: none; }
+
+// ── TABLE ─────────────────────────────────────────
+.users-table {
+  width: 100%;
+  background: transparent !important;
+
+  ::ng-deep .mat-mdc-header-row { background: $surface-3; }
+
+  ::ng-deep .mat-mdc-header-cell {
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid $border !important;
+    background: transparent;
+  }
+
+  ::ng-deep .mat-mdc-cell {
+    color: $text-primary;
+    border-bottom: 1px solid $border !important;
+    background: transparent;
+    font-size: 14px;
+    opacity: 0.75; // slightly dimmed to reinforce deactivated state
+  }
+
+  ::ng-deep .mat-sort-header-arrow { color: $warn !important; }
+}
+
+.table-row {
+  transition: background 0.15s;
+
+  &:hover ::ng-deep .mat-mdc-cell {
+    background: rgba(255,255,255,0.03) !important;
+    opacity: 1 !important;
+  }
+}
+
+// ── USER CELL ─────────────────────────────────────
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255,255,255,0.04);
+    .user-meta__name { color: $accent; }
+  }
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $accent, #7b5ea7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+
+  &--inactive {
+    background: linear-gradient(135deg, #374151, #4b5563); // grey for deactivated
+    filter: grayscale(0.5);
+  }
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__name { font-weight: 600; font-size: 14px; }
+  &__id { font-size: 11px; color: $text-muted; font-family: 'Fira Code', monospace; }
+}
+
+.mono { font-family: 'Fira Code', monospace; font-size: 13px; color: $text-muted; }
+.date-cell { font-size: 13px; color: $text-muted; }
+
+// ── CHIPS ─────────────────────────────────────────
+.chip--complete {
+  background: rgba($success, 0.12) !important;
+  border: 1px solid rgba($success, 0.3) !important;
+  font-size: 12px !important; font-weight: 600 !important; height: 26px !important;
+  ::ng-deep { .mdc-evolution-chip__text-label { color: $success !important; } }
+}
+
+.chip--incomplete {
+  background: rgba($warn, 0.1) !important;
+  border: 1px solid rgba($warn, 0.25) !important;
+  font-size: 12px !important; font-weight: 600 !important; height: 26px !important;
+  ::ng-deep { .mdc-evolution-chip__text-label { color: $warn !important; } }
+}
+
+// ── ACTION BUTTONS ────────────────────────────────
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  border-radius: 6px !important;
+  transition: background 0.15s, color 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+
+  &--success {
+    color: $success;
+    &:hover { background: rgba($success, 0.1) !important; }
+  }
+
+  &--danger {
+    color: $danger;
+    &:hover { background: rgba($danger, 0.1) !important; }
+  }
+}
+
+// ── EMPTY STATE ───────────────────────────────────
+.empty-state {
+  text-align: center;
+  padding: 64px 24px !important;
+  color: $text-muted;
+
+  mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.4; display: block; margin: 0 auto 12px; }
+  p { margin: 0; font-size: 14px; }
+}
+
+// ── PAGINATOR ─────────────────────────────────────
+.table-paginator {
+  background: transparent !important;
+
+  ::ng-deep {
+    .mat-mdc-paginator-container { padding: 8px 16px; }
+    .mat-mdc-select-value,
+    .mat-mdc-paginator-range-label { color: $text-muted; font-size: 13px; }
+    .mat-mdc-icon-button {
+      color: $text-muted;
+      &:not([disabled]):hover { color: $warn; background: rgba($warn, 0.08); }
+      &[disabled] { opacity: 0.3; }
+    }
+  }
+}

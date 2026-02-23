@@ -1,1 +1,136 @@
-<p>deactivated works!</p>
+<div class="home-shell">
+
+  <!-- ── TOP BAR ── -->
+  <header class="top-bar">
+    <div class="top-bar__left">
+      <span class="top-bar__label">USER MANAGEMENT</span>
+      <h1 class="top-bar__title">Deactivated Users</h1>
+    </div>
+
+    <div class="top-bar__right">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search users…</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+  </header>
+
+  <!-- ── EMPTY BANNER ── -->
+  <div class="empty-banner" *ngIf="!isLoading && totalCount === 0">
+    <mat-icon>check_circle</mat-icon>
+    <p>No deactivated users — everyone is active!</p>
+  </div>
+
+  <!-- ── TABLE CARD ── -->
+  <mat-card class="table-card">
+
+    <div class="loading-overlay" *ngIf="isLoading">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <mat-card-content>
+      <table mat-table [dataSource]="dataSource" matSort class="users-table"
+             [class.table--loading]="isLoading">
+
+        <!-- Full Name -->
+        <ng-container matColumnDef="fullName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>User</th>
+          <td mat-cell *matCellDef="let user">
+            <div class="user-cell" (click)="goToProfile(user.authUserId)">
+              <div class="user-avatar user-avatar--inactive">{{ getInitials(user) }}</div>
+              <div class="user-meta">
+                <span class="user-meta__name">{{ user.fullName ?? '—' }}</span>
+                <span class="user-meta__id">{{ user.authUserId | slice:0:8 }}…</span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Email -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="mono">{{ user.email }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Phone -->
+        <ng-container matColumnDef="phone">
+          <th mat-header-cell *matHeaderCellDef>Phone</th>
+          <td mat-cell *matCellDef="let user">{{ user.phone ?? '—' }}</td>
+        </ng-container>
+
+        <!-- Profile Status -->
+        <ng-container matColumnDef="isProfileCompleted">
+          <th mat-header-cell *matHeaderCellDef>Profile</th>
+          <td mat-cell *matCellDef="let user">
+            <mat-chip
+              [class.chip--complete]="user.isProfileCompleted"
+              [class.chip--incomplete]="!user.isProfileCompleted"
+              [disableRipple]="true">
+              <mat-icon matChipAvatar>
+                {{ user.isProfileCompleted ? 'check_circle' : 'pending' }}
+              </mat-icon>
+              {{ user.isProfileCompleted ? 'Complete' : 'Incomplete' }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Created At -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Joined</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let user" class="actions-cell">
+
+            <button mat-icon-button
+                    matTooltip="Reactivate user"
+                    class="action-btn action-btn--success"
+                    (click)="activateUser(user)">
+              <mat-icon>check_circle</mat-icon>
+            </button>
+
+            <button mat-icon-button
+                    matTooltip="Delete user"
+                    class="action-btn action-btn--danger"
+                    (click)="deleteUser(user)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="empty-state" [attr.colspan]="displayedColumns.length">
+            <mat-icon>search_off</mat-icon>
+            <p>No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}</p>
+          </td>
+        </tr>
+
+      </table>
+    </mat-card-content>
+
+    <mat-divider></mat-divider>
+
+    <mat-paginator
+      [length]="totalCount"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      class="table-paginator">
+    </mat-paginator>
+
+  </mat-card>
+
+</div>
