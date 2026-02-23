@@ -3,6 +3,7 @@
     public record AuthResponse(
         string AccessToken,
         string RefreshToken,
+        bool MustChangePassword,
         DateTime ExpiresAt
     );
 }
