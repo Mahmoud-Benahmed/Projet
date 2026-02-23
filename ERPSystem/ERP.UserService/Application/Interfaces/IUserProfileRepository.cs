@@ -7,13 +7,14 @@ public interface IUserProfileRepository
     Task<UserProfile?> GetByAuthUserIdAsync(Guid authUserId);
     Task<List<UserProfile>> GetAllAsync();
 
+    Task<bool> ExistsByEmailAsync(string email);
+
     Task AddAsync(UserProfile profile);
     void Remove(UserProfile profile);
 
     Task SaveChangesAsync();
 
-    Task<(List<UserProfile> Items, int TotalCount)>
-    GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
+    Task<(List<UserProfile> Items, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
 
     Task<UserStatsDto> GetStatsAsync();
 }

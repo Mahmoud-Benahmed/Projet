@@ -35,6 +35,13 @@ public class UserProfileRepository : IUserProfileRepository
         return await _context.UserProfiles.ToListAsync();
     }
 
+    public async Task<bool> ExistsByEmailAsync(string email)
+    {
+        return await _context.UserProfiles
+            .AnyAsync(u => u.Email == email);
+    }
+
+
     public void Remove(UserProfile profile)
     {
         _context.UserProfiles.Remove(profile);

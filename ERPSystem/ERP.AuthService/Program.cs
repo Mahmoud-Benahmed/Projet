@@ -41,6 +41,13 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(settings.ConnectionString);
 });
 
+builder.Services.AddSingleton(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase(settings.DatabaseName); // <-- provide database name here
+});
+
 //////////////////////////////////////////////////
 // JWT Settings (ONLY for token generation)
 //////////////////////////////////////////////////
@@ -97,6 +104,15 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
 
 var app = builder.Build();
+
+//////////////////////////////////////////////////
+// --- Initialize MongoDB indexes on startup ---
+//////////////////////////////////////////////////
+using (var scope = app.Services.CreateScope())
+{
+    var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    await MongoDbInitializer.InitializeAsync(database);
+}
 
 if (app.Environment.IsDevelopment())
 {

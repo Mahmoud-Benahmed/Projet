@@ -6,4 +6,9 @@ public class UserProfileAlreadyExistsException : Exception
         : base($"User profile for AuthUserId '{authUserId}' already exists.")
     {
     }
+
+    public UserProfileAlreadyExistsException(string email)
+        : base($"User profile for Email '{email}' already exists.")
+    {
+    }
 }

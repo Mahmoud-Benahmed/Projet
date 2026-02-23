@@ -16,7 +16,7 @@ namespace ERP.AuthService.Domain
 
         public bool MustChangePassword { get; private set; } = true;
 
-        public bool IsActive { get; private set; } = true;
+        public bool IsActive { get; private set; } = false;
 
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
@@ -78,6 +78,15 @@ namespace ERP.AuthService.Domain
         public void ForcePasswordChange()
         {
             MustChangePassword = true;
+        }
+
+        public bool HasLoggedInBefore() => LastLoginAt != null;
+
+        public bool CanLogin()
+        {
+            if (!IsActive && HasLoggedInBefore())
+                return false;
+            return true;
         }
 
         public void RecordLogin()

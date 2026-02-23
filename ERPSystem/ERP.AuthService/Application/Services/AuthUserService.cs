@@ -58,7 +58,7 @@ namespace ERP.AuthService.Application.Services
             var user = await _userRepository.GetByEmailAsync(request.Email)
                 ?? throw new InvalidCredentialsException();
 
-            if (!user.IsActive)
+            if (!user.CanLogin())
                 throw new UserInactiveException();
 
             var result = _passwordHasher.VerifyHashedPassword(

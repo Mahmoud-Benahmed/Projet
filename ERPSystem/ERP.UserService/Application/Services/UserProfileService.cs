@@ -24,6 +24,11 @@ public class UserProfileService: IUserProfileService
         if (existing != null)
             throw new UserProfileAlreadyExistsException(dto.AuthUserId);
 
+        var existsByEmail = await _repository.ExistsByEmailAsync(dto.Email);
+
+        if (existsByEmail)
+            throw new UserProfileAlreadyExistsException(dto.Email);
+
         var profile = new UserProfile(dto.AuthUserId, dto.Email);
 
         await _repository.AddAsync(profile);

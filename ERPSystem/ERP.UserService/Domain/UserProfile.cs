@@ -27,7 +27,6 @@ public class UserProfile
         AuthUserId = authUserId;
         Email = email;
         CreatedAt = DateTime.UtcNow;
-        IsActive = true;
     }
 
     public void CompleteProfile(string fullName, string phone)
@@ -38,11 +37,16 @@ public class UserProfile
         if (string.IsNullOrWhiteSpace(phone))
             throw new ArgumentException("Phone is required.");
 
+        if (IsProfileCompleted() && !IsActive)
+            throw new InvalidOperationException(
+                "Cannot complete profile: profile already completed but account is not active."
+            );
+
         FullName = fullName;
         Phone = phone;
         UpdatedAt = DateTime.UtcNow;
 
-        // 🔥 Domain rule here
+        // Activate if not active
         if (!IsActive)
             Activate();
     }

@@ -151,7 +151,6 @@ public class UserProfilesController : ControllerBase
     // =========================
     // DELETE
     // =========================
-    [Authorize(Roles = "SystemAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id)

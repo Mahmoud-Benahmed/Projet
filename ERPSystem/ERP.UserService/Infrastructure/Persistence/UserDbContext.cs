@@ -22,6 +22,9 @@ public class UserDbContext : DbContext
                   .IsRequired()
                   .HasMaxLength(200);
 
+            entity.HasIndex(x => x.Email)
+                  .IsUnique();
+
             entity.Property(x => x.FullName)
                   .HasMaxLength(150);
 
