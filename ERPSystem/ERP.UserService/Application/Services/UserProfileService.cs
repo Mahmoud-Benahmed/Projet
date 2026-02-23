@@ -100,9 +100,7 @@ public class UserProfileService: IUserProfileService
     // =========================
     // UPDATE - COMPLETE PROFILE
     // =========================
-    public async Task<UserProfileResponseDto> CompleteProfileAsync(
-        Guid authUserId,
-        CompleteProfileDto dto)
+    public async Task<UserProfileResponseDto> CompleteProfileAsync(Guid authUserId,CompleteProfileDto dto)
     {
         var profile = await _repository.GetByAuthUserIdAsync(authUserId)
                       ?? throw new UserProfileNotFoundException(
@@ -114,8 +112,6 @@ public class UserProfileService: IUserProfileService
 
         return MapToDto(profile);
     }
-
-
 
 
     // =========================

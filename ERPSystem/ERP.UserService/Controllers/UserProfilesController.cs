@@ -78,9 +78,7 @@ public class UserProfilesController : ControllerBase
     // =========================
     [HttpPut("{authUserId:guid}/complete")]
     [ProducesResponseType(typeof(UserProfileResponseDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CompleteProfile(
-    Guid authUserId,
-    [FromBody] CompleteProfileDto dto)
+    public async Task<IActionResult> CompleteProfile(Guid authUserId, [FromBody] CompleteProfileDto dto)
     {
         var requesterId = User.FindFirst("sub")?.Value;
 
