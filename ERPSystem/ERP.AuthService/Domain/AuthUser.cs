@@ -70,8 +70,12 @@ namespace ERP.AuthService.Domain
             if (string.IsNullOrWhiteSpace(newPasswordHash))
                 throw new ArgumentException("Password hash is required");
 
+            if(MustChangePassword && !IsActive)
+            {
+                MustChangePassword = false;
+                Activate();
+            }
             PasswordHash = newPasswordHash;
-            MustChangePassword = false;
             UpdatedAt = DateTime.UtcNow;
         }
 
