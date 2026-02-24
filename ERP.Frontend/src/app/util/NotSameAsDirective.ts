@@ -1,18 +1,24 @@
 import { Directive, Input } from '@angular/core';
-import { NG_VALIDATORS, Validator, AbstractControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator } from '@angular/forms';
 
 @Directive({
   selector: '[notSameAs]',
   standalone: true,
-  providers: [{ provide: NG_VALIDATORS, useExisting: NotSameAsDirective, multi: true }]
+  providers: [
+    {
+      provide: NG_VALIDATORS,
+      useExisting: NotSameAsDirective,
+      multi: true,
+    }
+  ]
 })
 export class NotSameAsDirective implements Validator {
-  @Input('notSameAs') otherValue!: string;
+  @Input() notSameAs: string = '';
 
   validate(control: AbstractControl): ValidationErrors | null {
-    if (control.value && control.value === this.otherValue) {
-      return { sameAsOld: true };
-    }
-    return null;
+    if (!control.value || !this.notSameAs) return null;
+    return control.value === this.notSameAs
+      ? { notSameAs: true }
+      : null;
   }
 }
