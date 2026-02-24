@@ -65,20 +65,6 @@ namespace ERP.AuthService.Domain
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void ChangePassword(string newPasswordHash)
-        {
-            if (string.IsNullOrWhiteSpace(newPasswordHash))
-                throw new ArgumentException("Password hash is required");
-
-            if(MustChangePassword && !IsActive)
-            {
-                MustChangePassword = false;
-                Activate();
-            }
-            PasswordHash = newPasswordHash;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
         public void ForcePasswordChange()
         {
             MustChangePassword = true;
@@ -93,8 +79,25 @@ namespace ERP.AuthService.Domain
             return true;
         }
 
+        public void ChangePassword(string newPasswordHash)
+        {
+            if (string.IsNullOrWhiteSpace(newPasswordHash))
+                throw new ArgumentException("Password hash is required");
+
+            PasswordHash = newPasswordHash;
+
+            if (MustChangePassword)
+                MustChangePassword = false;
+
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public void RecordLogin()
         {
+            // Only activate on first ever login (new user, not yet active)
+            if (!IsActive && !HasLoggedInBefore())
+                Activate();
+
             LastLoginAt = DateTime.UtcNow;
         }
     }
