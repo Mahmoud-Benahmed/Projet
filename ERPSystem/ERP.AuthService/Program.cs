@@ -33,9 +33,8 @@ builder.Services.AddSwaggerGen();
 // ── Mongo GUID Serializer
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-// ── Mongo Configuration
-builder.Services.Configure<MongoSettings>(
-    builder.Configuration.GetSection("Mongo"));
+// ── Mongo Configuration  (MONGO__ env vars → "MONGO" section)
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MONGO"));  // was "MongoSettings" ← wrong
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -51,11 +50,15 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 // ── Read JWT secret from env
-var jwtSecret = builder.Configuration["JWT_SECRET"] ?? "supersecretkey";
-
+// ── JWT Settings
 builder.Services.Configure<JwtSettings>(options =>
 {
-    options.Secret = jwtSecret;
+    options.Secret = builder.Configuration["JWT:SECRET"]
+                       ?? throw new InvalidOperationException("JWT:SECRET is not configured.");
+    options.Issuer = builder.Configuration["JWT:ISSUER"] ?? "ERP.AuthService";
+    options.Audience = builder.Configuration["JWT:AUDIENCE"] ?? "ERP.Client";
+    options.AccessTokenExpirationMinutes = 60;
+    options.RefreshTokenExpirationDays = 7;
 });
 
 // ── JWT Parsing (no validation, gateway already did it)
@@ -102,10 +105,27 @@ builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(
 var app = builder.Build();
 
 // ── Initialize MongoDB indexes
+// --- Initialize MongoDB indexes on startup ---
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
     await MongoDbInitializer.InitializeAsync(database);
+
+    // --- Seed initial admin user ---
+    var authUserService = scope.ServiceProvider.GetRequiredService<IAuthUserService>();
+    var userRepository = scope.ServiceProvider.GetRequiredService<IAuthUserRepository>();
+
+    var seedEmail = builder.Configuration["SeedUser:Email"] ?? "admin@erp.com";
+    var seedPassword = builder.Configuration["SeedUser:Password"] ?? "Admin@1234";
+    var seedRole = Enum.Parse<UserRole>(builder.Configuration["SeedUser:Role"] ?? "SystemAdmin");
+    if (!await userRepository.ExistsByEmailAsync(seedEmail))
+    {
+        _ = await authUserService.RegisterAsync(new ERP.AuthService.Application.DTOs.RegisterRequest(
+            Email: seedEmail,
+            Password: seedPassword,
+            Role: seedRole
+        ));
+    }
 }
 
 app.UseSwagger();

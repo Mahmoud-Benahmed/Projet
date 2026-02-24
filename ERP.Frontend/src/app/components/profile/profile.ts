@@ -83,7 +83,7 @@ export class ProfileComponent implements OnInit {
 
   loadProfile(): void {
     const routeId = this.route.snapshot.paramMap.get('authUserId');
-    this.authUserId = routeId ?? null;
+    this.authUserId = routeId ?? this.authService.UserId;
 
     if (this.authUserId === null ) return;
 
@@ -193,7 +193,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get hasRole():boolean{
-    return this.allowedRoles.includes(this.authService.Role!);
+    return this.allowedRoles.includes(this.authService.Role!) && !this.isOwnProfile;
   }
 
   get canEditProfile(): boolean{
@@ -201,8 +201,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get isOwnProfile(): boolean {
-    const routeId = this.route.snapshot.paramMap.get('authUserId');
-    return routeId === this.authService.UserId;
+    return this.profile?.authUserId === this.authService.UserId;
   }
 
   get initials(): string {
