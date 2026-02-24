@@ -5,38 +5,39 @@ import { AuthService } from './auth.service';
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const auth = inject(AuthService);
   const router = inject(Router);
+  const path = route.routeConfig?.path ?? '';
 
   if (!auth.isLoggedIn) {
     router.navigate(['/login']);
     return false;
   }
-  
-  // If mustChangePassword, only allow the must-change-password route
-   if (auth.mustChangePassword) {
-    const targetPath = route.routeConfig?.path ?? '';
-    if (targetPath !== 'must-change-password') {
+
+  // Step 1 — must change password first
+  if (auth.mustChangePassword) {
+    if (path !== 'must-change-password') {
       router.navigate(['/must-change-password']);
       return false;
     }
     return true;
   }
 
-  // Prevent going back to must-change-password if already done
-  if (route.routeConfig?.path === 'must-change-password') {
-    router.navigate(['/home']);
+  // Step 2 — block going back to must-change-password once done
+  if (path === 'must-change-password') {
+    router.navigate(['/complete-profile']);
     return false;
   }
 
+  // Step 3 — complete-profile is always accessible after password change
+  if (path === 'complete-profile') {
+    return true;
+  }
 
+  // Step 4 — role-based access
   const requiredRoles = route.data['roles'] as string[];
-  if (requiredRoles && requiredRoles.length > 0) {
+  if (requiredRoles?.length > 0) {
     const userRole = auth.Role;
     if (!userRole || !requiredRoles.includes(userRole)) {
-      if (userRole === 'SystemAdmin') {
-        router.navigate(['/users']);
-      } else {
-        router.navigate(['/home']);
-      }
+      router.navigate([userRole === 'SystemAdmin' ? '/users' : '/home']);
       return false;
     }
   }
