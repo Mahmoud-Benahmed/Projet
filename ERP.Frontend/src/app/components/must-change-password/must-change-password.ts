@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,6 +13,7 @@ import { AuthService } from '../../services/auth.service';
 import { NotSameAsDirective } from '../../util/NotSameAsDirective';
 import { ChangePasswordRequest } from '../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../util/PasswordUtil';
+import { SameAsDirective } from '../../util/SameAsDirective';
 
 @Component({
   selector: 'app-must-change-password',
@@ -28,11 +29,14 @@ import { generatePassword, checkPassword } from '../../util/PasswordUtil';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     NotSameAsDirective,
+    SameAsDirective
   ],
   templateUrl: './must-change-password.html',
   styleUrl: './must-change-password.scss',
 })
 export class MustChangePasswordComponent {
+  @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
+
   isLoading = false;
   showCurrentPassword = false;
   showNewPassword = false;
@@ -60,14 +64,8 @@ export class MustChangePasswordComponent {
       next: () => {
         this.isLoading = false;
         this.authService.clearMustChangePassword();
-        this.snackBar.open('Password changed successfully. Welcome!', 'OK', { duration: 3000 });
-
-        const role = this.authService.Role!;
-        if (role === 'SystemAdmin') {
-          this.router.navigate(['/users']);
-        } else {
-          this.router.navigate(['/home']);
-        }
+        this.snackBar.open('Password changed successfully!', 'OK', { duration: 3000 });
+        this.router.navigate(['/complete-profile']);
       },
       error: (err) => {
         this.isLoading = false;
@@ -87,6 +85,19 @@ export class MustChangePasswordComponent {
     this.passwordErrors = result.errors;
     this.passwordScore = result.score;
     this.passwordStrength = result.strength;
+
+    // revalidate currentPassword when newPassword changes
+    const currentPwdControl = this.passwordFormRef?.controls?.['currentPassword'];
+    if (currentPwdControl) {
+      currentPwdControl.updateValueAndValidity();
+    }
+  }
+
+  onCurrentPasswordChange(): void {
+    const newPwdControl = this.passwordFormRef?.controls?.['newPassword'];
+    if (newPwdControl) {
+      newPwdControl.updateValueAndValidity();
+    }
   }
 
   generatePassword(): void {
