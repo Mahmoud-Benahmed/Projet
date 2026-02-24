@@ -83,7 +83,9 @@ export class ProfileComponent implements OnInit {
 
   loadProfile(): void {
     const routeId = this.route.snapshot.paramMap.get('authUserId');
-    this.authUserId = routeId ?? null;
+    this.authUserId = routeId ?? this.authService.UserId;
+    console.log(this.authUserId);
+
 
     if (this.authUserId === null ) return;
 
