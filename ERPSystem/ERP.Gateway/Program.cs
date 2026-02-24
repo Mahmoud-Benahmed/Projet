@@ -19,7 +19,8 @@ builder.Services.AddAuthentication(options =>
     options.MapInboundClaims = false;
 
     var signingKey = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
+        Encoding.UTF8.GetBytes(config["Jwt:Secret"]
+            ?? throw new InvalidOperationException("Jwt:Secret is not configured.")));
     signingKey.KeyId = "erp-key-1";
 
     options.TokenValidationParameters = new TokenValidationParameters

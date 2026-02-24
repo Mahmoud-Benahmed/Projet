@@ -1,0 +1,46 @@
+services:
+  gateway:
+    build:
+      context: ./ERP.Gateway
+      dockerfile: Dockerfile
+    container_name: erp-gateway
+    ports:
+      - "5000:8080"
+    env_file:
+      - .env
+    networks:
+      - erp-auth-network
+      - erp-user-network
+    depends_on:
+      - auth
+      - user
+
+  auth:
+    build:
+      context: ./ERP.AuthService
+      dockerfile: Dockerfile
+    container_name: erp-auth
+    ports:
+      - "5001:8080"
+    env_file:
+      - .env
+    networks:
+      - erp-auth-network
+
+  user:
+    build:
+      context: ./ERP.UserService
+      dockerfile: Dockerfile
+    container_name: erp-user
+    ports:
+      - "5002:8080"
+    env_file:
+      - .env
+    networks:
+      - erp-user-network
+
+networks:
+  erp-auth-network:
+    name: erpauthservice_default
+  erp-user-network:
+    name: erpuserservice_erp-network

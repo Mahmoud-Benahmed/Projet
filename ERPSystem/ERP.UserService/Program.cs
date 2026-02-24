@@ -7,17 +7,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-var config = builder.Configuration;
 
-// Database
+// ── Add environment variables
+builder.Configuration.AddEnvironmentVariables();
+
+var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+
+// ── Database
 builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
-// Services
+// ── Services
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
-// JWT Parsing (no validation, gateway already did it)
+// ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -49,21 +54,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Controllers & Swagger
+// ── Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<UserDbContext>();
+    db.Database.Migrate();
 }
 
-app.UseAuthentication(); // ← must be before UseAuthorization
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseAuthentication(); // must be before UseAuthorization
 app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
+
 app.Run();

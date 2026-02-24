@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: erp-auth-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongo-data:/data/db
+
+  auth-service:
+    build:
+      context: .
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          ignore:
+            - bin/
+            - obj/
+    container_name: erp-auth
+    ports:
+      - "5001:8080"
+    env_file:
+      - ../.env
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:

@@ -426,3 +426,40 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+
+# ── .NET ──────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+
+# ── Publish output ────────────────────────────
+publish/
+out/
+
+# ── EF Core migrations snapshots (optional) ──
+# Uncomment if you don't want to track migrations
+# */Migrations/
+
+# ── Docker ────────────────────────────────────
+docker-compose.override.yml
+
+# ── Environment & Secrets ─────────────────────
+.env
+*.env
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Docker.json
+
+# ── Rider / JetBrains ─────────────────────────
+.idea/
+
+# ── VSCode ────────────────────────────────────
+.vscode/
+
+# ── OS ────────────────────────────────────────
+.DS_Store
+Thumbs.db

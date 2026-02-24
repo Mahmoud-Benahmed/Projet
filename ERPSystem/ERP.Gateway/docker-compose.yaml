@@ -1,0 +1,28 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          ignore:
+            - bin/
+            - obj/
+    container_name: erp-gateway
+    ports:
+      - "5000:8080"
+    env_file:
+      - ../.env
+    networks:
+      - erp-auth-network
+      - erp-user-network
+
+networks:
+  erp-auth-network:
+    external: true
+    name: erpauthservice_default
+  erp-user-network:
+    external: true
+    name: erpuserservice_erp-network

@@ -16,6 +16,10 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Add environment variables
+builder.Configuration.AddEnvironmentVariables();
+
+// ── Controllers & Swagger
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -26,14 +30,12 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ── Mongo GUID Serializer
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-//////////////////////////////////////////////////
-// Mongo Configuration
-//////////////////////////////////////////////////
-
+// ── Mongo Configuration
 builder.Services.Configure<MongoSettings>(
-    builder.Configuration.GetSection("MongoSettings"));
+    builder.Configuration.GetSection("Mongo"));
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -41,29 +43,26 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(settings.ConnectionString);
 });
 
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
     var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase(settings.DatabaseName); // <-- provide database name here
+    return client.GetDatabase(settings.DatabaseName);
 });
 
-//////////////////////////////////////////////////
-// JWT Settings (ONLY for token generation)
-//////////////////////////////////////////////////
+// ── Read JWT secret from env
+var jwtSecret = builder.Configuration["JWT_SECRET"] ?? "supersecretkey";
 
-builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("JwtSettings"));
+builder.Services.Configure<JwtSettings>(options =>
+{
+    options.Secret = jwtSecret;
+});
 
-//////////////////////////////////////////////////
-// JWT Parsing (no validation, gateway already did it)
-//////////////////////////////////////////////////
-
+// ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
-
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -74,7 +73,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return Task.CompletedTask;
             }
         };
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -94,9 +92,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin", "HR"));
 });
 
-//////////////////////////////////////////////////
-// Dependency Injection
-//////////////////////////////////////////////////
+// ── Dependency Injection
 builder.Services.AddScoped<IAuthUserService, AuthUserService>();
 builder.Services.AddScoped<IAuthUserRepository, MongoAuthUserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, MongoRefreshTokenRepository>();
@@ -105,20 +101,15 @@ builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(
 
 var app = builder.Build();
 
-//////////////////////////////////////////////////
-// --- Initialize MongoDB indexes on startup ---
-//////////////////////////////////////////////////
+// ── Initialize MongoDB indexes
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
     await MongoDbInitializer.InitializeAsync(database);
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,14 +1,10 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".env" />
+    <File Path=".env.example" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/src/" />
-  <Folder Name="/src/Services/" />
-  <Folder Name="/src/Services/AuthService/">
-    <Project Path="ERP.AuthService/ERP.AuthService.csproj" />
-  </Folder>
-  <Folder Name="/src/Services/UserService/">
-    <Project Path="ERP.UserService/ERP.UserService.csproj" Id="67fc6eaf-4682-4246-b39c-e890c5eedbfd" />
-  </Folder>
+  <Project Path="ERP.AuthService/ERP.AuthService.csproj" />
   <Project Path="ERP.Gateway/ERP.Gateway.csproj" Id="52856135-4d4e-43d2-8bc7-6285ae5e42f7" />
+  <Project Path="ERP.UserService/ERP.UserService.csproj" Id="67fc6eaf-4682-4246-b39c-e890c5eedbfd" />
 </Solution>
