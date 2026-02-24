@@ -62,17 +62,18 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.authService.storeTokens(response);
-        const role = this.authService.Role!;
-        if (role === 'SystemAdmin') {
-          this.router.navigate(['/users']);
-        } else {
-          this.router.navigate(['/home']);
+        this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
+
+        if (response.mustChangePassword) {
+          this.router.navigate(['/must-change-password']);
+          return;
         }
+
+        const role = this.authService.Role!;
+        this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);
       },
       error: (error) => {
         this.isLoading = false;
-        // skip if already handled by interceptor
         if (error.status === 0) return;
         this.snackBar.open('Failed to login, please check your credentials.', 'Dismiss', { duration: 3000 });
       }

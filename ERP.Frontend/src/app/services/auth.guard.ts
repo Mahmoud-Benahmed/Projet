@@ -10,6 +10,23 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     router.navigate(['/login']);
     return false;
   }
+  
+  // If mustChangePassword, only allow the must-change-password route
+   if (auth.mustChangePassword) {
+    const targetPath = route.routeConfig?.path ?? '';
+    if (targetPath !== 'must-change-password') {
+      router.navigate(['/must-change-password']);
+      return false;
+    }
+    return true;
+  }
+
+  // Prevent going back to must-change-password if already done
+  if (route.routeConfig?.path === 'must-change-password') {
+    router.navigate(['/home']);
+    return false;
+  }
+
 
   const requiredRoles = route.data['roles'] as string[];
   if (requiredRoles && requiredRoles.length > 0) {
