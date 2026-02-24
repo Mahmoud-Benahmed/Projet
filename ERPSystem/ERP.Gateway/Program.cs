@@ -63,9 +63,6 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
-<<<<<<< Updated upstream
-
-=======
     // ── GLOBAL SAFETY NET ─────────────────────────────────
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -78,26 +75,17 @@ builder.Services.AddRateLimiter(options =>
             }));
 
     // ── LOGIN — strict (anti brute-force) ─────────────────
->>>>>>> Stashed changes
     options.AddPolicy("LoginPolicy", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "global",
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-<<<<<<< Updated upstream
-                PermitLimit = 10,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-
-=======
                 PermitLimit = 5,                // 5 attempts
                 Window = TimeSpan.FromMinutes(5),
                 QueueLimit = 0
             }));
 
     // ── AUTHENTICATED USER ACTIONS ────────────────────────
->>>>>>> Stashed changes
     options.AddPolicy("UserPolicy", context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
@@ -108,23 +96,14 @@ builder.Services.AddRateLimiter(options =>
             userId ?? "anonymous",
             _ => new SlidingWindowRateLimiterOptions
             {
-<<<<<<< Updated upstream
-                PermitLimit = 20,
-                Window = TimeSpan.FromMinutes(1),
-                SegmentsPerWindow = 6,
-=======
                 PermitLimit = 60,               // 60 req per minute per user
                 Window = TimeSpan.FromMinutes(1),
                 SegmentsPerWindow = 6,          // every 10 sec
->>>>>>> Stashed changes
                 QueueLimit = 0
             });
     });
 
-<<<<<<< Updated upstream
-=======
     // ── WRITE OPERATIONS ──────────────────────────────────
->>>>>>> Stashed changes
     options.AddPolicy("WritePolicy", context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
@@ -135,11 +114,7 @@ builder.Services.AddRateLimiter(options =>
             userId ?? "anonymous",
             _ => new FixedWindowRateLimiterOptions
             {
-<<<<<<< Updated upstream
-                PermitLimit = 20,
-=======
                 PermitLimit = 20,               // 20 writes per minute
->>>>>>> Stashed changes
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             });
