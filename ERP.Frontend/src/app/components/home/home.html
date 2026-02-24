@@ -1,13 +1,62 @@
-<mat-toolbar color="primary">
-  <span>ERP System</span>
-  <span class="spacer"></span>
-  <span class="me-3">{{ email }} ({{ role }})</span>
-  <button mat-icon-button (click)="logout()" title="Logout">
-    <mat-icon>logout</mat-icon>
-  </button>
-</mat-toolbar>
+<div class="home-shell">
 
-<div class="home-container">
-  <h2>Bienvenue, {{ email }} 👋</h2>
-  <p>Vous êtes connecté en tant que <strong>{{ role }}</strong>.</p>
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div>
+      <span class="top-bar__label">Dashboard</span>
+      <h1 class="top-bar__title">Welcome back, {{ firstName }} 👋</h1>
+    </div>
+    <div class="top-bar__right">
+      <div class="top-bar__user">
+        <div class="top-bar__avatar">{{ initials }}</div>
+        <div class="top-bar__user-meta">
+          <span class="top-bar__email">{{ email }}</span>
+          <span class="top-bar__role">{{ role }}</span>
+        </div>
+      </div>
+      <button mat-icon-button class="top-bar__logout-btn" (click)="logout()" matTooltip="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="quick-links">
+    <span class="section-label">Quick Access</span>
+    <div class="quick-links__grid">
+      <a class="quick-card" routerLink="/profile">
+        <div class="quick-card__icon-wrap quick-card__icon-wrap--accent">
+          <mat-icon>person</mat-icon>
+        </div>
+        <span class="quick-card__label">My Profile</span>
+        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
+      </a>
+      <a class="quick-card" routerLink="/users" *ngIf="role === 'SystemAdmin'">
+        <div class="quick-card__icon-wrap quick-card__icon-wrap--success">
+          <mat-icon>group</mat-icon>
+        </div>
+        <span class="quick-card__label">Manage Users</span>
+        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
+      </a>
+      <a class="quick-card" routerLink="/users/register" *ngIf="role === 'SystemAdmin'">
+        <div class="quick-card__icon-wrap quick-card__icon-wrap--warn">
+          <mat-icon>person_add</mat-icon>
+        </div>
+        <span class="quick-card__label">Register User</span>
+        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
+      </a>
+    </div>
+  </div>
+
+  <!-- INFO CARD -->
+  <div class="info-card">
+    <div class="info-card__icon-wrap">
+      <mat-icon>info</mat-icon>
+    </div>
+    <div class="info-card__body">
+      <span class="info-card__title">You're signed in as <strong>{{ role }}</strong></span>
+      <span class="info-card__sub">{{ email }}</span>
+    </div>
+  </div>
+
 </div>
