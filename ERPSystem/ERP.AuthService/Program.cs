@@ -35,7 +35,7 @@ BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard
 
 // ── Mongo Configuration
 builder.Services.Configure<MongoSettings>(
-    builder.Configuration.GetSection("Mongo"));
+    builder.Configuration.GetSection("MongoSettings"));
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
