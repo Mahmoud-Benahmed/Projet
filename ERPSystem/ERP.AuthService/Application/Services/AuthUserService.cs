@@ -61,6 +61,7 @@ namespace ERP.AuthService.Application.Services
             if (!user.CanLogin())
                 throw new UserInactiveException();
 
+
             var result = _passwordHasher.VerifyHashedPassword(
                 user,
                 user.PasswordHash,
@@ -71,6 +72,7 @@ namespace ERP.AuthService.Application.Services
                 throw new InvalidCredentialsException();
 
             user.RecordLogin();
+
             await _userRepository.UpdateAsync(user);
             return await GenerateAuthResponseAsync(user);
         }
