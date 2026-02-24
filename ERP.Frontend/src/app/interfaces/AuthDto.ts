@@ -21,7 +21,8 @@ export interface RegisterRequest extends LoginRequest{
 export interface AuthResponse{
   accessToken: string,
   refreshToken: string,
-  expiresAt: string
+  expiresAt: string,
+  mustChangePassword: boolean
 }
 
 

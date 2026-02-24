@@ -1,8 +1,258 @@
-.spacer {
-  flex: 1 1 auto;
+// ── TOKENS ────────────────────────────────────────
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$border:       rgba(255, 255, 255, 0.07);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$success:      #34d399;
+$warn:         #fbbf24;
+$danger:       #f87171;
+$radius:       12px;
+$radius-sm:    8px;
+
+// ── SHELL ─────────────────────────────────────────
+.home-shell {
+  min-height: 100vh;
+  background: $surface;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: $text-primary;
+
+  @media (max-width: 600px) {
+    padding: 20px 16px;
+  }
 }
 
-.home-container {
-  padding: 2rem;
-  text-align: center;
+// ── TOP BAR ───────────────────────────────────────
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  &__label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: $accent;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    color: $text-primary;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $accent, #7b5ea7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  &__user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1;
+  }
+
+  &__email {
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  &__role {
+    font-size: 11px;
+    color: $accent;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__logout-btn {
+    color: $text-muted !important;
+    border-radius: $radius-sm !important;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: $danger !important;
+      background: rgba($danger, 0.1) !important;
+    }
+  }
+}
+
+// ── SECTION LABEL ─────────────────────────────────
+.section-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: $text-muted;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+// ── QUICK LINKS ───────────────────────────────────
+.quick-links {
+  &__grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+}
+
+.quick-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 16px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  color: $text-primary;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  min-width: 200px;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: $surface-3;
+    border-color: rgba($accent, 0.3);
+
+    .quick-card__arrow {
+      opacity: 1;
+      transform: translateX(3px);
+    }
+  }
+
+  &__icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    &--accent {
+      background: $accent-glow;
+      mat-icon { color: $accent; }
+    }
+
+    &--success {
+      background: rgba($success, 0.12);
+      mat-icon { color: $success; }
+    }
+
+    &--warn {
+      background: rgba($warn, 0.12);
+      mat-icon { color: $warn; }
+    }
+  }
+
+  &__label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &__arrow {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $text-muted;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+}
+
+// ── INFO CARD ─────────────────────────────────────
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: $surface-2;
+  border: 1px solid rgba($accent, 0.2);
+  border-radius: $radius;
+  padding: 16px 20px;
+  max-width: 480px;
+
+  &__icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-sm;
+    background: $accent-glow;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: $accent;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__title {
+    font-size: 13px;
+    color: $text-primary;
+
+    strong {
+      color: $accent;
+    }
+  }
+
+  &__sub {
+    font-size: 12px;
+    color: $text-muted;
+  }
 }

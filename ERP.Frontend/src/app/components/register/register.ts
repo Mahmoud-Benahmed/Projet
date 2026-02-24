@@ -66,14 +66,20 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register(this.credentials).subscribe({
       next: () => {
         this.isLoading = false;
-        this.cdr.detectChanges(); // ← add this
-
+          this.dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Enregistrement réussi', // <-- success title
+              message: "User has been registered successfully.",
+              confirmText: 'OK',
+              showCancel: false,
+              icon: 'check_circle',
+              iconColor: 'primary'
+            }
+          });
       },
       error: (error) =>
       {
-          this.isLoading = false;
-          this.cdr.detectChanges(); // ← add this
-
           // skip if already handled by interceptor
           if (error.status === 0) return;
           this.dialog.open(ModalComponent, {

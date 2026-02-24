@@ -1,0 +1,74 @@
+<div class="complete-profile-container">
+  <mat-card class="complete-profile-card">
+    <mat-card-header>
+      <div class="header-content">
+        <div class="header-icon-wrap">
+          <mat-icon>badge</mat-icon>
+        </div>
+        <mat-card-title>Complete Your Profile</mat-card-title>
+        <mat-card-subtitle>
+          Add your name and phone number so your team can identify you.
+        </mat-card-subtitle>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form #profileForm="ngForm" (ngSubmit)="onSubmit(profileForm)" novalidate>
+
+        <!-- Full Name -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full Name</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput
+            name="fullName"
+            [(ngModel)]="form.fullName"
+            required
+            minlength="3"
+            maxlength="100"
+            placeholder="e.g. John Doe"
+            #fullName="ngModel"/>
+          <mat-error *ngIf="fullName.errors?.['required'] && fullName.touched">
+            Full name is required.
+          </mat-error>
+          <mat-error *ngIf="fullName.errors?.['minlength'] && fullName.touched">
+            At least 3 characters.
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Phone -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Phone Number</mat-label>
+          <mat-icon matPrefix>phone</mat-icon>
+          <input matInput
+            name="phone"
+            [(ngModel)]="form.phone"
+            required
+            pattern="^[+]?[0-9\s\-()]{7,20}$"
+            placeholder="e.g. +216 12 345 678"
+            #phone="ngModel"/>
+          <mat-error *ngIf="phone.errors?.['required'] && phone.touched">
+            Phone number is required.
+          </mat-error>
+          <mat-error *ngIf="phone.errors?.['pattern'] && phone.touched">
+            Enter a valid phone number.
+          </mat-error>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-button type="button" class="skip-btn" (click)="skip()" [disabled]="isLoading">
+            Skip for now
+          </button>
+          <button mat-flat-button class="submit-btn" type="submit"
+            [disabled]="profileForm.invalid || isLoading">
+            <mat-progress-spinner *ngIf="isLoading" diameter="18" mode="indeterminate"/>
+            <span *ngIf="!isLoading">
+              <mat-icon>check</mat-icon>
+              Save & Continue
+            </span>
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

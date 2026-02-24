@@ -46,25 +46,11 @@ export class AuthService {
     return this.http.put<void>(`${this.baseUrl}/change-password/${userId}`, request);
   }
 
-  revokeToken(token: string): Observable<any> {
-    return this.http.post<any>(this.baseUrl + '/revoke', { refreshToken: token });
-  }
-
-  getAccessToken(): string | null {
-    return localStorage.getItem('accessToken');
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
-  }
 
 
 
-  storeTokens(response: AuthResponse){
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        localStorage.setItem('expiresAt', response.expiresAt);
-  }
+
+
 
   private decodeAccessToken(): any {
     const token = this.getAccessToken();
@@ -75,12 +61,6 @@ export class AuthService {
       console.error('Invalid token', e);
       return null;
     }
-  }
-
-  private clearSession(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('expiresAt');
   }
 
   logout(): void {
@@ -102,6 +82,22 @@ export class AuthService {
     });
   }
 
+
+  storeTokens(response: AuthResponse){
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    localStorage.setItem('expiresAt', response.expiresAt);
+    localStorage.setItem('mustChangePassword', String(response.mustChangePassword)); // ADD THIS
+  }
+  // Update clearSession to include it:
+  private clearSession(): void {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('expiresAt');
+    localStorage.removeItem('mustChangePassword');
+  }
+
+
   get isLoggedIn(): boolean {
     const token = this.getAccessToken();
     const expiresAt = localStorage.getItem('expiresAt');
@@ -121,7 +117,34 @@ export class AuthService {
     return this.decodeAccessToken()?.sub ?? null;
   }
 
+  get mustChangePassword(): boolean {
+    return localStorage.getItem('mustChangePassword') === 'true';
+  }
+
+
   get hasRole(): boolean {
     return this.roles.some(r => r.value === this.Role);
+  }
+
+    // Add to storeTokens or call separately after login
+  storeMustChangePassword(value: boolean): void {
+    localStorage.setItem('mustChangePassword', String(value));
+  }
+
+  clearMustChangePassword(): void {
+    localStorage.removeItem('mustChangePassword');
+  }
+
+
+  revokeToken(token: string): Observable<any> {
+    return this.http.post<any>(this.baseUrl + '/revoke', { refreshToken: token });
+  }
+
+  getAccessToken(): string | null {
+    return localStorage.getItem('accessToken');
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
   }
 }
