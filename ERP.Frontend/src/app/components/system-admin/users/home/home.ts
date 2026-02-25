@@ -89,8 +89,10 @@ export class UsersHomeComponent implements OnInit {
       .getActiveUsers(this.pageNumber, this.pageSize)
       .subscribe({
         next: (result: PagedResultDto<UserProfileResponseDto>) => {
-          this.dataSource.data = result.items;
-          this.totalCount = result.totalCount;
+          this.dataSource.data = result.items.filter(
+            u => u.authUserId !== this.authService.UserId
+          );
+          this.totalCount = result.totalCount-1;
           this.dataSource.sort = this.sort;
           this.isLoading = false;
           this.statsComponent.loadStats();
