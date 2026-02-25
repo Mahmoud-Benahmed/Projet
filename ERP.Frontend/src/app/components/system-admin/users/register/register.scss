@@ -1,0 +1,289 @@
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$border:       rgba(255, 255, 255, 0.07);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$danger:       #f87171;
+$warn:         #fbbf24;
+$success:      #34d399;
+$radius:       12px;
+$radius-sm:    8px;
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $surface;
+  padding: 1rem;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: $surface-2 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius !important;
+  box-shadow: none !important;
+  padding: 1.5rem;
+
+  mat-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    padding: 0;
+  }
+
+  mat-card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: $text-primary !important;
+    margin-bottom: 0.35rem;
+  }
+
+  mat-card-subtitle {
+    font-size: 0.875rem;
+    color: $text-muted !important;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+// ── FORM ──────────────────────────────────────────
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// ── FORM FIELDS ───────────────────────────────────
+mat-form-field {
+  width: 100%;
+
+  ::ng-deep {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: $border !important;
+    }
+
+    &:hover .mdc-notched-outline__leading,
+    &:hover .mdc-notched-outline__notch,
+    &:hover .mdc-notched-outline__trailing {
+      border-color: rgba($accent, 0.4) !important;
+    }
+
+    &.mat-focused .mdc-notched-outline__leading,
+    &.mat-focused .mdc-notched-outline__notch,
+    &.mat-focused .mdc-notched-outline__trailing {
+      border-color: $accent !important;
+    }
+
+    input,
+    .mat-mdc-select-value-text {
+      color: $text-primary !important;
+      caret-color: $accent;
+    }
+
+    .mat-mdc-floating-label {
+      color: $text-muted !important;
+    }
+
+    .mat-mdc-form-field-icon-prefix mat-icon {
+      color: $text-muted;
+    }
+
+    .mat-mdc-icon-button mat-icon {
+      color: $text-muted;
+    }
+
+    .mat-mdc-select-arrow {
+      color: $text-muted !important;
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      background: transparent;
+    }
+  }
+}
+
+// ── SELECT PANEL ──────────────────────────────────
+::ng-deep .mat-mdc-select-panel {
+  background: $surface-3 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius-sm !important;
+
+  .mat-mdc-option {
+    color: $text-primary !important;
+
+    &:hover,
+    &.mat-mdc-option-active {
+      background: rgba($accent, 0.1) !important;
+    }
+
+    &.mdc-list-item--selected {
+      color: $accent !important;
+    }
+  }
+}
+
+// ── PASSWORD GROUP ────────────────────────────────
+.password-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+// ── PASSWORD METER ────────────────────────────────
+.password-meter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &__bars {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+
+    .bar {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: $surface-3;
+      transition: background 0.3s;
+
+      &--filled {
+        &.strength--weak        { background: $danger; }
+        &.strength--fair        { background: $warn; }
+        &.strength--strong      { background: $success; }
+        &.strength--very-strong { background: $accent; }
+      }
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 64px;
+    text-align: right;
+
+    &.strength--weak        { color: $danger; }
+    &.strength--fair        { color: $warn; }
+    &.strength--strong      { color: $success; }
+    &.strength--very-strong { color: $accent; }
+  }
+}
+
+// ── PASSWORD ERRORS ───────────────────────────────
+.password-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba($danger, 0.06);
+  border: 1px solid rgba($danger, 0.15);
+  border-radius: $radius-sm;
+
+  .password-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: $danger;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// ── GENERATE BUTTON ───────────────────────────────
+button[mat-stroked-button] {
+  color: $text-muted !important;
+  border-color: $border !important;
+  border-radius: $radius-sm !important;
+  font-size: 13px;
+  font-weight: 500;
+  align-self: flex-start;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $accent;
+  }
+
+  &:hover {
+    border-color: rgba($accent, 0.4) !important;
+    color: $text-primary !important;
+    background: rgba($accent, 0.05) !important;
+  }
+}
+
+// ── ALERTS ───────────────────────────────────────
+.error-alert {
+  padding: 10px 14px;
+  background: rgba($danger, 0.08);
+  border: 1px solid rgba($danger, 0.2);
+  border-radius: $radius-sm;
+  color: $danger;
+  font-size: 0.8rem;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+}
+
+.success-alert {
+  padding: 10px 14px;
+  background: rgba($success, 0.08);
+  border: 1px solid rgba($success, 0.2);
+  border-radius: $radius-sm;
+  color: $success;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+// ── SUBMIT BUTTON ─────────────────────────────────
+button[mat-raised-button] {
+  background: $accent !important;
+  color: #fff !important;
+  border-radius: $radius-sm !important;
+  font-weight: 600;
+  height: 42px;
+  width: 100%;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+// ── LOADING BUTTON ────────────────────────────────
+.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 14px;
+}

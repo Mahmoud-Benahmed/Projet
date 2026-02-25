@@ -2,18 +2,18 @@ import { ChangeDetectorRef, Component, HostBinding, OnDestroy } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../../../services/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { ModalComponent } from '../modal/modal';
+import { ModalComponent } from '../../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { RegisterRequest, RoleDto } from '../../interfaces/AuthDto';
-import { generatePassword, checkPassword } from '../../util/PasswordUtil';
+import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
+import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
 
 @HostBinding('class')
 @Component({
