@@ -24,7 +24,7 @@ services:
     ports:
       - "5001:8080"
     env_file:
-      - ../.env
+      - .env
     depends_on:
       - mongo
 

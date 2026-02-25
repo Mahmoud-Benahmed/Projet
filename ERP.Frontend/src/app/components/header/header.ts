@@ -28,9 +28,9 @@ import { NavLink } from '../../interfaces/NavLink';
   styleUrl: './header.scss',
 })
 export class HeaderComponent {
-  @Input() userName: string = 'John Doe';
-  @Input() userEmail: string = 'john@example.com';
-  @Input() userRole: string = 'User';
+  @Input() userName: string = '-';
+  @Input() userEmail: string = '-';
+  @Input() userRole: string = '-';
   @Input() notificationCount: number = 3;
   @Output() logoutClicked = new EventEmitter<void>();
   @Output() sidenavToggle = new EventEmitter<void>();
