@@ -450,9 +450,8 @@ docker-compose.override.yml
 # ── Environment & Secrets ─────────────────────
 .env
 *.env
-appsettings.Development.json
-appsettings.Production.json
-appsettings.Docker.json
+**/appsettings.Development.json
+**/appsettings.Docker.json
 
 # ── Rider / JetBrains ─────────────────────────
 .idea/

@@ -1,0 +1,22 @@
+[
+  {
+    "Name": "Launch Services",
+    "Projects": [
+      {
+        "Path": "ERP.Gateway\\ERP.Gateway.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "ERP.UserService\\ERP.UserService.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "ERP.AuthService\\ERP.AuthService.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  }
+]

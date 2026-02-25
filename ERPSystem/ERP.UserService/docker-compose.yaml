@@ -14,7 +14,7 @@ services:
     ports:
       - "5002:8080"
     env_file:
-      - ../.env
+      - .env
     depends_on:
       sqlserver:
         condition: service_healthy

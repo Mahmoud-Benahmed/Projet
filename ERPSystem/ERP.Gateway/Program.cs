@@ -19,7 +19,7 @@ builder.Services.AddAuthentication(options =>
     options.MapInboundClaims = false;
 
     var signingKey = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes(config["Jwt:Secret"]
+        Encoding.UTF8.GetBytes(config["JWT:Secret"]
             ?? throw new InvalidOperationException("Jwt:Secret is not configured.")));
     signingKey.KeyId = "erp-key-1";
 
@@ -29,8 +29,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = config["Jwt:Issuer"],
-        ValidAudience = config["Jwt:Audience"],
+        ValidIssuer = config["JWT:Issuer"],
+        ValidAudience = config["JWT:Audience"],
         IssuerSigningKey = signingKey,
         RoleClaimType = "role"
     };

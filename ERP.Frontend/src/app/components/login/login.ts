@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthResponse } from '../../interfaces/AuthDto';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { UsersService } from '../../services/users.service';
 
 @Component({
   selector: 'app-login',
@@ -39,17 +40,13 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
+    private userService: UsersService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn!) {
-      const role = this.authService.Role!;
-      if (role === 'SystemAdmin') {
-        this.router.navigate(['/register']);
-      } else {
-        this.router.navigate(['/home']);
-      }
+      this.router.navigate(['/home']);
     }
   }
 
@@ -61,13 +58,31 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
-        this.isLoading = false;
         this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
 
         if (response.mustChangePassword) {
+          this.isLoading= false;
           this.router.navigate(['/must-change-password']);
           return;
         }
+
+        const authUserId= this.authService.UserId!;
+        this.userService.getByAuthUserId(authUserId).subscribe({
+          next: (profile)=> {
+            this.isLoading = false;
+            if (!profile.isProfileCompleted) {
+              this.router.navigate(['/complete-profile']);
+              return;
+            }
+            const role = this.authService.Role!;
+            this.router.navigate(['/home']);
+          },
+          error: () => {
+            this.isLoading = false;
+            // profile not found, redirect to complete profile
+            this.router.navigate(['/complete-profile']);
+        }
+      });
 
         const role = this.authService.Role!;
         this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);

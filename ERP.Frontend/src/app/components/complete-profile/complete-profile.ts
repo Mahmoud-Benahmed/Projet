@@ -45,6 +45,21 @@ export class CompleteProfileComponent {
     private snackBar: MatSnackBar
   ) {}
 
+  ngOnInit(){
+    this.usersService.getByAuthUserId(this.authService.UserId!).subscribe({
+      next: (profile)=>{
+        if(profile.isProfileCompleted){
+          this.router.navigate(["/profile"]);
+        }
+      },
+      error:(err)=>{
+        const message = err.error?.message || 'Failed to load profile.';
+        this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+        this.router.navigate(["/home"]);
+      }
+    });
+  }
+
   onSubmit(ngForm: NgForm): void {
     if (ngForm.invalid) return;
 
@@ -56,7 +71,7 @@ export class CompleteProfileComponent {
         this.isLoading = false;
         this.snackBar.open('Profile completed. Welcome!', 'OK', { duration: 3000 });
         const role = this.authService.Role!;
-        this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.isLoading = false;
@@ -68,6 +83,6 @@ export class CompleteProfileComponent {
 
   skip(): void {
     const role = this.authService.Role!;
-    this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);
+    this.router.navigate(['/home']);
   }
 }
