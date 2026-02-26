@@ -14,15 +14,11 @@ services:
     ports:
       - "5000:8080"
     env_file:
-      - ../.env
+      - .env
     networks:
-      - erp-auth-network
-      - erp-user-network
+      - erp-network
 
 networks:
-  erp-auth-network:
+  erp-network:
     external: true
-    name: erpauthservice_default
-  erp-user-network:
-    external: true
-    name: erpuserservice_erp-network
+    name: erp-network

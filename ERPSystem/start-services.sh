@@ -1,38 +1,35 @@
 #!/bin/bash
-
 set -e
-
 ROOT_DIR=$(pwd)
 
-echo "🔍 Searching for ERP.* services..."
+echo " Removing existing containers..."
+docker rm -f erp-kafka erp-auth erp-user erp-gateway erp-auth-mongo erp-user-sqlserver
+echo " Starting shared infrastructure..."
+docker compose -f docker-compose.infra.yaml up -d
 
-for dir in ERP.*/ ; do
-  service=${dir%/}
+echo " Waiting for Kafka to be healthy..."
+until docker inspect erp-kafka --format='{{.State.Health.Status}}' 2>/dev/null | grep -q "healthy"; do
+  echo " still waiting..."
+  sleep 5
+done
+echo " Kafka is healthy!"
 
-  # Skip if not a directory
+for service in ERP.AuthService ERP.UserService ERP.Gateway; do
   [ -d "$service" ] || continue
-
-  # Check if docker compose file exists
   if [ -f "$service/docker-compose.yaml" ] || [ -f "$service/docker-compose.yml" ]; then
-
     echo "--------------------------------------"
-    echo " Stopping $service (if running)..."
+    echo "  Starting $service..."
     echo "--------------------------------------"
-
     cd "$ROOT_DIR/$service"
-
-    # Stop existing containers (safe even if none are running)
     docker compose down || true
-
-    echo "🚀 Rebuilding and starting $service..."
     docker compose up --build -d
-
     cd "$ROOT_DIR"
   else
-    echo "!! Skipping $service (no docker compose file)"
+    echo "!! Skipping $service (no docker-compose file)"
   fi
 done
 
 echo "--------------------------------------"
-echo "✅ All ERP services restarted successfully!"
+echo " All ERP services started!"
 echo "--------------------------------------"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
