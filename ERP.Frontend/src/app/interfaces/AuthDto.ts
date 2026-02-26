@@ -1,5 +1,3 @@
-
-
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
@@ -10,12 +8,12 @@ export interface AdminChangePasswordRequest {
 }
 
 export interface LoginRequest {
-  email: string;
+  login: string;
   password: string
 }
 
 export interface RegisterRequest extends LoginRequest{
-  roleId: ''
+  email: '', roleId: ''
 }
 
 export interface AuthResponse{
@@ -29,4 +27,17 @@ export interface AuthResponse{
 export interface RoleDto{
   value: string,
   label: string
+}
+
+export interface AuthUserDto{
+    Id: string,
+    Email: string,
+    Login: string,
+    RoleId: string,
+    RoleName: string,
+    MustChangePassword: boolean,
+    IsActive: boolean,
+    CreatedAt: string,
+    UpdatedAt: string,
+    LastLoginAt?: string
 }

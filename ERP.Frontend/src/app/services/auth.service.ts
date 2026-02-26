@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
-import { AdminChangePasswordRequest, AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest, RoleDto } from '../interfaces/AuthDto';
+import { AdminChangePasswordRequest, AuthResponse, AuthUserDto, ChangePasswordRequest, LoginRequest, RegisterRequest, RoleDto } from '../interfaces/AuthDto';
 
 @Injectable({
   providedIn: 'root',
@@ -13,11 +13,15 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  getUserById(id: string): Observable<any>{
-    return this.http.get(this.baseUrl+`/${id}`);
+  getUserById(id: string): Observable<AuthUserDto>{
+    return this.http.get<AuthUserDto>(this.baseUrl+`/${id}`);
   }
 
-  login(credentials: LoginRequest): Observable<any> {
+  getUserByLogin(login: string): Observable<AuthUserDto>{
+    return this.http.get<AuthUserDto>(this.baseUrl+`/${login}`);
+  }
+
+  login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<any>(this.baseUrl + '/login', credentials);
   }
 

@@ -15,6 +15,8 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
 import { RoleResponseDto, RoleService } from '../../../../services/role.service';
+import { ThisReceiver } from '@angular/compiler';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @HostBinding('class')
 @Component({
@@ -35,9 +37,7 @@ import { RoleResponseDto, RoleService } from '../../../../services/role.service'
 })
 export class RegisterComponent implements OnDestroy {
 
-  credentials: RegisterRequest = { email: '', password: '', roleId: '' };
-  errorMessage = '';
-  successMessage = '';
+  credentials: RegisterRequest = { login:'', email: '', password: '', roleId: '' };
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
@@ -53,7 +53,8 @@ export class RegisterComponent implements OnDestroy {
               private authService: AuthService,
               private roleService: RoleService,
               private cdr: ChangeDetectorRef,
-              private dialog: MatDialog) {}
+              private dialog: MatDialog,
+              private snackbar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.roleService.getAll().subscribe(
@@ -73,38 +74,74 @@ export class RegisterComponent implements OnDestroy {
 
   onSubmit(): void {
     this.isLoading = true;
-    this.authService.register(this.credentials).subscribe({
-      next: () => {
-        this.isLoading = false;
-          this.dialog.open(ModalComponent, {
+
+    const sanitizedLogin= this.sanitizeLogin(this.credentials.login);
+    const loginChanged= sanitizedLogin !== this.credentials.login;
+    if(loginChanged){
+        const dialogRef= this.dialog.open(ModalComponent, {
             width: '400px',
             data: {
-              title: 'Enregistrement réussi', // <-- success title
-              message: "User has been registered successfully.",
-              confirmText: 'OK',
-              showCancel: false,
+              title: 'Login input changed', // <-- success title
+              message: `Login input has been changed to ${sanitizedLogin}, since login cannot contain spaces or be uppercase.
+                        Do you want to procceed with this username ?`,
+              confirmText: 'Confirm',
+              showCancel: true,
               icon: 'check_circle',
               iconColor: 'primary'
             }
+        });
+
+      dialogRef.afterClosed().subscribe(result => {
+          if (result) {
+              this.credentials.login= sanitizedLogin;
+              this.register();
+          }else{
+              this.isLoading= false;
+          }
+        });
+    } else {
+        this.register(); // ← no change, register directly
+    }
+  }
+
+  private register(): void {
+    this.isLoading= true;
+    this.authService.getUserByLogin(this.credentials.login).subscribe(
+      next=> {
+          this.isLoading= true;
+          const dialogRef= this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Invalid Login ', // <-- success title
+                message: `Please choose another Login other than ${this.credentials.login}.`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'primary'
+              },
           });
+          return;
       },
-      error: (error) =>
-      {
-          // skip if already handled by interceptor
+      error => {
+        this.isLoading= false;
+      });
+      
+    return;
+      this.authService.register(this.credentials).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
+        },
+        error: (error) => {
+          this.isLoading = false; // ← don't forget this
           if (error.status === 0) return;
-          this.dialog.open(ModalComponent, {
-                width: '400px',
-                data: {
-                  title: 'Erreur d\'enregistrement',
-                  message: error.error.message || 'L\'enregistrement a échoué. Veuillez vérifier vos informations.',
-                  confirmText: 'OK',
-                  showCancel: false,
-                  icon: 'warning',
-                  iconColor: 'warn'
-                }
-          });
-      }
-    });
+          this.snackbar.open('Failed to register user', 'Dismiss', { duration: 3000 });
+        }
+      });
+  }
+  sanitizeLogin(login: string){
+    login= login.toLowerCase().replace(/ /g, "_");
+    return login;
   }
 
   generatePassword(){

@@ -32,7 +32,7 @@ import { UsersService } from '../../services/users.service';
 })
 export class LoginComponent implements OnInit, OnDestroy {
 
-  credentials = { email: '', password: '' };
+  credentials = { login: '', password: '' };
   showPassword = false;
   isLoading = false;
   private errorTimeout: any = null;

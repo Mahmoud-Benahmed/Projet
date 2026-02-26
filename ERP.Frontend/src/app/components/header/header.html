@@ -40,20 +40,20 @@
 
     <!-- User menu -->
     <button mat-button [matMenuTriggerFor]="userMenu" class="avatar-btn">
-      <div class="avatar">{{ initials }}</div>
-      <div class="avatar-info">
-        <span class="avatar-info__name">{{ userName }}</span>
-        <span class="avatar-info__role">{{ userRole }}</span>
+        <div class="avatar"><mat-icon>person</mat-icon></div>
+        <div class="avatar-info">
+        <span class="avatar-info__name">{{ authUser.Login }}</span>
+        <span class="avatar-info__role">{{ authUser.RoleName }}</span>
       </div>
       <mat-icon class="avatar-chevron">expand_more</mat-icon>
     </button>
 
     <mat-menu #userMenu="matMenu" class="user-menu" xPosition="before">
       <div class="menu-header">
-        <div class="menu-avatar">{{ initials }}</div>
+        <div class="menu-avatar"><mat-icon>person</mat-icon></div>
         <div>
-          <p class="menu-header__name">{{ userName }}</p>
-          <p class="menu-header__email">{{ userEmail }}</p>
+          <p class="menu-header__name">{{ authUser.Login }}</p>
+          <p class="menu-header__email">{{ authUser.Email }}</p>
         </div>
       </div>
 

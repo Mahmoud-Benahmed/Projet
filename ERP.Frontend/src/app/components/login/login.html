@@ -11,17 +11,16 @@
 
         <!-- Email -->
         <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Email</mat-label>
+          <mat-label>Login</mat-label>
           <input matInput
-                type="email"
-                name="email"
-                [(ngModel)]="credentials.email"
+                type="text"
+                name="login"
+                [(ngModel)]="credentials.login"
                 required
-                email
-                #emailInput="ngModel"/>
-          <mat-icon matPrefix>email</mat-icon>
-          <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
-          <mat-error *ngIf="emailInput.errors?.['email']">Email invalide</mat-error>
+                #loginInput="ngModel"/>
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-error *ngIf="loginInput.errors?.['required']">Login required</mat-error>
+          <mat-error *ngIf="loginInput.errors?.['login']">Invalid Login</mat-error>
         </mat-form-field>
 
         <!-- Password -->

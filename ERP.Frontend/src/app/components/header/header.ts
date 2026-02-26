@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,6 +9,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavLink } from '../../interfaces/NavLink';
+import { AuthService } from '../../services/auth.service';
+import { AuthUserDto } from '../../interfaces/AuthDto';
+import { UsersService } from '../../services/users.service';
+import { forkJoin } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-header',
@@ -27,14 +32,13 @@ import { NavLink } from '../../interfaces/NavLink';
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })
-export class HeaderComponent {
-  @Input() userName: string = '-';
-  @Input() userEmail: string = '-';
-  @Input() userRole: string = '-';
+export class HeaderComponent implements OnInit {
   @Input() notificationCount: number = 3;
   @Output() logoutClicked = new EventEmitter<void>();
   @Output() sidenavToggle = new EventEmitter<void>();
 
+
+  authUser: any= null;
   allNavLinks: NavLink[] = [
     { label: 'Home', route: '/home', icon: 'home' },
     { label: 'Settings', route: '/settings', icon: 'settings'},
@@ -43,22 +47,35 @@ export class HeaderComponent {
     { label: 'Permissions', route: '/permissions', icon: 'security', roles: ['SystemAdmin']},
   ];
 
+  constructor(private authService: AuthService,
+              private userProfileService: UsersService,
+            private snackBar: MatSnackBar){}
+
+  ngOnInit(){
+     forkJoin({
+          authUser: this.authService.getUserById(this.authService.UserId!),
+          profile: this.userProfileService.getByAuthUserId(this.authService.UserId!),
+        }).subscribe({
+          next: ({ authUser, profile }) => {
+            // merge both responses into one object
+            this.authUser = {
+              ...profile,
+              RoleName: authUser.RoleName,
+              MustChangePassword: authUser.MustChangePassword,
+              LastLoginAt: authUser.LastLoginAt ?? undefined,
+            };
+          },
+          error: () => {
+            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+          },
+        });
+  }
+
   get navLinks(): NavLink[] {
     return this.allNavLinks.filter(link =>
-      !link.roles || link.roles.includes(this.userRole)
+      !link.roles || link.roles.includes(this.authService.Role!)
     );
   }
-
-
-  get initials(): string {
-    return this.userName
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  }
-
 
 
   onLogout(): void {

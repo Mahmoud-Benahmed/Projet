@@ -9,6 +9,22 @@
     <mat-card-content>
       <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
 
+        <mat-form-field appearance="outline">
+          <mat-label>Login</mat-label>
+          <input matInput
+                 type="text"
+                 name="login"
+                 [(ngModel)]="credentials.login"
+                 required
+                 login
+                 [minLength]="5"
+                 [maxlength]="50",
+                 #loginInput="ngModel"/>
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-error *ngIf="loginInput.errors?.['required']">Login required</mat-error>
+          <mat-error *ngIf="loginInput.errors?.['login']">Invalid Login</mat-error>
+        </mat-form-field>
+
         <!-- Email -->
         <mat-form-field appearance="outline">
           <mat-label>Email</mat-label>
@@ -100,18 +116,6 @@
           <mat-icon matPrefix>badge</mat-icon>
           <mat-error *ngIf="roleInput.errors?.['required']">Rôle requis</mat-error>
         </mat-form-field>
-
-        <!-- Error message -->
-        <div *ngIf="errorMessage" class="error-alert">
-          @for (error of errorMessage.split('\n'); track error) {
-            <p>{{ error }}</p>
-          }
-        </div>
-
-        <!-- Success message -->
-        <div *ngIf="successMessage" class="success-alert">
-          {{ successMessage }}
-        </div>
 
         <!-- Submit -->
         <button mat-raised-button

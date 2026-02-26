@@ -97,9 +97,9 @@ export class ProfileComponent implements OnInit {
         // merge both responses into one object
         this.profile = {
           ...profile,
-          role: authUser.role,
-          mustChangePassword: authUser.mustChangePassword,
-          lastLoginAt: authUser.lastLoginAt,
+          role: authUser.RoleName,
+          mustChangePassword: authUser.MustChangePassword,
+          lastLoginAt: authUser.LastLoginAt ?? null,
         };
         this.isLoading = false;
       },
