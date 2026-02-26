@@ -4,6 +4,7 @@ using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using System.Security;
 using System.Security.Cryptography;
@@ -19,19 +20,25 @@ namespace ERP.AuthService.Application.Services
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IJwtTokenGenerator _jwtGenerator;
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
+        private readonly IControleRepository _controleRepository;
+        private readonly IPrivilegeRepository _privilegeRepository;
 
         public AuthUserService(
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtGenerator,
-            IPasswordHasher<AuthUser> passwordHasher)
+            IPasswordHasher<AuthUser> passwordHasher,
+            IControleRepository controleRepository,
+            IPrivilegeRepository privilegeRepository)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _jwtGenerator = jwtGenerator;
             _passwordHasher = passwordHasher;
+            _controleRepository = controleRepository;
+            _privilegeRepository = privilegeRepository;
         }
 
         public async Task<AuthUserGetResponseDto> GetByIdAsync(Guid id)
@@ -78,8 +85,8 @@ namespace ERP.AuthService.Application.Services
                 throw new InvalidCredentialsException();
 
             user.RecordLogin();
-
             await _userRepository.UpdateAsync(user);
+
             return await GenerateAuthResponseAsync(user);
         }
 
@@ -181,16 +188,34 @@ namespace ERP.AuthService.Application.Services
         private async Task<AuthResponseDto> GenerateAuthResponseAsync(AuthUser user)
         {
             var role = await _roleRepository.GetByIdAsync(user.RoleId)
-              ?? throw new InvalidOperationException("Role not found.");
+                       ?? throw new InvalidOperationException("Role not found.");
+
+            // fetch granted privileges for this role
+            var privileges = await _privilegeRepository.GetByRoleIdAsync(user.RoleId);
+            var grantedPrivileges = privileges
+                .Where(p => p.IsGranted)
+                .Select(p => p.ControleId.ToString())
+                .ToList();
+
+            // resolve controle names for the privileges
+            var controles = await _controleRepository.GetAllAsync();
+            var controleMap = controles.ToDictionary(c => c.Id, c => c.Libelle);
+
+            var privilegeNames = privileges
+                .Where(p => p.IsGranted)
+                .Select(p => controleMap.TryGetValue(p.ControleId, out var name) ? name : null)
+                .Where(name => name != null)
+                .Select(name => name!)
+                .ToList();
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
                 user.Email,
-                role.Libelle  // RoleEnum
+                role.Libelle,
+                privilegeNames
             );
 
             var refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
-
             var refreshToken = new RefreshToken(
                 user.Id,
                 refreshTokenValue,
@@ -206,7 +231,6 @@ namespace ERP.AuthService.Application.Services
                 expiresAt
             );
         }
-
         private async Task<AuthUserGetResponseDto> MapToDtoAsync(AuthUser user)
         {
             var role = await _roleRepository.GetByIdAsync(user.RoleId)
