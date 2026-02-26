@@ -48,14 +48,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireAuthenticatedUser()
               .RequireRole("SystemAdmin"));
-
-    options.AddPolicy("AdminOrHR", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireRole("SystemAdmin", "HRManager"));
-
-    options.AddPolicy("HROnly", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireRole("HRManager"));
 });
 
 //////////////////////////////////////////////////
