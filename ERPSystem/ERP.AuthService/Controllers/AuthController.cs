@@ -27,6 +27,17 @@ namespace ERP.AuthService.Controllers
         }
 
 
+        [HttpGet("{login:string}")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAuthUserByLogin(string login)
+        {
+            var result = await _authService.GetByLoginAsync(login);
+            return Ok(result);
+        }
+
+
+
+
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {

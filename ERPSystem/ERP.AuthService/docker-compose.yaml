@@ -9,6 +9,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: root
     volumes:
       - mongo-data:/data/db
+    networks:
+      - erp-network
 
   auth-service:
     build:
@@ -26,7 +28,15 @@ services:
     env_file:
       - .env
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
+    networks:
+      - erp-network
 
 volumes:
   mongo-data:
+
+networks:
+  erp-network:
+    external: true
+    name: erp-network

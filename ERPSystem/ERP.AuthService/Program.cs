@@ -4,17 +4,20 @@ using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Application.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Configuration;
+using ERP.AuthService.Infrastructure.Messaging;
 using ERP.AuthService.Infrastructure.Persistence;
 using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,24 +69,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return Task.CompletedTask;
             }
         };
+
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found")) ;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false,
-            ValidateIssuerSigningKey = false,
-            SignatureValidator = (token, _) =>
-                new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token),
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? throw new Exception("JwtSettings:Secret not found"),
+
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? throw new Exception("JwtSettings:Secret not found"),
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(5),
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+
             RoleClaimType = "role",
             NameClaimType = "sub"
         };
     });
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOrHR", policy =>
-        policy.RequireRole("Admin", "HR"));
-});
 
 // ── Dependency Injection
 builder.Services.AddScoped<IAuthUserRepository, AuthUserRepository>();
@@ -97,6 +102,7 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();
 // ── Initialize MongoDB indexes
@@ -113,12 +119,11 @@ using (var scope = app.Services.CreateScope())
     var refreshTokenRepository= scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
     var authUserService = scope.ServiceProvider.GetRequiredService<IAuthUserService>();
 
+
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     bool resetDb = configuration.GetValue<bool>("RunSeeders:ResetDatabase");
-    Console.WriteLine($"resetDb: {resetDb}");
     if (resetDb)
     {
-
         await privilegeRepository.DeleteAllAsync();
         await controleRepository.DeleteAllAsync();
         await roleRepository.DeleteAllAsync();
@@ -126,13 +131,18 @@ using (var scope = app.Services.CreateScope())
         await userRepository.DeleteAllAsync();
 
     }
+
+    var services = scope.ServiceProvider;
     await AuthServiceSeeder.SeedAsync(
-        userRepository,
-        roleRepository,
-        controleRepository,
-        privilegeRepository,
-        authUserService,
-        builder.Configuration);
+        services.GetRequiredService<IAuthUserRepository>(),
+        services.GetRequiredService<IRoleRepository>(),
+        services.GetRequiredService<IControleRepository>(),
+        services.GetRequiredService<IPrivilegeRepository>(),
+        services.GetRequiredService<IAuthUserService>(),
+        services.GetRequiredService<IConfiguration>(),
+        services.GetRequiredService<IEventPublisher>()  // ← add this
+    );
+    
 }
 
 app.UseSwagger();
