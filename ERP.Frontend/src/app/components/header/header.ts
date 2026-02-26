@@ -8,12 +8,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
 import { AuthUserDto } from '../../interfaces/AuthDto';
-import { UsersService } from '../../services/users.service';
-import { forkJoin } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-header',
@@ -28,6 +26,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatDividerModule,
     MatBadgeModule,
     MatTooltipModule,
+    MatSnackBarModule,
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -37,38 +36,22 @@ export class HeaderComponent implements OnInit {
   @Output() logoutClicked = new EventEmitter<void>();
   @Output() sidenavToggle = new EventEmitter<void>();
 
+  userLogin: string= '';
+  userRole: string= '';
 
-  authUser: any= null;
   allNavLinks: NavLink[] = [
-    { label: 'Home', route: '/home', icon: 'home' },
-    { label: 'Settings', route: '/settings', icon: 'settings'},
-    { label: 'Users', route: '/users', icon: 'group', roles: ['SystemAdmin'] },
+    { label: 'Home',        route: '/home',              icon: 'home'                           },
+    { label: 'Settings',    route: '/settings',          icon: 'settings'                       },
+    { label: 'Users',       route: '/users',             icon: 'group',     roles: ['SystemAdmin'] },
     { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off', roles: ['SystemAdmin'] },
-    { label: 'Permissions', route: '/permissions', icon: 'security', roles: ['SystemAdmin']},
+    { label: 'Permissions', route: '/permissions',       icon: 'security',  roles: ['SystemAdmin'] },
   ];
 
-  constructor(private authService: AuthService,
-              private userProfileService: UsersService,
-            private snackBar: MatSnackBar){}
+  constructor(private authService: AuthService) {}
 
-  ngOnInit(){
-     forkJoin({
-          authUser: this.authService.getUserById(this.authService.UserId!),
-          profile: this.userProfileService.getByAuthUserId(this.authService.UserId!),
-        }).subscribe({
-          next: ({ authUser, profile }) => {
-            // merge both responses into one object
-            this.authUser = {
-              ...profile,
-              RoleName: authUser.RoleName,
-              MustChangePassword: authUser.MustChangePassword,
-              LastLoginAt: authUser.LastLoginAt ?? undefined,
-            };
-          },
-          error: () => {
-            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
-          },
-        });
+  ngOnInit(): void {
+    this.userLogin= this.authService.Login!;
+    this.userRole= this.authService.Role!;
   }
 
   get navLinks(): NavLink[] {
@@ -76,7 +59,6 @@ export class HeaderComponent implements OnInit {
       !link.roles || link.roles.includes(this.authService.Role!)
     );
   }
-
 
   onLogout(): void {
     this.logoutClicked.emit();

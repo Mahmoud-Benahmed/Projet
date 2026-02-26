@@ -39,5 +39,5 @@ export interface AuthUserDto{
     IsActive: boolean,
     CreatedAt: string,
     UpdatedAt: string,
-    LastLoginAt?: string
+    LastLoginAt: string
 }

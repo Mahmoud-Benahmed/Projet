@@ -43,7 +43,7 @@
             name="phone"
             [(ngModel)]="form.phone"
             required
-            pattern="^[+]?[0-9\s\-()]{7,20}$"
+            type=""
             placeholder="e.g. +216 12 345 678"
             #phone="ngModel"/>
           <mat-error *ngIf="phone.errors?.['required'] && phone.touched">

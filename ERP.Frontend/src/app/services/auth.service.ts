@@ -10,6 +10,18 @@ import { AdminChangePasswordRequest, AuthResponse, AuthUserDto, ChangePasswordRe
 })
 export class AuthService {
   private baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
+  user: AuthUserDto= {
+      Id: '',
+      Email: '',
+      Login: '',
+      RoleId: '',
+      RoleName: '',
+      MustChangePassword: false,
+      IsActive: true,
+      CreatedAt: '',
+      UpdatedAt: '',
+      LastLoginAt: ''
+  };
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -106,8 +118,8 @@ export class AuthService {
     return this.decodeAccessToken()?.role ?? null;
   }
 
-  get Email(): string | null {
-    return this.decodeAccessToken()?.email ?? null;
+  get Login(): string | null {
+    return this.decodeAccessToken()?.login ?? null;
   }
 
   get UserId(): string | null {
