@@ -1,8 +1,11 @@
 using ERP.AuthService.Application.Interfaces;
+using ERP.AuthService.Application.Interfaces.Repositories;
+using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Application.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Configuration;
 using ERP.AuthService.Infrastructure.Persistence;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,7 +15,6 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,22 +35,15 @@ builder.Services.AddSwaggerGen();
 // ── Mongo GUID Serializer
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
-// ── Mongo Configuration  (MONGO__ env vars → "MONGO" section)
+// ── Mongo Configuration
 builder.Services.Configure<MongoSettings>(
     builder.Configuration.GetSection("MongoSettings"));
 
 
-builder.Services.AddSingleton<IMongoClient>(sp =>
+builder.Services.AddSingleton<MongoDbContext>(sp =>
 {
     var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
-    return new MongoClient(settings.ConnectionString);
-});
-
-builder.Services.AddSingleton<IMongoDatabase>(sp =>
-{
-    var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
-    var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase(settings.DatabaseName);
+    return new MongoDbContext(settings.ConnectionString, settings.DatabaseName);
 });
 
 // ── Read JWT secret from env
@@ -91,36 +86,39 @@ builder.Services.AddAuthorization(options =>
 });
 
 // ── Dependency Injection
-builder.Services.AddScoped<IAuthUserService, AuthUserService>();
-builder.Services.AddScoped<IAuthUserRepository, MongoAuthUserRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, MongoRefreshTokenRepository>();
+builder.Services.AddScoped<IAuthUserRepository, AuthUserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IControleRepository, ControleRepository>();
+builder.Services.AddScoped<IPrivilegeRepository, PrivilegeRepository>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IAuthUserService, AuthUserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IControleService, ControleService>();
+builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
 
 var app = builder.Build();
-
 // ── Initialize MongoDB indexes
-// --- Initialize MongoDB indexes on startup ---
+var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
+await MongoDbInitializer.InitializeAsync(mongoContext);
+
+// ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-    var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
-    await MongoDbInitializer.InitializeAsync(database);
-
-    // --- Seed initial admin user ---
-    var authUserService = scope.ServiceProvider.GetRequiredService<IAuthUserService>();
     var userRepository = scope.ServiceProvider.GetRequiredService<IAuthUserRepository>();
+    var roleRepository = scope.ServiceProvider.GetRequiredService<IRoleRepository>();
+    var controleRepository = scope.ServiceProvider.GetRequiredService<IControleRepository>();
+    var privilegeRepository = scope.ServiceProvider.GetRequiredService<IPrivilegeRepository>();
+    var authUserService = scope.ServiceProvider.GetRequiredService<IAuthUserService>();
 
-    var seedEmail = builder.Configuration["SeedUser:Email"] ?? "admin@erp.com";
-    var seedPassword = builder.Configuration["SeedUser:Password"] ?? "Admin@1234";
-    var seedRole = Enum.Parse<UserRole>(builder.Configuration["SeedUser:Role"] ?? "SystemAdmin");
-    if (!await userRepository.ExistsByEmailAsync(seedEmail))
-    {
-        _ = await authUserService.RegisterAsync(new ERP.AuthService.Application.DTOs.RegisterRequest(
-            Email: seedEmail,
-            Password: seedPassword,
-            Role: seedRole
-        ));
-    }
+    await AuthServiceSeeder.SeedAsync(
+        userRepository,
+        roleRepository,
+        controleRepository,
+        privilegeRepository,
+        authUserService,
+        builder.Configuration);
 }
 
 app.UseSwagger();
