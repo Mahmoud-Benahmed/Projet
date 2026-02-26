@@ -48,6 +48,75 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireAuthenticatedUser()
               .RequireRole("SystemAdmin"));
+
+    // privilege-based policies
+    options.AddPolicy("CanViewClients", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewClients"));
+
+    options.AddPolicy("CanCreateClient", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "CreateClient"));
+
+    options.AddPolicy("CanUpdateClient", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "UpdateClient"));
+
+    options.AddPolicy("CanDeleteClient", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "DeleteClient"));
+
+    options.AddPolicy("CanViewInvoices", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewInvoices"));
+
+    options.AddPolicy("CanCreateInvoice", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "CreateInvoice"));
+
+    options.AddPolicy("CanValidateInvoice", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ValidateInvoice"));
+
+    options.AddPolicy("CanViewPayments", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewPayments"));
+
+    options.AddPolicy("CanRecordPayment", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "RecordPayment"));
+
+    options.AddPolicy("CanViewArticles", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewArticles"));
+
+    options.AddPolicy("CanCreateArticle", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "CreateArticle"));
+
+    options.AddPolicy("CanUpdateArticle", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "UpdateArticle"));
+
+    options.AddPolicy("CanViewStock", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewStock"));
+
+    options.AddPolicy("CanUpdateStock", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "UpdateStock"));
+
+    options.AddPolicy("CanAddEntry", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "AddEntry"));
+
+    options.AddPolicy("CanViewReports", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ViewReports"));
+
+    options.AddPolicy("CanExportReports", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("privilege", "ExportReports"));
 });
 
 //////////////////////////////////////////////////
