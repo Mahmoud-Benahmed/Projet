@@ -5,7 +5,7 @@ using ERP.UserService.Application.Exceptions;
 using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Domain;
 
-public class UserProfileService: IUserProfileService
+public class UserProfileService : IUserProfileService
 {
     private readonly IUserProfileRepository _repository;
 
@@ -99,7 +99,7 @@ public class UserProfileService: IUserProfileService
     // =========================
     // UPDATE - COMPLETE PROFILE
     // =========================
-    public async Task<UserProfileResponseDto> CompleteProfileAsync(Guid authUserId,CompleteProfileDto dto)
+    public async Task<UserProfileResponseDto> CompleteProfileAsync(Guid authUserId, CompleteProfileDto dto)
     {
         var profile = await _repository.GetByAuthUserIdAsync(authUserId)
                       ?? throw new UserProfileNotFoundException(

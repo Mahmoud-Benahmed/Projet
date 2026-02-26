@@ -1,7 +1,5 @@
 ﻿using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Interfaces;
-using ERP.UserService.Application.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.UserService.Controllers;
@@ -28,7 +26,7 @@ public class UserProfilesController : ControllerBase
     {
         var result = await _service.CreateProfileAsync(dto);
 
-        return CreatedAtAction(nameof(GetById),new { id = result.Id },result);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
 

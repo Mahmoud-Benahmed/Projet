@@ -1,6 +1,6 @@
-﻿using ERP.UserService.Domain;
+﻿using ERP.UserService.Application.DTOs;
+using ERP.UserService.Domain;
 using Microsoft.EntityFrameworkCore;
-using ERP.UserService.Application.DTOs;
 
 namespace ERP.UserService.Infrastructure.Persistence;
 

@@ -1,6 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ERP.UserService.Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ERP.UserService.Domain;
 
 public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
 {

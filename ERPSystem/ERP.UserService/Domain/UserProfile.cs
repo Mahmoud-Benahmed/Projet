@@ -1,4 +1,5 @@
 ﻿namespace ERP.UserService.Domain;
+
 using ERP.UserService.Application.Exceptions;
 public class UserProfile
 {
