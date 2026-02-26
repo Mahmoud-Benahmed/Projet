@@ -1,6 +1,6 @@
 ﻿using ERP.AuthService.Domain;
 
-namespace ERP.AuthService.Application.Interfaces
+namespace ERP.AuthService.Application.Interfaces.Repositories
 {
     public interface IRefreshTokenRepository
     {

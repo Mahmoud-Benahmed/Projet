@@ -7,7 +7,7 @@ namespace ERP.AuthService.Application.Interfaces
         (string Token, DateTime ExpiresAt) GenerateAccessToken(
             Guid userId,
             string email,
-            UserRole role
+            RoleEnum role
         );
 
         string GenerateRefreshToken();

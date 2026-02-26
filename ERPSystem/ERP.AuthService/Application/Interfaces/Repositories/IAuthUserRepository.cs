@@ -1,6 +1,6 @@
 ﻿using ERP.AuthService.Domain;
 
-namespace ERP.AuthService.Application.Interfaces
+namespace ERP.AuthService.Application.Interfaces.Repositories
 {
     public interface IAuthUserRepository
     {
@@ -9,5 +9,6 @@ namespace ERP.AuthService.Application.Interfaces
         Task<AuthUser?> GetByIdAsync(Guid id);
         Task UpdateAsync(AuthUser user);
         Task<bool> ExistsByEmailAsync(string email);
+        Task<long> CountAsync();
     }
 }
