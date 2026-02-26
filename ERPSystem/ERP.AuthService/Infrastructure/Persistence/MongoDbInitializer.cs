@@ -7,26 +7,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
     {
         public static async Task InitializeAsync(MongoDbContext context)
         {
-            // AuthUsers — unique email
-            await context.AuthUsers.Indexes.CreateOneAsync(
-                new CreateIndexModel<AuthUser>(
-                    Builders<AuthUser>.IndexKeys.Ascending(u => u.Email),
-                    new CreateIndexOptions
-                    {
-                        Unique = true,
-                        Collation = new Collation("en", strength: CollationStrength.Primary)
-                    }));
-
-            // AuthUsers — unique Login(username)
-            await context.AuthUsers.Indexes.CreateOneAsync(
-                new CreateIndexModel<AuthUser>(
-                    Builders<AuthUser>.IndexKeys.Ascending(u => u.Login),
-                    new CreateIndexOptions
-                    {
-                        Unique = true,
-                        Collation = new Collation("en", strength: CollationStrength.Primary)
-                    }));
-
             // Controles — unique libelle
             await context.Controles.Indexes.CreateOneAsync(
                 new CreateIndexModel<Controle>(

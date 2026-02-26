@@ -112,25 +112,7 @@ await MongoDbInitializer.InitializeAsync(mongoContext);
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-    var userRepository = scope.ServiceProvider.GetRequiredService<IAuthUserRepository>();
-    var privilegeRepository = scope.ServiceProvider.GetRequiredService<IPrivilegeRepository>();
-    var controleRepository = scope.ServiceProvider.GetRequiredService<IControleRepository>();
-    var roleRepository = scope.ServiceProvider.GetRequiredService<IRoleRepository>();
-    var refreshTokenRepository= scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
-    var authUserService = scope.ServiceProvider.GetRequiredService<IAuthUserService>();
-
-
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    bool resetDb = configuration.GetValue<bool>("RunSeeders:ResetDatabase");
-    if (resetDb)
-    {
-        await privilegeRepository.DeleteAllAsync();
-        await controleRepository.DeleteAllAsync();
-        await roleRepository.DeleteAllAsync();
-        await refreshTokenRepository.DeleteAllAsync();
-        await userRepository.DeleteAllAsync();
-
-    }
 
     var services = scope.ServiceProvider;
     await AuthServiceSeeder.SeedAsync(

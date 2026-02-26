@@ -3,7 +3,8 @@ using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Messaging;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
+using ERP.UserService.Application.Events;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -28,12 +29,8 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<string, Controle>> SeedControlesAsync(
             IControleRepository controleRepository)
         {
-            if (await controleRepository.CountAsync() > 0)
-            {
-                // already seeded — just load into dictionary
-                var existing = await controleRepository.GetAllAsync();
-                return existing.ToDictionary(c => c.Libelle);
-            }
+            if(await controleRepository.CountAsync() > 0)
+                await controleRepository.DeleteAllAsync();
 
             var controles = new List<(string Category, string Libelle, string Description)>
             {
@@ -101,12 +98,9 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<RoleEnum, Role>> SeedRolesAsync(
             IRoleRepository roleRepository)
         {
-            if (await roleRepository.CountAsync() > 0)
-            {
-                // already seeded — just load into dictionary
-                var existing = await roleRepository.GetAllAsync();
-                return existing.ToDictionary(c => c.Libelle);
-            }
+            if(await roleRepository.CountAsync() > 0)
+                await roleRepository.DeleteAllAsync();
+
 
             var result = new Dictionary<RoleEnum, Role>();
 
@@ -137,7 +131,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
             Dictionary<string, Controle> controles)
         {
             if (await privilegeRepository.CountAsync() > 0)
-                return;
+                await privilegeRepository.DeleteAllAsync();
 
             // Format: (RoleEnum, ControleName, IsGranted)
             var matrix = new List<(RoleEnum Role, string Controle, bool IsGranted)>
@@ -276,7 +270,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IEventPublisher eventPublisher)
         {
             if (await userRepository.CountAsync() > 0)
-                return;
+                await userRepository.DeleteAllAsync();
 
             var seedUsers = new List<(string Login, string Email, string Password, RoleEnum Role)>
             {
@@ -308,7 +302,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
                  ));
 
                 // publish event so UserService creates the profile
-                await eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(user.Id.ToString(), user.Email));
+                await eventPublisher.PublishAsync(Topics.UserRegistered, new UserRegisteredEvent(user.Id.ToString(), user.Email));
             }
         }
     }
