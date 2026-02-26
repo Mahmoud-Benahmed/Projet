@@ -20,7 +20,7 @@ namespace ERP.AuthService.Infrastructure.Security
 
         public (string Token, DateTime ExpiresAt) GenerateAccessToken(
                 Guid userId,
-                string email,
+                string login,
                 RoleEnum role,
                 IEnumerable<string> privileges)
         {
@@ -33,7 +33,7 @@ namespace ERP.AuthService.Infrastructure.Security
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub,   userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim("login", login),
                 new Claim("role",                        role.ToString()),
             };
 

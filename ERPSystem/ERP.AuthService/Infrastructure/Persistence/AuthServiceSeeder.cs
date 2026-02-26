@@ -1,7 +1,9 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Infrastructure.Messaging;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -13,12 +15,13 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IControleRepository controleRepository,
             IPrivilegeRepository privilegeRepository,
             IAuthUserService authUserService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IEventPublisher eventPublisher)
         {
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
-            await SeedUsersAsync(userRepository, roleRepository, authUserService, configuration);
+            await SeedUsersAsync(userRepository, roleRepository, authUserService, configuration, eventPublisher);
         }
 
         // ── 1. SEED CONTROLES ─────────────────────────────
@@ -124,7 +127,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
             return result;
         }
-
 
 
 
@@ -270,24 +272,26 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IAuthUserService authUserService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IEventPublisher eventPublisher)
         {
             if (await userRepository.CountAsync() > 0)
                 return;
 
-            var seedUsers = new List<(string Email, string Password, RoleEnum Role)>
+            var seedUsers = new List<(string Login, string Email, string Password, RoleEnum Role)>
             {
                 (
+                configuration["SeedUser:Login"]    ?? "admin_erp1234",
                     configuration["SeedUser:Email"]    ?? "admin@erp.com",
                     configuration["SeedUser:Password"] ?? "Admin@1234",
                     Enum.Parse<RoleEnum>(configuration["SeedUser:Role"] ?? "SystemAdmin")
                 ),
-                ("sales@erp.com",   "Sales@1234",   RoleEnum.SalesManager),
-                ("stock@erp.com",   "Stock@1234",   RoleEnum.StockManager),
-                ("account@erp.com", "Account@1234", RoleEnum.Accountant),
+                ("sales_erp1234","sales@erp.com",   "Sales@1234",   RoleEnum.SalesManager),
+                ("stock_erp1234","stock@erp.com",   "Stock@1234",   RoleEnum.StockManager),
+                ("account_erp1234","account@erp.com", "Account@1234", RoleEnum.Accountant),
             };
 
-            foreach (var (email, password, roleEnum) in seedUsers)
+            foreach (var (login, email, password, roleEnum) in seedUsers)
             {
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
@@ -296,11 +300,15 @@ namespace ERP.AuthService.Infrastructure.Persistence
                            ?? throw new InvalidOperationException(
                                $"Role {roleEnum} not found.");
 
-                await authUserService.RegisterAsync(new RegisterRequestDto(
-                    Email: email,
-                    Password: password,
-                    RoleId: role.Id
-                ));
+                var user = await authUserService.RegisterAsync(new RegisterRequestDto(
+                     Login: login,
+                     Email: email,
+                     Password: password,
+                     RoleId: role.Id
+                 ));
+
+                // publish event so UserService creates the profile
+                await eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(user.Id.ToString(), user.Email));
             }
         }
     }

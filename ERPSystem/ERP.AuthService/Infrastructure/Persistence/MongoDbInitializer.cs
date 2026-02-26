@@ -17,6 +17,16 @@ namespace ERP.AuthService.Infrastructure.Persistence
                         Collation = new Collation("en", strength: CollationStrength.Primary)
                     }));
 
+            // AuthUsers — unique Login(username)
+            await context.AuthUsers.Indexes.CreateOneAsync(
+                new CreateIndexModel<AuthUser>(
+                    Builders<AuthUser>.IndexKeys.Ascending(u => u.Login),
+                    new CreateIndexOptions
+                    {
+                        Unique = true,
+                        Collation = new Collation("en", strength: CollationStrength.Primary)
+                    }));
+
             // Controles — unique libelle
             await context.Controles.Indexes.CreateOneAsync(
                 new CreateIndexModel<Controle>(

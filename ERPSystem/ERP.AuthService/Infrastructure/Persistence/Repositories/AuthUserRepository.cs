@@ -16,6 +16,9 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task AddAsync(AuthUser user)
             => await _collection.InsertOneAsync(user);
 
+        public async Task<AuthUser?> GetByLoginAsync(string login)
+            => await _collection.Find(x => x.Login == login).FirstOrDefaultAsync();
+
         public async Task<AuthUser?> GetByEmailAsync(string email)
             => await _collection.Find(x => x.Email == email).FirstOrDefaultAsync();
 
@@ -24,6 +27,9 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExistsByEmailAsync(string email)
             => await _collection.Find(x => x.Email == email).AnyAsync();
+
+        public async Task<bool> ExistsByLoginAsync(string login)
+            => await _collection.Find(x => x.Login == login).AnyAsync();
 
         public async Task UpdateAsync(AuthUser user)
             => await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
