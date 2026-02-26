@@ -1,21 +1,16 @@
-﻿using ERP.AuthService.Application.Interfaces;
+﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Configuration;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace ERP.AuthService.Infrastructure.Persistence
+namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {
-    public class MongoAuthUserRepository : IAuthUserRepository
+    public class AuthUserRepository : IAuthUserRepository
     {
         private readonly IMongoCollection<AuthUser> _collection;
 
-        public MongoAuthUserRepository(
-            IMongoClient client,
-            IOptions<MongoSettings> settings)
+        public AuthUserRepository(MongoDbContext context)
         {
-            var database = client.GetDatabase(settings.Value.DatabaseName);
-            _collection = database.GetCollection<AuthUser>("AuthUsers");
+            _collection = context.AuthUsers;
         }
 
         public async Task AddAsync(AuthUser user)
@@ -32,6 +27,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
         public async Task UpdateAsync(AuthUser user)
             => await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
-
+        public async Task<long> CountAsync()
+            => await _collection.CountDocumentsAsync(_ => true);
     }
 }

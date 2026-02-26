@@ -1,21 +1,16 @@
-﻿using ERP.AuthService.Application.Interfaces;
+﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Configuration;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace ERP.AuthService.Infrastructure.Persistence
+namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {
-    public class MongoRefreshTokenRepository : IRefreshTokenRepository
+    public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly IMongoCollection<RefreshToken> _collection;
 
-        public MongoRefreshTokenRepository(
-            IMongoClient client,
-            IOptions<MongoSettings> settings)
+        public RefreshTokenRepository(MongoDbContext context)
         {
-            var database = client.GetDatabase(settings.Value.DatabaseName);
-            _collection = database.GetCollection<RefreshToken>("RefreshTokens");
+            _collection = context.RefreshTokens;
         }
 
         public async Task AddAsync(RefreshToken token)
