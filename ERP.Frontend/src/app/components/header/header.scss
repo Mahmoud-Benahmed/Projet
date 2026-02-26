@@ -219,7 +219,7 @@ $danger:      #f87171;
     }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.05) !important;
+      background: rgba(255, 255, 255, 0.05);
 
       .mat-icon { color: $accent; }
     }
