@@ -34,7 +34,7 @@ namespace ERP.UserService.Infrastructure.Messaging
             };
 
             using var consumer = new ConsumerBuilder<string, string>(config).Build();
-            consumer.Subscribe("UserRegistered");
+            consumer.Subscribe(Topics.UserRegistered);
 
             _logger.LogInformation("UserRegisteredConsumer started.");
 

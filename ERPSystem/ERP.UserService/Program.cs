@@ -68,12 +68,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     db.Database.Migrate();
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    bool resetDb = configuration.GetValue<bool>("SeedUsers:ResetDatabase");
-
-    if (resetDb)
-    {
-        db.UserProfiles.ExecuteDelete();
-    }
+    db.UserProfiles.ExecuteDelete();
 }
 
 
