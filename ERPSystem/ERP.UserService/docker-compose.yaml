@@ -41,4 +41,5 @@ services:
 
 networks:
   erp-network:
-    driver: bridge
+    external: true
+    name: erp-network
