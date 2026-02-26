@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ERP.AuthService.Application.DTOs
+namespace ERP.AuthService.Application.DTOs.AuthUser
 {
     public record AdminChangeProfileRequest(
         [Required]

@@ -1,12 +1,11 @@
-﻿using ERP.AuthService.Domain;
-
-namespace ERP.AuthService.Application.DTOs
+﻿namespace ERP.AuthService.Application.DTOs.AuthUser
 {
     public record AuthUserGetResponseDto
     (
         Guid Id,
         string Email,
-        UserRole Role,
+        Guid RoleId,
+        string RoleName,
         bool MustChangePassword,
         bool IsActive,
         DateTime CreatedAt,

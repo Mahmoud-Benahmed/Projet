@@ -1,6 +1,6 @@
-﻿namespace ERP.AuthService.Application.DTOs
+﻿namespace ERP.AuthService.Application.DTOs.AuthUser
 {
-    public record AuthResponse(
+    public record AuthResponseDto(
         string AccessToken,
         string RefreshToken,
         bool MustChangePassword,
