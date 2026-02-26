@@ -37,9 +37,10 @@ export class HeaderComponent {
 
   allNavLinks: NavLink[] = [
     { label: 'Home', route: '/home', icon: 'home' },
+    { label: 'Settings', route: '/settings', icon: 'settings'},
     { label: 'Users', route: '/users', icon: 'group', roles: ['SystemAdmin'] },
     { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off', roles: ['SystemAdmin'] },
-    { label: 'Settings', route: '/settings', icon: 'settings' },
+    { label: 'Permissions', route: '/permissions', icon: 'security', roles: ['SystemAdmin']},
   ];
 
   get navLinks(): NavLink[] {
