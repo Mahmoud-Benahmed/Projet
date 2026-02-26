@@ -1,46 +1,176 @@
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$border:       rgba(255, 255, 255, 0.07);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$danger:       #f87171;
+$warn:         #fbbf24;
+$success:      #34d399;
+$radius:       12px;
+$radius-sm:    8px;
+
 .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background: #4682B4;
-  background: linear-gradient(90deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $surface;
+  padding: 1rem;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
 }
 
 .login-card {
   width: 100%;
-  max-width: 450px;
-  border-radius: 16px !important;
-  padding: 1rem;
+  max-width: 440px;
+  background: $surface-2 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius !important;
+  box-shadow: none !important;
+  padding: 1.5rem;
 
   mat-card-header {
-    justify-content: center;
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    padding: 0;
+
+    .header-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: $radius;
+      background: rgba($accent, 0.1);
+      border: 1px solid rgba($accent, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+
+      mat-icon {
+        font-size: 26px;
+        width: 26px;
+        height: 26px;
+        color: $accent;
+      }
+    }
+
+    mat-card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: $text-primary !important;
+      margin-bottom: 0.35rem;
+    }
+
+    mat-card-subtitle {
+      font-size: 0.875rem;
+      color: $text-muted !important;
+      max-width: 320px;
+      line-height: 1.5;
+    }
   }
 
-  mat-form-field {
-    width: 100%;
-    margin-bottom: 0.5rem;
+  mat-card-content {
+    padding: 0;
   }
 }
 
-button[mat-raised-button] {
+// ── FORM FIELDS ───────────────────────────────────
+.w-100 {
+  width: 100%;
+  margin-bottom: 0.25rem;
+
+  ::ng-deep {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: $border !important;
+    }
+
+    &:hover .mdc-notched-outline__leading,
+    &:hover .mdc-notched-outline__notch,
+    &:hover .mdc-notched-outline__trailing {
+      border-color: rgba($accent, 0.4) !important;
+    }
+
+    &.mat-focused .mdc-notched-outline__leading,
+    &.mat-focused .mdc-notched-outline__notch,
+    &.mat-focused .mdc-notched-outline__trailing {
+      border-color: $accent !important;
+    }
+
+    input {
+      color: $text-primary !important;
+      caret-color: $accent;
+    }
+
+    .mat-mdc-floating-label {
+      color: $text-muted !important;
+    }
+
+    .mat-mdc-form-field-icon-prefix mat-icon {
+      color: $text-muted;
+    }
+
+    .mat-mdc-icon-button mat-icon {
+      color: $text-muted;
+
+      &:hover {
+        color: $text-primary;
+      }
+    }
+
+    .mat-mdc-form-field-error {
+      color: $danger;
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// ── SUBMIT BUTTON ─────────────────────────────────
+.mt-2 {
+  margin-top: 1.25rem;
+}
+
+button[mat-raised-button][color="primary"] {
+  background: $accent !important;
+  color: #fff !important;
+  border-radius: $radius-sm !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  height: 42px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;  // ← ensure full width
-  margin: 0 auto; // ← center horizontally
 
-  mat-progress-spinner {
-    display: inline-flex;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    background: lighten(#4f8ef7, 6%) !important;
+    box-shadow: 0 0 0 3px $accent-glow !important;
   }
 }
 
+// ── LOADING STATE ─────────────────────────────────
 .btn-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  font-size: 0.875rem;
+  color: #fff;
+
+  mat-progress-spinner {
+    ::ng-deep circle {
+      stroke: rgba(255, 255, 255, 0.8);
+    }
+  }
 }
