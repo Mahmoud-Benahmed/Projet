@@ -1,0 +1,115 @@
+<div class="matrix-page">
+
+  <!-- Header -->
+  <div class="matrix-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>security</mat-icon>
+      </div>
+      <div>
+        <h1 class="header-title">Permission Matrix</h1>
+        <p class="header-subtitle">Manage role-based access control across all services</p>
+      </div>
+    </div>
+    <button mat-stroked-button class="refresh-btn" (click)="loadMatrix()" [disabled]="isLoading">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="isLoading">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    <span>Loading permission matrix...</span>
+  </div>
+
+  <!-- Matrix -->
+  <div class="matrix-container" *ngIf="!isLoading">
+
+    <!-- Role Legend -->
+    <div class="role-legend">
+      <div class="legend-label">Roles</div>
+      <div class="legend-roles">
+        <div class="legend-role" *ngFor="let role of roles">
+          <div class="role-badge">{{ formatRole(role.libelle) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Sections -->
+    <div class="category-section" *ngFor="let category of categories">
+
+      <!-- Category Header -->
+      <div class="category-header">
+        <div class="category-name">
+          <span class="category-dot"></span>
+          {{ category }}
+        </div>
+        <div class="category-roles">
+          <div class="category-role-label" *ngFor="let role of roles">
+            {{ formatRole(role.libelle) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Controle Rows -->
+      <div class="controle-row" *ngFor="let controle of getControlesByCategory(category); let last = last"
+           [class.last]="last">
+        <div class="controle-info">
+          <span class="controle-name">{{ controle.libelle }}</span>
+          <span class="controle-desc">{{ controle.description }}</span>
+        </div>
+
+        <div class="controle-cells">
+          <div class="cell-wrapper" *ngFor="let role of roles">
+            <ng-container [ngSwitch]="true">
+
+              <!-- Loading -->
+              <div class="cell cell--loading"
+                   *ngSwitchCase="getCell(role.id, controle.id)?.loading === true">
+                <mat-progress-spinner mode="indeterminate" diameter="16"></mat-progress-spinner>
+              </div>
+
+              <!-- Granted -->
+              <button class="cell cell--granted"
+                      *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
+                      (click)="togglePrivilege(role.id, controle.id)"
+                      [matTooltip]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
+                <mat-icon>check</mat-icon>
+              </button>
+
+              <!-- Denied -->
+              <button class="cell cell--denied"
+                      *ngSwitchDefault
+                      (click)="togglePrivilege(role.id, controle.id)"
+                      [matTooltip]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
+                <mat-icon>close</mat-icon>
+              </button>
+
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Stats Footer -->
+    <div class="matrix-footer">
+      <div class="stat">
+        <span class="stat-value">{{ roles.length }}</span>
+        <span class="stat-label">Roles</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value">{{ controles.length }}</span>
+        <span class="stat-label">Controls</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value">{{ categories.length }}</span>
+        <span class="stat-label">Services</span>
+      </div>
+    </div>
+
+  </div>
+</div>

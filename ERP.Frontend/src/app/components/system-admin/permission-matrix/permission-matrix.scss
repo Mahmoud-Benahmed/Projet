@@ -1,0 +1,365 @@
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$surface-4:    #242840;
+$border:       rgba(255, 255, 255, 0.07);
+$border-hover: rgba(255, 255, 255, 0.12);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$text-dim:     #4b5563;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$success:      #34d399;
+$success-glow: rgba(52, 211, 153, 0.12);
+$danger:       #f87171;
+$danger-glow:  rgba(248, 113, 113, 0.12);
+$warn:         #fbbf24;
+$radius:       12px;
+$radius-sm:    8px;
+$radius-xs:    6px;
+
+// ── PAGE ──────────────────────────────────────────────
+.matrix-page {
+  min-height: 100vh;
+  background: $surface;
+  padding: 2rem;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: $text-primary;
+}
+
+// ── HEADER ────────────────────────────────────────────
+.matrix-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-sm;
+    background: rgba($accent, 0.1);
+    border: 1px solid rgba($accent, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      color: $accent;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .header-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .header-subtitle {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
+.refresh-btn {
+  color: $text-muted !important;
+  border-color: $border !important;
+  border-radius: $radius-sm !important;
+  font-size: 13px;
+  gap: 4px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $accent;
+  }
+
+  &:hover {
+    border-color: rgba($accent, 0.4) !important;
+    color: $text-primary !important;
+    background: rgba($accent, 0.05) !important;
+  }
+}
+
+// ── LOADING ───────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: $text-muted;
+  font-size: 0.9rem;
+
+  ::ng-deep .mat-mdc-progress-spinner circle {
+    stroke: $accent !important;
+  }
+}
+
+// ── MATRIX CONTAINER ──────────────────────────────────
+.matrix-container {
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $radius;
+  overflow: hidden;
+}
+
+// ── ROLE LEGEND ───────────────────────────────────────
+.role-legend {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: $surface-3;
+  border-bottom: 1px solid $border;
+  gap: 1rem;
+
+  .legend-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    min-width: 280px;
+  }
+
+  .legend-roles {
+    display: flex;
+    gap: 0;
+    flex: 1;
+  }
+
+  .legend-role {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .role-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $accent;
+    background: rgba($accent, 0.1);
+    border: 1px solid rgba($accent, 0.2);
+    border-radius: $radius-xs;
+    padding: 4px 10px;
+    white-space: nowrap;
+    text-align: center;
+  }
+}
+
+// ── CATEGORY SECTION ──────────────────────────────────
+.category-section {
+  & + .category-section {
+    border-top: 1px solid $border;
+  }
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1.5rem;
+  background: rgba($surface-4, 0.5);
+  border-bottom: 1px solid $border;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
+  .category-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    min-width: 280px;
+  }
+
+  .category-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $warn;
+    flex-shrink: 0;
+  }
+
+  .category-roles {
+    display: flex;
+    flex: 1;
+    gap: 0;
+  }
+
+  .category-role-label {
+    flex: 1;
+    text-align: center;
+    font-size: 0.7rem;
+    color: $text-dim;
+    font-weight: 500;
+  }
+}
+
+// ── CONTROLE ROW ──────────────────────────────────────
+.controle-row {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1.5rem;
+  border-bottom: 1px solid rgba($border, 0.5);
+  transition: background 0.15s;
+  gap: 1rem;
+
+  &:last-child,
+  &.last {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba($surface-3, 0.4);
+  }
+}
+
+.controle-info {
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .controle-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $text-primary;
+  }
+
+  .controle-desc {
+    font-size: 0.72rem;
+    color: $text-dim;
+  }
+}
+
+.controle-cells {
+  display: flex;
+  flex: 1;
+  gap: 0;
+}
+
+.cell-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// ── CELLS ─────────────────────────────────────────────
+.cell {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  outline: none;
+  padding: 0;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &--granted {
+    background: $success-glow;
+    border: 1px solid rgba($success, 0.3);
+    color: $success;
+
+    mat-icon { color: $success; }
+
+    &:hover {
+      background: rgba($danger, 0.15);
+      border-color: rgba($danger, 0.4);
+      color: $danger;
+
+      mat-icon { color: $danger; }
+    }
+  }
+
+  &--denied {
+    background: transparent;
+    border: 1px solid $border;
+    color: $text-dim;
+
+    mat-icon { color: $text-dim; }
+
+    &:hover {
+      background: $success-glow;
+      border-color: rgba($success, 0.4);
+      color: $success;
+
+      mat-icon { color: $success; }
+    }
+  }
+
+  &--loading {
+    background: transparent;
+    border: 1px solid $border;
+    cursor: default;
+
+    ::ng-deep .mat-mdc-progress-spinner circle {
+      stroke: $accent !important;
+    }
+  }
+}
+
+// ── FOOTER ────────────────────────────────────────────
+.matrix-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem;
+  border-top: 1px solid $border;
+  background: $surface-3;
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $accent;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: $text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 32px;
+    background: $border;
+  }
+}
