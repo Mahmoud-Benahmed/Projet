@@ -161,20 +161,65 @@ docker-compose up -d
 ```
 
 ---
+# 🚀 Running the Project
 
-# 🚀 Running the Auth Service
+## Prerequisites
 
-## 1️⃣ Restore dependencies
+Ensure the following are installed and configured before running the project:
+
+| Requirement | Purpose |
+|---|---|
+| **ASP.NET 10** | Backend runtime |
+| **MongoDB, mongosh & MongoDB Compass** | Database for `AuthService` |
+| **SQL Server & SSMS** | Databases for remaining services |
+| **Docker Desktop** + WSL2 | Container orchestration |
+| **Node.js & Angular 21** | Frontend |
+
+> ⚠️ **Docker requirement:** Make sure **WSL2 integration** is enabled in Docker Desktop settings.
+
+---
+
+## Running the Project
+
+### Option 1 — Localhost (Visual Studio)
+
+> **Services involved:** `ERP.AuthService`, `ERP.UserService`, `ERP.Gateway`
+
+**Step 1 — Start Kafka via Docker**
+
+Open a WSL terminal (Ubuntu or run `bash` in cmd), navigate to the project root, and run:
 
 ```bash
-dotnet restore
+user@pc:ERPSystem/$ docker compose up --build -d
 ```
 
-## 2️⃣ Run project
+This starts Kafka, which handles inter-service communication between `AuthService` and `UserService`. **Do not proceed until Kafka is running correctly.**
+
+**Step 2 — Launch services in Visual Studio**
+
+Select the `Launch Services` run profile, which starts all three services simultaneously, then hit the ▶️ **Start** button.
+
+> 📝 **Note on data seeding:** On every startup, existing data in `ERPAuthDb` (MongoDB) and `ERPUsersDb` (SQL Server) is **wiped and re-seeded**. If you want to preserve existing data, you'll need to disable auto-seeding in `AuthService`, `UserService`, or both — otherwise the services may crash on launch if stale data is detected.
+
+---
+
+### Option 2 — Full Docker
+
+**Step 1 — Open a WSL terminal** and navigate to the project root.
+
+**Step 2 — Run the startup script:**
 
 ```bash
-dotnet run
+user@pc:ERPSystem/$ ./start-services.sh
 ```
+
+**What the script does:**
+- Removes any previously built service containers (e.g. `erp-auth`, `erp-users`)
+- Scans for available service directories (`ERP.AuthService`, `ERP.UserService`, etc.)
+- Runs `docker-compose` for each, building and starting every service container
+```
+
+Key improvements made: added a prerequisites table for scannability, used clear numbered steps with bold headers, surfaced the important data-seeding warning more prominently, clarified what the startup script does, and cleaned up typos and inconsistent formatting throughout.
 
 ## 3️⃣ Open Swagger
 
