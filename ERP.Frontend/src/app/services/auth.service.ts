@@ -9,14 +9,7 @@ import { AdminChangePasswordRequest, AuthResponse, ChangePasswordRequest, LoginR
   providedIn: 'root',
 })
 export class AuthService {
-  private baseUrl = `${environment.apiUrl}${environment.authUrl}`;
-  readonly roles: RoleDto[] = [
-    { value: 'Accountant', label: 'Accountant' },
-    { value: 'HRManager', label: 'HR Manager' },
-    { value: 'SalesManager', label: 'Sales Manager' },
-    { value: 'StockManager', label: 'Stock Manager' },
-    { value: 'SystemAdmin', label: 'System Admin' }
-  ];
+  private baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -123,7 +116,19 @@ export class AuthService {
 
 
   get hasRole(): boolean {
-    return this.roles.some(r => r.value === this.Role);
+    return this.Role !== null;
+  }
+
+  get Privileges(): string[] {
+    const decoded = this.decodeAccessToken();
+    if (!decoded) return [];
+    const p = decoded['privilege'];
+    if (!p) return [];
+    return Array.isArray(p) ? p : [p];
+  }
+
+  hasPrivilege(privilege: string): boolean {
+    return this.Privileges.includes(privilege);
   }
 
     // Add to storeTokens or call separately after login

@@ -15,7 +15,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest extends LoginRequest{
-  role: 'Accountant' | 'SalesManager' | 'StockManager' | 'HRManager' | 'SystemAdmin' | ''
+  roleId: ''
 }
 
 export interface AuthResponse{
