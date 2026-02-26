@@ -1,14 +1,14 @@
-﻿using ERP.AuthService.Application.DTOs;
-using ERP.AuthService.Application.Exceptions;
-using ERP.AuthService.Application.Interfaces;
-using ERP.AuthService.Application.Services;
+﻿using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Application.Exceptions.AuthUser;
+using ERP.AuthService.Application.Interfaces.Services;
+using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Mvc;
 using System.Security;
 
 namespace ERP.AuthService.Controllers
 {
     [ApiController]
-    [Route("auth")]
+    [Route(ApiRoutes.Auth.Base)]
     public class AuthController : ControllerBase
     {
         private readonly IAuthUserService _authService;
@@ -26,8 +26,9 @@ namespace ERP.AuthService.Controllers
             return Ok(result);
         }
 
+
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        public async Task<IActionResult> Register(RegisterRequestDto request)
         {
             try
             {
@@ -43,7 +44,7 @@ namespace ERP.AuthService.Controllers
 
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequest request)
+        public async Task<IActionResult> Login(LoginRequestDto request)
         {
             try
             {
@@ -62,55 +63,8 @@ namespace ERP.AuthService.Controllers
         }
 
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh(RefreshTokenRequest request)
-        {
-            try
-            {
-                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
-                return Ok(result);
-            }
-            catch (InvalidCredentialsException)
-            {
-                return Unauthorized(new { message = "Invalid refresh token." });
-            }
-            catch (SecurityException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch(TokenAlreadyRevokedException te)
-            {
-                return Unauthorized(new { message = te.Message });
-            }
-            catch(UnauthorizedAccessException e)
-            {
-                return Unauthorized(new { message = e.Message });
-            }
-        }
-
-
-        [HttpPost("revoke")]
-        public async Task<IActionResult> Revoke(RefreshTokenRequest request)
-        {
-            try
-            {
-                await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
-                return NoContent();
-            }
-            catch (TokenAlreadyRevokedException te)
-            {
-                return Unauthorized(new { message = te.Message });
-            }
-            catch(UnauthorizedAccessException e)
-            {
-                return Unauthorized(new { message = e.Message });
-            }
-        }
-
-
-
         [HttpPut("change-password/profile")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             var requesterId = User.FindFirst("sub")?.Value;
 
@@ -162,5 +116,52 @@ namespace ERP.AuthService.Controllers
                 return NotFound(new { message = ex.Message });
             }
         }
+
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(RefreshTokenRequestDto request)
+        {
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+                return Ok(result);
+            }
+            catch (InvalidCredentialsException)
+            {
+                return Unauthorized(new { message = "Invalid refresh token." });
+            }
+            catch (SecurityException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (TokenAlreadyRevokedException te)
+            {
+                return Unauthorized(new { message = te.Message });
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return Unauthorized(new { message = e.Message });
+            }
+        }
+
+
+        [HttpPost("revoke")]
+        public async Task<IActionResult> Revoke(RefreshTokenRequestDto request)
+        {
+            try
+            {
+                await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+                return NoContent();
+            }
+            catch (TokenAlreadyRevokedException te)
+            {
+                return Unauthorized(new { message = te.Message });
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return Unauthorized(new { message = e.Message });
+            }
+        }
+
     }
 }

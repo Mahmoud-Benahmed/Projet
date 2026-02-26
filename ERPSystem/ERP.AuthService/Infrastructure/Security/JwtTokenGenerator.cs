@@ -18,10 +18,7 @@ namespace ERP.AuthService.Infrastructure.Security
             _jwtSettings = jwtSettings.Value;
         }
 
-        public (string Token, DateTime ExpiresAt) GenerateAccessToken(
-            Guid userId,
-            string email,
-            UserRole role)
+        public (string Token, DateTime ExpiresAt) GenerateAccessToken(Guid userId, string email, RoleEnum role)
         {
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Secret));
@@ -42,12 +39,11 @@ namespace ERP.AuthService.Infrastructure.Security
             var expires = DateTime.UtcNow
                 .AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
 
-            var token = new JwtSecurityToken(
-                issuer: _jwtSettings.Issuer,
-                audience: _jwtSettings.Audience,
-                claims: claims,
-                expires: expires,
-                signingCredentials: credentials);
+            var token = new JwtSecurityToken(issuer: _jwtSettings.Issuer,
+                                            audience: _jwtSettings.Audience,
+                                            claims: claims,
+                                            expires: expires,
+                                            signingCredentials: credentials);
 
             var tokenString = new JwtSecurityTokenHandler()
                 .WriteToken(token);
