@@ -12,7 +12,7 @@ import { environment } from '../environment';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
-  private readonly baseUrl = `${environment.apiUrl}${environment.usersUrl}`;
+  private readonly baseUrl = `${environment.apiUrl}${environment.routes.users}`;
 
   constructor(private http: HttpClient) {}
 

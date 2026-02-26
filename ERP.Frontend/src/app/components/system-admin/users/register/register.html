@@ -90,11 +90,11 @@
         <mat-form-field appearance="outline">
           <mat-label>Rôle</mat-label>
           <mat-select name="role"
-                      [(ngModel)]="credentials.role"
+                      [(ngModel)]="credentials.roleId"
                       required
                       #roleInput="ngModel">
-            @for (role of roles; track role.value) {
-              <mat-option [value]="role.value">{{ role.label }}</mat-option>
+            @for (role of roles; track role.libelle) {
+              <mat-option [value]="role.id">{{ role.libelle }}</mat-option>
             }
           </mat-select>
           <mat-icon matPrefix>badge</mat-icon>

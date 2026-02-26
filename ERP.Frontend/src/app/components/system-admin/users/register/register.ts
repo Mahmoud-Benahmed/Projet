@@ -14,6 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
+import { RoleResponseDto, RoleService } from '../../../../services/role.service';
 
 @HostBinding('class')
 @Component({
@@ -34,12 +35,14 @@ import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
 })
 export class RegisterComponent implements OnDestroy {
 
-  credentials: RegisterRequest = { email: '', password: '', role: '' };
+  credentials: RegisterRequest = { email: '', password: '', roleId: '' };
   errorMessage = '';
   successMessage = '';
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
+
+  roles: RoleResponseDto[] = [];
 
 
   passwordErrors: string[] = [];
@@ -48,8 +51,15 @@ export class RegisterComponent implements OnDestroy {
 
   constructor(private router: Router,
               private authService: AuthService,
+              private roleService: RoleService,
               private cdr: ChangeDetectorRef,
               private dialog: MatDialog) {}
+
+  ngOnInit(): void {
+    this.roleService.getAll().subscribe(
+      roles => this.roles = roles
+    );
+  }
 
   get hostClass(): string {
     return this.passwordStrength
@@ -139,10 +149,6 @@ export class RegisterComponent implements OnDestroy {
       'very strong': 'Très fort',
     };
     return map[this.passwordStrength] ?? '';
-  }
-
-  get roles(): RoleDto[]{
-    return this.authService.roles;
   }
 
   goToLogin(): void {
