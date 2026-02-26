@@ -1,4 +1,4 @@
-﻿namespace ERP.AuthService.Application.Exceptions
+﻿namespace ERP.AuthService.Application.Exceptions.AuthUser
 {
     public class UserNotFoundException : Exception
     {

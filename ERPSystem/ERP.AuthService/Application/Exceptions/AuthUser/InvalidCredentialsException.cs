@@ -1,6 +1,6 @@
-﻿namespace ERP.AuthService.Application.Exceptions
+﻿namespace ERP.AuthService.Application.Exceptions.AuthUser
 {
-    public class InvalidCredentialsException: Exception
+    public class InvalidCredentialsException : Exception
     {
         public InvalidCredentialsException() : base("Invalid credentials.")
         {

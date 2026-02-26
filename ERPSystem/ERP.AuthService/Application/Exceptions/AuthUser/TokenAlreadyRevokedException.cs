@@ -1,6 +1,6 @@
-﻿namespace ERP.AuthService.Application.Exceptions
+﻿namespace ERP.AuthService.Application.Exceptions.AuthUser
 {
-    public class TokenAlreadyRevokedException: Exception
+    public class TokenAlreadyRevokedException : Exception
     {
         public TokenAlreadyRevokedException() : base("Token already revoked.")
         {
