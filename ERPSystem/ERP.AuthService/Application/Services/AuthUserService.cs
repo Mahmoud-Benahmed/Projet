@@ -1,4 +1,5 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
@@ -22,6 +23,7 @@ namespace ERP.AuthService.Application.Services
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
+        private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
             IAuthUserRepository userRepository,
@@ -30,7 +32,8 @@ namespace ERP.AuthService.Application.Services
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository)
+            IPrivilegeRepository privilegeRepository,
+            IEventPublisher eventPublisher)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -39,6 +42,7 @@ namespace ERP.AuthService.Application.Services
             _passwordHasher = passwordHasher;
             _controleRepository = controleRepository;
             _privilegeRepository = privilegeRepository;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<AuthUserGetResponseDto> GetByIdAsync(Guid id)
@@ -49,26 +53,43 @@ namespace ERP.AuthService.Application.Services
             return await MapToDtoAsync(user);
         }
 
-        public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
+        public async Task<AuthUserGetResponseDto> GetByLoginAsync(string login)
         {
+            var user= await _userRepository.GetByLoginAsync(login)
+                        ?? throw new UserNotFoundException(login);
+
+            return await MapToDtoAsync(user);
+        }
+
+        public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request)
+        {
+            if (await _userRepository.ExistsByLoginAsync(request.Login))
+                throw new LoginAlreadyExsistException();
+
             if (await _userRepository.ExistsByEmailAsync(request.Email))
                 throw new EmailAlreadyExistsException();
 
             var role = await _roleRepository.GetByIdAsync(request.RoleId) ?? throw new InvalidOperationException("Role not found.");
 
-            var user = new AuthUser(request.Email);
+            var user = new AuthUser(request.Login, request.Email);
             var hashedPassword = _passwordHasher.HashPassword(user, request.Password);
             user.SetPasswordHash(hashedPassword);
             user.SetRole(role.Id);
 
             await _userRepository.AddAsync(user);
 
-            return await GenerateAuthResponseAsync(user);
+            // publish event to Kafka
+            await _eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(
+                AuthUserId: user.Id.ToString(),
+                Email: user.Email
+            ));
+
+            return await MapToDtoAsync(user);
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email)
+            var user = await _userRepository.GetByLoginAsync(request.Login)
                 ?? throw new InvalidCredentialsException();
 
             if (!user.CanLogin())
@@ -210,7 +231,7 @@ namespace ERP.AuthService.Application.Services
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
-                user.Email,
+                user.Login,
                 role.Libelle,
                 privilegeNames
             );
@@ -239,6 +260,7 @@ namespace ERP.AuthService.Application.Services
             return new AuthUserGetResponseDto(
                 Id: user.Id,
                 Email: user.Email,
+                Login: user.Login,
                 RoleId: user.RoleId,
                 RoleName: role.Libelle.ToString(),
                 MustChangePassword: user.MustChangePassword,

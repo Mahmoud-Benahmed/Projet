@@ -10,6 +10,9 @@ namespace ERP.AuthService.Domain
         [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid Id { get; private set; }
 
+        [BsonRequired]
+        public string Login { get; private set; }
+
         public string Email { get; set; } = default!;
 
         public string PasswordHash { get; set; } = default!;
@@ -30,14 +33,17 @@ namespace ERP.AuthService.Domain
 
         private AuthUser() { }
 
-        public AuthUser(string email)
+        public AuthUser(string login, string email)
         {
+            if (string.IsNullOrWhiteSpace(login))
+                throw new ArgumentException("Username is required");
+
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email is required");
 
-
             Id = Guid.NewGuid();
             Email = email;
+            Login= login;
             CreatedAt = DateTime.UtcNow;
         }
 

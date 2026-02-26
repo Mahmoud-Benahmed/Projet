@@ -2,8 +2,8 @@
 {
     public class UserNotFoundException : Exception
     {
-        public UserNotFoundException(string email)
-            : base($"User with email '{email}' was not found.")
+        public UserNotFoundException(string login)
+            : base($"User with login '{login}' was not found.")
         {
         }
 
