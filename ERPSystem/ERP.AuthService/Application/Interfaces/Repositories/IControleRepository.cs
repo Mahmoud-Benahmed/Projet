@@ -11,6 +11,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task AddAsync(Controle controle);
         Task UpdateAsync(Controle controle);
         Task DeleteAsync(Guid id);
+        Task DeleteAllAsync();
         Task<long> CountAsync();
 
     }

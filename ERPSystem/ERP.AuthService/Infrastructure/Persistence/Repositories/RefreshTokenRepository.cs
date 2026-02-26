@@ -43,6 +43,11 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
                 x => x.UserId == userId && !x.IsRevoked,
                 update);
         }
+
+        public async Task DeleteAllAsync()
+        {
+            await _collection.DeleteManyAsync(FilterDefinition<RefreshToken>.Empty);
+        }
     }
 
 }

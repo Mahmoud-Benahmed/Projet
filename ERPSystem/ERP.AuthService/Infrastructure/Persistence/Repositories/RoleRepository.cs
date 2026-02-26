@@ -31,6 +31,11 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task DeleteAsync(Guid id)
             => await _collection.DeleteOneAsync(x => x.Id == id);
 
+        public async Task DeleteAllAsync()
+        {
+            await _collection.DeleteManyAsync(FilterDefinition<Role>.Empty);
+        }
+
         public async Task<long> CountAsync()
             => await _collection.CountDocumentsAsync(_ => true);
     }

@@ -10,6 +10,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task AddAsync(Role role);
         Task UpdateAsync(Role role);
         Task DeleteAsync(Guid id);
+        Task DeleteAllAsync();
         Task<long> CountAsync();
     }
 }

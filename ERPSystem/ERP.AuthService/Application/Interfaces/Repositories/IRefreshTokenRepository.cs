@@ -11,5 +11,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task UpdateAsync(RefreshToken token);
 
         Task RevokeAllByUserIdAsync(Guid userId);
+
+        Task DeleteAllAsync();
     }
 }

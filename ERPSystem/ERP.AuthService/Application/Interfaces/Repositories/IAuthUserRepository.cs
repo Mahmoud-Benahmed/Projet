@@ -10,5 +10,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task UpdateAsync(AuthUser user);
         Task<bool> ExistsByEmailAsync(string email);
         Task<long> CountAsync();
+
+        Task DeleteAllAsync();
     }
 }
