@@ -12,7 +12,7 @@ namespace ERP.AuthService.Domain
         [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid UserId { get; private set; }
 
-        public string Token { get; private set; }
+        public string Token { get; set; }
 
         public DateTime ExpiresAt { get; private set; }
 
@@ -23,7 +23,7 @@ namespace ERP.AuthService.Domain
         public DateTime? RevokedAt { get; private set; }
 
 
-        [BsonConstructor] // tells MongoDB which constructor to use for deserialization
+        [BsonConstructor]
         private RefreshToken() { }
 
         public RefreshToken(Guid userId, string token, DateTime expiresAt)

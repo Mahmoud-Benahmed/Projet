@@ -10,21 +10,23 @@ namespace ERP.AuthService.Domain
         [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid Id { get; private set; }
 
-        public string Email { get; set; }= default!;
+        public string Email { get; set; } = default!;
 
-        public string PasswordHash { get; set; }= default!;
+        public string PasswordHash { get; set; } = default!;
 
         public bool MustChangePassword { get; private set; } = true;
 
         public bool IsActive { get; private set; } = false;
+
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
+        public Guid RoleId { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
 
         public DateTime? LastLoginAt { get; private set; }
 
-        [BsonRepresentation(BsonType.String)]
-        public UserRole Role { get; set; }
+
 
         private AuthUser() { }
 
@@ -45,11 +47,9 @@ namespace ERP.AuthService.Domain
                 throw new ArgumentException("Password hash is required");
             PasswordHash = passwordHash;
         }
-        public void SetRole(UserRole role)
+        public void SetRole(Guid roleId)
         {
-            if (!Enum.IsDefined(typeof(UserRole), role))
-                throw new ArgumentException($"Invalid role: {role}");
-            Role = role;
+            RoleId = roleId;
             UpdatedAt = DateTime.UtcNow;
         }
 
