@@ -8,7 +8,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
 import { AuthUserDto } from '../../interfaces/AuthDto';
@@ -30,7 +29,6 @@ import { FullProfile } from '../../interfaces/UserProfileDto';
     MatDividerModule,
     MatBadgeModule,
     MatTooltipModule,
-    MatSnackBarModule,
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -40,19 +38,19 @@ export class HeaderComponent implements OnInit {
   @Output() logoutClicked = new EventEmitter<void>();
   @Output() sidenavToggle = new EventEmitter<void>();
 
-  userLogin: string= '';
-  userRole: string= '';
 
   authUser: FullProfile | null = null;
   allNavLinks: NavLink[] = [
-    { label: 'Home',        route: '/home',              icon: 'home'                           },
-    { label: 'Settings',    route: '/settings',          icon: 'settings'                       },
-    { label: 'Users',       route: '/users',             icon: 'group',     roles: ['SystemAdmin'] },
+    { label: 'Home', route: '/home', icon: 'home' },
+    { label: 'Settings', route: '/settings', icon: 'settings'},
+    { label: 'Users', route: '/users', icon: 'group', roles: ['SystemAdmin'] },
     { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off', roles: ['SystemAdmin'] },
-    { label: 'Permissions', route: '/permissions',       icon: 'security',  roles: ['SystemAdmin'] },
+    { label: 'Permissions', route: '/permissions', icon: 'security', roles: ['SystemAdmin']},
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService,
+              private userProfileService: UsersService,
+            private snackBar: MatSnackBar){}
 
   ngOnInit(){
      forkJoin({
@@ -80,6 +78,7 @@ export class HeaderComponent implements OnInit {
       !link.roles || link.roles.includes(this.authService.Role!)
     );
   }
+
 
   onLogout(): void {
     this.logoutClicked.emit();

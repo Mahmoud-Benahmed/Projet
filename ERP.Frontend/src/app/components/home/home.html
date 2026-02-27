@@ -8,9 +8,9 @@
     </div>
     <div class="top-bar__right">
       <div class="top-bar__user">
-        <div class="top-bar__avatar"><mat-icon>person</mat-icon></div>
+        <div class="top-bar__avatar">{{ initials }}</div>
         <div class="top-bar__user-meta">
-          <span class="top-bar__email">{{login}}</span>
+          <span class="top-bar__email">{{ email }}</span>
           <span class="top-bar__role">{{ role }}</span>
         </div>
       </div>
@@ -55,7 +55,7 @@
     </div>
     <div class="info-card__body">
       <span class="info-card__title">You're signed in as <strong>{{ role }}</strong></span>
-      <span class="info-card__sub">{{ role }}</span>
+      <span class="info-card__sub">{{ email }}</span>
     </div>
   </div>
 

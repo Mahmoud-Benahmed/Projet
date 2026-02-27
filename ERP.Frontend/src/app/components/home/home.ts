@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './home.scss',
 })
 export class HomeComponent implements OnInit {
-  login: string | null = null;
+  email: string | null = null;
   role: string | null = null;
 
   constructor(private authService: AuthService) {}
@@ -24,7 +24,7 @@ export class HomeComponent implements OnInit {
       this.authService.logout();
       return;
     }
-    this.login = this.authService.Login;
+    this.email = this.authService.Email;
     this.role  = this.authService.Role;
   }
 
@@ -33,6 +33,15 @@ export class HomeComponent implements OnInit {
   }
 
   get firstName(): string {
-    return this.login?.split('@')[0] ?? 'there';
+    return this.email?.split('@')[0] ?? 'there';
+  }
+
+  get initials(): string {
+    return (this.email?.split('@')[0] ?? '?')
+      .split('.')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   }
 }
