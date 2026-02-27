@@ -72,7 +72,9 @@ export function checkPassword(
     score += 1;
   }
 
-  if (requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  const specialCharsRegex = /[!@#$%^&*()_+\-=\[\]{};:\\|,.?]/;
+
+  if (requireSpecialChars && !specialCharsRegex.test(password)) {
     errors.push("Password must contain at least one special character.");
   } else if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
     score += 1;
@@ -112,7 +114,7 @@ export function generatePassword(): string {
       upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
       lower: 'abcdefghijklmnopqrstuvwxyz',
       numbers: '0123456789',
-      symbols: '!@#$%^&*'
+      symbols: '!@#$%^=*'
     };
 
     const allChars = chars.upper + chars.lower + chars.numbers + chars.symbols;
