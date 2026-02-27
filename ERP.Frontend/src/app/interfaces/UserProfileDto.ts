@@ -11,9 +11,10 @@ export interface UserProfileResponseDto {
 }
 
 export interface FullProfile extends UserProfileResponseDto {
-  role: string;
+  login: string
+  roleName: string;
   mustChangePassword: boolean;
-  lastLoginAt: string | null;
+  lastLoginAt?: string;
 }
 
 export interface CreateUserProfileDto {
