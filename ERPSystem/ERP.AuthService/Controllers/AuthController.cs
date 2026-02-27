@@ -27,7 +27,7 @@ namespace ERP.AuthService.Controllers
         }
 
 
-        [HttpGet("{login:string}")]
+        [HttpGet("{login}")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthUserByLogin(string login)
         {
