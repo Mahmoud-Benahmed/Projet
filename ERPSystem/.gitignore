@@ -464,3 +464,5 @@ docker-compose.override.yml
 Thumbs.db
 "ERP.Gateway/appsettings.Development.json" 
 "ERP.Gateway/appsettings.Docker.json" 
+scripts/ 
+start-kafka.sh
