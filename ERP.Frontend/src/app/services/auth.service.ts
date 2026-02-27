@@ -17,6 +17,18 @@ export class AuthService {
     return this.http.get<AuthUserDto>(this.baseUrl+`/${id}`);
   }
 
+  getUserByEmail(email: string): Observable<AuthUserDto>{
+    return this.http.get<AuthUserDto>(this.baseUrl+`/${email}`);
+  }
+
+  existsByEmail(email:string): Observable<boolean>{
+    return this.http.get<boolean>(this.baseUrl+`/exists-email/${email}`);
+  }
+
+  existsByLogin(login:string): Observable<boolean>{
+    return this.http.get<boolean>(this.baseUrl+`/exists-login/${login}`);
+  }
+
   getUserByLogin(login: string): Observable<AuthUserDto>{
     return this.http.get<AuthUserDto>(this.baseUrl+`/${login}`);
   }
