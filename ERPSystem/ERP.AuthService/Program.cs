@@ -4,7 +4,7 @@ using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Application.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Configuration;
-using ERP.AuthService.Infrastructure.Messaging;
+//using ERP.AuthService.Infrastructure.Messaging;
 using ERP.AuthService.Infrastructure.Persistence;
 using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Security;
@@ -102,7 +102,7 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
-builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+//builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();
 // ── Initialize MongoDB indexes
@@ -121,8 +121,8 @@ using (var scope = app.Services.CreateScope())
         services.GetRequiredService<IControleRepository>(),
         services.GetRequiredService<IPrivilegeRepository>(),
         services.GetRequiredService<IAuthUserService>(),
-        services.GetRequiredService<IConfiguration>(),
-        services.GetRequiredService<IEventPublisher>()  // ← add this
+        services.GetRequiredService<IConfiguration>()
+        //services.GetRequiredService<IEventPublisher>()
     );
     
 }

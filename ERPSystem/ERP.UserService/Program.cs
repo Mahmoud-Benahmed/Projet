@@ -1,6 +1,6 @@
 using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Application.Services;
-using ERP.UserService.Infrastructure.Messaging;
+//using ERP.UserService.Infrastructure.Messaging;
 using ERP.UserService.Infrastructure.Persistence;
 using ERP.UserService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,7 +22,7 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 // ── Services
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
-builder.Services.AddHostedService<UserRegisteredConsumer>();
+//builder.Services.AddHostedService<UserRegisteredConsumer>();
 
 // ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

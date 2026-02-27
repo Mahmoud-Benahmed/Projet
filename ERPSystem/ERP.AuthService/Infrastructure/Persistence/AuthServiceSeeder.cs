@@ -1,10 +1,10 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Events;
+//using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Persistence.Repositories;
-using ERP.UserService.Application.Events;
+//using ERP.UserService.Application.Events;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -16,13 +16,19 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IControleRepository controleRepository,
             IPrivilegeRepository privilegeRepository,
             IAuthUserService authUserService,
-            IConfiguration configuration,
-            IEventPublisher eventPublisher)
+            IConfiguration configuration
+            )
+            //IEventPublisher eventPublisher
         {
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
-            await SeedUsersAsync(userRepository, roleRepository, authUserService, configuration, eventPublisher);
+            await SeedUsersAsync(userRepository, 
+                                 roleRepository, 
+                                 authUserService, 
+                                 configuration
+                                 );
+                                 //eventPublisher
         }
 
         // ── 1. SEED CONTROLES ─────────────────────────────
@@ -266,8 +272,9 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IAuthUserService authUserService,
-            IConfiguration configuration,
-            IEventPublisher eventPublisher)
+            IConfiguration configuration
+            )
+            //IEventPublisher eventPublisher
         {
             if (await userRepository.CountAsync() > 0)
                 await userRepository.DeleteAllAsync();
@@ -302,7 +309,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
                  ));
 
                 // publish event so UserService creates the profile
-                await eventPublisher.PublishAsync(Topics.UserRegistered, new UserRegisteredEvent(user.Id.ToString(), user.Email));
+                //await eventPublisher.PublishAsync(Topics.UserRegistered, new UserRegisteredEvent(user.Id.ToString(), user.Email));
             }
         }
     }

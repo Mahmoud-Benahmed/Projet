@@ -1,5 +1,5 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Events;
+//using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
@@ -23,7 +23,7 @@ namespace ERP.AuthService.Application.Services
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
-        private readonly IEventPublisher _eventPublisher;
+        //private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
             IAuthUserRepository userRepository,
@@ -32,8 +32,9 @@ namespace ERP.AuthService.Application.Services
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository,
-            IEventPublisher eventPublisher)
+            IPrivilegeRepository privilegeRepository
+            )
+            //IEventPublisher eventPublisher
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -42,7 +43,7 @@ namespace ERP.AuthService.Application.Services
             _passwordHasher = passwordHasher;
             _controleRepository = controleRepository;
             _privilegeRepository = privilegeRepository;
-            _eventPublisher = eventPublisher;
+            //_eventPublisher = eventPublisher;
         }
 
         public async Task<AuthUserGetResponseDto> GetByIdAsync(Guid id)
@@ -79,10 +80,10 @@ namespace ERP.AuthService.Application.Services
             await _userRepository.AddAsync(user);
 
             // publish event to Kafka
-            await _eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(
-                AuthUserId: user.Id.ToString(),
-                Email: user.Email
-            ));
+            //await _eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(
+            //    AuthUserId: user.Id.ToString(),
+            //    Email: user.Email
+            //));
 
             return await MapToDtoAsync(user);
         }
