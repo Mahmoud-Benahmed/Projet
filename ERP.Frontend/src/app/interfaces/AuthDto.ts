@@ -13,7 +13,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest extends LoginRequest{
-  email: '', roleId: ''
+  email: string, roleId: string
 }
 
 export interface AuthResponse{
