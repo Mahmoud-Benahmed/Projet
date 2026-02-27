@@ -1,3 +1,7 @@
+.icon--primary { color: var(--mat-sys-primary); }
+.icon--warn    { color: var(--mat-sys-error); }
+.icon--accent  { color: var(--mat-sys-secondary); }
+.icon--success { color: #4caf50; }
 
 .modal-header {
   display: flex;

@@ -7,6 +7,6 @@ export interface ModalData {
   cancelText?: string;
   showCancel?: boolean;
   icon?: string;
-  iconColor?: 'primary' | 'warn' | 'accent';
+  iconColor?: 'primary' | 'warn' | 'accent' | 'success';
   inputs?: ModalInput[];
 }

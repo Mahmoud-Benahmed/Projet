@@ -15,8 +15,8 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
 import { RoleResponseDto, RoleService } from '../../../../services/role.service';
-import { ThisReceiver } from '@angular/compiler';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { forkJoin } from 'rxjs';
 
 @HostBinding('class')
 @Component({
@@ -77,6 +77,7 @@ export class RegisterComponent implements OnDestroy {
 
     const sanitizedLogin= this.sanitizeLogin(this.credentials.login);
     const loginChanged= sanitizedLogin !== this.credentials.login;
+
     if(loginChanged){
         const dialogRef= this.dialog.open(ModalComponent, {
             width: '400px',
@@ -94,80 +95,102 @@ export class RegisterComponent implements OnDestroy {
       dialogRef.afterClosed().subscribe(result => {
           if (result) {
               this.credentials.login= sanitizedLogin;
-              this.register();
+              this.cdr.markForCheck();
+              this.checkAndRegister();
           }else{
-              this.isLoading= false;
+              this.stopLoading();
           }
-        });
+      });
     } else {
-        this.isLoading= false;
-        this.register(); // ← no change, register directly
+        this.checkAndRegister();
     }
+
   }
 
-  private register(): void {
-    this.authService.existsByLogin(this.credentials.login).subscribe({
-          next: (exists) => {
-            if (!exists) return;
-
-            this.isLoading = false;
+  private checkAndRegister(): void {
+      forkJoin({
+        loginExists: this.authService.existsByLogin(this.credentials.login),
+        emailExists: this.authService.existsByEmail(this.credentials.email) // ← correct field
+      }).subscribe({
+        next: ({ loginExists, emailExists }) => {
+          if (loginExists) {
+            this.stopLoading();
             this.dialog.open(ModalComponent, {
               width: '400px',
               data: {
                 title: 'Invalid Login',
-                message: `Please choose another Login other than ${this.credentials.login}.`,
+                message: `Please choose another login other than ${this.credentials.login}.`,
                 confirmText: 'Ok',
                 showCancel: false,
-                icon:'check_circle',
+                icon: 'check_circle',
                 iconColor: 'primary'
-              },
+              }
             });
-          },
-          error: () => {
-            this.isLoading = false;
-            this.snackbar.open('Failed to check login availability.', 'Dismiss', { duration: 3000 });
+            return;
           }
-    });
 
-    this.authService.existsByLogin(this.credentials.login).subscribe({
-        next: (exists) => {
-          if (!exists) return; // login is available, proceed
-          this.isLoading = false;
+          if (emailExists) {
+            this.isLoading = false;
+            this.stopLoading();
+            this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Invalid Email',
+                message: `Please choose another email other than ${this.credentials.email}.`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'primary'
+              }
+            });
+            return;
+          }
+
           this.dialog.open(ModalComponent, {
-            width: '400px',
-            data: {
-              title: 'Invalid Login',
-              message: `Please choose another Email other than ${this.credentials.login}.`,
-              confirmText: 'Ok',
-              showCancel: false,
-              icon:'check_circle',
-              iconColor: 'primary'
-            },
-          });
+              width: '400px',
+              data: {
+                title: 'Operation done successfully',
+                message: `User ${this.credentials.login} has been registered successfully`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'success'
+              }
+            });
+
+          this.stopLoading();
+          return;
+          // call the aut.service method to register the user in the backend
+          this.register();
         },
         error: () => {
-          this.isLoading = false;
-          this.snackbar.open('Failed to check login availability.', 'Dismiss', { duration: 3000 });
+          this.stopLoading();
+          this.snackbar.open('Failed to check availability.', 'Dismiss', { duration: 3000 });
         }
-    });
+      });
+  }
 
+  private register(): void {
+    this.isLoading= true;
     this.authService.register(this.credentials).subscribe({
         next: () => {
-          this.isLoading = false;
+          this.stopLoading();
           this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
         },
         error: (error) => {
-          this.isLoading = false; // ← don't forget this
+          this.stopLoading();
           if (error.status === 0) return;
           this.snackbar.open('Failed to register user', 'Dismiss', { duration: 3000 });
         }
     });
   }
-  sanitizeLogin(login: string){
-    login= login.toLowerCase().replace(/ /g, "_");
-    return login;
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
   }
 
+
+  // helper methods
   generatePassword(){
     this.credentials.password= generatePassword();
     if(!this.showPassword) this.showPassword= true;
@@ -212,8 +235,14 @@ export class RegisterComponent implements OnDestroy {
     return map[this.passwordStrength] ?? '';
   }
 
-  goToLogin(): void {
-    this.router.navigate(['/login']);
+  private sanitizeLogin(login: string){
+    login= login.toLowerCase().replace(/ /g, "_");
+    return login;
+  }
+
+  stopLoading():void{
+    this.isLoading = false;
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
