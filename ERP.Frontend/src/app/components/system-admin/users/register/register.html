@@ -17,12 +17,15 @@
                  [(ngModel)]="credentials.login"
                  required
                  login
+                 pattern="^[a-zA-Z0-9_ ]+$"
                  [minLength]="5"
                  [maxlength]="50",
                  #loginInput="ngModel"/>
           <mat-icon matPrefix>badge</mat-icon>
-          <mat-error *ngIf="loginInput.errors?.['required']">Login required</mat-error>
-          <mat-error *ngIf="loginInput.errors?.['login']">Invalid Login</mat-error>
+          <mat-error *ngIf="loginInput.errors?.['required']"> Login required</mat-error>
+          <mat-error *ngIf="loginInput.errors?.['pattern']">  Login can only contain lowercase letters, digits and underscores.</mat-error>
+          <mat-error *ngIf="loginInput.errors?.['login']">    Invalid Login</mat-error>
+
         </mat-form-field>
 
         <!-- Email -->
@@ -33,11 +36,12 @@
                  name="email"
                  [(ngModel)]="credentials.email"
                  required
+                 [pattern]="emailPattern"
                  email
                  #emailInput="ngModel"/>
           <mat-icon matPrefix>email</mat-icon>
           <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
-          <mat-error *ngIf="emailInput.errors?.['email']">Email invalide</mat-error>
+          <mat-error *ngIf="emailInput.errors?.['pattern']">Email invalide</mat-error>
         </mat-form-field>
 
         <div class="password-group">
@@ -50,6 +54,7 @@
                   [(ngModel)]="credentials.password"
                   (ngModelChange)="onPasswordChange()"
                   required
+                  [pattern]="passwordPattern"
                   minlength="8"
                   #passwordInput="ngModel"/>
 
@@ -65,11 +70,15 @@
             </button>
 
             <mat-error *ngIf="passwordInput.errors?.['required']">
-              Mot de passe requis
+              Password required
+            </mat-error>
+
+            <mat-error *ngIf="passwordInput.errors?.['pattern']">
+              Password cannot contain &lt; &gt; &amp; " ' /
             </mat-error>
 
             <mat-error *ngIf="passwordInput.errors?.['minlength']">
-              Minimum 8 caractères
+              Minimum 8 characters
             </mat-error>
 
           </mat-form-field>

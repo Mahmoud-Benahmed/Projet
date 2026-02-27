@@ -1,6 +1,6 @@
-import { ChangeDetectorRef, Component, HostBinding, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, HostBinding, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { MatCardModule } from '@angular/material/card';
@@ -36,6 +36,10 @@ import { forkJoin } from 'rxjs';
   styleUrl: './register.scss'
 })
 export class RegisterComponent implements OnDestroy {
+  @ViewChild('registerForm') registerForm! :NgForm;
+
+  readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
+  readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
 
   credentials: RegisterRequest = { login:'', email: '', password: '', roleId: '' };
   showPassword = false;
@@ -74,6 +78,7 @@ export class RegisterComponent implements OnDestroy {
 
   onSubmit(): void {
     this.isLoading = true;
+    this.sanitizeInputs();  // ← sanitize before anything else
 
     const sanitizedLogin= this.sanitizeLogin(this.credentials.login);
     const loginChanged= sanitizedLogin !== this.credentials.login;
@@ -83,7 +88,7 @@ export class RegisterComponent implements OnDestroy {
             width: '400px',
             data: {
               title: 'Login input changed', // <-- success title
-              message: `Login input has been changed to ${sanitizedLogin}, since login cannot contain spaces or be uppercase.
+              message: `Login input has been changed to ${sanitizedLogin}, since login cannot contain spaces nor uppercase letters.
                         Do you want to procceed with this username ?`,
               confirmText: 'Confirm',
               showCancel: true,
@@ -119,7 +124,7 @@ export class RegisterComponent implements OnDestroy {
               width: '400px',
               data: {
                 title: 'Invalid Login',
-                message: `Please choose another login other than ${this.credentials.login}.`,
+                message: `Please choose a login other than ${this.credentials.login}.`,
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
@@ -136,31 +141,20 @@ export class RegisterComponent implements OnDestroy {
               width: '400px',
               data: {
                 title: 'Invalid Email',
-                message: `Please choose another email other than ${this.credentials.email}.`,
+                message: `Please choose an email other than ${this.credentials.email}.`,
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
-                iconColor: 'primary'
+                iconColor: 'warn'
               }
             });
             return;
           }
 
-          this.dialog.open(ModalComponent, {
-              width: '400px',
-              data: {
-                title: 'Operation done successfully',
-                message: `User ${this.credentials.login} has been registered successfully`,
-                confirmText: 'Ok',
-                showCancel: false,
-                icon: 'check_circle',
-                iconColor: 'success'
-              }
-            });
-
           this.stopLoading();
-          return;
-          // call the aut.service method to register the user in the backend
+          console.log(this.credentials);
+
+          // call the auth.service method to register the user in the backend
           this.register();
         },
         error: () => {
@@ -173,9 +167,10 @@ export class RegisterComponent implements OnDestroy {
   private register(): void {
     this.isLoading= true;
     this.authService.register(this.credentials).subscribe({
-        next: () => {
+        next: (registeredUser) => {
           this.stopLoading();
           this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
+          setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
           this.stopLoading();
@@ -198,10 +193,17 @@ export class RegisterComponent implements OnDestroy {
   }
 
   onPasswordChange(): void {
-    const result = checkPassword(this.credentials.password);
-    this.passwordErrors = result.errors;
-    this.passwordScore = result.score;
-    this.passwordStrength = result.strength;
+      if (!this.credentials.password) {
+        this.passwordErrors = [];
+        this.passwordScore = 0;
+        this.passwordStrength = '';
+        return;
+      }
+
+      const result = checkPassword(this.credentials.password);
+      this.passwordErrors = result.errors;
+      this.passwordScore = result.score;
+      this.passwordStrength = result.strength;
   }
 
   getScore(): number {
@@ -240,6 +242,30 @@ export class RegisterComponent implements OnDestroy {
     return login;
   }
 
+  private sanitizeInputs(): void {
+    this.credentials.login = this.sanitizeText(this.credentials.login);
+    this.credentials.email = this.sanitizeText(this.credentials.email).toLowerCase();
+  }
+
+  private sanitizeText(value: string): string {
+    return value
+      .trim()                          // remove leading/trailing spaces
+      .replace(/</g, '&lt;')           // escape <
+      .replace(/>/g, '&gt;')           // escape >
+      .replace(/&/g, '&amp;')          // escape &
+      .replace(/"/g, '&quot;')         // escape "
+      .replace(/'/g, '&#x27;')         // escape '
+      .replace(/\//g, '&#x2F;');       // escape /
+  }
+
+  resetForm(): void {
+    this.credentials = { login: '', email: '', password: '', roleId: '' };
+    this.passwordErrors = [];
+    this.passwordScore = 0;
+    this.passwordStrength = '';
+    this.showPassword = false;
+    this.registerForm.resetForm();
+  }
   stopLoading():void{
     this.isLoading = false;
     this.cdr.markForCheck();
