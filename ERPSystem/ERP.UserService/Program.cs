@@ -67,7 +67,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     db.Database.Migrate();
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     db.UserProfiles.ExecuteDelete();
 }
 

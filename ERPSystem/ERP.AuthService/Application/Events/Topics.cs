@@ -1,4 +1,4 @@
-﻿namespace ERP.UserService.Application.Events
+﻿namespace ERP.AuthService.Application.Events
 {
     public static class Topics
     {

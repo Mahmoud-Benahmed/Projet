@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Events;
+using ERP.UserService.Application.Exceptions;
 using ERP.UserService.Application.Interfaces;
 using System.Text.Json;
 
@@ -44,8 +45,11 @@ namespace ERP.UserService.Infrastructure.Messaging
                 {
                     var result = consumer.Consume(stoppingToken);
 
-                    var @event = JsonSerializer.Deserialize<UserRegisteredEvent>(
-                        result.Message.Value);
+                    var @event = JsonSerializer.Deserialize<UserRegisteredEvent>(result.Message.Value);
+
+                    // ← add here
+                    _logger.LogInformation("Consumed message: AuthUserId={Id}, Email={Email}, Offset={Offset}",
+                                            @event?.AuthUserId, @event?.Email, result.Offset);
 
                     if (@event is null)
                     {
@@ -57,10 +61,21 @@ namespace ERP.UserService.Infrastructure.Messaging
                     var userProfileService = scope.ServiceProvider
                         .GetRequiredService<IUserProfileService>();
 
-                    await userProfileService.CreateProfileAsync(new CreateUserProfileDto(
-                        AuthUserId: Guid.Parse(@event.AuthUserId),
-                        Email: @event.Email
-                    ));
+                    try
+                    {
+                        await userProfileService.CreateProfileAsync(new CreateUserProfileDto(
+                            AuthUserId: Guid.Parse(@event.AuthUserId),
+                            Email: @event.Email
+                        ));
+                    }
+                    catch (UserProfileAlreadyExistsException)
+                    {
+                        // already processed, skip silently
+                        _logger.LogWarning(
+                            "Profile already exists for AuthUserId: {Id}, skipping.", @event.AuthUserId);
+                    }
+
+                    consumer.Commit(result); // always commit so offset advances
 
                     consumer.Commit(result);
 

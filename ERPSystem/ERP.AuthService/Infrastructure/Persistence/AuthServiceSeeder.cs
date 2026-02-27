@@ -1,10 +1,7 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
-using ERP.UserService.Application.Events;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -29,7 +26,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<string, Controle>> SeedControlesAsync(
             IControleRepository controleRepository)
         {
-            if(await controleRepository.CountAsync() > 0)
+            if (await controleRepository.CountAsync() > 0)
                 await controleRepository.DeleteAllAsync();
 
             var controles = new List<(string Category, string Libelle, string Description)>
@@ -98,7 +95,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<RoleEnum, Role>> SeedRolesAsync(
             IRoleRepository roleRepository)
         {
-            if(await roleRepository.CountAsync() > 0)
+            if (await roleRepository.CountAsync() > 0)
                 await roleRepository.DeleteAllAsync();
 
 
@@ -300,9 +297,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
                      Password: password,
                      RoleId: role.Id
                  ));
-
-                // publish event so UserService creates the profile
-                await eventPublisher.PublishAsync(Topics.UserRegistered, new UserRegisteredEvent(user.Id.ToString(), user.Email));
             }
         }
     }

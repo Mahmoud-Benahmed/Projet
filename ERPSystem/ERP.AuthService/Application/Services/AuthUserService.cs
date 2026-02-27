@@ -61,6 +61,17 @@ namespace ERP.AuthService.Application.Services
             return await MapToDtoAsync(user);
         }
 
+        public async Task<bool> ExistsByEmail(string email)
+        {
+            return await _userRepository.ExistsByEmailAsync(email);
+        }
+
+        public async Task<bool> ExistsByLogin(string login)
+        {
+            return await _userRepository.ExistsByLoginAsync(login);
+        }
+
+
         public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request)
         {
             if (await _userRepository.ExistsByLoginAsync(request.Login))
@@ -79,9 +90,11 @@ namespace ERP.AuthService.Application.Services
             await _userRepository.AddAsync(user);
 
             // publish event to Kafka
-            await _eventPublisher.PublishAsync("UserRegistered", new UserRegisteredEvent(
-                AuthUserId: user.Id.ToString(),
-                Email: user.Email
+            await _eventPublisher.PublishAsync(
+                Topics.UserRegistered, 
+                new UserRegisteredEvent(
+                                        AuthUserId: user.Id.ToString(),
+                                        Email: user.Email
             ));
 
             return await MapToDtoAsync(user);
@@ -111,7 +124,6 @@ namespace ERP.AuthService.Application.Services
             return await GenerateAuthResponseAsync(user);
         }
 
-
         public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
@@ -140,7 +152,6 @@ namespace ERP.AuthService.Application.Services
 
             return await GenerateAuthResponseAsync(user);
         }
-
 
         public async Task RevokeRefreshTokenAsync(string refreshToken)
         {
@@ -187,7 +198,6 @@ namespace ERP.AuthService.Application.Services
 
             await _userRepository.UpdateAsync(user);
         }
-
 
         private async Task RevokeRefreshTokenAsyncPrivate(RefreshToken token)
         {
@@ -252,6 +262,7 @@ namespace ERP.AuthService.Application.Services
                 expiresAt
             );
         }
+
         private async Task<AuthUserGetResponseDto> MapToDtoAsync(AuthUser user)
         {
             var role = await _roleRepository.GetByIdAsync(user.RoleId)

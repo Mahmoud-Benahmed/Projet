@@ -1,9 +1,12 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces.Services;
+using ERP.AuthService.Domain;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security;
+using System.Security.Claims;
 
 namespace ERP.AuthService.Controllers
 {
@@ -22,6 +25,19 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthUserById(Guid id)
         {
+            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var role = User.FindFirstValue("role");
+
+            if (!Guid.TryParse(sub, out var requesterId))
+                throw new UnauthorizedAccessException("Invalid token.");
+
+            bool isSelf = requesterId == id;
+            bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
+
+            if (!isSelf && !isAdmin)
+                throw new UnauthorizedAccessException("You are not authorized to access this resource.");
+
+
             var result = await _authService.GetByIdAsync(id);
             return Ok(result);
         }
@@ -31,11 +47,35 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthUserByLogin(string login)
         {
+            var userLogin = User.FindFirstValue("login") ?? throw new UnauthorizedAccessException("Invalid token.");
+            var role = User.FindFirstValue("role") ?? throw new UnauthorizedAccessException("Invalid token.");
+            ;
+
+
+            bool isSelf = userLogin == login;
+            bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
+
+            if (!isSelf && !isAdmin)
+                throw new UnauthorizedAccessException("You are not authorized to access this resource.");
+
             var result = await _authService.GetByLoginAsync(login);
             return Ok(result);
         }
 
 
+        [HttpGet("exists-login/{login}")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<bool> ExistsByLogin(string login)
+        {
+            return await _authService.ExistsByLogin(login);
+        }
+
+        [HttpGet("exists-email/{email}")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<bool> ExistsByEmail(string email)
+        {
+            return await _authService.ExistsByEmail(email);
+        }
 
 
         [HttpPost("register")]
