@@ -100,34 +100,58 @@ export class RegisterComponent implements OnDestroy {
           }
         });
     } else {
+        this.isLoading= false;
         this.register(); // ← no change, register directly
     }
   }
 
   private register(): void {
-    this.isLoading= true;
-    this.authService.getUserByLogin(this.credentials.login).subscribe(
-      next=> {
-          this.isLoading= true;
-          const dialogRef= this.dialog.open(ModalComponent, {
+    this.authService.existsByLogin(this.credentials.login).subscribe({
+          next: (exists) => {
+            if (!exists) return;
+
+            this.isLoading = false;
+            this.dialog.open(ModalComponent, {
               width: '400px',
               data: {
-                title: 'Invalid Login ', // <-- success title
+                title: 'Invalid Login',
                 message: `Please choose another Login other than ${this.credentials.login}.`,
                 confirmText: 'Ok',
                 showCancel: false,
-                icon: 'check_circle',
+                icon:'check_circle',
                 iconColor: 'primary'
               },
+            });
+          },
+          error: () => {
+            this.isLoading = false;
+            this.snackbar.open('Failed to check login availability.', 'Dismiss', { duration: 3000 });
+          }
+    });
+
+    this.authService.existsByLogin(this.credentials.login).subscribe({
+        next: (exists) => {
+          if (!exists) return; // login is available, proceed
+          this.isLoading = false;
+          this.dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Invalid Login',
+              message: `Please choose another Email other than ${this.credentials.login}.`,
+              confirmText: 'Ok',
+              showCancel: false,
+              icon:'check_circle',
+              iconColor: 'primary'
+            },
           });
-          return;
-      },
-      error => {
-        this.isLoading= false;
-      });
-      
-    return;
-      this.authService.register(this.credentials).subscribe({
+        },
+        error: () => {
+          this.isLoading = false;
+          this.snackbar.open('Failed to check login availability.', 'Dismiss', { duration: 3000 });
+        }
+    });
+
+    this.authService.register(this.credentials).subscribe({
         next: () => {
           this.isLoading = false;
           this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
@@ -137,7 +161,7 @@ export class RegisterComponent implements OnDestroy {
           if (error.status === 0) return;
           this.snackbar.open('Failed to register user', 'Dismiss', { duration: 3000 });
         }
-      });
+    });
   }
   sanitizeLogin(login: string){
     login= login.toLowerCase().replace(/ /g, "_");

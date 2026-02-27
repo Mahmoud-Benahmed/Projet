@@ -30,14 +30,14 @@ export interface RoleDto{
 }
 
 export interface AuthUserDto{
-    Id: string,
-    Email: string,
-    Login: string,
-    RoleId: string,
-    RoleName: string,
-    MustChangePassword: boolean,
-    IsActive: boolean,
-    CreatedAt: string,
-    UpdatedAt: string,
-    LastLoginAt: string
+    id: string,
+    email: string,
+    login: string,
+    roleId: string,
+    roleName: string,
+    mustChangePassword: boolean,
+    isActive: boolean,
+    createdAt: string,
+    updatedAt: string,
+    lastLoginAt?: string
 }

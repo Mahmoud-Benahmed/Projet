@@ -12,6 +12,10 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
 import { AuthUserDto } from '../../interfaces/AuthDto';
+import { UsersService } from '../../services/users.service';
+import { forkJoin } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { FullProfile } from '../../interfaces/UserProfileDto';
 
 @Component({
   selector: 'app-header',
@@ -39,6 +43,7 @@ export class HeaderComponent implements OnInit {
   userLogin: string= '';
   userRole: string= '';
 
+  authUser: FullProfile | null = null;
   allNavLinks: NavLink[] = [
     { label: 'Home',        route: '/home',              icon: 'home'                           },
     { label: 'Settings',    route: '/settings',          icon: 'settings'                       },
@@ -49,9 +54,25 @@ export class HeaderComponent implements OnInit {
 
   constructor(private authService: AuthService) {}
 
-  ngOnInit(): void {
-    this.userLogin= this.authService.Login!;
-    this.userRole= this.authService.Role!;
+  ngOnInit(){
+     forkJoin({
+          authUser: this.authService.getUserById(this.authService.UserId!),
+          profile: this.userProfileService.getByAuthUserId(this.authService.UserId!),
+        }).subscribe({
+          next: ({ authUser, profile }) => {
+            // merge both responses into one object
+            this.authUser = {
+              ...profile,
+              login: authUser.login,
+              roleName: authUser.roleName,
+              mustChangePassword: authUser.mustChangePassword,
+              lastLoginAt: authUser.lastLoginAt ?? undefined,
+            };
+          },
+          error: () => {
+            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+          },
+        });
   }
 
   get navLinks(): NavLink[] {

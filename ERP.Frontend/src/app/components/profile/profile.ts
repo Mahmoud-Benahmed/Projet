@@ -43,7 +43,8 @@ import { AdminChangePasswordRequest, ChangePasswordRequest } from '../../interfa
   styleUrl: './profile.scss',
 })
 export class ProfileComponent implements OnInit {
-  profile: FullProfile | null = null;  isLoading = true;
+  profile: FullProfile | null = null;
+  isLoading = true;
   isEditing = false;
   isSaving = false;
   role: string= '';
@@ -97,10 +98,13 @@ export class ProfileComponent implements OnInit {
         // merge both responses into one object
         this.profile = {
           ...profile,
-          role: authUser.RoleName,
-          mustChangePassword: authUser.MustChangePassword,
-          lastLoginAt: authUser.LastLoginAt ?? null,
+          login: authUser.login,
+          roleName: authUser.roleName,
+          mustChangePassword: authUser.mustChangePassword,
+          lastLoginAt: authUser.lastLoginAt,
         };
+        console.log(authUser.login);// undefined
+
         this.isLoading = false;
       },
       error: () => {
@@ -177,7 +181,8 @@ export class ProfileComponent implements OnInit {
       next: (updated) => {
           this.profile = {
             ...updated,
-            role: this.profile!.role,
+            login: this.profile!.login,
+            roleName: this.profile!.roleName,
             mustChangePassword: this.profile!.mustChangePassword,
             lastLoginAt: this.profile!.lastLoginAt,
           };

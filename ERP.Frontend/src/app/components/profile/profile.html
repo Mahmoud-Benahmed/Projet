@@ -29,12 +29,12 @@
             <h1 class="hero-identity__name">
               {{ profile.fullName ?? 'No name set' }}
             </h1>
-            <p class="hero-identity__email">{{ profile.email }}</p>
+            <p class="hero-identity__email">{{ profile.login }}</p>
 
             <div class="hero-identity__chips">
               <mat-chip class="chip chip--role">
                 <mat-icon matChipAvatar>shield</mat-icon>
-                {{ profile.role }}
+                {{ profile.roleName }}
               </mat-chip>
 
               <mat-chip
@@ -89,54 +89,63 @@
         <mat-card-content>
 
           <!-- VIEW MODE -->
-          <div class="info-list" *ngIf="!isEditing">
+          @if(!isEditing){
+              <div class="info-list">
 
-            <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>badge</mat-icon> Full Name
-              </span>
-              <span class="info-row__value">{{ profile.fullName ?? '—' }}</span>
-            </div>
+                <div class="info-row" *ngIf="profile.fullName">
+                  <span class="info-row__label">
+                    <mat-icon>person</mat-icon> Full Name
+                  </span>
+                  <span class="info-row__value">{{ profile.fullName }}</span>
+                </div>
 
-            <mat-divider></mat-divider>
+                <mat-divider></mat-divider>
 
-            <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>email</mat-icon> Email
-              </span>
-              <span class="info-row__value mono">{{ profile.email }}</span>
-            </div>
+                <div class="info-row" *ngIf="profile.login">
+                  <span class="info-row__label">
+                    <mat-icon>badge</mat-icon> Login
+                  </span>
+                  <span class="info-row__value mono">{{ profile.login }}</span>
+                </div>
 
-            <mat-divider></mat-divider>
+                <div class="info-row" *ngIf="profile.email">
+                  <span class="info-row__label">
+                    <mat-icon>email</mat-icon> Email
+                  </span>
+                  <span class="info-row__value mono">{{ profile.email }}</span>
+                </div>
 
-            <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>phone</mat-icon> Phone
-              </span>
-              <span class="info-row__value">{{ profile.phone ?? '—' }}</span>
-            </div>
+                <mat-divider></mat-divider>
 
-            <mat-divider></mat-divider>
+                <div class="info-row" *ngIf="profile.phone">
+                  <span class="info-row__label">
+                    <mat-icon>phone</mat-icon> Phone
+                  </span>
+                  <span class="info-row__value">{{ profile.phone}}</span>
+                </div>
 
-            <div class="info-row">
-              <span class="info-row__label">
-                <mat-icon>calendar_today</mat-icon> Member Since
-              </span>
-              <span class="info-row__value">{{ memberSince }}</span>
-            </div>
+                <mat-divider></mat-divider>
 
-            <mat-divider *ngIf="profile.updatedAt"></mat-divider>
+                <div class="info-row" *ngIf="memberSince">
+                  <span class="info-row__label">
+                    <mat-icon>calendar_today</mat-icon> Member Since
+                  </span>
+                  <span class="info-row__value">{{ memberSince }}</span>
+                </div>
 
-            <div class="info-row" *ngIf="profile.updatedAt">
-              <span class="info-row__label">
-                <mat-icon>update</mat-icon> Last Updated
-              </span>
-              <span class="info-row__value">
-                {{ profile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
-              </span>
-            </div>
+                <mat-divider *ngIf="profile.updatedAt"></mat-divider>
 
-          </div>
+                <div class="info-row" *ngIf="profile.updatedAt">
+                  <span class="info-row__label">
+                    <mat-icon>update</mat-icon> Last Updated
+                  </span>
+                  <span class="info-row__value">
+                    {{ profile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
+                  </span>
+                </div>
+
+              </div>
+          }
 
           <!-- EDIT MODE -->
           <form class="edit-form" *ngIf="isEditing">

@@ -44,7 +44,8 @@
             [(ngModel)]="form.phone"
             required
             type="tel"
-            placeholder="e.g. +216 12 345 678"
+            pattern="^[+]?[0-9\s\-()]{7,20}$"
+            placeholder="e.g. +000 123 456 789"
             #phone="ngModel"/>
           <mat-error *ngIf="phone.errors?.['required'] && phone.touched">
             Phone number is required.

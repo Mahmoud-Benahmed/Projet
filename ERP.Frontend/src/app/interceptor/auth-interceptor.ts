@@ -33,14 +33,13 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
             iconColor: 'warn'
           }
         });
+        auth.logout();
       }
 
       // token expired — but not a password validation failure
       if (error.status === 401 && !req.url.includes('change-password')) {
         auth.logout();
-        router.navigate(['/login']);
       }
-
       return throwError(() => error);
     })
   );
