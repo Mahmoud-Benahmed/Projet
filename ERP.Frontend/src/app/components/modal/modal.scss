@@ -1,6 +1,7 @@
 .icon--primary { color: var(--mat-sys-primary); }
-.icon--warn    { color: var(--mat-sys-error); }
-.icon--accent  { color: var(--mat-sys-secondary); }
+.icon--danger  { color: var(--mat-sys-error)}
+.icon--warn    { color: #e7a61a; }
+.icon--accent  { color:  #adadadb9;}
 .icon--success { color: #4caf50; }
 
 .modal-header {

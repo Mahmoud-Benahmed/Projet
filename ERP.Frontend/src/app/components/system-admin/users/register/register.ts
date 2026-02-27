@@ -93,7 +93,7 @@ export class RegisterComponent implements OnDestroy {
               confirmText: 'Confirm',
               showCancel: true,
               icon: 'check_circle',
-              iconColor: 'primary'
+              iconColor: 'warn'
             }
         });
 
