@@ -4,21 +4,14 @@ import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator } from '@an
 @Directive({
   selector: '[sameAs]',
   standalone: true,
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: SameAsDirective,
-      multi: true,
-    }
-  ]
+  providers: [{ provide: NG_VALIDATORS, useExisting: SameAsDirective, multi: true }]
 })
 export class SameAsDirective implements Validator {
-  @Input() sameAs: string = '';
+  @Input() sameAs!: string; // sibling control name
 
   validate(control: AbstractControl): ValidationErrors | null {
-    if (!control.value || !this.sameAs) return null;
-    return control.value === this.sameAs
-      ? { sameAs: true }
-      : null;
+    const sibling = control.parent?.get(this.sameAs);
+    if (!sibling || !control.value || !sibling.value) return null;
+    return control.value === sibling.value ? { sameAs: true } : null;
   }
 }
