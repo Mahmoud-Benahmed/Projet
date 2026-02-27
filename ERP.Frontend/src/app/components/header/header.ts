@@ -14,6 +14,7 @@ import { AuthUserDto } from '../../interfaces/AuthDto';
 import { UsersService } from '../../services/users.service';
 import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FullProfile } from '../../interfaces/UserProfileDto';
 
 @Component({
   selector: 'app-header',
@@ -38,7 +39,7 @@ export class HeaderComponent implements OnInit {
   @Output() sidenavToggle = new EventEmitter<void>();
 
 
-  authUser: any= null;
+  authUser: FullProfile | null = null;
   allNavLinks: NavLink[] = [
     { label: 'Home', route: '/home', icon: 'home' },
     { label: 'Settings', route: '/settings', icon: 'settings'},
@@ -60,9 +61,10 @@ export class HeaderComponent implements OnInit {
             // merge both responses into one object
             this.authUser = {
               ...profile,
-              RoleName: authUser.RoleName,
-              MustChangePassword: authUser.MustChangePassword,
-              LastLoginAt: authUser.LastLoginAt ?? undefined,
+              login: authUser.login,
+              roleName: authUser.roleName,
+              mustChangePassword: authUser.mustChangePassword,
+              lastLoginAt: authUser.lastLoginAt ?? undefined,
             };
           },
           error: () => {
