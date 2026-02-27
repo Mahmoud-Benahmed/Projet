@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
 import { AdminChangePasswordRequest, AuthResponse, AuthUserDto, ChangePasswordRequest, LoginRequest, RegisterRequest, RoleDto } from '../interfaces/AuthDto';
+import { UserProfileResponseDto } from '../interfaces/UserProfileDto';
 
 @Injectable({
   providedIn: 'root',
@@ -37,7 +38,7 @@ export class AuthService {
     return this.http.post<any>(this.baseUrl + '/login', credentials);
   }
 
-  register(credentials: RegisterRequest): Observable<any> {
+  register(credentials: RegisterRequest): Observable<UserProfileResponseDto> {
     return this.http.post<any>(this.baseUrl + '/register', credentials);
   }
 
