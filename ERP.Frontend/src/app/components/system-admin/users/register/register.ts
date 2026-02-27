@@ -87,8 +87,8 @@ export class RegisterComponent implements OnDestroy {
         const dialogRef= this.dialog.open(ModalComponent, {
             width: '400px',
             data: {
-              title: 'Login input changed', // <-- success title
-              message: `Login input has been changed to ${sanitizedLogin}, since login cannot contain spaces nor uppercase letters.
+              title: 'Login input will be changed', // <-- success title
+              message: `Login input will be changed to ${sanitizedLogin}, since login cannot contain spaces nor uppercase letters.
                         Do you want to procceed with this username ?`,
               confirmText: 'Confirm',
               showCancel: true,
@@ -128,7 +128,7 @@ export class RegisterComponent implements OnDestroy {
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
-                iconColor: 'primary'
+                iconColor: 'danger'
               }
             });
             return;
@@ -145,7 +145,7 @@ export class RegisterComponent implements OnDestroy {
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
-                iconColor: 'warn'
+                iconColor: 'danger'
               }
             });
             return;
