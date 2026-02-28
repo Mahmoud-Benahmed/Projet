@@ -21,6 +21,26 @@ namespace ERP.AuthService.Controllers
             _authService = authService;
         }
 
+
+        [HttpGet("me")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMe()
+        {
+            // Extract authUserId from the JWT claim
+            var id = User.FindFirstValue("sub")
+                          ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!Guid.TryParse(id, out var authUserIdGuid))
+                return Unauthorized();
+
+            var user = await _authService.GetByIdAsync(authUserIdGuid);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthUserById(Guid id)
