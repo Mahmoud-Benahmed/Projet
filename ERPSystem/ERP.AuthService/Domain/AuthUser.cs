@@ -43,7 +43,7 @@ namespace ERP.AuthService.Domain
 
             Id = Guid.NewGuid();
             Email = email;
-            Login= login;
+            Login = login;
             CreatedAt = DateTime.UtcNow;
         }
 

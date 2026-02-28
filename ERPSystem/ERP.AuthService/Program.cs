@@ -10,7 +10,6 @@ using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -70,7 +69,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
 
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found")) ;
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found"));
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -124,7 +123,7 @@ using (var scope = app.Services.CreateScope())
         services.GetRequiredService<IConfiguration>(),
         services.GetRequiredService<IEventPublisher>()  // ← add this
     );
-    
+
 }
 
 app.UseSwagger();

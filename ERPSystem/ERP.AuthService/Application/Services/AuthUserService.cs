@@ -5,7 +5,6 @@ using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using System.Security;
 using System.Security.Cryptography;
@@ -55,7 +54,7 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<AuthUserGetResponseDto> GetByLoginAsync(string login)
         {
-            var user= await _userRepository.GetByLoginAsync(login)
+            var user = await _userRepository.GetByLoginAsync(login)
                         ?? throw new UserNotFoundException(login);
 
             return await MapToDtoAsync(user);
@@ -91,10 +90,11 @@ namespace ERP.AuthService.Application.Services
 
             // publish event to Kafka
             await _eventPublisher.PublishAsync(
-                Topics.UserRegistered, 
+                Topics.UserRegistered,
                 new UserRegisteredEvent(
-                                        AuthUserId: user.Id.ToString(),
-                                        Email: user.Email
+                    Login: user.Login,
+                    AuthUserId: user.Id.ToString(),
+                    Email: user.Email
             ));
 
             return await MapToDtoAsync(user);
