@@ -8,7 +8,7 @@ public class UserProfileAlreadyExistsException : Exception
     }
 
     public UserProfileAlreadyExistsException(string email)
-        : base($"User profile for Email '{email}' already exists.")
+        : base($"User profile for '{email}' already exists.")
     {
     }
 }

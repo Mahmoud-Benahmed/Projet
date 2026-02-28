@@ -19,17 +19,21 @@ public class UserProfileService : IUserProfileService
     // =========================
     public async Task<UserProfileResponseDto> CreateProfileAsync(CreateUserProfileDto dto)
     {
-        var existing = await _repository.GetByAuthUserIdAsync(dto.AuthUserId);
+        var existsByLogin = await _repository.ExistsByLoginAsync(dto.Login);
+        if (existsByLogin)
+            throw new UserProfileAlreadyExistsException(dto.Login);
 
+        var existing = await _repository.GetByAuthUserIdAsync(dto.AuthUserId);
         if (existing != null)
             throw new UserProfileAlreadyExistsException(dto.AuthUserId);
 
         var existsByEmail = await _repository.ExistsByEmailAsync(dto.Email);
-
         if (existsByEmail)
             throw new UserProfileAlreadyExistsException(dto.Email);
 
-        var profile = new UserProfile(dto.AuthUserId, dto.Email);
+
+
+        var profile = new UserProfile(dto.Login, dto.AuthUserId, dto.Email);
 
         await _repository.AddAsync(profile);
         await _repository.SaveChangesAsync();
@@ -64,6 +68,31 @@ public class UserProfileService : IUserProfileService
         return MapToDto(profile);
     }
 
+    // =========================
+    // READ - BY LOGIN
+    // =========================
+    public async Task<UserProfileResponseDto> GetByLoginAsync(string login)
+    {
+        var profile = await _repository.GetByLoginAsync(login) ?? throw new UserProfileNotFoundException($"User profile with Login: {login} not found");
+        return MapToDto(profile);
+    }
+
+    // =========================
+    // EXISTS - BY AUTH USER ID
+    // =========================
+    public async Task<bool> ExistsByAuthUserIdAsync(Guid authUserId)
+    {
+        return await _repository.ExistsByAuthUserIdAsync(authUserId);
+    }
+
+
+    // =========================
+    // EXISTS - BY LOGIN
+    // =========================
+    public async Task<bool> ExistsByLoginAsync(string login)
+    {
+        return await _repository.ExistsByLoginAsync(login);
+    }
 
 
     // =========================
@@ -94,6 +123,8 @@ public class UserProfileService : IUserProfileService
             pageNumber,
             pageSize);
     }
+
+
 
 
     // =========================
@@ -177,6 +208,7 @@ public class UserProfileService : IUserProfileService
         {
             Id = profile.Id,
             AuthUserId = profile.AuthUserId,
+            Login= profile.Login,
             Email = profile.Email,
             FullName = profile.FullName,
             Phone = profile.Phone,

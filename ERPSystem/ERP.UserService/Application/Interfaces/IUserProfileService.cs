@@ -7,6 +7,11 @@ namespace ERP.UserService.Application.Interfaces
         Task<UserProfileResponseDto> CreateProfileAsync(CreateUserProfileDto dto);
         Task<UserProfileResponseDto> GetByIdAsync(Guid id);
         Task<UserProfileResponseDto> GetByAuthUserIdAsync(Guid authUserId);
+        Task<UserProfileResponseDto> GetByLoginAsync(string login);
+
+        Task<bool> ExistsByAuthUserIdAsync(Guid authUserId);
+        Task<bool> ExistsByLoginAsync(string login);
+
         Task<List<UserProfileResponseDto>> GetAllAsync();
         Task<PagedResultDto<UserProfileResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
         Task<UserProfileResponseDto> CompleteProfileAsync(Guid authUserId, CompleteProfileDto dto);

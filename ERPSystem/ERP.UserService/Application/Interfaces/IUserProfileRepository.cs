@@ -5,8 +5,12 @@ public interface IUserProfileRepository
 {
     Task<UserProfile?> GetByIdAsync(Guid id);
     Task<UserProfile?> GetByAuthUserIdAsync(Guid authUserId);
+    Task<UserProfile?> GetByLoginAsync(string login);
+
     Task<List<UserProfile>> GetAllAsync();
 
+    Task<bool> ExistsByAuthUserIdAsync(Guid authUserId);
+    Task<bool> ExistsByLoginAsync(string login);
     Task<bool> ExistsByEmailAsync(string email);
 
     Task AddAsync(UserProfile profile);
