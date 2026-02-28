@@ -1,6 +1,8 @@
 ﻿using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ERP.UserService.Controllers;
 
@@ -30,6 +32,25 @@ public class UserProfilesController : ControllerBase
     }
 
 
+    // UserController.cs
+
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        // Extract authUserId from the JWT claim
+        var authUserId = User.FindFirstValue("sub")
+                      ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(authUserId, out var authUserIdGuid))
+            return Unauthorized();
+
+        var user = await _service.GetByAuthUserIdAsync(authUserIdGuid);
+
+        if (user == null)
+            return NotFound();
+
+        return Ok(user);
+    }
 
     // =========================
     // GET BY ID
