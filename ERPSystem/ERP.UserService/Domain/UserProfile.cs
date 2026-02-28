@@ -5,6 +5,7 @@ public class UserProfile
 {
     public Guid Id { get; private set; }
     public Guid AuthUserId { get; private set; }
+    public string Login { get; private set; }
     public string Email { get; private set; }
 
     public string? FullName { get; private set; }
@@ -16,8 +17,11 @@ public class UserProfile
 
     private UserProfile() { }
 
-    public UserProfile(Guid authUserId, string email)
+    public UserProfile(string login, Guid authUserId, string email)
     {
+        if (string.IsNullOrEmpty(login))
+            throw new ArgumentNullException("Login canot be empty");
+
         if (authUserId == Guid.Empty)
             throw new ArgumentException("AuthUserId cannot be empty.");
 
@@ -25,6 +29,7 @@ public class UserProfile
             throw new ArgumentException("Email is required.");
 
         Id = Guid.NewGuid();
+        Login = login;
         AuthUserId = authUserId;
         Email = email;
         CreatedAt = DateTime.UtcNow;
