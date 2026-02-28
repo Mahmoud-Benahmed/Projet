@@ -45,11 +45,11 @@ namespace ERP.UserService.Infrastructure.Messaging
                 {
                     var result = consumer.Consume(stoppingToken);
 
-                    var @event = JsonSerializer.Deserialize<UserRegisteredEvent>(result.Message.Value);
+                    var @event = JsonSerializer.Deserialize<UserRegistered>(result.Message.Value);
 
                     // ← add here
-                    _logger.LogInformation("Consumed message: AuthUserId={Id}, Email={Email}, Offset={Offset}",
-                                            @event?.AuthUserId, @event?.Email, result.Offset);
+                    _logger.LogInformation("\nConsumed message: AuthUserId={Id},Login={Login}, Email={Email}, Offset={Offset}\n",
+                                            @event?.AuthUserId, @event?.Login, @event?.Email, result.Offset);
 
                     if (@event is null)
                     {
@@ -65,6 +65,7 @@ namespace ERP.UserService.Infrastructure.Messaging
                     {
                         await userProfileService.CreateProfileAsync(new CreateUserProfileDto(
                             Login: @event.Login,
+                            Role: @event.Role,
                             AuthUserId: Guid.Parse(@event.AuthUserId),
                             Email: @event.Email
                         ));
