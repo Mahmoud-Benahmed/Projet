@@ -64,6 +64,7 @@ namespace ERP.UserService.Infrastructure.Messaging
                     try
                     {
                         await userProfileService.CreateProfileAsync(new CreateUserProfileDto(
+                            Login: @event.Login,
                             AuthUserId: Guid.Parse(@event.AuthUserId),
                             Email: @event.Email
                         ));
@@ -77,10 +78,12 @@ namespace ERP.UserService.Infrastructure.Messaging
 
                     consumer.Commit(result); // always commit so offset advances
 
-                    consumer.Commit(result);
+                    _logger.LogInformation(
+                        "Profile created for Login: {Login}", @event.Login);
 
                     _logger.LogInformation(
                         "Profile created for AuthUserId: {AuthUserId}", @event.AuthUserId);
+
                 }
                 catch (OperationCanceledException)
                 {

@@ -30,9 +30,27 @@ public class UserProfileRepository : IUserProfileRepository
             .FirstOrDefaultAsync(x => x.AuthUserId == authUserId);
     }
 
+    public async Task<UserProfile?> GetByLoginAsync(string login)
+    {
+        return await _context.UserProfiles
+            .FirstOrDefaultAsync(x => x.Login == login);
+    }
+
     public async Task<List<UserProfile>> GetAllAsync()
     {
         return await _context.UserProfiles.ToListAsync();
+    }
+
+    public async Task<bool> ExistsByLoginAsync(string login)
+    {
+        return await _context.UserProfiles
+            .AnyAsync(u => u.Login == login);
+    }
+
+    public async Task<bool> ExistsByAuthUserIdAsync(Guid authUserId)
+    {
+        return await _context.UserProfiles
+            .AnyAsync(u => u.AuthUserId == authUserId);
     }
 
     public async Task<bool> ExistsByEmailAsync(string email)
@@ -40,6 +58,7 @@ public class UserProfileRepository : IUserProfileRepository
         return await _context.UserProfiles
             .AnyAsync(u => u.Email == email);
     }
+
 
 
     public void Remove(UserProfile profile)

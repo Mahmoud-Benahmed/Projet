@@ -47,12 +47,48 @@ public class UserProfilesController : ControllerBase
     // =========================
     // GET BY AUTH USER ID
     // =========================
-    [HttpGet("auth/{authUserId:guid}")]
+    [HttpGet("authId/{authUserId:guid}")]
     [ProducesResponseType(typeof(UserProfileResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByAuthUserId(Guid authUserId)
     {
         var result = await _service.GetByAuthUserIdAsync(authUserId);
         return Ok(result);
+    }
+
+
+    // =========================
+    // EXISTS BY AUTH USER ID
+    // =========================
+    [HttpGet("exists-authId/{authUserId:guid}")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    public async Task<bool> ExistsByAuthUserId(Guid authUserId)
+    {
+        return await _service.ExistsByAuthUserIdAsync(authUserId);
+    }
+
+
+
+    // =========================
+    // GET BY LOGIN
+    // =========================
+    [HttpGet("login/{login}")]
+    [ProducesResponseType(typeof(UserProfileResponseDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetByLogin(string login)
+    {
+        var result = await _service.GetByLoginAsync(login);
+        return Ok(result);
+    }
+
+
+
+    // =========================
+    // EXISTS BY LOGIN
+    // =========================
+    [HttpGet("exists-login/{login}")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    public async Task<bool> ExistsByLogin(string login)
+    {
+        return await _service.ExistsByLoginAsync(login);
     }
 
 
