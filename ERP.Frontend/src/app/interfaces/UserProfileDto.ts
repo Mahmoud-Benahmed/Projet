@@ -1,6 +1,7 @@
 export interface UserProfileResponseDto {
   id: string;
   authUserId: string;
+  login: string;
   email: string;
   fullName?: string;
   phone?: string;
