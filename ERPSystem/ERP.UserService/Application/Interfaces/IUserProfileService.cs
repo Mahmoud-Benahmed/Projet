@@ -14,6 +14,8 @@ namespace ERP.UserService.Application.Interfaces
 
         Task<List<UserProfileResponseDto>> GetAllAsync();
         Task<PagedResultDto<UserProfileResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
+        Task<PagedResultDto<UserProfileResponseDto>> GetPagedByRoleAsync(string role, int pageNumber, int pageSize);
+
         Task<UserProfileResponseDto> CompleteProfileAsync(Guid authUserId, CompleteProfileDto dto);
         Task ActivateAsync(Guid id);
         Task DeactivateAsync(Guid id);

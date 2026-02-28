@@ -2,6 +2,7 @@
 using ERP.UserService.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using System.Security.Claims;
 
 namespace ERP.UserService.Controllers;
@@ -161,6 +162,18 @@ public class UserProfilesController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("role/{role}")]
+    [ProducesResponseType(typeof(PagedResultDto<UserProfileResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUsersByRole(
+    [FromRoute] string role,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+    {
+        var result = await _service.GetPagedByRoleAsync(role, pageNumber, pageSize);
+        return Ok(result);
+    }
+
 
     // =========================
     // ACTIVATE

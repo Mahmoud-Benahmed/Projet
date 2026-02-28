@@ -31,9 +31,7 @@ public class UserProfileService : IUserProfileService
         if (existsByEmail)
             throw new UserProfileAlreadyExistsException(dto.Email);
 
-
-
-        var profile = new UserProfile(dto.Login, dto.AuthUserId, dto.Email);
+        var profile = new UserProfile(dto.Login, dto.Role, dto.AuthUserId, dto.Email);
 
         await _repository.AddAsync(profile);
         await _repository.SaveChangesAsync();
@@ -108,7 +106,9 @@ public class UserProfileService : IUserProfileService
     }
 
 
-
+    // =========================
+    // GET BY STATUS: ACTIVE/ DEACTIVE
+    // =========================
     public async Task<PagedResultDto<UserProfileResponseDto>>
     GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize)
     {
@@ -123,6 +123,28 @@ public class UserProfileService : IUserProfileService
             pageNumber,
             pageSize);
     }
+
+
+
+    // =========================
+    // GET BY ROLE PAGED
+    // =========================
+    public async Task<PagedResultDto<UserProfileResponseDto>>
+    GetPagedByRoleAsync(string role, int pageNumber, int pageSize)
+    {
+        var (items, totalCount) =
+            await _repository.GetPagedByRoleAsync(role, pageNumber, pageSize);
+
+        var mapped = items.Select(MapToDto).ToList();
+
+        return new PagedResultDto<UserProfileResponseDto>(
+            mapped,
+            totalCount,
+            pageNumber,
+            pageSize);
+    }
+
+
 
 
 
@@ -208,10 +230,11 @@ public class UserProfileService : IUserProfileService
         {
             Id = profile.Id,
             AuthUserId = profile.AuthUserId,
-            Login= profile.Login,
+            Login = profile.Login,
             Email = profile.Email,
             FullName = profile.FullName,
             Phone = profile.Phone,
+            Role = profile.Role,
             IsActive = profile.IsActive,
             IsProfileCompleted = profile.IsProfileCompleted(),
             CreatedAt = profile.CreatedAt,

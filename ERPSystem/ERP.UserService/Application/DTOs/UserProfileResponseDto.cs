@@ -4,13 +4,16 @@ public class UserProfileResponseDto
 {
     public Guid Id { get; set; }
 
-    public Guid AuthUserId { get; set; }
-    public string Login { get; set; } = default!;
-    public string Email { get; set; } = default!;
+    public required Guid AuthUserId { get; set; }
+    public required string Login { get; set; } = default!;
+    public required string Email { get; set; } = default!;
 
     public string? FullName { get; set; }
 
     public string? Phone { get; set; }
+
+    public required string Role { get; set; }
+
 
     public bool IsActive { get; set; }
 
