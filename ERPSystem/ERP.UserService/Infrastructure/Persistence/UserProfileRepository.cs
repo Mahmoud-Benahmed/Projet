@@ -88,6 +88,23 @@ public class UserProfileRepository : IUserProfileRepository
         return (items, totalCount);
     }
 
+    public async Task<(List<UserProfile> Items, int TotalCount)> 
+    GetPagedByRoleAsync(string role, int pageNumber, int pageSize)
+    {
+        var query = _context.UserProfiles
+            .Where(x => x.Role == role);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(x => x.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task<UserStatsDto> GetStatsAsync()
     {
         var total = await _context.UserProfiles.CountAsync();

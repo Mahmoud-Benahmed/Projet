@@ -11,16 +11,21 @@ public class UserProfile
     public string? FullName { get; private set; }
     public string? Phone { get; private set; }
 
+    public string Role { get; private set; }
+
     public bool IsActive { get; private set; } = false;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
     private UserProfile() { }
 
-    public UserProfile(string login, Guid authUserId, string email)
+    public UserProfile(string login, string role, Guid authUserId, string email)
     {
         if (string.IsNullOrEmpty(login))
             throw new ArgumentNullException("Login canot be empty");
+
+        if (string.IsNullOrEmpty(login))
+            throw new ArgumentNullException("Role canot be empty");
 
         if (authUserId == Guid.Empty)
             throw new ArgumentException("AuthUserId cannot be empty.");
@@ -30,6 +35,7 @@ public class UserProfile
 
         Id = Guid.NewGuid();
         Login = login;
+        Role = role;
         AuthUserId = authUserId;
         Email = email;
         CreatedAt = DateTime.UtcNow;
