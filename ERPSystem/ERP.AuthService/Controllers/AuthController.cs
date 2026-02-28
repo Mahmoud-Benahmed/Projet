@@ -43,21 +43,10 @@ namespace ERP.AuthService.Controllers
         }
 
 
-        [HttpGet("{login}")]
+        [HttpGet("login/{login}")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthUserByLogin(string login)
         {
-            var userLogin = User.FindFirstValue("login") ?? throw new UnauthorizedAccessException("Invalid token.");
-            var role = User.FindFirstValue("role") ?? throw new UnauthorizedAccessException("Invalid token.");
-            ;
-
-
-            bool isSelf = userLogin == login;
-            bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
-
-            if (!isSelf && !isAdmin)
-                throw new UnauthorizedAccessException("You are not authorized to access this resource.");
-
             var result = await _authService.GetByLoginAsync(login);
             return Ok(result);
         }

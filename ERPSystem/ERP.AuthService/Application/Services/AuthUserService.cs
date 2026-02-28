@@ -91,8 +91,9 @@ namespace ERP.AuthService.Application.Services
             // publish event to Kafka
             await _eventPublisher.PublishAsync(
                 Topics.UserRegistered,
-                new UserRegisteredEvent(
+                new UserRegistered(
                     Login: user.Login,
+                    Role: role.Libelle.ToString(),
                     AuthUserId: user.Id.ToString(),
                     Email: user.Email
             ));
