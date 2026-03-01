@@ -36,6 +36,9 @@ import { ChangePasswordRequestDto } from '../../interfaces/AuthDto';
 })
 export class MustChangePasswordComponent {
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
+  mustChangePassword: boolean = false;
+
+
 
   isLoading = false;
   showCurrentPassword = false;
@@ -56,6 +59,10 @@ export class MustChangePasswordComponent {
     private snackBar: MatSnackBar
   ) {}
 
+  ngOnInit(){
+    this.mustChangePassword = this.authService.getMustChangePassword()
+  }
+
   onSubmit(form: NgForm): void {
     if (form.invalid) return;
 
@@ -63,7 +70,7 @@ export class MustChangePasswordComponent {
     this.authService.changePassword(this.passwordForm).subscribe({
       next: () => {
         this.isLoading = false;
-        this.authService.clearMustChangePassword();
+        if(this.mustChangePassword) this.authService.clearMustChangePassword();
         this.snackBar.open('Password changed successfully!', 'OK', { duration: 3000 });
         this.router.navigate(['/complete-profile']);
       },
