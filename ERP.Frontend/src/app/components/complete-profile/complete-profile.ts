@@ -45,20 +45,27 @@ export class CompleteProfileComponent {
     private snackBar: MatSnackBar
   ) {}
 
-  ngOnInit(){
-    this.usersService.getByAuthUserId(this.authService.UserId!).subscribe({
-      next: (profile)=>{
-        if(profile.isProfileCompleted){
-          this.router.navigate(["/profile"]);
-        }
-      },
-      error:(err)=>{
-        const message = err.error?.message || 'Failed to load profile.';
-        this.snackBar.open(message, 'Dismiss', { duration: 4000 });
-        this.router.navigate(["/home"]);
-      }
-    });
+ngOnInit(): void {
+  const userId = this.authService.UserId;
+
+  if (!userId) {
+    this.router.navigate(['/home']);
+    return;
   }
+
+  this.usersService.getByAuthUserId(userId).subscribe({
+    next: (profile) => {
+      if (profile.isProfileCompleted) {
+        this.router.navigate(['/profile']);
+      }
+    },
+    error: (err) => {
+      const message = err.error?.message || 'Failed to load profile.';
+      this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+      this.router.navigate(['/home']);
+    }
+  });
+}
 
   onSubmit(ngForm: NgForm): void {
     if (ngForm.invalid) return;

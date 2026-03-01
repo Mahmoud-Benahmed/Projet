@@ -108,6 +108,10 @@
                   <span class="info-row__value mono">{{ profile.login }}</span>
                 </div>
 
+
+
+                <mat-divider></mat-divider>
+
                 <div class="info-row" *ngIf="profile.email">
                   <span class="info-row__label">
                     <mat-icon>email</mat-icon> Email
@@ -238,53 +242,139 @@
             <div class="form-collapse" [class.form-collapse--open]="showPasswordForm">
               <form class="password-form" #passwordFormRef="ngForm">
 
-                @if(hasRole){
+                @if(hasPrivilege){
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>New Password</mat-label>
                     <input matInput
                           [type]="showNewPassword ? 'text' : 'password'"
                           [(ngModel)]="adminChangePasswordForm.newPassword"
-                          name="newPassword" required minlength="8"
+                          name="newPassword"
+                          required
+                          [pattern]="passwordPattern"
                           #newPasswordInput="ngModel" />
                     <mat-icon matPrefix>lock_open</mat-icon>
                     <button mat-icon-button matSuffix type="button"
                             (click)="showNewPassword = !showNewPassword">
                       <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
                     </button>
+
+                    <!-- Password Meter -->
+                    <div class="password-meter" *ngIf="adminChangePasswordForm.newPassword">
+                      <div class="password-meter__bars">
+                        <div class="bar"
+                          *ngFor="let bar of [1,2,3,4]"
+                          [class.bar--filled]="getScore() >= bar"
+                          [ngClass]="getStrengthClass()">
+                        </div>
+                      </div>
+                      <span class="password-meter__label" [ngClass]="getStrengthClass()">
+                        {{ getStrengthLabel() }}
+                      </span>
+                    </div>
+
+                    <!-- Password Errors -->
+                    <div class="password-errors" *ngIf="passwordErrors.length > 0 && adminChangePasswordForm.newPassword">
+                      <span *ngFor="let error of passwordErrors" class="password-error">
+                        <mat-icon>error_outline</mat-icon>{{ error }}
+                      </span>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button mat-stroked-button type="button" (click)="generatePassword()">
+                      <mat-icon>auto_fix_high</mat-icon>
+                      Generate Password
+                    </button>
+
                     <mat-error *ngIf="newPasswordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
                     <mat-error *ngIf="newPasswordInput.errors?.['sameAsOld']">Must differ from current password</mat-error>
+
+
                   </mat-form-field>
                 }
                 @else{
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Current Password</mat-label>
-                    <input matInput
-                          [type]="showCurrentPassword ? 'text' : 'password'"
-                          [(ngModel)]="passwordForm.currentPassword"
-                          name="currentPassword" required />
-                    <mat-icon matPrefix>lock</mat-icon>
-                    <button mat-icon-button matSuffix type="button"
+                        <!-- Current Password -->
+                        <mat-form-field appearance="outline" class="full-width">
+                          <mat-label>Current Password</mat-label>
+                          <mat-icon matPrefix>lock</mat-icon>
+                          <input matInput
+                            [type]="showCurrentPassword ? 'text' : 'password'"
+                            name="currentPassword"
+                            [sameAs]="'newPassword'"
+                            [pattern]="passwordPattern"
+                            [(ngModel)]="passwordForm.currentPassword"
+                            (ngModelChange)="onCurrentPasswordChange()"
+                            required
+                            #currentPwd="ngModel"/>
+                          <button mat-icon-button matSuffix type="button"
                             (click)="showCurrentPassword = !showCurrentPassword">
-                      <mat-icon>{{ showCurrentPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-                    </button>
-                  </mat-form-field>
+                            <mat-icon>{{ showCurrentPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                          </button>
+                          <mat-error *ngIf="currentPwd.errors?.['required'] && currentPwd.touched">
+                            Current password is required.
+                          </mat-error>
+                          <mat-error *ngIf="currentPwd.errors?.['sameAs'] && currentPwd.touched">
+                            Current password must differ from the new one.
+                          </mat-error>
+                        </mat-form-field>
 
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>New Password</mat-label>
-                    <input matInput
-                          [type]="showNewPassword ? 'text' : 'password'"
-                          [(ngModel)]="passwordForm.newPassword"
-                          name="newPassword" required minlength="8"
-                          [notSameAs]="passwordForm.currentPassword"
-                          #newPasswordInput="ngModel" />
-                    <mat-icon matPrefix>lock_open</mat-icon>
-                    <button mat-icon-button matSuffix type="button"
-                            (click)="showNewPassword = !showNewPassword">
-                      <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-                    </button>
-                    <mat-error *ngIf="newPasswordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
-                    <mat-error *ngIf="newPasswordInput.errors?.['sameAsOld']">Must differ from current password</mat-error>
-                  </mat-form-field>
+
+                         <!-- New Password -->
+                        <div class="password-group">
+                          <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>New Password</mat-label>
+                            <mat-icon matPrefix>lock_open</mat-icon>
+                            <input matInput
+                              [type]="showNewPassword ? 'text' : 'password'"
+                              name="newPassword"
+                              [(ngModel)]="passwordForm.newPassword"
+                              (ngModelChange)="onPasswordChange()"
+                              required
+                              [pattern]="passwordPattern"
+                              [notSameAs]="'currentPassword'"
+                              #newPwd="ngModel"/>
+                            <button mat-icon-button matSuffix type="button"
+                              (click)="showNewPassword = !showNewPassword">
+                              <mat-icon>{{ showNewPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                            </button>
+                            <mat-error *ngIf="newPwd.errors?.['required'] && newPwd.touched">
+                              New password is required.
+                            </mat-error>
+                            <mat-error *ngIf="newPwd.errors?.['minlength'] && newPwd.touched">
+                              Minimum 8 characters.
+                            </mat-error>
+                            <mat-error *ngIf="newPwd.errors?.['notSameAs'] && newPwd.touched">
+                              New password must differ from the current one.
+                            </mat-error>
+                          </mat-form-field>
+
+                          <!-- Password Meter -->
+                          <div class="password-meter" *ngIf="passwordForm.newPassword">
+                            <div class="password-meter__bars">
+                              <div class="bar"
+                                *ngFor="let bar of [1,2,3,4]"
+                                [class.bar--filled]="getScore() >= bar"
+                                [ngClass]="getStrengthClass()">
+                              </div>
+                            </div>
+                            <span class="password-meter__label" [ngClass]="getStrengthClass()">
+                              {{ getStrengthLabel() }}
+                            </span>
+                          </div>
+
+                          <!-- Password Errors -->
+                          <div class="password-errors" *ngIf="passwordErrors.length > 0 && passwordForm.newPassword">
+                            <span *ngFor="let error of passwordErrors" class="password-error">
+                              <mat-icon>error_outline</mat-icon>{{ error }}
+                            </span>
+                          </div>
+
+                          <!-- Generate Button -->
+                          <button mat-stroked-button type="button" (click)="generatePassword()">
+                            <mat-icon>auto_fix_high</mat-icon>
+                            Generate Password
+                          </button>
+                        </div>
+
                 }
 
                 <div class="password-form__actions">
@@ -294,7 +384,7 @@
                   </button>
                   <button mat-flat-button class="save-btn" type="button"
                           (click)="changePassword(passwordFormRef)"
-                          [disabled]="isChangingPassword || passwordFormRef.invalid">
+                          [disabled]="passwordFormRef.invalid || isChangingPassword">
                     <mat-spinner diameter="16" *ngIf="isChangingPassword"></mat-spinner>
                     <mat-icon *ngIf="!isChangingPassword">check</mat-icon>
                     {{ isChangingPassword ? 'Saving…' : 'Update Password' }}

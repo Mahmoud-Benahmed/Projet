@@ -1,154 +1,121 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../environment';
-import { AdminChangePasswordRequest, AuthResponse, AuthUserDto, ChangePasswordRequest, LoginRequest, RegisterRequest, RoleDto } from '../interfaces/AuthDto';
+import { AuthUserGetResponseDto, AdminChangePasswordRequestDto, AuthResponseDto, ChangePasswordRequestDto, LoginRequestDto, RefreshTokenRequestDto, RegisterRequestDto } from '../interfaces/AuthDto';
+import { jwtDecode } from 'jwt-decode';
 import { UserProfileResponseDto } from '../interfaces/UserProfileDto';
+import { Router } from '@angular/router';
+
+interface JwtPayload {
+  sub: string;
+  role: string;
+  login: string;
+  email: string;
+  privilege: string | string[];
+  exp: number;
+}
+
+export interface FullProfile extends UserProfileResponseDto{
+  mustChangePassword: boolean;
+  lastLoginAt: string | null;
+}
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class AuthService {
-  private baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
+  private readonly base = `${environment.apiUrl}${environment.routes.auth}`;
+  private readonly ACCESS_TOKEN_KEY = 'accessToken';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
+  private _userProfile: FullProfile | null = null;
 
-  constructor(private http: HttpClient, private router: Router) {}
-
-  getUserById(id: string): Observable<AuthUserDto>{
-    return this.http.get<AuthUserDto>(this.baseUrl+`/${id}`);
-  }
-
-  getUserByEmail(email: string): Observable<AuthUserDto>{
-    return this.http.get<AuthUserDto>(this.baseUrl+`/${email}`);
-  }
-
-  existsByEmail(email:string): Observable<boolean>{
-    return this.http.get<boolean>(this.baseUrl+`/exists-email/${email}`);
-  }
-
-  existsByLogin(login:string): Observable<boolean>{
-    return this.http.get<boolean>(this.baseUrl+`/exists-login/${login}`);
-  }
-
-  getUserByLogin(login: string): Observable<AuthUserDto>{
-    return this.http.get<AuthUserDto>(this.baseUrl+`/${login}`);
-  }
-
-  login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<any>(this.baseUrl + '/login', credentials);
-  }
-
-  register(credentials: RegisterRequest): Observable<UserProfileResponseDto> {
-    return this.http.post<any>(this.baseUrl + '/register', credentials);
-  }
+  constructor(private http: HttpClient,   private router: Router) {}
 
   // =========================
-  // CHANGE PASSWORD (Self)
+  // TOKEN STORAGE
   // =========================
-  changePassword(request: ChangePasswordRequest): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/change-password/profile`, request);
-  }
-
-  // =========================
-  // CHANGE PASSWORD (Admin)
-  // =========================
-  adminChangePassword(userId: string, request: AdminChangePasswordRequest): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/change-password/${userId}`, request);
-  }
-
-
-
-
-
-
-
-  private decodeAccessToken(): any {
-    const token = this.getAccessToken();
-    if (!token) return null;
-    try {
-      return JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-      console.error('Invalid token', e);
-      return null;
-    }
-  }
-
-  logout(): void {
-    const token = this.getRefreshToken();
-    if (!token) {
-      this.clearSession();
-      this.router.navigate(['/login']);
-      return;
-    }
-    this.revokeToken(token).subscribe({
-      next: () => {
-        this.clearSession();
-        this.router.navigate(['/login']);
-      },
-      error: () => {
-        this.clearSession();
-        this.router.navigate(['/login']);
-      }
-    });
-  }
-
-
-  storeTokens(response: AuthResponse){
-    localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
+  storeTokens(response: AuthResponseDto): void {
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, response.accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken);
     localStorage.setItem('expiresAt', response.expiresAt);
     localStorage.setItem('mustChangePassword', String(response.mustChangePassword)); // ADD THIS
   }
-  // Update clearSession to include it:
-  private clearSession(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('expiresAt');
-    localStorage.removeItem('mustChangePassword');
+
+  getAccessToken(): string | null {
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
-
-  get isLoggedIn(): boolean {
-    const token = this.getAccessToken();
-    const expiresAt = localStorage.getItem('expiresAt');
-    if (!token || !expiresAt) return false;
-    return new Date(expiresAt) > new Date();
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
-  get Role(): string | null {
-    return this.decodeAccessToken()?.role ?? null;
+  getExpiresAt(): Date | null {
+    const value = localStorage.getItem('expiresAt');
+    return value ? new Date(value) : null;
   }
 
-  get Email(): string | null {
-    return this.decodeAccessToken()?.email ?? null;
-  }
-
-  get UserId(): string | null {
-    return this.decodeAccessToken()?.sub ?? null;
-  }
-
-  get mustChangePassword(): boolean {
+  getMustChangePassword(): boolean {
     return localStorage.getItem('mustChangePassword') === 'true';
   }
 
 
-  get hasRole(): boolean {
-    return this.Role !== null;
+  clearSession(): void {
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem('expiresAt');
+    localStorage.removeItem('mustChangePassword');
+  }
+
+  isLoggedIn(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    try {
+      const decoded = jwtDecode<JwtPayload>(token);
+      return decoded.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
+
+  // =========================
+  // CLAIM GETTERS
+  // =========================
+  private getPayload(): JwtPayload | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    try {
+      return jwtDecode<JwtPayload>(token);
+    } catch {
+      return null;
+    }
+  }
+
+  get UserId(): string | null {
+    return this.getPayload()?.sub ?? null;
+  }
+
+  get Role(): string | null {
+    return this.getPayload()?.role ?? null;
+  }
+
+  get Login(): string | null {
+    return this.getPayload()?.login ?? null;
   }
 
   get Privileges(): string[] {
-    const decoded = this.decodeAccessToken();
-    if (!decoded) return [];
-    const p = decoded['privilege'];
-    if (!p) return [];
-    return Array.isArray(p) ? p : [p];
+    const payload = this.getPayload();
+    if (!payload?.privilege) return [];
+    return Array.isArray(payload.privilege)
+      ? payload.privilege
+      : [payload.privilege];
   }
 
   hasPrivilege(privilege: string): boolean {
     return this.Privileges.includes(privilege);
   }
 
-    // Add to storeTokens or call separately after login
+
   storeMustChangePassword(value: boolean): void {
     localStorage.setItem('mustChangePassword', String(value));
   }
@@ -158,15 +125,123 @@ export class AuthService {
   }
 
 
-  revokeToken(token: string): Observable<any> {
-    return this.http.post<any>(this.baseUrl + '/revoke', { refreshToken: token });
+  // =========================
+  // USER PROFILE CACHE
+  // =========================
+  get UserProfile(): FullProfile | null {
+    return this._userProfile;
   }
 
-  getAccessToken(): string | null {
-    return localStorage.getItem('accessToken');
+  setUserProfile(profile: FullProfile): void {
+    this._userProfile = profile;
   }
 
-  getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
+  clearUserProfile(): void {
+    this._userProfile = null;
+  }
+
+  // =========================
+  // GET ME
+  // =========================
+  getMe(): Observable<AuthUserGetResponseDto> {
+    return this.http.get<AuthUserGetResponseDto>(`${this.base}/me`);
+  }
+
+  // =========================
+  // GET BY ID
+  // =========================
+  getById(id: string): Observable<AuthUserGetResponseDto> {
+    return this.http.get<AuthUserGetResponseDto>(`${this.base}/${id}`);
+  }
+
+  // =========================
+  // GET BY LOGIN
+  // =========================
+  getByLogin(login: string): Observable<AuthUserGetResponseDto> {
+    return this.http.get<AuthUserGetResponseDto>(`${this.base}/login/${login}`);
+  }
+
+  // =========================
+  // EXISTS BY LOGIN
+  // =========================
+  existsByLogin(login: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.base}/exists-login/${login}`);
+  }
+
+  // =========================
+  // EXISTS BY EMAIL
+  // =========================
+  existsByEmail(email: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.base}/exists-email/${email}`);
+  }
+
+  // =========================
+  // REGISTER
+  // =========================
+  register(request: RegisterRequestDto): Observable<AuthUserGetResponseDto> {
+    return this.http.post<AuthUserGetResponseDto>(`${this.base}/register`, request);
+  }
+
+  // =========================
+  // LOGIN
+  // =========================
+  login(request: LoginRequestDto): Observable<AuthResponseDto> {
+    return this.http.post<AuthResponseDto>(`${this.base}/login`, request).pipe(
+      tap(response => this.storeTokens(response))
+    );
+  }
+
+  // =========================
+  // CHANGE PASSWORD (own profile)
+  // =========================
+  changePassword(request: ChangePasswordRequestDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/change-password/profile`, request);
+  }
+
+  // =========================
+  // CHANGE PASSWORD (admin)
+  // =========================
+  adminChangePassword(userId: string, request: AdminChangePasswordRequestDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/change-password/${userId}`, request);
+  }
+
+  // =========================
+  // REFRESH TOKEN
+  // =========================
+  refresh(request: RefreshTokenRequestDto): Observable<AuthResponseDto> {
+    return this.http.post<AuthResponseDto>(`${this.base}/refresh`, request).pipe(
+      tap(response => this.storeTokens(response))
+    );
+  }
+
+  // =========================
+  // REVOKE + LOGOUT
+  // =========================
+  revoke(request: RefreshTokenRequestDto): Observable<void> {
+    return this.http.post<void>(`${this.base}/revoke`, request).pipe(
+      tap(() => {
+        this.clearSession();
+        this.clearUserProfile();
+      })
+    );
+  }
+
+  logout(): void {
+    const refreshToken = this.getRefreshToken();
+
+    if (refreshToken) {
+      this.revoke({ refreshToken }).subscribe({
+        next: () => this.router.navigate(['/login']),
+        error: () => {
+          this.clearSession();
+          this.clearUserProfile();
+          this.router.navigate(['/login']);
+        }
+      });
+    } else {
+      this.clearSession();
+      this.clearUserProfile();
+      this.router.navigate(['/login']);
+    }
   }
 }

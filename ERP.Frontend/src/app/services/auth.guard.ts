@@ -7,38 +7,36 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const router = inject(Router);
   const path = route.routeConfig?.path ?? '';
 
-  if (!auth.isLoggedIn) {
-    router.navigate(['/login']);
-    return false;
+  // 1️⃣ Not logged in
+  if (!auth.isLoggedIn()) {
+    return router.createUrlTree(['/login']);
   }
 
-  // Step 1 — must change password first
-  if (auth.mustChangePassword) {
-    if (path !== 'must-change-password') {
-      router.navigate(['/must-change-password']);
-      return false;
-    }
-    return true;
+  const mustChangePassword = auth.getMustChangePassword();
+  const userRole = auth.Role; // use a getter instead of property
+
+  // 2️⃣ Force password change
+  if (mustChangePassword && path !== 'must-change-password') {
+    return router.createUrlTree(['/must-change-password']);
   }
 
-  // Step 2 — block going back to must-change-password once done
-  if (path === 'must-change-password') {
-    router.navigate(['/complete-profile']);
-    return false;
+  // 3️⃣ Prevent going back after password change
+  if (!mustChangePassword && path === 'must-change-password') {
+    return router.createUrlTree(['/complete-profile']);
   }
 
-  // Step 3 — complete-profile is always accessible after password change
-  if (path === 'complete-profile') {
-    return true;
-  }
+  // 4️⃣ Role-based access
+  const requiredRoles = route.data['roles'] as string[] | undefined;
 
-  // Step 4 — role-based access
-  const requiredRoles = route.data['roles'] as string[];
-  if (requiredRoles?.length > 0) {
-    const userRole = auth.Role;
+  if (requiredRoles?.length) {
     if (!userRole || !requiredRoles.includes(userRole)) {
-      router.navigate([userRole === 'SystemAdmin' ? '/users' : '/home']);
-      return false;
+
+      // Smart fallback
+      if (userRole === 'SystemAdmin') {
+        return router.createUrlTree(['/users']);
+      }
+
+      return router.createUrlTree(['/home']);
     }
   }
 

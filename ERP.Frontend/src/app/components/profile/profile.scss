@@ -231,6 +231,97 @@ $radius-sm:    8px;
   }
 }
 
+
+
+// ── PASSWORD METER ────────────────────────────────
+.password-meter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &__bars {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+
+    .bar {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: $surface-3;
+      transition: background 0.3s;
+
+      &--filled {
+        &.strength--weak        { background: $danger; }
+        &.strength--fair        { background: $warn; }
+        &.strength--strong      { background: $success; }
+        &.strength--very-strong { background: $accent; }
+      }
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 64px;
+    text-align: right;
+
+    &.strength--weak        { color: $danger; }
+    &.strength--fair        { color: $warn; }
+    &.strength--strong      { color: $success; }
+    &.strength--very-strong { color: $accent; }
+  }
+}
+
+// ── PASSWORD ERRORS ───────────────────────────────
+.password-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba($danger, 0.06);
+  border: 1px solid rgba($danger, 0.15);
+  border-radius: $radius-sm;
+
+  .password-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: $danger;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// ── GENERATE BUTTON ───────────────────────────────
+button[mat-stroked-button] {
+  color: $text-muted !important;
+  border-color: $border !important;
+  border-radius: $radius-sm !important;
+  font-size: 13px;
+  font-weight: 500;
+  align-self: flex-start;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $accent;
+  }
+
+  &:hover {
+    border-color: rgba($accent, 0.4) !important;
+    color: $text-primary !important;
+    background: rgba($accent, 0.05) !important;
+  }
+}
+
+
 // ── CHIPS ─────────────────────────────────────────
 .chip {
   font-size: 12px !important;

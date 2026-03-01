@@ -11,9 +11,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../services/auth.service';
 import { NotSameAsDirective } from '../../util/NotSameAsDirective';
-import { ChangePasswordRequest } from '../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../util/PasswordUtil';
 import { SameAsDirective } from '../../util/SameAsDirective';
+import { ChangePasswordRequestDto } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-must-change-password',
@@ -45,7 +45,7 @@ export class MustChangePasswordComponent {
   passwordScore: number = 0;
   passwordStrength: string = '';
 
-  passwordForm: ChangePasswordRequest = {
+  passwordForm: ChangePasswordRequestDto = {
     currentPassword: '',
     newPassword: '',
   };

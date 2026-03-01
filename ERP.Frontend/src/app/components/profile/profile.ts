@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -14,11 +14,13 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { UsersService as UserProfileService } from '../../services/users.service';
 import { AuthService } from '../../services/auth.service';
-import { UserProfileResponseDto, CompleteProfileDto, FullProfile } from '../../interfaces/UserProfileDto';
+import { CompleteProfileDto, UserProfileResponseDto } from '../../interfaces/UserProfileDto';
 import { forkJoin } from 'rxjs';
 import { NgForm } from '@angular/forms';
 import { NotSameAsDirective } from '../../util/NotSameAsDirective';
-import { AdminChangePasswordRequest, ChangePasswordRequest } from '../../interfaces/AuthDto';
+import { AdminChangePasswordRequestDto, ChangePasswordRequestDto } from '../../interfaces/AuthDto';
+import { SameAsDirective } from "../../util/SameAsDirective";
+import { checkPassword, generatePassword } from '../../util/PasswordUtil';
 
 @Component({
   selector: 'app-profile',
@@ -37,13 +39,17 @@ import { AdminChangePasswordRequest, ChangePasswordRequest } from '../../interfa
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-    NotSameAsDirective
-  ],
+    NotSameAsDirective,
+    SameAsDirective
+],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
 export class ProfileComponent implements OnInit {
-  profile: FullProfile | null = null;
+
+  @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
+
+  profile: any = null;
   isLoading = true;
   isEditing = false;
   isSaving = false;
@@ -55,14 +61,21 @@ export class ProfileComponent implements OnInit {
   showCurrentPassword = false;
   showNewPassword = false;
 
+  passwordErrors: string[] = [];
+  passwordScore: number = 0;
+  passwordStrength: string = '';
+
+
   readonly allowedRoles: string[]= ['SystemAdmin', 'HRManager'];
 
+  readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
 
-  adminChangePasswordForm: AdminChangePasswordRequest = {
+
+  adminChangePasswordForm: AdminChangePasswordRequestDto = {
     newPassword: ''
   };
 
-  passwordForm: ChangePasswordRequest = {
+  passwordForm: ChangePasswordRequestDto = {
     currentPassword: '',
     newPassword: '',
   };
@@ -75,7 +88,8 @@ export class ProfileComponent implements OnInit {
   constructor(private userProfileService: UserProfileService,
               private authService: AuthService,
               private snackBar: MatSnackBar,
-              private route: ActivatedRoute
+              private route: ActivatedRoute,
+              private cdr: ChangeDetectorRef,
             ) {}
 
   ngOnInit(): void {
@@ -89,29 +103,28 @@ export class ProfileComponent implements OnInit {
     if (this.authUserId === null ) return;
 
     this.isLoading = true;
-
-    forkJoin({
-      authUser: this.authService.getUserById(this.authUserId),
-      profile: this.userProfileService.getByAuthUserId(this.authUserId),
-    }).subscribe({
-      next: ({ authUser, profile }) => {
-        // merge both responses into one object
-        this.profile = {
-          ...profile,
-          login: authUser.login,
-          roleName: authUser.roleName,
-          mustChangePassword: authUser.mustChangePassword,
-          lastLoginAt: authUser.lastLoginAt,
-        };
-        console.log(authUser.login);// undefined
-
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-        this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
-      },
-    });
+    if(this.authService.Role==='SystemAdmin'){
+      forkJoin({
+        authUser: this.authService.getById(this.authUserId),
+        profile: this.userProfileService.getByAuthUserId(this.authUserId),
+      }).subscribe({
+        next: ({ authUser, profile }) => {
+          // merge both responses into one object
+          this.profile = {
+            ...profile,
+            ...authUser
+          };
+          this.stopLoading('isLoading');
+          return;
+        },
+        error: () => {
+          this.stopLoading('isLoading');
+          this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+        },
+      });
+    }else{
+      this.authService.UserProfile;
+    }
   }
 
   togglePasswordForm(): void {
@@ -132,12 +145,12 @@ export class ProfileComponent implements OnInit {
     if(this.isOwnProfile){
       this.authService.changePassword(this.passwordForm).subscribe({
         next: () => {
-          this.isSaving= false;
+          this.stopLoading('isSaving');
           this.togglePasswordForm();
           this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
         },
         error: (err) => {
-          this.isSaving= false;
+          this.stopLoading('isSaving');
           const message = err.error?.message || 'Failed to update password.';
           this.snackBar.open(message, 'Dismiss', { duration: 4000 });
         },
@@ -146,18 +159,39 @@ export class ProfileComponent implements OnInit {
     else if(['SystemAdmin', 'HRManager'].includes(this.authService.Role!)){
       this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({
         next: () => {
-          this.isSaving= false;
+          this.stopLoading('isSaving');
           this.togglePasswordForm();
           this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
         },
         error: (err) => {
-          this.isSaving= false;
+          this.stopLoading('isSaving');
           const message = err.error?.message || 'Failed to update password.';
           this.snackBar.open(message, 'Dismiss', { duration: 4000 });
         },
       });
     }
 
+  }
+
+  onPasswordChange(): void {
+    const result = checkPassword(this.passwordForm.newPassword);
+    this.passwordErrors = result.errors;
+    this.passwordScore = result.score;
+    this.passwordStrength = result.strength;
+
+    // revalidate currentPassword when newPassword changes
+    const currentPwdControl = this.passwordFormRef?.controls?.['currentPassword'];
+    if (currentPwdControl) {
+      currentPwdControl.updateValueAndValidity();
+    }
+  }
+
+
+  onCurrentPasswordChange(): void {
+    const newPwdControl = this.passwordFormRef?.controls?.['newPassword'];
+    if (newPwdControl) {
+      newPwdControl.updateValueAndValidity();
+    }
   }
 
   startEditing(): void {
@@ -187,22 +221,54 @@ export class ProfileComponent implements OnInit {
             lastLoginAt: this.profile!.lastLoginAt,
           };
           this.isEditing = false;
-          this.isSaving = false;
+          this.stopLoading('isSaving');
           this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
       },
       error: () => {
-          this.isSaving = false;
+          this.stopLoading('isSaving');
           this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
       }
     });
   }
 
-  get hasRole():boolean{
-    return this.allowedRoles.includes(this.authService.Role!) && !this.isOwnProfile;
+
+
+  generatePassword(): void {
+    this.passwordForm.newPassword = generatePassword();
+    if (!this.showNewPassword) this.showNewPassword = true;
+    this.onPasswordChange();
+  }
+
+  getScore(): number {
+    const map: Record<string, number> = {
+      'weak': 1, 'fair': 2, 'strong': 3, 'very strong': 4,
+    };
+    return map[this.passwordStrength] ?? 0;
+  }
+
+  getStrengthClass(): string {
+    const map: Record<string, string> = {
+      'weak': 'strength--weak',
+      'fair': 'strength--fair',
+      'strong': 'strength--strong',
+      'very strong': 'strength--very-strong',
+    };
+    return map[this.passwordStrength] ?? '';
+  }
+
+  getStrengthLabel(): string {
+    const map: Record<string, string> = {
+      'weak': 'Weak', 'fair': 'Fair', 'strong': 'Strong', 'very strong': 'Very Strong',
+    };
+    return map[this.passwordStrength] ?? '';
+  }
+
+  get hasPrivilege():boolean{
+    return this.authService.Privileges.includes('ManageUsers') && !this.isOwnProfile;
   }
 
   get canEditProfile(): boolean{
-    return this.isOwnProfile || this.hasRole;
+    return this.isOwnProfile || this.hasPrivilege;
   }
 
   get isOwnProfile(): boolean {
@@ -210,7 +276,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get initials(): string {
-    const name = this.profile?.fullName ?? this.profile?.email ?? '?';
+    const name:string = this.profile?.fullName ?? this.profile?.email ?? '?';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -226,5 +292,11 @@ export class ProfileComponent implements OnInit {
       month: 'long',
       day: 'numeric',
     });
+  }
+
+  stopLoading(type: 'isSaving' | 'isLoading'):void{
+    if(type==='isLoading')this.isLoading= false;
+    if(type==='isSaving') this.isSaving= false;
+    this.cdr.markForCheck();
   }
 }

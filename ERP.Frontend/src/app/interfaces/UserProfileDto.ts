@@ -1,24 +1,37 @@
-export interface UserProfileResponseDto {
+
+// =========================
+// DTOs
+// =========================
+
+export interface UserProfileResponseDto  {
   id: string;
   authUserId: string;
   login: string;
   email: string;
-  fullName?: string;
-  phone?: string;
+  fullName: string | null;
+  phone: string | null;
+  role: string;
   isActive: boolean;
   isProfileCompleted: boolean;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string | null;
 }
 
-export interface FullProfile extends UserProfileResponseDto {
-  login: string
+export interface AuthUserGetResponseDto {
+  id: string;
+  email: string;
+  login: string;
+  roleId: string;
   roleName: string;
   mustChangePassword: boolean;
-  lastLoginAt?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt: string | null;
 }
-
 export interface CreateUserProfileDto {
+  login: string;
+  role: string;
   authUserId: string;
   email: string;
 }
@@ -28,17 +41,16 @@ export interface CompleteProfileDto {
   phone: string;
 }
 
-export interface PagedResultDto<T> {
-  items: T[];
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
-}
-
-
 export interface UserStatsDto {
   totalUsers: number;
   activeUsers: number;
   deactivatedUsers: number;
   completedProfiles: number;
+}
+
+export interface PagedResultDto<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
 }
