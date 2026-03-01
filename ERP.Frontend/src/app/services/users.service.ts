@@ -85,6 +85,24 @@ export class UsersService {
     return this.http.get<PagedResultDto<UserProfileResponseDto>>(`${this.base}/deactivated`, { params });
   }
 
+
+  getPagedByCompletionStatus(
+    status: boolean,
+    pageNumber: number = 1,
+    pageSize: number = 10
+  ): Observable<PagedResultDto<UserProfileResponseDto>> {
+    return this.http.get<PagedResultDto<UserProfileResponseDto>>(
+      `${this.base}/paged/completion-status`,
+      {
+        params: {
+          status: status.toString(),
+          pageNumber: pageNumber.toString(),
+          pageSize: pageSize.toString()
+        }
+      }
+    );
+  }
+
   // =========================
   // GET BY ROLE (PAGED)
   // =========================

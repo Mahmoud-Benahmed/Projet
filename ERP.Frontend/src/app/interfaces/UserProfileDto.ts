@@ -46,6 +46,7 @@ export interface UserStatsDto {
   activeUsers: number;
   deactivatedUsers: number;
   completedProfiles: number;
+  incompletedProfiles: number;
 }
 
 export interface PagedResultDto<T> {
