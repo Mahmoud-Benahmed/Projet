@@ -236,7 +236,6 @@ export class ProfileComponent implements OnInit {
           this.isEditing = false;
           this.stopLoading('isSaving');
           this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
-          this.cdr.detectChanges();
       },
       error: () => {
           this.stopLoading('isSaving');
