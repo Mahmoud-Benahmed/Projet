@@ -218,30 +218,22 @@ export class AuthService {
   // REVOKE + LOGOUT
   // =========================
   revoke(request: RefreshTokenRequestDto): Observable<void> {
-    return this.http.post<void>(`${this.base}/revoke`, request).pipe(
-      tap(() => {
-        this.clearSession();
-        this.clearUserProfile();
-      })
-    );
+    return this.http.post<void>(`${this.base}/revoke`, request);
   }
 
   logout(): void {
     const refreshToken = this.getRefreshToken();
 
+    // Always clear immediately — don't wait for revoke
+    this.clearSession();
+    this.clearUserProfile();
+
     if (refreshToken) {
       this.revoke({ refreshToken }).subscribe({
-        next: () => this.router.navigate(['/login']),
-        error: () => {
-          this.clearSession();
-          this.clearUserProfile();
-          this.router.navigate(['/login']);
-        }
+        error: () => {} // silently ignore failures
       });
-    } else {
-      this.clearSession();
-      this.clearUserProfile();
-      this.router.navigate(['/login']);
     }
+
+    this.router.navigate(['/login']);
   }
 }
