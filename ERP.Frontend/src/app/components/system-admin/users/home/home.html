@@ -1,5 +1,5 @@
 <div class="home-shell">
-
+  <h1 class="top-bar__title">{{ pageTitle }}</h1>
   <!-- ── TOP BAR ── -->
   <header class="top-bar">
     <div class="top-bar__left">
@@ -95,6 +95,8 @@
             <button mat-icon-button
                     matTooltip="Deactivate user"
                     class="action-btn action-btn--warn"
+                    [disabled]="user.authUserId === currentUserId"
+                    [style.visibility]="user.authUserId === currentUserId ? 'hidden' : 'visible'"
                     (click)="deactivateUser(user)">
               <mat-icon>block</mat-icon>
             </button>
@@ -102,6 +104,7 @@
             <button mat-icon-button
                     matTooltip="Delete user"
                     class="action-btn action-btn--danger"
+                    [style.visibility]="user.authUserId === currentUserId ? 'hidden' : 'visible'"
                     (click)="deleteUser(user)">
               <mat-icon>delete_outline</mat-icon>
             </button>

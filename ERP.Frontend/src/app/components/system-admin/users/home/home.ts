@@ -18,7 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../services/users.service';
 import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { Stats } from '../stats/stats';
 
@@ -72,15 +72,31 @@ export class UsersHomeComponent implements OnInit {
   isLoading = false;
   searchTerm = '';
 
+  pageTitle= 'Active Users'
+
   constructor(
     private userProfileService: UsersService,
     private snackBar: MatSnackBar,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadUsers();
+    this.route.queryParams.subscribe(params => {
+      const status = params['status'];
+
+      if (status === 'true') {
+        this.pageTitle = 'Completed Profiles';
+        this.loadByCompletionStatus(true);
+      } else if (status === 'false') {
+        this.pageTitle = 'Incomplete Profiles';
+        this.loadByCompletionStatus(false);
+      } else {
+        this.pageTitle = 'Active Users';
+        this.loadUsers();
+      }
+    });
   }
 
   loadUsers(): void {
@@ -89,10 +105,8 @@ export class UsersHomeComponent implements OnInit {
       .getActive(this.pageNumber, this.pageSize)
       .subscribe({
         next: (result: PagedResultDto<UserProfileResponseDto>) => {
-          this.dataSource.data = result.items.filter(
-            u => u.authUserId !== this.authService.UserId
-          );
-          this.totalCount = result.totalCount-1;
+          this.dataSource.data = result.items;
+          this.totalCount = result.totalCount;
           this.dataSource.sort = this.sort;
           this.isLoading = false;
           this.statsComponent.loadStats();
@@ -109,39 +123,67 @@ export class UsersHomeComponent implements OnInit {
   onPageChange(event: PageEvent): void {
     this.pageNumber = event.pageIndex + 1;
     this.pageSize = event.pageSize;
-    this.loadUsers();
+
+    const status = this.route.snapshot.queryParams['status'];
+    if (status === 'true') {
+      this.loadByCompletionStatus(true);
+    } else if (status === 'false') {
+      this.loadByCompletionStatus(false);
+    } else {
+      this.loadUsers();
+    }
+  }
+
+  loadByCompletionStatus(status: boolean): void {
+    this.isLoading = true;
+    this.userProfileService.getPagedByCompletionStatus(status, this.pageNumber, this.pageSize).subscribe({
+      next: (result) => {
+        this.dataSource.data = result.items;   // no filter needed here
+        this.totalCount = result.totalCount;   // no -1 either, current user isn't excluded
+        this.dataSource.sort = this.sort;
+        this.isLoading = false;
+        this.statsComponent.loadStats();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+      }
+    });
   }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-  deactivateUser(user: UserProfileResponseDto): void {
-    this.userProfileService.deactivate(user.id).subscribe({
-      next: () => {
-        this.snackBar.open(`${user.fullName ?? user.email} deactivated.`, 'OK', {
-          duration: 3000,
-        });
-        this.loadUsers();
-      },
-      error: () =>
-        this.snackBar.open('Failed to deactivate user.', 'Dismiss', {
-          duration: 3000,
-        }),
-    });
-  }
+deactivateUser(user: UserProfileResponseDto): void {
+  this.userProfileService.deactivate(user.id).subscribe({
+    next: () => {
+      this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
+      this.reloadCurrentView();  // ← instead of loadUsers()
+    },
+    error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
+  });
+}
 
   deleteUser(user: UserProfileResponseDto): void {
     this.userProfileService.delete(user.id).subscribe({
       next: () => {
-        this.snackBar.open(`User deleted.`, 'OK', { duration: 3000 });
-        this.loadUsers();
+        this.snackBar.open('User deleted.', 'OK', { duration: 3000 });
+        this.reloadCurrentView();  // ← instead of loadUsers()
       },
-      error: () =>
-        this.snackBar.open('Failed to delete user.', 'Dismiss', {
-          duration: 3000,
-        }),
+      error: () => this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 })
     });
+  }
+
+  private reloadCurrentView(): void {
+    const status = this.route.snapshot.queryParams['status'];
+    if (status === 'true') {
+      this.loadByCompletionStatus(true);
+    } else if (status === 'false') {
+      this.loadByCompletionStatus(false);
+    } else {
+      this.loadUsers();
+    }
   }
 
   getInitials(user: UserProfileResponseDto): string {
@@ -157,10 +199,37 @@ export class UsersHomeComponent implements OnInit {
   }
 
   goToProfile(authUserId: string): void {
+    if (!authUserId) return;
+
+    if (authUserId === this.authService.UserId) {
+      this.router.navigate(['/profile']);
+      return;
+    }
+
     this.router.navigate(['/users', authUserId]);
   }
 
   goToRegister(): void{
     this.router.navigate(['/users/register'])
+  }
+
+  get currentUserId(): string | null {
+    return this.authService.UserId;
+  }
+
+  get isOwnProfile(): boolean {
+    return false; // in the table context, we use currentUserId comparison directly
+  }
+
+  get hasPrivilege(): boolean {
+    return this.authService.Privileges.includes('ManageUsers');
+  }
+
+  get canDeactivate(): boolean {
+    return this.hasPrivilege;
+  }
+
+  get canDelete(): boolean {
+    return this.hasPrivilege;
   }
 }
