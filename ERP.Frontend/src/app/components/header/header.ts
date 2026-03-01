@@ -10,11 +10,10 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
-import { AuthUserDto } from '../../interfaces/AuthDto';
 import { UsersService } from '../../services/users.service';
 import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { FullProfile } from '../../interfaces/UserProfileDto';
+import { UserProfileResponseDto } from '../../interfaces/UserProfileDto';
 
 @Component({
   selector: 'app-header',
@@ -39,7 +38,7 @@ export class HeaderComponent implements OnInit {
   @Output() sidenavToggle = new EventEmitter<void>();
 
 
-  authUser: FullProfile | null = null;
+  authUser: UserProfileResponseDto | null = null;
   allNavLinks: NavLink[] = [
     { label: 'Home', route: '/home', icon: 'home' },
     { label: 'Settings', route: '/settings', icon: 'settings'},
@@ -52,25 +51,15 @@ export class HeaderComponent implements OnInit {
               private userProfileService: UsersService,
             private snackBar: MatSnackBar){}
 
-  ngOnInit(){
-     forkJoin({
-          authUser: this.authService.getUserById(this.authService.UserId!),
-          profile: this.userProfileService.getByAuthUserId(this.authService.UserId!),
-        }).subscribe({
-          next: ({ authUser, profile }) => {
-            // merge both responses into one object
-            this.authUser = {
-              ...profile,
-              login: authUser.login,
-              roleName: authUser.roleName,
-              mustChangePassword: authUser.mustChangePassword,
-              lastLoginAt: authUser.lastLoginAt ?? undefined,
-            };
-          },
-          error: () => {
-            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
-          },
-        });
+  ngOnInit(): void {
+    this.userProfileService.getMe().subscribe({
+      next: (profile) => {
+        this.authUser = profile;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+      }
+    });
   }
 
   get navLinks(): NavLink[] {

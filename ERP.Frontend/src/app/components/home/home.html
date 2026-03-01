@@ -10,8 +10,8 @@
       <div class="top-bar__user">
         <div class="top-bar__avatar">{{ initials }}</div>
         <div class="top-bar__user-meta">
-          <span class="top-bar__email">{{ email }}</span>
-          <span class="top-bar__role">{{ role }}</span>
+          <span class="top-bar__email">{{ userProfile?.email }}</span>
+          <span class="top-bar__role">{{ userProfile?.role }}</span>
         </div>
       </div>
       <button mat-icon-button class="top-bar__logout-btn" (click)="logout()" matTooltip="Logout">
@@ -31,14 +31,14 @@
         <span class="quick-card__label">My Profile</span>
         <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
       </a>
-      <a class="quick-card" routerLink="/users" *ngIf="role === 'SystemAdmin'">
+      <a class="quick-card" routerLink="/users" *ngIf="userRole==='SystemAdmin'">
         <div class="quick-card__icon-wrap quick-card__icon-wrap--success">
           <mat-icon>group</mat-icon>
         </div>
         <span class="quick-card__label">Manage Users</span>
         <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
       </a>
-      <a class="quick-card" routerLink="/users/register" *ngIf="role === 'SystemAdmin'">
+      <a class="quick-card" routerLink="/users/register" *ngIf="userRole === 'SystemAdmin'">
         <div class="quick-card__icon-wrap quick-card__icon-wrap--warn">
           <mat-icon>person_add</mat-icon>
         </div>
@@ -54,8 +54,8 @@
       <mat-icon>info</mat-icon>
     </div>
     <div class="info-card__body">
-      <span class="info-card__title">You're signed in as <strong>{{ role }}</strong></span>
-      <span class="info-card__sub">{{ email }}</span>
+      <span class="info-card__title">You're signed in as <strong>{{ userRole }}</strong></span>
+      <span class="info-card__sub">{{ userProfile?.email }}</span>
     </div>
   </div>
 
