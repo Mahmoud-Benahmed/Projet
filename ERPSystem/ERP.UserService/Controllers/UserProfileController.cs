@@ -1,5 +1,6 @@
 ﻿using ERP.UserService.Application.DTOs;
 using ERP.UserService.Application.Interfaces;
+using ERP.UserService.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
@@ -10,11 +11,11 @@ namespace ERP.UserService.Controllers;
 [ApiController]
 [Route("users")]
 [Produces("application/json")]
-public class UserProfilesController : ControllerBase
+public class UserProfileController : ControllerBase
 {
     private readonly IUserProfileService _service;
 
-    public UserProfilesController(IUserProfileService service)
+    public UserProfileController(IUserProfileService service)
     {
         _service = service;
     }
@@ -223,6 +224,20 @@ public class UserProfilesController : ControllerBase
     {
         await _service.DeleteAsync(id);
         return NoContent();
+    }
+
+
+    [HttpGet("paged/completion-status")]
+    public async Task<IActionResult> GetPagedByCompletionStatus(
+    [FromQuery] bool status,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+    {
+        if (pageNumber < 1 || pageSize < 1)
+            return BadRequest("PageNumber and PageSize must be greater than 0.");
+
+        var result = await _service.GetPagedCompletedStatusAsync(status, pageNumber, pageSize);
+        return Ok(result);
     }
 
 
