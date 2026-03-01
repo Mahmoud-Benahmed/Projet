@@ -1,17 +1,20 @@
 ﻿namespace ERP.UserService.Application.Services;
 
 using ERP.UserService.Application.DTOs;
+using ERP.UserService.Application.Events;
 using ERP.UserService.Application.Exceptions;
 using ERP.UserService.Application.Interfaces;
 using ERP.UserService.Domain;
+using System.Data;
 
 public class UserProfileService : IUserProfileService
 {
     private readonly IUserProfileRepository _repository;
-
-    public UserProfileService(IUserProfileRepository repository)
+    private readonly IEventPublisher _eventPublisher;
+    public UserProfileService(IUserProfileRepository repository, IEventPublisher eventPublisher)
     {
         _repository = repository;
+        _eventPublisher = eventPublisher;
     }
 
     // =========================
@@ -145,6 +148,21 @@ public class UserProfileService : IUserProfileService
     }
 
 
+    public async Task<PagedResultDto<UserProfileResponseDto>>GetPagedCompletedStatusAsync(bool status, int pageNumber, int pageSize)
+    {
+        var (items, totalCount) =
+            await _repository.GetPagedCompletedStatusAsync(status, pageNumber, pageSize);
+
+        var mapped = items.Select(MapToDto).ToList();
+
+        return new PagedResultDto<UserProfileResponseDto>(
+            mapped,
+            totalCount,
+            pageNumber,
+            pageSize);
+    }
+
+
 
 
 
@@ -174,11 +192,28 @@ public class UserProfileService : IUserProfileService
         var profile = await _repository.GetByIdAsync(id)
                       ?? throw new UserProfileNotFoundException(id);
 
-        profile.Activate();
 
+        profile.Activate();
         await _repository.SaveChangesAsync();
+
+        await _eventPublisher.PublishAsync(
+            Topics.UserActivated,
+            new UserActivated(AuthUserId: profile.AuthUserId.ToString()
+        ));
     }
 
+    // Called by the Kafka consumer — updates DB only, no event publishing
+    public async Task ActivateFromEventAsync(Guid authUserId)
+    {
+        var profile = await _repository.GetByAuthUserIdAsync(authUserId)
+                      ?? throw new UserProfileNotFoundException(authUserId);
+
+        if (profile.IsActive) return;
+
+        profile.Activate();
+        await _repository.SaveChangesAsync();
+        // NO publishing — we're already inside a consumer
+    }
 
 
     // =========================
@@ -190,8 +225,11 @@ public class UserProfileService : IUserProfileService
                       ?? throw new UserProfileNotFoundException(id);
 
         profile.Deactivate();
-
         await _repository.SaveChangesAsync();
+
+        await _eventPublisher.PublishAsync(
+            Topics.UserDeactivated,
+            new UserDeactivated(AuthUserId: profile.AuthUserId.ToString()));
     }
 
 

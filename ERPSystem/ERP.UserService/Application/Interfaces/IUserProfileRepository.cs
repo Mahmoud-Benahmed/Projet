@@ -19,6 +19,9 @@ public interface IUserProfileRepository
     Task SaveChangesAsync();
 
     Task<(List<UserProfile> Items, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
+    Task<(List<UserProfile> Items, int TotalCount)> GetPagedCompletedStatusAsync(bool status, int pageNumber, int pageSize);
+
+
 
     Task<(List<UserProfile> Items, int TotalCount)> GetPagedByRoleAsync(string role, int pageNumber, int pageSize);
 

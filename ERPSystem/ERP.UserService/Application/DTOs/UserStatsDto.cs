@@ -6,5 +6,6 @@
         public int ActiveUsers { get; set; }
         public int DeactivatedUsers { get; set; }
         public int CompletedProfiles { get; set; }
+        public int IncompletedProfiles { get; set; }
     }
 }

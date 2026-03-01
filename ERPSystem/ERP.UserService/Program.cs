@@ -23,6 +23,9 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 builder.Services.AddHostedService<UserRegisteredConsumer>();
+builder.Services.AddHostedService<UserActivatedConsumer>();
+
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 // ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

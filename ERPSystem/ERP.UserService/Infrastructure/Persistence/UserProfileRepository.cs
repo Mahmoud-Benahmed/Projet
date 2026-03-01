@@ -88,6 +88,21 @@ public class UserProfileRepository : IUserProfileRepository
         return (items, totalCount);
     }
 
+    public async Task<(List<UserProfile> Items, int TotalCount)> GetPagedCompletedStatusAsync(bool isCompleted, int pageNumber, int pageSize)
+        {
+        var query = _context.UserProfiles
+                            .Where(x => (x.FullName != null && x.Phone != null) == isCompleted);
+        var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(x => x.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
     public async Task<(List<UserProfile> Items, int TotalCount)> 
     GetPagedByRoleAsync(string role, int pageNumber, int pageSize)
     {
@@ -119,6 +134,7 @@ public class UserProfileRepository : IUserProfileRepository
             ActiveUsers = active,
             DeactivatedUsers = deactivated,
             CompletedProfiles = completed,
+            IncompletedProfiles = total - completed  // ← derive it, no extra DB call
         };
     }
 

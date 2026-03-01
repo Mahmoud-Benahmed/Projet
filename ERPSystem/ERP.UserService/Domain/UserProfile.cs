@@ -69,9 +69,6 @@ public class UserProfile
 
     public void Activate()
     {
-        if (!IsProfileCompleted())
-            throw new InvalidOperationException("Profile must be completed before activation.");
-
         if (IsActive)
             return;
         IsActive = true;
