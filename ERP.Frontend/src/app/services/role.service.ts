@@ -2,34 +2,36 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
+import { RoleEnum } from '../interfaces/AuthDto';
 
 export interface RoleResponseDto {
   id: string;
-  libelle: string;
+  libelle: RoleEnum;
 }
+
+// =========================
+// Service
+// =========================
 
 @Injectable({
   providedIn: 'root'
 })
-export class RoleService {
-
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.roles}`;
+export class RolesService {
+  private readonly base = `${environment.apiUrl}/auth/roles`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * GET /auth/roles
-   * Retrieves all roles. (AdminOnly)
-   */
+  // =========================
+  // GET ALL
+  // =========================
   getAll(): Observable<RoleResponseDto[]> {
-    return this.http.get<RoleResponseDto[]>(this.baseUrl);
+    return this.http.get<RoleResponseDto[]>(this.base);
   }
 
-  /**
-   * GET /auth/roles/:id
-   * Retrieves a single role by its UUID. (AdminOnly)
-   */
+  // =========================
+  // GET BY ID
+  // =========================
   getById(id: string): Observable<RoleResponseDto> {
-    return this.http.get<RoleResponseDto>(`${this.baseUrl}/${id}`);
+    return this.http.get<RoleResponseDto>(`${this.base}/${id}`);
   }
 }

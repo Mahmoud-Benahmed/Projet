@@ -78,7 +78,7 @@ export class DeactivatedComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
-    this.usersService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
+    this.usersService.getDeactivated(this.pageNumber, this.pageSize).subscribe({
       next: (result: PagedResultDto<UserProfileResponseDto>) => {
         this.dataSource.data = result.items;
         this.totalCount = result.totalCount;

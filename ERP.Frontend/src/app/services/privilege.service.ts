@@ -2,46 +2,38 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
+import { PrivilegeResponseDto } from '../interfaces/AuthDto';
 
-export interface PrivilegeResponseDto {
-  id: string;
-  roleId: string;
-  controleId: string;
-  controleLibelle: string;
-  controleCategory: string;
-  isGranted: boolean;
-}
+// =========================
+// Service
+// =========================
 
 @Injectable({
   providedIn: 'root'
 })
-export class PrivilegeService {
-
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.privileges}`;
+export class PrivilegesService {
+  private readonly base = `${environment.apiUrl}/auth/privileges`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * GET /auth/privileges/:roleId
-   * Retrieves all privileges for a given role, enriched with controle details. (AdminOnly)
-   */
+  // =========================
+  // GET BY ROLE ID
+  // =========================
   getByRoleId(roleId: string): Observable<PrivilegeResponseDto[]> {
-    return this.http.get<PrivilegeResponseDto[]>(`${this.baseUrl}/${roleId}`);
+    return this.http.get<PrivilegeResponseDto[]>(`${this.base}/${roleId}`);
   }
 
-  /**
-   * PUT /auth/privileges/:roleId/:controleId/allow
-   * Grants a privilege (sets IsGranted = true) for the given role/controle pair. (AdminOnly)
-   */
+  // =========================
+  // ALLOW
+  // =========================
   allow(roleId: string, controleId: string): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/${roleId}/${controleId}/allow`, {});
+    return this.http.put<void>(`${this.base}/${roleId}/${controleId}/allow`, {});
   }
 
-  /**
-   * PUT /auth/privileges/:roleId/:controleId/deny
-   * Revokes a privilege (sets IsGranted = false) for the given role/controle pair. (AdminOnly)
-   */
+  // =========================
+  // DENY
+  // =========================
   deny(roleId: string, controleId: string): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/${roleId}/${controleId}/deny`, {});
+    return this.http.put<void>(`${this.base}/${roleId}/${controleId}/deny`, {});
   }
 }

@@ -12,11 +12,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { ModalComponent } from '../../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
-import { RoleResponseDto, RoleService } from '../../../../services/role.service';
+import { RoleResponseDto, RolesService } from '../../../../services/role.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
+import { RegisterRequestDto } from '../../../../interfaces/AuthDto';
 
 @HostBinding('class')
 @Component({
@@ -41,7 +41,7 @@ export class RegisterComponent implements OnDestroy {
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
 
-  credentials: RegisterRequest = { login:'', email: '', password: '', roleId: '' };
+  credentials: RegisterRequestDto = { login:'', email: '', password: '', roleId: '' };
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
@@ -55,7 +55,7 @@ export class RegisterComponent implements OnDestroy {
 
   constructor(private router: Router,
               private authService: AuthService,
-              private roleService: RoleService,
+              private roleService: RolesService,
               private cdr: ChangeDetectorRef,
               private dialog: MatDialog,
               private snackbar: MatSnackBar) {}

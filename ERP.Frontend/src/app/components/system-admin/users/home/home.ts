@@ -86,7 +86,7 @@ export class UsersHomeComponent implements OnInit {
   loadUsers(): void {
     this.isLoading = true;
     this.userProfileService
-      .getActiveUsers(this.pageNumber, this.pageSize)
+      .getActive(this.pageNumber, this.pageSize)
       .subscribe({
         next: (result: PagedResultDto<UserProfileResponseDto>) => {
           this.dataSource.data = result.items.filter(

@@ -2,44 +2,38 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../environment';
+import { ControleResponseDto } from '../interfaces/AuthDto';
 
-export interface ControleResponseDto {
-  id: string;
-  category: string;
-  libelle: string;
-  description: string;
-}
+// =========================
+// Service
+// =========================
 
 @Injectable({
   providedIn: 'root'
 })
-export class ControleService {
-
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.controles}`;
+export class ControlesService {
+  private readonly base = `${environment.apiUrl}/auth/controles`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * GET /auth/controles
-   * Retrieves all controles. (AdminOnly)
-   */
+  // =========================
+  // GET ALL
+  // =========================
   getAll(): Observable<ControleResponseDto[]> {
-    return this.http.get<ControleResponseDto[]>(this.baseUrl);
+    return this.http.get<ControleResponseDto[]>(this.base);
   }
 
-  /**
-   * GET /auth/controles/:id
-   * Retrieves a single controle by its UUID. (AdminOnly)
-   */
+  // =========================
+  // GET BY ID
+  // =========================
   getById(id: string): Observable<ControleResponseDto> {
-    return this.http.get<ControleResponseDto>(`${this.baseUrl}/${id}`);
+    return this.http.get<ControleResponseDto>(`${this.base}/${id}`);
   }
 
-  /**
-   * GET /auth/controles/category/:category
-   * Retrieves all controles belonging to a given category. (AdminOnly)
-   */
+  // =========================
+  // GET BY CATEGORY
+  // =========================
   getByCategory(category: string): Observable<ControleResponseDto[]> {
-    return this.http.get<ControleResponseDto[]>(`${this.baseUrl}/category/${category}`);
+    return this.http.get<ControleResponseDto[]>(`${this.base}/category/${category}`);
   }
 }
