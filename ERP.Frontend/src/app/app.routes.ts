@@ -20,6 +20,7 @@ export const routes: Routes = [
     children: [
       { path: 'home',               component: HomeComponent,           canActivate: [authGuard] },
       { path: 'profile',            component: ProfileComponent,        canActivate: [authGuard] },
+      { path: 'change-password',            component: MustChangePasswordComponent,        canActivate: [authGuard] },
       { path: 'permissions',              component: PermissionMatrixComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users',              component: UsersHomeComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/register',     component: RegisterComponent,       canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
