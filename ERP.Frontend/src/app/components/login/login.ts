@@ -48,7 +48,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn!) {
+    if (this.authService.isLoggedIn()!) {
       this.router.navigate(['/home']);
     }
   }
@@ -63,58 +63,40 @@ export class LoginComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
 
-        if (this.authService.UserProfile) {
-          this.userProfile = this.authService.UserProfile;
-        }else{
-              forkJoin({
-                      authUser: this.authService.getMe(),
-                      profile: this.userService.getMe(),
-                    }).subscribe({
-                next: ({ authUser, profile }) => {
-                  this.userProfile = {
-                    ...profile,
-                    mustChangePassword: authUser.mustChangePassword,
-                    lastLoginAt: authUser.lastLoginAt
-                  };
-                  this.authService.setUserProfile(this.userProfile); // cache it globally
-                },
-                error: () => {
-                  this.authService.logout();
-                }
-              });
-        }
+        forkJoin({
+                authUser: this.authService.getMe(),
+                profile: this.userService.getMe(),
+              }).subscribe({
+          next: ({ authUser, profile }) => {
+            this.userProfile = {
+              ...profile,
+              mustChangePassword: authUser.mustChangePassword,
+              lastLoginAt: authUser.lastLoginAt
+            };
+            this.authService.setUserProfile(this.userProfile);
 
-        if (response.mustChangePassword) {
-          this.isLoading= false;
-          this.router.navigate(['/must-change-password']);
-          return;
-        }
+            if (response.mustChangePassword) {
+              this.isLoading= false;
+              this.router.navigate(['/must-change-password']);
+              return;
+            }
 
-        const authUserId= this.authService.UserId!;
-        this.userService.getByAuthUserId(authUserId).subscribe({
-          next: (profile)=> {
-            this.isLoading = false;
-            if (!profile.isProfileCompleted) {
+            if (!this.userProfile?.isProfileCompleted) {
               this.router.navigate(['/complete-profile']);
               return;
             }
-            const role = this.authService.Role!;
             this.router.navigate(['/home']);
+
           },
           error: () => {
-            this.isLoading = false;
-            // profile not found, redirect to complete profile
-            this.router.navigate(['/complete-profile']);
-        }
-      });
-
-        const role = this.authService.Role!;
-        this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);
+            this.authService.logout();
+          }
+        });
       },
       error: (error) => {
         this.isLoading = false;
         if (error.status === 0) return;
-        this.snackBar.open('Failed to login, please check your credentials.', 'Dismiss', { duration: 3000 });
+        this.snackBar.open('Failed to login. Unexpected error', 'Dismiss', { duration: 3000 });
       }
     });
   }
