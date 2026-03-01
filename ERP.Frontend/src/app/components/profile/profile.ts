@@ -13,7 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { UsersService as UserProfileService } from '../../services/users.service';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, FullProfile } from '../../services/auth.service';
 import { CompleteProfileDto, UserProfileResponseDto } from '../../interfaces/UserProfileDto';
 import { forkJoin } from 'rxjs';
 import { NgForm } from '@angular/forms';
@@ -49,7 +49,7 @@ export class ProfileComponent implements OnInit {
 
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
 
-  profile: any = null;
+  userProfile: FullProfile|null = null;
   isLoading = true;
   isEditing = false;
   isSaving = false;
@@ -64,9 +64,6 @@ export class ProfileComponent implements OnInit {
   passwordErrors: string[] = [];
   passwordScore: number = 0;
   passwordStrength: string = '';
-
-
-  readonly allowedRoles: string[]= ['SystemAdmin', 'HRManager'];
 
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
 
@@ -97,34 +94,59 @@ export class ProfileComponent implements OnInit {
   }
 
   loadProfile(): void {
-    const routeId = this.route.snapshot.paramMap.get('authUserId');
-    this.authUserId = routeId ?? this.authService.UserId;
+      const routeId = this.route.snapshot.paramMap.get('authUserId');
+      this.authUserId = routeId ?? this.authService.UserId;
 
-    if (this.authUserId === null ) return;
+      if (!this.authUserId) {
+        this.isLoading = false;
+        return;
+      }
 
-    this.isLoading = true;
-    if(this.authService.Role==='SystemAdmin'){
-      forkJoin({
-        authUser: this.authService.getById(this.authUserId),
-        profile: this.userProfileService.getByAuthUserId(this.authUserId),
-      }).subscribe({
-        next: ({ authUser, profile }) => {
-          // merge both responses into one object
-          this.profile = {
-            ...profile,
-            ...authUser
-          };
-          this.stopLoading('isLoading');
-          return;
-        },
-        error: () => {
-          this.stopLoading('isLoading');
-          this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
-        },
-      });
-    }else{
-      this.authService.UserProfile;
-    }
+      if (this.authService.Role === 'SystemAdmin') {
+        forkJoin({
+          authUser: this.authService.getById(this.authUserId),
+          profile: this.userProfileService.getByAuthUserId(this.authUserId),
+        }).subscribe({
+          next: ({ authUser, profile }) => {
+            this.userProfile = {
+              ...profile,
+              mustChangePassword: authUser.mustChangePassword,
+              lastLoginAt: authUser.lastLoginAt
+            };
+            this.stopLoading('isLoading');
+          },
+          error: () => {
+            this.stopLoading('isLoading');
+            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+          }
+        });
+      } else {
+            const cached = this.authService.UserProfile;
+            if (cached) {
+              this.userProfile = cached;
+              this.isLoading = false;
+            } else {
+                // Cache miss (e.g. page refresh) — fetch fresh data
+                forkJoin({
+                  authUser: this.authService.getMe(),
+                  profile: this.userProfileService.getMe(),
+                }).subscribe({
+                  next: ({ authUser, profile }) => {
+                    this.userProfile = {
+                      ...profile,
+                      mustChangePassword: authUser.mustChangePassword,
+                      lastLoginAt: authUser.lastLoginAt,
+                    };
+                    this.authService.setUserProfile(this.userProfile);
+                    this.stopLoading('isLoading');
+                  },
+                  error: () => {
+                    this.stopLoading('isLoading');
+                    this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+                  }
+                });
+            }
+      }
   }
 
   togglePasswordForm(): void {
@@ -137,40 +159,32 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  // Fix: use isChangingPassword consistently
   changePassword(form: NgForm): void {
-    if (form.invalid) return;
+      if (form.invalid) return;
+      this.isChangingPassword = true;
 
-    this.isChangingPassword= true;
+      const stop = () => {
+        this.isChangingPassword = false;
+        this.cdr.markForCheck();
+      };
 
-    if(this.isOwnProfile){
-      this.authService.changePassword(this.passwordForm).subscribe({
-        next: () => {
-          this.stopLoading('isSaving');
-          this.togglePasswordForm();
-          this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
-        },
-        error: (err) => {
-          this.stopLoading('isSaving');
-          const message = err.error?.message || 'Failed to update password.';
-          this.snackBar.open(message, 'Dismiss', { duration: 4000 });
-        },
-      });
-    }
-    else if(['SystemAdmin', 'HRManager'].includes(this.authService.Role!)){
-      this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({
-        next: () => {
-          this.stopLoading('isSaving');
-          this.togglePasswordForm();
-          this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
-        },
-        error: (err) => {
-          this.stopLoading('isSaving');
-          const message = err.error?.message || 'Failed to update password.';
-          this.snackBar.open(message, 'Dismiss', { duration: 4000 });
-        },
-      });
-    }
+      const onSuccess = () => {
+        stop();
+        this.togglePasswordForm();
+        this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
+      };
 
+      const onError = (err: any) => {
+        stop();
+        this.snackBar.open(err.error?.message || 'Failed to update password.', 'Dismiss', { duration: 4000 });
+      };
+
+      if (this.isOwnProfile) {
+        this.authService.changePassword(this.passwordForm).subscribe({ next: onSuccess, error: onError });
+      } else if (['SystemAdmin', 'HRManager'].includes(this.authService.Role!)) {
+        this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({ next: onSuccess, error: onError });
+      }
   }
 
   onPasswordChange(): void {
@@ -195,10 +209,10 @@ export class ProfileComponent implements OnInit {
   }
 
   startEditing(): void {
-    if (!this.profile) return;
+    if (!this.userProfile) return;
     this.editForm = {
-      fullName: this.profile.fullName ?? '',
-      phone: this.profile.phone ?? '',
+      fullName: this.userProfile.fullName ?? '',
+      phone: this.userProfile.phone ?? '',
     };
     this.isEditing = true;
   }
@@ -208,21 +222,21 @@ export class ProfileComponent implements OnInit {
   }
 
   saveProfile(): void {
-    if (!this.profile) return;
+    if (!this.userProfile) return;
     this.isSaving = true;
 
-    this.userProfileService.completeProfile(this.profile.authUserId, this.editForm).subscribe({
+    this.userProfileService.completeProfile(this.userProfile.authUserId, this.editForm).subscribe({
       next: (updated) => {
-          this.profile = {
+          this.userProfile = {
             ...updated,
-            login: this.profile!.login,
-            roleName: this.profile!.roleName,
-            mustChangePassword: this.profile!.mustChangePassword,
-            lastLoginAt: this.profile!.lastLoginAt,
+            mustChangePassword: this.userProfile!.mustChangePassword,
+            lastLoginAt: this.userProfile!.lastLoginAt,
           };
+          this.authService.setUserProfile(this.userProfile);  // ← add this
           this.isEditing = false;
           this.stopLoading('isSaving');
           this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
+          this.cdr.detectChanges();
       },
       error: () => {
           this.stopLoading('isSaving');
@@ -272,11 +286,11 @@ export class ProfileComponent implements OnInit {
   }
 
   get isOwnProfile(): boolean {
-    return this.profile?.authUserId === this.authService.UserId;
+    return this.userProfile?.authUserId === this.authService.UserId;
   }
 
   get initials(): string {
-    const name:string = this.profile?.fullName ?? this.profile?.email ?? '?';
+    const name:string = this.userProfile?.fullName ?? this.userProfile?.email ?? '?';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -286,8 +300,8 @@ export class ProfileComponent implements OnInit {
   }
 
   get memberSince(): string {
-    if (!this.profile?.createdAt) return '—';
-    return new Date(this.profile.createdAt).toLocaleDateString('en-US', {
+    if (!this.userProfile?.createdAt) return '—';
+    return new Date(this.userProfile.createdAt).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

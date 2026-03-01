@@ -6,7 +6,7 @@
     <p>Loading profile…</p>
   </div>
 
-  <ng-container *ngIf="!isLoading && profile">
+  <ng-container *ngIf="!isLoading && userProfile">
 
     <!-- ── HERO CARD ── -->
     <mat-card class="hero-card">
@@ -18,32 +18,32 @@
           <div class="hero-avatar">
             <span class="hero-avatar__initials">{{ initials }}</span>
             <span class="hero-avatar__status"
-                  [class.hero-avatar__status--active]="profile.isActive"
-                  [class.hero-avatar__status--inactive]="!profile.isActive"
-                  [matTooltip]="profile.isActive ? 'Active' : 'Inactive'">
+                  [class.hero-avatar__status--active]="userProfile.isActive"
+                  [class.hero-avatar__status--inactive]="!userProfile.isActive"
+                  [matTooltip]="userProfile.isActive ? 'Active' : 'Inactive'">
             </span>
           </div>
 
           <!-- Identity -->
           <div class="hero-identity">
             <h1 class="hero-identity__name">
-              {{ profile.fullName ?? 'No name set' }}
+              {{ userProfile.fullName ?? 'No name set' }}
             </h1>
-            <p class="hero-identity__email">{{ profile.login }}</p>
+            <p class="hero-identity__email">{{ userProfile.login }}</p>
 
             <div class="hero-identity__chips">
               <mat-chip class="chip chip--role">
                 <mat-icon matChipAvatar>shield</mat-icon>
-                {{ profile.roleName }}
+                {{ userProfile.role }}
               </mat-chip>
 
               <mat-chip
-                [class.chip--complete]="profile.isProfileCompleted"
-                [class.chip--incomplete]="!profile.isProfileCompleted">
+                [class.chip--complete]="userProfile.isProfileCompleted"
+                [class.chip--incomplete]="!userProfile.isProfileCompleted">
                 <mat-icon matChipAvatar>
-                  {{ profile.isProfileCompleted ? 'verified' : 'pending' }}
+                  {{ userProfile.isProfileCompleted ? 'verified' : 'pending' }}
                 </mat-icon>
-                {{ profile.isProfileCompleted ? 'Profile Complete' : 'Incomplete Profile' }}
+                {{ userProfile.isProfileCompleted ? 'Profile Complete' : 'Incomplete Profile' }}
               </mat-chip>
             </div>
           </div>
@@ -92,40 +92,40 @@
           @if(!isEditing){
               <div class="info-list">
 
-                <div class="info-row" *ngIf="profile.fullName">
+                <div class="info-row" *ngIf="userProfile.fullName">
                   <span class="info-row__label">
                     <mat-icon>person</mat-icon> Full Name
                   </span>
-                  <span class="info-row__value">{{ profile.fullName }}</span>
+                  <span class="info-row__value">{{ userProfile.fullName }}</span>
                 </div>
 
                 <mat-divider></mat-divider>
 
-                <div class="info-row" *ngIf="profile.login">
+                <div class="info-row" *ngIf="userProfile.login">
                   <span class="info-row__label">
                     <mat-icon>badge</mat-icon> Login
                   </span>
-                  <span class="info-row__value mono">{{ profile.login }}</span>
+                  <span class="info-row__value mono">{{ userProfile.login }}</span>
                 </div>
 
 
 
                 <mat-divider></mat-divider>
 
-                <div class="info-row" *ngIf="profile.email">
+                <div class="info-row" *ngIf="userProfile.email">
                   <span class="info-row__label">
                     <mat-icon>email</mat-icon> Email
                   </span>
-                  <span class="info-row__value mono">{{ profile.email }}</span>
+                  <span class="info-row__value mono">{{ userProfile.email }}</span>
                 </div>
 
                 <mat-divider></mat-divider>
 
-                <div class="info-row" *ngIf="profile.phone">
+                <div class="info-row" *ngIf="userProfile.phone">
                   <span class="info-row__label">
                     <mat-icon>phone</mat-icon> Phone
                   </span>
-                  <span class="info-row__value">{{ profile.phone}}</span>
+                  <span class="info-row__value">{{ userProfile.phone}}</span>
                 </div>
 
                 <mat-divider></mat-divider>
@@ -137,14 +137,14 @@
                   <span class="info-row__value">{{ memberSince }}</span>
                 </div>
 
-                <mat-divider *ngIf="profile.updatedAt"></mat-divider>
+                <mat-divider *ngIf="userProfile.updatedAt"></mat-divider>
 
-                <div class="info-row" *ngIf="profile.updatedAt">
+                <div class="info-row" *ngIf="userProfile.updatedAt">
                   <span class="info-row__label">
                     <mat-icon>update</mat-icon> Last Updated
                   </span>
                   <span class="info-row__value">
-                    {{ profile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
+                    {{ userProfile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
                   </span>
                 </div>
 
@@ -200,26 +200,26 @@
           <div class="info-list">
             <div class="info-row">
               <span class="info-row__label"><mat-icon>fingerprint</mat-icon> Profile ID</span>
-              <span class="info-row__value mono small">{{ profile.id }}</span>
+              <span class="info-row__value mono small">{{ userProfile.id }}</span>
             </div>
             <mat-divider></mat-divider>
             <div class="info-row">
               <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
-              <span class="info-row__value mono small">{{ profile.authUserId }}</span>
+              <span class="info-row__value mono small">{{ userProfile.authUserId }}</span>
             </div>
             <mat-divider></mat-divider>
             <div class="info-row">
               <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
               <span class="info-row__value">
-                <span class="status-dot" [class.status-dot--active]="profile.isActive"></span>
-                {{ profile.isActive ? 'Active' : 'Inactive' }}
+                <span class="status-dot" [class.status-dot--active]="userProfile.isActive"></span>
+                {{ userProfile.isActive ? 'Active' : 'Inactive' }}
               </span>
             </div>
             <mat-divider></mat-divider>
             <div class="info-row">
               <span class="info-row__label"><mat-icon>login</mat-icon> Last Login</span>
               <span class="info-row__value">
-                {{ profile.lastLoginAt ? (profile.lastLoginAt | date:'dd MMM yyyy, HH:mm') : '—' }}
+                {{ userProfile.lastLoginAt| date:('dd MMM yyyy, HH:mm') : '—' }}
               </span>
             </div>
           </div>
