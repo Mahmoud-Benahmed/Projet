@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, FullProfile } from '../../services/auth.service';
 import { UsersService } from '../../services/users.service';
 import { CompleteProfileDto } from '../../interfaces/UserProfileDto';
 
@@ -31,6 +31,7 @@ import { CompleteProfileDto } from '../../interfaces/UserProfileDto';
   styleUrl: './complete-profile.scss',
 })
 export class CompleteProfileComponent {
+  userProfile: FullProfile | null = null;
   isLoading = false;
 
   form: CompleteProfileDto = {
@@ -45,39 +46,34 @@ export class CompleteProfileComponent {
     private snackBar: MatSnackBar
   ) {}
 
-ngOnInit(): void {
-  const userId = this.authService.UserId;
+  ngOnInit(): void {
+    this.userProfile= this.authService.UserProfile;
 
-  if (!userId) {
-    this.router.navigate(['/home']);
-    return;
-  }
+    if (!this.userProfile?.authUserId) {
+      this.router.navigate(['/home']);
+      return;
+    }
 
-  this.usersService.getByAuthUserId(userId).subscribe({
-    next: (profile) => {
-      if (profile.isProfileCompleted) {
-        this.router.navigate(['/profile']);
-      }
-    },
-    error: (err) => {
-      const message = err.error?.message || 'Failed to load profile.';
-      this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+    if (this.userProfile?.isProfileCompleted) {
       this.router.navigate(['/home']);
     }
-  });
-}
+  }
 
   onSubmit(ngForm: NgForm): void {
     if (ngForm.invalid) return;
 
     this.isLoading = true;
-    const userId = this.authService.UserId!;
 
-    this.usersService.completeProfile(userId, this.form).subscribe({
-      next: () => {
+    this.usersService.completeProfile(this.userProfile?.authUserId!, this.form).subscribe({
+      next: (updated) => {
+        this.userProfile = {
+            ...updated,
+            mustChangePassword: this.userProfile!.mustChangePassword,
+            lastLoginAt: this.userProfile!.lastLoginAt,
+          };
+        this.authService.setUserProfile(this.userProfile);  // ← add this
         this.isLoading = false;
         this.snackBar.open('Profile completed. Welcome!', 'OK', { duration: 3000 });
-        const role = this.authService.Role!;
         this.router.navigate(['/home']);
       },
       error: (err) => {
@@ -89,7 +85,6 @@ ngOnInit(): void {
   }
 
   skip(): void {
-    const role = this.authService.Role!;
     this.router.navigate(['/home']);
   }
 }
