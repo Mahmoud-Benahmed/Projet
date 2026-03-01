@@ -66,7 +66,7 @@ export class HomeComponent implements OnInit {
   }
 
   get initials(): string {
-    return (this.userProfile?.email?.split('@')[0] ?? '?')
+    return (this.userProfile?.fullName?.split('@')[0] ?? '?')
       .split('.')
       .map(n => n[0])
       .slice(0, 2)

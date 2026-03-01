@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  docker: false,
+  docker: true,
   apiUrl:'' as string,
   routes:{
     auth:   '/auth',

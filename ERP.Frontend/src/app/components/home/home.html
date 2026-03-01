@@ -8,7 +8,22 @@
     </div>
     <div class="top-bar__right">
       <div class="top-bar__user">
-        <div class="top-bar__avatar">{{ initials }}</div>
+        <div class="top-bar__avatar">
+            @switch(userProfile?.role){
+                @case("SystemAdmin"){
+                  <mat-icon>admin_panel_settings</mat-icon>
+                }
+                @case("Accountant"){
+                  <mat-icon>receipt_long</mat-icon>
+                }
+                @case("SalesManager"){
+                  <mat-icon>analytics</mat-icon>
+                }
+                @case("StockManager"){
+                  <mat-icon>inventory_2</mat-icon>
+                }
+            }
+        </div>
         <div class="top-bar__user-meta">
           <span class="top-bar__email">{{ userProfile?.email }}</span>
           <span class="top-bar__role">{{ userProfile?.role }}</span>
