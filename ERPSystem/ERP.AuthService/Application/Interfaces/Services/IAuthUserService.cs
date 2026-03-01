@@ -10,6 +10,9 @@ namespace ERP.AuthService.Application.Interfaces.Services
         Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
         Task<AuthResponseDto> RefreshTokenAsync(string refreshToken);
 
+        Task ActivateAsync(Guid authUserId);
+        Task DeactivateAsync(Guid authUserId);
+
         Task<bool> ExistsByLogin(string login);
         Task<bool> ExistsByEmail(string email);
 

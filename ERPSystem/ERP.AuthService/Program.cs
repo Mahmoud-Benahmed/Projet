@@ -102,6 +102,8 @@ builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
 builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+builder.Services.AddHostedService<UserActivatedConsumer>();
+builder.Services.AddHostedService<UserDeactivatedConsumer>();
 
 var app = builder.Build();
 // ── Initialize MongoDB indexes

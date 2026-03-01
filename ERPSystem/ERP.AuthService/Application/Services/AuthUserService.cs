@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace ERP.AuthService.Application.Services
@@ -119,8 +120,16 @@ namespace ERP.AuthService.Application.Services
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
 
+            bool isFirstLogin = !user.IsActive && !user.HasLoggedInBefore();
+
             user.RecordLogin();
             await _userRepository.UpdateAsync(user);
+
+            if (isFirstLogin)
+                await _eventPublisher.PublishAsync(
+                    Topics.UserActivated,
+                    new UserActivated(AuthUserId: user.Id.ToString()
+                ));
 
             return await GenerateAuthResponseAsync(user);
         }
@@ -199,6 +208,27 @@ namespace ERP.AuthService.Application.Services
 
             await _userRepository.UpdateAsync(user);
         }
+
+        public async Task ActivateAsync(Guid authUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(authUserId)
+                       ?? throw new UserNotFoundException(authUserId);
+            if (user.IsActive) return;
+            user.Activate();
+            await _userRepository.UpdateAsync(user);
+        }
+
+        public async Task DeactivateAsync(Guid authUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(authUserId)
+                       ?? throw new UserNotFoundException(authUserId);
+            if (!user.IsActive) return;
+
+            user.Deactivate();
+            await _userRepository.UpdateAsync(user);
+        }
+
+
 
         private async Task RevokeRefreshTokenAsyncPrivate(RefreshToken token)
         {
