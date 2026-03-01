@@ -136,56 +136,36 @@ $danger:      #f87171;
 .avatar-btn {
   display: flex !important;
   align-items: center;
-  gap: 10px;
-  padding: 4px 10px 4px 4px !important;
+  gap: 6px;
+  padding: 4px 10px !important;
   border-radius: 40px !important;
   border: 1px solid $border !important;
   background: $surface !important;
-  color: $text-dark !important;
   height: 40px;
+  width: fit-content;
   transition: border-color 0.15s, background 0.15s;
 
   &:hover {
     border-color: rgba($accent, 0.4) !important;
-    background: rgba($accent, 0.05) !important;
-  }
-}
+    background: #fff !important;
 
-.avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $accent, #7b5ea7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-  letter-spacing: 0.5px;
+    .avatar-info__name {
+      color: $text-dark;   // cascade hover down to the name
+    }
+  }
 }
 
 .avatar-info {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
+  align-items: center;
 
   &__name {
     font-size: 13px;
     font-weight: 600;
     line-height: 1.2;
-    color: $text-dark;
-  }
-
-  &__role {
-    font-size: 10px;
-    color: $accent;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    line-height: 1.2;
+    color: $text-light;
+    transition: color 0.15s;
+    white-space: nowrap;
   }
 }
 
@@ -194,6 +174,11 @@ $danger:      #f87171;
   width: 18px !important;
   height: 18px !important;
   color: $text-muted;
+  transition: color 0.15s;
+
+  .avatar-btn:hover & {
+    color: $text-dark;   // chevron also reacts to button hover
+  }
 }
 
 // ── DROPDOWN MENU ─────────────────────────────────
@@ -250,20 +235,6 @@ $danger:      #f87171;
     font-size: 12px;
     color: $text-muted;
   }
-}
-
-.menu-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $accent, #7b5ea7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
 }
 
 .logout-item {
