@@ -33,7 +33,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
             {
                 // Auth
                 ("Auth", "ManageUsers",     "Create, update, deactivate users"),
-                ("Auth", "AssignRoles",     "Assign roles to users"),
+                ("Auth", "AssignRoles",     "Assign roles and manage privileges"),
 
                 // Clients
                 ("Clients", "ViewClients",   "View client list and details"),
