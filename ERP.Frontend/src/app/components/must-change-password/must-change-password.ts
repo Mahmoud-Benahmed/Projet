@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,7 +34,7 @@ import { ChangePasswordRequestDto } from '../../interfaces/AuthDto';
   templateUrl: './must-change-password.html',
   styleUrl: './must-change-password.scss',
 })
-export class MustChangePasswordComponent {
+export class MustChangePasswordComponent implements OnInit{
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
   mustChangePassword: boolean = false;
 
@@ -63,16 +63,20 @@ export class MustChangePasswordComponent {
     this.mustChangePassword = this.authService.getMustChangePassword()
   }
 
-  onSubmit(form: NgForm): void {
-    if (form.invalid) return;
-
+  onSubmit(): void {
     this.isLoading = true;
     this.authService.changePassword(this.passwordForm).subscribe({
-      next: () => {
+     next: () => {
         this.isLoading = false;
-        if(this.mustChangePassword) this.authService.clearMustChangePassword();
+        if (this.mustChangePassword) this.authService.clearMustChangePassword();
         this.snackBar.open('Password changed successfully!', 'OK', { duration: 3000 });
-        this.router.navigate(['/complete-profile']);
+
+        const profile = this.authService.UserProfile;
+        if (profile?.isProfileCompleted) {
+          this.router.navigate(['/home']);
+        } else {
+          this.router.navigate(['/complete-profile']);
+        }
       },
       error: (err) => {
         this.isLoading = false;
