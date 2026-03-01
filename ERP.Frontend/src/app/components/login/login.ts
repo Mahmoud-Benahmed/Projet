@@ -44,7 +44,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private userService: UsersService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -76,7 +77,7 @@ export class LoginComponent implements OnInit, OnDestroy {
             this.authService.setUserProfile(this.userProfile);
 
             if (response.mustChangePassword) {
-              this.isLoading= false;
+              this.stopLoading();
               this.router.navigate(['/must-change-password']);
               return;
             }
@@ -94,7 +95,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         });
       },
       error: (error) => {
-        this.isLoading = false;
+        this.stopLoading();
         if (error.status === 0) return;
         this.snackBar.open('Failed to login. Unexpected error', 'Dismiss', { duration: 3000 });
       }
@@ -103,6 +104,11 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   goToSignup(): void {
     this.router.navigate(['/register']);
+  }
+
+  stopLoading(){
+    this.isLoading= false;
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
