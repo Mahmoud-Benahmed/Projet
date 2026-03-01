@@ -5,7 +5,8 @@
       </div>
     }
 
-    <mat-card class="stat-card stat-card--active">
+    <mat-card class="stat-card stat-card--active" (click)="stats.activeUsers > 0 && goToUsers()"
+              [class.stat-card--disabled]="stats.activeUsers < 1">
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>group</mat-icon>
@@ -17,7 +18,11 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="stat-card stat-card--inactive">
+
+
+    <mat-card class="stat-card stat-card--inactive"
+              (click)="stats.deactivatedUsers > 0 && goToDeactivated()"
+              [class.stat-card--disabled]="stats.deactivatedUsers < 1">
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>person_off</mat-icon>
@@ -29,14 +34,31 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="stat-card stat-card--completed">
+    <mat-card class="stat-card stat-card--completed"
+              (click)="stats.completedProfiles > 0 && goToCompleted()"
+              [class.stat-card--disabled]="stats.completedProfiles < 1">
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>verified_user</mat-icon>
         </div>
         <div class="stat-card__body">
           <span class="stat-card__value">{{ stats.completedProfiles }}</span>
-          <span class="stat-card__label">Profiles Complete</span>
+          <span class="stat-card__label">Profiles Completed</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+
+    <mat-card class="stat-card stat-card--incompleted"
+              (click)="stats.incompletedProfiles > 0 && goToIncompleted()"
+              [class.stat-card--disabled]="stats.incompletedProfiles < 1">
+      <mat-card-content>
+        <div class="stat-card__icon-wrap">
+          <mat-icon>person_search</mat-icon>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ stats.incompletedProfiles }}</span>
+          <span class="stat-card__label">Incompleted Profiles</span>
         </div>
       </mat-card-content>
     </mat-card>

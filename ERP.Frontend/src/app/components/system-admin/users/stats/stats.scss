@@ -30,6 +30,7 @@ $radius-sm:     8px;
   border-radius: $radius !important;
   box-shadow: none !important;
   transition: transform 0.2s, border-color 0.2s;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-2px);
@@ -89,12 +90,12 @@ $radius-sm:     8px;
   }
 
   &--inactive {
-    border-color: rgba($warn, 0.3) !important;
+    border-color: rgba($danger, 0.3) !important;
     .stat-card__icon-wrap {
-      background: rgba($warn, 0.12);
-      mat-icon { color: $warn; }
+      background: rgba($danger, 0.12);
+      mat-icon { color: $danger; }
     }
-    .stat-card__value { color: $warn; }
+    .stat-card__value { color: $danger; }
   }
 
   &--completed {
@@ -113,6 +114,21 @@ $radius-sm:     8px;
       mat-icon { color: $text-muted; }
     }
     .stat-card__value { color: $text-primary; }
+  }
+
+  &--incompleted {
+    border-color: rgba(#f59e0b, 0.3) !important;
+    .stat-card__icon-wrap {
+      background: rgba(#f59e0b, 0.12);
+      mat-icon { color: #f59e0b; }
+    }
+    .stat-card__value { color: #f59e0b; }
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
   }
 }
 
