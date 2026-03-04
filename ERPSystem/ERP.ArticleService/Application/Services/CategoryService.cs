@@ -1,0 +1,140 @@
+﻿using ERP.ArticleService.Application.Interfaces;
+using ERP.ArticleService.Domain;
+using ERP.ArticleService.Application.DTOs;
+
+namespace ERP.ArticleService.Application.Services
+{
+    public class CategoryService : ICategoryService
+    {
+        private readonly ICategoryRepository _categoryRepository;
+
+        public CategoryService(ICategoryRepository categoryRepository)
+        {
+            _categoryRepository = categoryRepository;
+        }
+
+        // =========================
+        // CREATE
+        // =========================
+        public async Task<Category> CreateAsync(string name)
+        {
+            var existing = await _categoryRepository.GetByNameAsync(name);
+            if (existing is not null)
+                throw new InvalidOperationException(
+                    $"A category with the name '{name}' already exists.");
+
+            var category = new Category(name);
+            await _categoryRepository.AddAsync(category);
+            await _categoryRepository.SaveChangesAsync();
+            return category;
+        }
+
+        // =========================
+        // READ
+        // =========================
+        public async Task<Category> GetByIdAsync(Guid id)
+        {
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category is null)
+                throw new KeyNotFoundException(
+                    $"Category with id '{id}' was not found.");
+            return category;
+        }
+
+        public async Task<Category> GetByNameAsync(string name)
+        {
+            var category = await _categoryRepository.GetByNameAsync(name);
+            if (category is null)
+                throw new KeyNotFoundException(
+                    $"Category with name '{name}' was not found.");
+            return category;
+        }
+
+        public async Task<List<Category>> GetAllAsync()
+        {
+            return await _categoryRepository.GetAllAsync();
+        }
+
+        // =========================
+        // UPDATE
+        // =========================
+        public async Task<Category> UpdateNameAsync(Guid id, string newName)
+        {
+            var category = await GetByIdAsync(id);
+
+            var existing = await _categoryRepository.GetByNameAsync(newName);
+            if (existing is not null && existing.Id != id)
+                throw new InvalidOperationException(
+                    $"A category with the name '{newName}' already exists.");
+
+            category.UpdateName(newName);
+            await _categoryRepository.SaveChangesAsync();
+            return category;
+        }
+
+        // =========================
+        // DELETE
+        // =========================
+        public async Task DeleteAsync(Guid id)
+        {
+            var category = await GetByIdAsync(id);
+            _categoryRepository.Remove(category);
+            await _categoryRepository.SaveChangesAsync();
+        }
+
+        // =========================
+        // PAGING / FILTERING
+        // =========================
+        public async Task<PagedResultDto<Category>> GetPagedAsync(
+            int pageNumber,
+            int pageSize)
+        {
+            ValidatePaging(pageNumber, pageSize);
+            var (items, totalCount) = await _categoryRepository
+                .GetPagedAsync(pageNumber, pageSize);
+            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<PagedResultDto<Category>> GetPagedByNameAsync(
+            string nameFilter,
+            int pageNumber,
+            int pageSize)
+        {
+            ValidatePaging(pageNumber, pageSize);
+            if (string.IsNullOrWhiteSpace(nameFilter))
+                throw new ArgumentException("Name filter cannot be empty.");
+
+            var (items, totalCount) = await _categoryRepository
+                .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
+            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<PagedResultDto<Category>> GetPagedByDateRangeAsync(
+            DateTime from,
+            DateTime to,
+            int pageNumber,
+            int pageSize)
+        {
+            ValidatePaging(pageNumber, pageSize);
+            if (from > to)
+                throw new ArgumentException("'from' date must be earlier than or equal to 'to' date.");
+
+            var (items, totalCount) = await _categoryRepository
+                .GetPagedByDateRangeAsync(from, to, pageNumber, pageSize);
+            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+        }
+
+        // =========================
+        // PRIVATE HELPERS
+        // =========================
+        private static void ValidatePaging(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
+                    "Page number must be greater than zero.");
+            if (pageSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageSize),
+                    "Page size must be greater than zero.");
+        }
+    }
+}

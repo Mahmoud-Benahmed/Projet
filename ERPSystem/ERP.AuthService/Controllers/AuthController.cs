@@ -124,7 +124,7 @@ namespace ERP.AuthService.Controllers
 
 
         [HttpPut("change-password/profile")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangeProfilePasswordRequestDto request)
         {
             var requesterId = User.FindFirst("sub")?.Value;
 

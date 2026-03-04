@@ -45,6 +45,7 @@ namespace ERP.AuthService.Domain
             Email = email;
             Login = login;
             CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void SetPasswordHash(string passwordHash)
@@ -61,12 +62,14 @@ namespace ERP.AuthService.Domain
 
         public void Deactivate()
         {
+            if(!IsActive) return;
             IsActive = false;
             UpdatedAt = DateTime.UtcNow;
         }
 
         public void Activate()
         {
+            if(IsActive) return;
             IsActive = true;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -100,7 +103,6 @@ namespace ERP.AuthService.Domain
 
         public void RecordLogin()
         {
-            // Only activate on first ever login (new user, not yet active)
             if (!IsActive && !HasLoggedInBefore())
                 Activate();
 

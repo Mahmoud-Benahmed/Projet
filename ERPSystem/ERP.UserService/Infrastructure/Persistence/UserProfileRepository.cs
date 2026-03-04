@@ -134,7 +134,7 @@ public class UserProfileRepository : IUserProfileRepository
             ActiveUsers = active,
             DeactivatedUsers = deactivated,
             CompletedProfiles = completed,
-            IncompletedProfiles = total - completed  // ← derive it, no extra DB call
+            IncompletedProfiles = total - completed
         };
     }
 

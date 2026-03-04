@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -115,18 +116,22 @@ builder.Services.AddRateLimiter(options =>
 
     // ── LOGIN — strict (anti brute-force) ─────────────────
     options.AddPolicy("LoginPolicy", context =>
-        RateLimitPartition.GetFixedWindowLimiter(
+    {
+        context.Items["RateLimitPolicyName"] = "LoginPolicy";
+        return RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,                // 5 attempts
                 Window = TimeSpan.FromMinutes(5),
                 QueueLimit = 0
-            }));
+            });
+    });
 
     // ── AUTHENTICATED USER ACTIONS ────────────────────────
     options.AddPolicy("UserPolicy", context =>
     {
+        context.Items["RateLimitPolicyName"] = "UserPolicy";
         var userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
@@ -145,6 +150,7 @@ builder.Services.AddRateLimiter(options =>
     // ── WRITE OPERATIONS ──────────────────────────────────
     options.AddPolicy("WritePolicy", context =>
     {
+        context.Items["RateLimitPolicyName"] = "WritePolicy";
         var userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
@@ -165,9 +171,28 @@ builder.Services.AddRateLimiter(options =>
     {
         context.HttpContext.Response.StatusCode = 429;
         context.HttpContext.Response.ContentType = "application/json";
+
+        // check if a Retry-After value is available
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString();
+        }
+        var endpoint = context.HttpContext.GetEndpoint();
+        var policyName = context.HttpContext.Items["RateLimitPolicyName"]?.ToString();
+
+        var message = policyName switch
+        {
+            "LoginPolicy" => $"Too many login attempts. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
+            "WritePolicy" => $"Too many write operations. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
+            "UserPolicy" => $"Request limit reached. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
+            _ => $"Too many requests. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying."
+        };
+
         await context.HttpContext.Response.WriteAsync(
-            """{"message": "Too many requests. Please wait before retrying."}""",
+            $$"""{"message": "{{message}}", "retryAfterSeconds": {{(int)(retryAfter.TotalSeconds)}}}""",
             token);
+
     };
 });
 

@@ -39,6 +39,7 @@ public class UserProfile
         AuthUserId = authUserId;
         Email = email;
         CreatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void CompleteProfile(string fullName, string phone)
