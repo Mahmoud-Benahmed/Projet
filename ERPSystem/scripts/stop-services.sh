@@ -7,15 +7,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-CONTAINERS=(
-  erp-kafka
-  erp-auth
-  erp-user
-  erp-gateway
-  erp-auth-mongo
-  erp-user-sqlserver
-)
-
+CONTAINERS=(erp-kafka erp-gateway erp-auth erp-auth-mongo erp-user erp-user-sqlserver  erp-article erp-article-sqlserver)
 echo -e "${BLUE}Removing existing containers...${NC}"
 
 for container in "${CONTAINERS[@]}"; do

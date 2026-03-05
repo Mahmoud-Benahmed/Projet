@@ -16,6 +16,11 @@
         "Path": "ERP.AuthService\\ERP.AuthService.csproj",
         "Action": "Start",
         "DebugTarget": "http"
+      },
+      {
+        "Path": "ERP.ArticleService\\ERP.ArticleService.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
       }
     ]
   }
