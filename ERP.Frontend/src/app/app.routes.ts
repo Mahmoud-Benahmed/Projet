@@ -5,11 +5,12 @@ import { RegisterComponent } from './components/system-admin/users/register/regi
 import { authGuard } from './services/auth.guard';
 import { UsersHomeComponent } from './components/system-admin/users/home/home';
 import { ShellComponent } from './components/shell/shell';
-import { ProfileComponent } from './components/profile/profile';
+import { ProfileComponent } from './components/user/profile/profile';
 import { DeactivatedComponent } from './components/system-admin/users/deactivated/deactivated';
-import { MustChangePasswordComponent } from './components/must-change-password/must-change-password';
-import { CompleteProfileComponent } from './components/complete-profile/complete-profile';
+import { MustChangePasswordComponent } from './components/user/must-change-password/must-change-password';
+import { CompleteProfileComponent } from './components/user/complete-profile/complete-profile';
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
+import { ArticleComponent } from './components/articles/home/home';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
@@ -26,6 +27,8 @@ export const routes: Routes = [
       { path: 'users/register',     component: RegisterComponent,       canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/deactivated',  component: DeactivatedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/:authUserId',  component: ProfileComponent,        canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
+      { path: 'articles',              component: ArticleComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin', 'StockManager'] } },
+
       { path: '',                   redirectTo: 'home',                 pathMatch: 'full' },
     ]
   },

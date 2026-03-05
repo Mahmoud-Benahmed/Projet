@@ -7,7 +7,8 @@ export const environment = {
     roles:  '/auth/roles',
     privileges: '/auth/privileges',
     controles: '/auth/controles',
-    users:'/users'
+    users:'/users',
+    articles: '/articles'
   }
 };
 
