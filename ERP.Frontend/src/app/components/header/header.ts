@@ -45,6 +45,7 @@ export class HeaderComponent implements OnInit {
     { label: 'Users', route: '/users', icon: 'group', roles: ['SystemAdmin'] },
     { label: 'Deactivated', route: '/users/deactivated', icon: 'person_off', roles: ['SystemAdmin'] },
     { label: 'Permissions', route: '/permissions', icon: 'security', roles: ['SystemAdmin']},
+    { label: 'Articles', route: '/articles', icon: 'receipt_long', roles: ['SystemAdmin', 'StockManager']},
   ];
 
   constructor(private authService: AuthService,
