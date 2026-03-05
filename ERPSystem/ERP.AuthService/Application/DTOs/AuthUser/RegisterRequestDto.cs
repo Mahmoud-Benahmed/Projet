@@ -11,7 +11,9 @@ namespace ERP.AuthService.Application.DTOs.AuthUser
 
         [Required]
         [EmailAddress]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Invalid email format.")]
         [MaxLength(255)]
+
         string Email,
 
         [Required]

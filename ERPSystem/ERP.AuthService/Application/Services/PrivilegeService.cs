@@ -2,6 +2,8 @@
 using ERP.AuthService.Application.Exceptions.Role;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
+using ERP.AuthService.Domain;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
 
 namespace ERP.AuthService.Application.Services
 {
@@ -48,22 +50,39 @@ namespace ERP.AuthService.Application.Services
 
         public async Task AllowAsync(Guid roleId, Guid controleId)
         {
-            var privilege = await _privilegeRepository
-                                .GetByRoleIdAndControleIdAsync(roleId, controleId)
-                            ?? throw new PrivilegeNotFoundException(roleId, controleId);
+            var privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
 
-            privilege.SetGranted(true);
-            await _privilegeRepository.UpdateAsync(privilege);
+            if(privilege == null)
+            {
+                privilege = new Privilege(roleId, controleId, true);
+                await _privilegeRepository.AddAsync(privilege);
+            }
+            else
+            {
+                if (privilege.IsGranted) return;
+
+                privilege.SetGranted(true);
+                await _privilegeRepository.UpdateAsync(privilege);
+            }
+
         }
 
         public async Task DenyAsync(Guid roleId, Guid controleId)
         {
-            var privilege = await _privilegeRepository
-                                .GetByRoleIdAndControleIdAsync(roleId, controleId)
-                            ?? throw new PrivilegeNotFoundException(roleId, controleId);
+            var privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
 
-            privilege.SetGranted(false);
-            await _privilegeRepository.UpdateAsync(privilege);
+            if(privilege == null)
+            {
+                privilege = new Privilege(roleId, controleId, false);
+                await _privilegeRepository.AddAsync(privilege);
+            }
+            else
+            {
+                if (!privilege.IsGranted) return;
+
+                privilege.SetGranted(false);
+                await _privilegeRepository.UpdateAsync(privilege);
+            }
         }
     }
 }
