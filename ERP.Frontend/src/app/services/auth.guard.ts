@@ -31,12 +31,15 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   if (requiredRoles?.length) {
     if (!userRole || !requiredRoles.includes(userRole)) {
 
-      // Smart fallback
-      if (userRole === 'SystemAdmin') {
-        return router.createUrlTree(['/users']);
+      switch(userRole){
+        case 'SystemAdmin':
+          return router.createUrlTree(['/users']);
+        case 'StockManager':
+          return router.createUrlTree(['/articles']);
+        default:
+          return router.createUrlTree(['/home']);
       }
-
-      return router.createUrlTree(['/home']);
+      
     }
   }
 
