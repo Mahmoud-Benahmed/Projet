@@ -10,7 +10,7 @@ import { DeactivatedComponent } from './components/system-admin/users/deactivate
 import { MustChangePasswordComponent } from './components/user/must-change-password/must-change-password';
 import { CompleteProfileComponent } from './components/user/complete-profile/complete-profile';
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
-import { ArticleComponent } from './components/articles/home/home';
+import { ArticleComponent } from './components/articles/home';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
