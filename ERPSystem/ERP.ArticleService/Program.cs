@@ -2,26 +2,23 @@ using DotNetEnv;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Application.Services;
 using ERP.ArticleService.Infrastructure.Persistence;
+using ERP.ArticleService.Infrastructure.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
 
-// =========================
-// LOAD .env
-// =========================
-Env.Load();
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
 
 // =========================
 // DATABASE
 // =========================
 
-var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' is not configured.");
 
 // ── Database
 builder.Services.AddDbContext<ArticleDbContext>(options =>
     options.UseSqlServer(connectionString));
-
 
 // =========================
 // REPOSITORIES
@@ -41,20 +38,48 @@ builder.Services.AddScoped<IArticleCodeService, ArticleCodeService>();
 // CONTROLLERS & API
 // =========================
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ArticleDbContext>();
+    await context.Database.MigrateAsync();
+
+    await context.Articles.ExecuteDeleteAsync();
+    await context.ArticleCodes.ExecuteDeleteAsync();
+    await context.Categories.ExecuteDeleteAsync();
+
+    var articleCodeSeeder = new ArticleCodeSeeder(
+        context,
+        scope.ServiceProvider.GetRequiredService<ILogger<ArticleCodeSeeder>>());
+    await articleCodeSeeder.SeedAsync();
+
+    var categorySeeder = new CategorySeeder(
+        scope.ServiceProvider.GetRequiredService<ICategoryService>(),
+        scope.ServiceProvider.GetRequiredService<ILogger<CategorySeeder>>());
+    await categorySeeder.SeedAsync();
+
+    var articleSeeder = new ArticleSeeder(
+        scope.ServiceProvider.GetRequiredService<IArticleService>(),
+        scope.ServiceProvider.GetRequiredService<ICategoryService>(),
+        scope.ServiceProvider.GetRequiredService<ILogger<ArticleSeeder>>());
+    await articleSeeder.SeedAsync();
+}
 
 // =========================
 // PIPELINE
 // =========================
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+//app.UseAuthentication(); // must be before UseAuthorization
+//app.UseAuthorization();
+//app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 
 app.Run();

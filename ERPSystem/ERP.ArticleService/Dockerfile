@@ -1,0 +1,14 @@
+# ---------- Build Stage ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ERP.ArticleService.csproj .
+RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+# ---------- Runtime Stage ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 5003
+ENTRYPOINT ["dotnet", "ERP.ArticleService.dll"]

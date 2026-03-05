@@ -1,12 +1,13 @@
-﻿namespace ERP.ArticleService.API
+﻿using System.Runtime.CompilerServices;
+
+namespace ERP.ArticleService.API
 {
     public static class ApiRoutes
     {
-        private const string Base = "api";
 
         public static class Categories
         {
-            private const string Controller = Base + "/categories";
+            private const string Controller = Articles.Controller + "/categories";
 
             public const string GetAll = Controller;
             public const string GetById = Controller + "/{id:guid}";
@@ -21,7 +22,7 @@
 
         public static class Articles
         {
-            private const string Controller = Base + "/articles";
+            public const string Controller = "articles";
 
             public const string GetAll = Controller;
             public const string GetById = Controller + "/{id:guid}";
@@ -34,13 +35,6 @@
             public const string Activate = Controller + "/{id:guid}/activate";
             public const string Deactivate = Controller + "/{id:guid}/deactivate";
             public const string Delete = Controller + "/{id:guid}";
-        }
-
-        public static class ArticleCodes
-        {
-            private const string Controller = Base + "/article-codes";
-
-            public const string Generate = Controller + "/generate";
         }
     }
 }

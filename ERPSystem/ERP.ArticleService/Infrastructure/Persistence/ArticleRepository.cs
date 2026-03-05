@@ -48,7 +48,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         // =========================
         public async Task<List<Article>> GetAllAsync()
         {
-            return await BaseQuery().ToListAsync();
+            return await BaseQuery().OrderBy(a=> a.CreatedAt).ToListAsync();
         }
 
         // =========================
@@ -98,7 +98,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                 .Where(a => EF.Functions.Like(a.Libelle, $"%{libelleFilter.Trim()}%"));
 
             return await PaginationHelper.ToPagedResultAsync(
-                query, pageNumber, pageSize, q => q.OrderBy(a => a.CreatedAt));
+                query, pageNumber, pageSize, q => q.OrderBy(a => a.Libelle));
         }
     }
 }
