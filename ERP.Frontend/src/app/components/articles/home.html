@@ -1,0 +1,253 @@
+<div class="page">
+
+  <!-- ===================== PAGE HEADER ===================== -->
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">Articles</p>
+      <h1 class="page-title">Articles</h1>
+    </div>
+  </div>
+
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+  </div>
+
+  <!-- ===================== LIST VIEW ===================== -->
+  <ng-container *ngIf="viewMode === 'list'">
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Total Articles</p>
+            <p class="stat-card__value">{{ totalArticles }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.49 7.52a.2.2 0 0 1 0-.08a.2.2 0 0 1 0-.07v-.09l-.06-.15a.5.5 0 0 0-.09-.11l-.09-.08h-.05l-3.94-2.49l-3.72-2.3a.9.9 0 0 0-.29-.15h-.08a.8.8 0 0 0-.27 0h-.1a1.1 1.1 0 0 0-.33.13L4 6.78l-.09.07l-.09.08l-.1.07l-.05.06l-.06.15v.15a.7.7 0 0 0 0 .2v8.73a1 1 0 0 0 .47.85l7.5 4.64l.15.06h.08a.86.86 0 0 0 .52 0h.08l.15-.06L20 17.21a1 1 0 0 0 .47-.85V7.63s.02-.07.02-.11M12 4.17l1.78 1.1l-5.59 3.46l-1.79-1.1Zm-1 15l-5.5-3.36V9.42l5.5 3.4Zm1-8.11l-1.91-1.15l5.59-3.47l1.92 1.19Zm6.5 4.72L13 19.2v-6.38l5.5-3.4Z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--amber">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Active</p>
+            <p class="stat-card__value">{{ activeCount }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--red">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Inactive</p>
+            <p class="stat-card__value">{{ inactiveCount }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--green">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Categories</p>
+            <p class="stat-card__value">{{ categoryCount }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search articles..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+      <button class="btn-add" (click)="openCreate()">
+        + Add Article
+      </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="loading-overlay" *ngIf="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <table class="table" *ngIf="!loading">
+        <thead>
+          <tr>
+            <th>CODE</th>
+            <th>NAME</th>
+            <th>CATEGORY</th>
+            <th>UNIT PRICE</th>
+            <th>STATUS</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let article of filteredArticles; trackBy: trackById" class="table__row">
+            <td class="td--code">{{ article.code }}</td>
+            <td class="td--name">{{ article.libelle }}</td>
+            <td class="td--category">{{ getCategoryName(article.categoryId) }}</td>
+            <td class="td--price">{{ article.prix | currency: currencyCode: 'symbol' :'1.2-2' : currencyLocale }}</td>
+            <td>
+              <span class="badge" [ngClass]="article.isActive ? 'badge--active' : 'badge--inactive'">
+                {{ article.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="td--actions">
+              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button class="icon-btn icon-btn--edit" (click)="openEdit(article)" title="Edit">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="icon-btn icon-btn--delete" (click)="delete(article)" title="Delete">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredArticles.length === 0">
+            <td colspan="6" class="td--empty">No articles found.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- PAGINATION -->
+      <div class="pagination" *ngIf="totalPages > 1 && !loading">
+        <button class="page-btn" (click)="prevPage()" [disabled]="pageNumber === 1">‹ Previous</button>
+        <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
+        <button class="page-btn" (click)="nextPage()" [disabled]="pageNumber === totalPages">Next ›</button>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ===================== VIEW PANEL ===================== -->
+  <div class="panel" *ngIf="viewMode === 'view' && selectedArticle">
+    <div class="panel__header">
+      <h2 class="panel__title">Article Details</h2>
+      <button class="btn-back" (click)="cancel()">← Back</button>
+    </div>
+    <div class="panel__body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">CODE</span>
+          <span class="detail-value detail-value--mono">{{ selectedArticle.code }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">LIBELLE</span>
+          <span class="detail-value">{{ selectedArticle.libelle }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">CATEGORY</span>
+          <span class="detail-value">{{ getCategoryName(selectedArticle.categoryId) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">UNIT PRICE</span>
+          <span class="detail-value">{{ selectedArticle.prix | number:'1.2-2' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">STATUS</span>
+          <span class="badge" [ngClass]="selectedArticle.isActive ? 'badge--active' : 'badge--inactive'">
+            {{ selectedArticle.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
+      <div class="panel__actions">
+        <button class="btn-secondary" (click)="openEdit(selectedArticle)">Edit Article</button>
+        <button class="btn-danger" (click)="delete(selectedArticle)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== FORM PANEL ===================== -->
+  <div class="panel" *ngIf="viewMode === 'create' || viewMode === 'edit'">
+    <div class="panel__header">
+      <h2 class="panel__title">{{ viewMode === 'create' ? 'Add New Article' : 'Edit Article' }}</h2>
+      <button class="btn-back" (click)="cancel()">← Back</button>
+    </div>
+    <div class="panel__body">
+      <form [formGroup]="articleForm" (ngSubmit)="submit()" class="form">
+
+        <div class="form__field">
+          <label class="form__label">Article Name</label>
+          <input
+            class="form__input"
+            type="text"
+            formControlName="libelle"
+            placeholder="Enter article name"
+            [class.form__input--error]="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched"
+          />
+          <span class="form__error" *ngIf="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched">
+            Name is required (min 2 characters)
+          </span>
+        </div>
+
+        <div class="form__row">
+          <div class="form__field">
+            <label class="form__label">Unit Price</label>
+            <input
+              class="form__input"
+              type="number"
+              formControlName="prix"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              [class.form__input--error]="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched"
+            />
+            <span class="form__error" *ngIf="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched">
+              Price must be 0 or greater
+            </span>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">Category</label>
+            <select
+              class="form__input form__select"
+              formControlName="categoryId"
+              [class.form__input--error]="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched"
+            >
+              <option value="">Select a category</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+            <span class="form__error" *ngIf="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched">
+              Category is required
+            </span>
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
+          <button type="submit" class="btn-add" [disabled]="articleForm.invalid">
+            {{ viewMode === 'create' ? '+ Add Article' : 'Save Changes' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
