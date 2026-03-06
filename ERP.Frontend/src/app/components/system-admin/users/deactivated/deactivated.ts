@@ -15,9 +15,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { UsersService } from '../../../../services/users.service';
-import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
 import { Stats } from "../stats/stats";
+import { AuthService } from '../../../../services/auth.service';
+import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-deactivated',
@@ -37,8 +37,7 @@ import { Stats } from "../stats/stats";
     MatFormFieldModule,
     MatTooltipModule,
     MatDividerModule,
-    MatSnackBarModule,
-    Stats
+    MatSnackBarModule
 ],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
@@ -57,7 +56,7 @@ export class DeactivatedComponent implements OnInit {
     'actions',
   ];
 
-  dataSource = new MatTableDataSource<UserProfileResponseDto>([]);
+  dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
   totalCount = 0;
   pageNumber = 1;
@@ -67,9 +66,9 @@ export class DeactivatedComponent implements OnInit {
   searchTerm = '';
 
   constructor(
-    private usersService: UsersService,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -78,8 +77,8 @@ export class DeactivatedComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
-    this.usersService.getDeactivated(this.pageNumber, this.pageSize).subscribe({
-      next: (result: PagedResultDto<UserProfileResponseDto>) => {
+    this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
+      next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items;
         this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
@@ -103,8 +102,8 @@ export class DeactivatedComponent implements OnInit {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-  activateUser(user: UserProfileResponseDto): void {
-    this.usersService.activate(user.id).subscribe({
+  activateUser(user: AuthUserGetResponseDto): void {
+    this.authService.activate(user.id).subscribe({
       next: () => {
         this.snackBar.open(
           `${user.fullName ?? user.email} reactivated.`, 'OK',
@@ -117,22 +116,11 @@ export class DeactivatedComponent implements OnInit {
     });
   }
 
-  deleteUser(user: UserProfileResponseDto): void {
-    this.usersService.delete(user.id).subscribe({
-      next: () => {
-        this.snackBar.open('User deleted.', 'OK', { duration: 3000 });
-        this.loadUsers();
-      },
-      error: () =>
-        this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 }),
-    });
-  }
-
   goToProfile(authUserId: string): void {
     this.router.navigate(['/users', authUserId]);
   }
 
-  getInitials(user: UserProfileResponseDto): string {
+  getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {
       return user.fullName
         .split(' ')

@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatCardContent, MatCard } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
-import { UsersService } from '../../../../services/users.service';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { UserStatsDto } from '../../../../interfaces/UserProfileDto';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../../services/auth.service';
+import { UserStatsDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-stats',
@@ -18,13 +18,11 @@ export class Stats implements OnInit{
   stats : UserStatsDto = {
       totalUsers: 0,
       activeUsers: 0,
-      deactivatedUsers: 0,
-      completedProfiles: 0,
-      incompletedProfiles: 0
+      deactivatedUsers: 0
   };
 
   isLoading: boolean= false;
-  constructor(private userProfileService: UsersService,
+  constructor(private authService: AuthService,
               private snackbar: MatSnackBar,
               private router: Router,
               private cdr: ChangeDetectorRef) {}
@@ -35,7 +33,7 @@ export class Stats implements OnInit{
 
   loadStats(): void {
     this.isLoading= true;
-    this.userProfileService.getStats().subscribe({
+    this.authService.getStats().subscribe({
       next: (stats) => {
         this.isLoading= false;
         this.stats = stats;
