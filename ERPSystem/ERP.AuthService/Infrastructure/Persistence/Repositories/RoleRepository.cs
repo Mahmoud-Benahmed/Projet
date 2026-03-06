@@ -17,7 +17,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
         public async Task<Role?> GetByLibelleAsync(RoleEnum libelle)
-            => await _collection.Find(x => x.Libelle == libelle).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Libelle.Equals(libelle)).FirstOrDefaultAsync();
 
         public async Task<List<Role>> GetAllAsync()
             => await _collection.Find(_ => true).ToListAsync();

@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using Microsoft.AspNetCore.Identity;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -12,14 +13,13 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IRoleRepository roleRepository,
             IControleRepository controleRepository,
             IPrivilegeRepository privilegeRepository,
-            IAuthUserService authUserService,
-            IConfiguration configuration,
-            IEventPublisher eventPublisher)
+            IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
+            IConfiguration configuration)
         {
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
-            await SeedUsersAsync(userRepository, roleRepository, authUserService, configuration, eventPublisher);
+            await SeedUsersAsync(userRepository, roleRepository, configuration, passwordHasher);
         }
 
         // ── 1. SEED CONTROLES ─────────────────────────────
@@ -262,41 +262,41 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task SeedUsersAsync(
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
-            IAuthUserService authUserService,
             IConfiguration configuration,
-            IEventPublisher eventPublisher)
+            IPasswordHasher<AuthUser> passwordHasher)
         {
             if (await userRepository.CountAsync() > 0)
                 await userRepository.DeleteAllAsync();
 
-            var seedUsers = new List<(string Login, string Email, string Password, RoleEnum Role)>
+            List<Role> roles = await roleRepository.GetAllAsync();
+            Role adminRole = roles.Find(r => r.Libelle == RoleEnum.SystemAdmin);
+            Role salesRole = roles.Find(r => r.Libelle == RoleEnum.SalesManager);
+            Role stockRole = roles.Find(r => r.Libelle == RoleEnum.StockManager);
+            Role accountRole = roles.Find(r => r.Libelle == RoleEnum.Accountant);
+
+
+            var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
             {
-                (
-                configuration["SeedUser:Login"]    ?? "admin_erp1234",
-                    configuration["SeedUser:Email"]    ?? "admin@erp.com",
-                    configuration["SeedUser:Password"] ?? "Admin@1234",
-                    Enum.Parse<RoleEnum>(configuration["SeedUser:Role"] ?? "SystemAdmin")
-                ),
-                ("sales_erp1234","sales@erp.com",   "Sales@1234",   RoleEnum.SalesManager),
-                ("stock_erp1234","stock@erp.com",   "Stock@1234",   RoleEnum.StockManager),
-                ("account_erp1234","account@erp.com", "Account@1234", RoleEnum.Accountant),
+                ("John DOE",        "admin_erp1234",    "admin@erp.com",    "Admin@1234",   adminRole.Id),
+                ("Sales Alex",      "sales_erp1234",    "sales@erp.com",    "Sales@1234",   salesRole.Id),
+                ("Stock David",     "stock_erp1234",    "stock@erp.com",    "Stock@1234",   stockRole.Id),
+                ("Accountant Jane", "account_erp1234",  "account@erp.com",  "Account@1234", accountRole.Id),
             };
 
-            foreach (var (login, email, password, roleEnum) in seedUsers)
+            foreach (var (fullName, login, email, password, roleId) in seedUsers)
             {
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
 
-                var role = await roleRepository.GetByLibelleAsync(roleEnum)
-                           ?? throw new InvalidOperationException(
-                               $"Role {roleEnum} not found.");
+                var user = new AuthUser(login, email, fullName);
 
-                var user = await authUserService.RegisterAsync(new RegisterRequestDto(
-                     Login: login,
-                     Email: email,
-                     Password: password,
-                     RoleId: role.Id
-                 ));
+                user.SetRole(roleId);
+
+
+                var hashedPassword = passwordHasher.HashPassword(user, password);
+                user.SetPasswordHash(hashedPassword);
+
+                await userRepository.AddAsync(user);
             }
         }
     }
