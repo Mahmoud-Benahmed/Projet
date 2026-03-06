@@ -15,6 +15,8 @@ namespace ERP.AuthService.Domain
 
         public string Email { get; set; } = default!;
 
+        public string FullName { get; set; }
+
         public string PasswordHash { get; set; } = default!;
 
         public bool MustChangePassword { get; private set; } = true;
@@ -33,8 +35,11 @@ namespace ERP.AuthService.Domain
 
         private AuthUser() { }
 
-        public AuthUser(string login, string email)
+        public AuthUser(string login, string email, string fullName)
         {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentNullException("FullName is required");
+
             if (string.IsNullOrWhiteSpace(login))
                 throw new ArgumentException("Username is required");
 
@@ -44,8 +49,25 @@ namespace ERP.AuthService.Domain
             Id = Guid.NewGuid();
             Email = email;
             Login = login;
+            FullName = fullName;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
+
+        }
+
+        public void UpdateProfile(string fullname, string email)
+        {
+            bool invalidRequest= string.IsNullOrEmpty(fullname) || string.IsNullOrEmpty(email);
+            if (invalidRequest)
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    throw new ArgumentException("Email is required");
+                if (string.IsNullOrWhiteSpace(fullname))
+                    throw new ArgumentException("FullName is required");
+            }
+            Email = email;
+            FullName= fullname;
+            UpdatedAt= DateTime.UtcNow;
         }
 
         public void SetPasswordHash(string passwordHash)
