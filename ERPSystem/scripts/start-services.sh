@@ -3,7 +3,7 @@ set -e
 ROOT_DIR=$(pwd)
 
 echo "Removing existing containers..."
-docker rm -f erp-kafka erp-auth erp-user erp-gateway erp-auth-mongo erp-user-sqlserver erp-article erp-article-sqlserver 2>/dev/null || true
+docker rm -f erp-kafka erp-auth erp-gateway erp-auth-mongo erp-article erp-article-sqlserver 2>/dev/null || true
 
 echo "Starting shared infrastructure..."
 bash "$ROOT_DIR/start-kafka.sh"
@@ -15,7 +15,7 @@ until docker inspect erp-kafka --format='{{.State.Health.Status}}' 2>/dev/null |
 done
 echo "Kafka is healthy!"
 
-for service in ERP.AuthService ERP.UserService ERP.Gateway ERP.ArticleService; do
+for service in ERP.AuthService ERP.Gateway ERP.ArticleService; do
   [ -d "$service" ] || continue
   if [ -f "$service/docker-compose.yaml" ] || [ -f "$service/docker-compose.yml" ]; then
     echo "--------------------------------------"

@@ -5,6 +5,7 @@
         Guid Id,
         string Email,
         string Login,
+        string FullName,
         Guid RoleId,
         string RoleName,
         bool MustChangePassword,

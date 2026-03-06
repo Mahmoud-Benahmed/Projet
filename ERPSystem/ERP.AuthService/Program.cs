@@ -100,12 +100,11 @@ builder.Services.AddScoped<IAuthUserService, AuthUserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
-builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
-builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
-builder.Services.AddHostedService<UserActivatedConsumer>();
-builder.Services.AddHostedService<UserDeactivatedConsumer>();
+builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(); // ← keep only this
+//builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();
+
 // ── Initialize MongoDB indexes
 var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
 await MongoDbInitializer.InitializeAsync(mongoContext);
@@ -113,19 +112,15 @@ await MongoDbInitializer.InitializeAsync(mongoContext);
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-
     var services = scope.ServiceProvider;
     await AuthServiceSeeder.SeedAsync(
         services.GetRequiredService<IAuthUserRepository>(),
         services.GetRequiredService<IRoleRepository>(),
         services.GetRequiredService<IControleRepository>(),
         services.GetRequiredService<IPrivilegeRepository>(),
-        services.GetRequiredService<IAuthUserService>(),
-        services.GetRequiredService<IConfiguration>(),
-        services.GetRequiredService<IEventPublisher>()  // ← add this
+        services.GetRequiredService<IPasswordHasher<AuthUser>>(), // ← generic type
+        services.GetRequiredService<IConfiguration>()
     );
-
 }
 
 app.UseSwagger();
