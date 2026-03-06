@@ -1,11 +1,10 @@
-// =========================
-// DTOs
-// =========================
+// ─── DTOs ────────────────────────────────────────────────────────────────────
 
 export interface AuthUserGetResponseDto {
   id: string;
   email: string;
   login: string;
+  fullName: string;
   roleId: string;
   roleName: string;
   mustChangePassword: boolean;
@@ -15,16 +14,11 @@ export interface AuthUserGetResponseDto {
   lastLoginAt: string | null;
 }
 
-export interface RegisterRequestDto {
-  login: string;
-  email: string;
-  password: string;
-  roleId: string;
-}
-
-export interface LoginRequestDto {
-  login: string;
-  password: string;
+export interface PagedResultDto<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
 }
 
 export interface AuthResponseDto {
@@ -34,17 +28,46 @@ export interface AuthResponseDto {
   expiresAt: string;
 }
 
-export interface ChangePasswordRequestDto {
+export interface LoginRequestDto {
+  login: string;
+  password: string;
+}
+
+export interface RegisterRequestDto {
+  login: string;
+  email: string;
+  fullName: string;
+  password: string;
+  roleId: string;
+}
+
+export interface ChangeProfilePasswordRequestDto {
   currentPassword: string;
   newPassword: string;
 }
 
-export interface AdminChangePasswordRequestDto {
+export interface AdminChangeProfileRequest {
   newPassword: string;
 }
 
 export interface RefreshTokenRequestDto {
   refreshToken: string;
+}
+
+export interface UpdateProfileDto {
+  email: string;
+  fullName: string;
+}
+
+export interface UserStatsDto {
+  totalUsers: number;
+  activeUsers: number;
+  deactivatedUsers: number;
+}
+
+export interface RoleResponseDto {
+  id: string;
+  libelle: string;
 }
 
 export interface ControleResponseDto {
@@ -54,10 +77,6 @@ export interface ControleResponseDto {
   description: string;
 }
 
-// =========================
-// DTOs
-// =========================
-
 export interface PrivilegeResponseDto {
   id: string;
   roleId: string;
@@ -65,12 +84,4 @@ export interface PrivilegeResponseDto {
   controleLibelle: string;
   controleCategory: string;
   isGranted: boolean;
-}
-
-
-export enum RoleEnum {
-  SystemAdmin = 'SystemAdmin',
-  Accountant='Accountant',
-  SalesManager='SalesManager',
-  StockManager='StockManager'
 }
