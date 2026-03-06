@@ -1,34 +1,27 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
-import { environment } from '../environment';
-import { AuthUserGetResponseDto, AdminChangePasswordRequestDto, AuthResponseDto, ChangePasswordRequestDto, LoginRequestDto, RefreshTokenRequestDto, RegisterRequestDto } from '../interfaces/AuthDto';
 import { jwtDecode } from 'jwt-decode';
-import { UserProfileResponseDto } from '../interfaces/UserProfileDto';
-import { Router } from '@angular/router';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { Router } from "@angular/router";
+import { environment } from "../environment";
+import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UserStatsDto } from "../interfaces/AuthDto";
+import { Observable, tap } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
   role: string;
   login: string;
-  email: string;
   privilege: string | string[];
   exp: number;
-}
-
-export interface FullProfile extends UserProfileResponseDto{
-  mustChangePassword: boolean;
-  lastLoginAt: string | null;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly base = `${environment.apiUrl}${environment.routes.auth}`;
+  private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
-  private _userProfile: FullProfile | null = null;
+  private _userProfile: AuthUserGetResponseDto | null = null;
 
   constructor(private http: HttpClient,   private router: Router) {}
 
@@ -128,11 +121,11 @@ export class AuthService {
   // =========================
   // USER PROFILE CACHE
   // =========================
-  get UserProfile(): FullProfile | null {
+  get UserProfile(): AuthUserGetResponseDto | null {
     return this._userProfile;
   }
 
-  setUserProfile(profile: FullProfile): void {
+  setUserProfile(profile: AuthUserGetResponseDto): void {
     this._userProfile = profile;
   }
 
@@ -144,72 +137,181 @@ export class AuthService {
   // GET ME
   // =========================
   getMe(): Observable<AuthUserGetResponseDto> {
-    return this.http.get<AuthUserGetResponseDto>(`${this.base}/me`);
+    return this.http.get<AuthUserGetResponseDto>(`${this.baseUrl}/me`);
   }
 
   // =========================
   // GET BY ID
   // =========================
   getById(id: string): Observable<AuthUserGetResponseDto> {
-    return this.http.get<AuthUserGetResponseDto>(`${this.base}/${id}`);
+    return this.http.get<AuthUserGetResponseDto>(`${this.baseUrl}/${id}`);
   }
 
   // =========================
   // GET BY LOGIN
   // =========================
   getByLogin(login: string): Observable<AuthUserGetResponseDto> {
-    return this.http.get<AuthUserGetResponseDto>(`${this.base}/login/${login}`);
+    return this.http.get<AuthUserGetResponseDto>(`${this.baseUrl}/login/${login}`);
   }
+
+  // ── Auth: User Lists ─────────────────────────────────────────────────────
+
+  /** GET /auth — Get all users (paginated) */
+  getUsers(pageNumber: number = 1, pageSize: number = 10): Observable<PagedResultDto<AuthUserGetResponseDto>> {
+      const params = new HttpParams().set('pageNumber', pageNumber)
+                                      .set('pageSize', pageSize);
+      return this.http.get<PagedResultDto<AuthUserGetResponseDto>>(this.baseUrl, { params });
+  }
+
+  /** GET /auth/activated — Get all active users (paginated) */
+  getActivatedUsers(pageNumber: number = 1,
+                    pageSize: number = 10): Observable<PagedResultDto<AuthUserGetResponseDto>> {
+      const params = new HttpParams().set('pageNumber', pageNumber)
+                                      .set('pageSize', pageSize);
+      return this.http.get<PagedResultDto<AuthUserGetResponseDto>>(`${this.baseUrl}/activated`,
+                                                                    { params });
+  }
+
+  /** GET /auth/deactivated — Get all deactivated users (paginated) */
+  getDeactivatedUsers(pageNumber: number = 1,
+                      pageSize: number = 10): Observable<PagedResultDto<AuthUserGetResponseDto>> {
+    const params = new HttpParams().set('pageNumber', pageNumber)
+                                    .set('pageSize', pageSize);
+    return this.http.get<PagedResultDto<AuthUserGetResponseDto>>(`${this.baseUrl}/deactivated`,
+                                                                  { params });
+  }
+
+  /** GET /auth/by-role — Get users filtered by role (paginated) */
+  getUsersByRole(roleId: string,
+                  pageNumber: number = 1,
+                  pageSize: number = 10): Observable<PagedResultDto<AuthUserGetResponseDto>> {
+    const params = new HttpParams().set('roleId', roleId)
+                                    .set('pageNumber', pageNumber)
+                                    .set('pageSize', pageSize);
+    return this.http.get<PagedResultDto<AuthUserGetResponseDto>>(`${this.baseUrl}/by-role`,
+                                                                  { params });
+  }
+
 
   // =========================
   // EXISTS BY LOGIN
   // =========================
   existsByLogin(login: string): Observable<boolean> {
-    return this.http.get<boolean>(`${this.base}/exists-login/${login}`);
+    return this.http.get<boolean>(`${this.baseUrl}/exists-login/${login}`);
   }
 
   // =========================
   // EXISTS BY EMAIL
   // =========================
   existsByEmail(email: string): Observable<boolean> {
-    return this.http.get<boolean>(`${this.base}/exists-email/${email}`);
+    return this.http.get<boolean>(`${this.baseUrl}/exists-email/${email}`);
+  }
+
+  getStats(): Observable<UserStatsDto>{
+    return this.http.get<UserStatsDto>(`${this.baseUrl}/stats`);
   }
 
   // =========================
   // REGISTER
   // =========================
   register(request: RegisterRequestDto): Observable<AuthUserGetResponseDto> {
-    return this.http.post<AuthUserGetResponseDto>(`${this.base}/register`, request);
+    return this.http.post<AuthUserGetResponseDto>(`${this.baseUrl}/register`, request);
   }
 
   // =========================
   // LOGIN
   // =========================
   login(request: LoginRequestDto): Observable<AuthResponseDto> {
-    return this.http.post<AuthResponseDto>(`${this.base}/login`, request).pipe(
+    return this.http.post<AuthResponseDto>(`${this.baseUrl}/login`, request).pipe(
       tap(response => this.storeTokens(response))
     );
   }
 
-  // =========================
-  // CHANGE PASSWORD (own profile)
-  // =========================
-  changePassword(request: ChangePasswordRequestDto): Observable<void> {
-    return this.http.put<void>(`${this.base}/change-password/profile`, request);
+    // ── Auth: Activation ─────────────────────────────────────────────────────
+
+  /** PATCH /auth/{id}/activate — Activate a user account */
+  activate(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/activate`, {});
   }
 
-  // =========================
-  // CHANGE PASSWORD (admin)
-  // =========================
-  adminChangePassword(userId: string, request: AdminChangePasswordRequestDto): Observable<void> {
-    return this.http.put<void>(`${this.base}/change-password/${userId}`, request);
+  /** PATCH /auth/{id}/deactivate — Deactivate a user account */
+  deactivate(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/deactivate`, {});
+  }
+
+
+  // ── Auth: Password Management ────────────────────────────────────────────
+
+  /** PUT /auth/change-password/profile — Change own password (requires current password) */
+  changeProfilePassword(payload: ChangeProfilePasswordRequestDto): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/change-password/profile`, payload);
+  }
+
+  /** PUT /auth/change-password/{userId} — Admin: force-change a user's password */
+  adminChangePassword(userId: string, payload: AdminChangeProfileRequest): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/change-password/${userId}`, payload);
+  }
+
+
+  // ── Roles ────────────────────────────────────────────────────────────────
+
+  /** GET /auth/roles — Get all roles */
+  getRoles(): Observable<RoleResponseDto[]> {
+    return this.http.get<RoleResponseDto[]>(`${this.baseUrl}/roles`);
+  }
+
+  /** GET /auth/roles/{id} — Get a role by ID */
+  getRoleById(id: string): Observable<RoleResponseDto> {
+    return this.http.get<RoleResponseDto>(`${this.baseUrl}/roles/${id}`);
+  }
+
+  // ── Controles ────────────────────────────────────────────────────────────
+
+  /** GET /auth/controles — Get all controles */
+  getControles(): Observable<ControleResponseDto[]> {
+    return this.http.get<ControleResponseDto[]>(`${this.baseUrl}/controles`);
+  }
+
+  /** GET /auth/controles/{id} — Get a controle by ID */
+  getControleById(id: string): Observable<ControleResponseDto> {
+    return this.http.get<ControleResponseDto>(`${this.baseUrl}/controles/${id}`);
+  }
+
+  /** GET /auth/controles/category/{category} — Get controles by category */
+  getControlesByCategory(category: string): Observable<ControleResponseDto[]> {
+    return this.http.get<ControleResponseDto[]>(
+      `${this.baseUrl}/controles/category/${category}`
+    );
+  }
+
+  // ── Privileges ───────────────────────────────────────────────────────────
+
+  /** GET /auth/privileges/{roleId} — Get all privileges for a role */
+  getPrivilegesByRole(roleId: string): Observable<PrivilegeResponseDto[]> {
+    return this.http.get<PrivilegeResponseDto[]>(`${this.baseUrl}/privileges/${roleId}`);
+  }
+
+  /** PUT /auth/privileges/{roleId}/{controleId}/allow — Grant a privilege */
+  allowPrivilege(roleId: string, controleId: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.baseUrl}/privileges/${roleId}/${controleId}/allow`,
+      {}
+    );
+  }
+
+  /** PUT /auth/privileges/{roleId}/{controleId}/deny — Revoke a privilege */
+  denyPrivilege(roleId: string, controleId: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.baseUrl}/privileges/${roleId}/${controleId}/deny`,
+      {}
+    );
   }
 
   // =========================
   // REFRESH TOKEN
   // =========================
   refresh(request: RefreshTokenRequestDto): Observable<AuthResponseDto> {
-    return this.http.post<AuthResponseDto>(`${this.base}/refresh`, request).pipe(
+    return this.http.post<AuthResponseDto>(`${this.baseUrl}/refresh`, request).pipe(
       tap(response => this.storeTokens(response))
     );
   }
@@ -218,7 +320,7 @@ export class AuthService {
   // REVOKE + LOGOUT
   // =========================
   revoke(request: RefreshTokenRequestDto): Observable<void> {
-    return this.http.post<void>(`${this.base}/revoke`, request);
+    return this.http.post<void>(`${this.baseUrl}/revoke`, request);
   }
 
   logout(): void {
