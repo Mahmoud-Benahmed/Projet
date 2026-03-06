@@ -1,4 +1,5 @@
-﻿using ERP.AuthService.Application.DTOs.AuthUser;
+﻿using ERP.AuthService.Application.DTOs;
+using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
@@ -43,7 +44,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAuthUserById(Guid id)
+        public async Task<IActionResult> GetById(Guid id)
         {
             var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             var role = User.FindFirstValue("role");
@@ -65,9 +66,70 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("login/{login}")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAuthUserByLogin(string login)
+        public async Task<IActionResult> GetByLogin(string login)
         {
             var result = await _authService.GetByLoginAsync(login);
+            return Ok(result);
+        }
+
+
+        [HttpGet]
+        [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _authService.GetAllAsync(pageNumber, pageSize);
+            return Ok(result);
+        }
+
+        [HttpGet("deactivated")]
+        [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetDeactivated(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize);
+            return Ok(result);
+        }
+
+        [HttpGet("activated")]
+        [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetActivated(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize);
+            return Ok(result);
+        }
+
+        [HttpPatch("{id:guid}/activate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Activate(Guid id)
+        {
+            await _authService.ActivateAsync(id);
+            return NoContent();
+        }
+
+
+        [HttpPatch("{id:guid}/deactivate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Deactivate(Guid id)
+        {
+            await _authService.DeactivateAsync(id);
+            return NoContent();
+        }
+
+
+
+        [HttpGet("by-role")]
+        [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetByRole(
+            [FromQuery] Guid roleId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize);
             return Ok(result);
         }
 
@@ -86,8 +148,17 @@ namespace ERP.AuthService.Controllers
             return await _authService.ExistsByEmail(email);
         }
 
+        [HttpGet("/stats")]
+        [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetStats()
+        {
+            var result = await _authService.GetStatsAsync();
+            return Ok(result);
+        }
+
 
         [HttpPost("register")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {
             try
@@ -100,6 +171,21 @@ namespace ERP.AuthService.Controllers
                 ModelState.AddModelError("Email", ex.Message);
                 return ValidationProblem(ModelState);
             }
+        }
+
+        [HttpPut("update/{id:guid}")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateProfileDto updatedProfile)
+        {
+            var currentUserId = User.FindFirstValue("sub");
+            var canManageUsers = User.HasClaim("privilege", "ManageUsers");
+            var isOwner = currentUserId == id.ToString();
+
+            if (!isOwner && !canManageUsers)
+                return Forbid();
+
+            var result = await _authService.UpdateProfile(id, updatedProfile);
+            return Ok(result);
         }
 
 
