@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { AuthService, FullProfile } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { UsersService } from '../../services/users.service';
 import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-home',
@@ -19,12 +19,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class HomeComponent implements OnInit {
   isLoading: boolean = false;
 
-  userProfile: FullProfile | null=null;
+  userProfile: AuthUserGetResponseDto | null=null;
   userRole: string| null= null;
 
   constructor(private authService: AuthService,
-              private snackbar: MatSnackBar,
-              private userProfileService: UsersService) {}
+              private snackbar: MatSnackBar) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) {
@@ -37,16 +36,9 @@ export class HomeComponent implements OnInit {
       this.userProfile = this.authService.UserProfile;
       this.userRole= this.authService.Role;
     }else{
-      forkJoin({
-                authUser: this.authService.getMe(),
-                profile: this.userProfileService.getMe(),
-              }).subscribe({
-          next: ({ authUser, profile }) => {
-            this.userProfile = {
-              ...profile,
-              mustChangePassword: authUser.mustChangePassword,
-              lastLoginAt: authUser.lastLoginAt
-            };
+      this.authService.getMe().subscribe({
+          next: (authUser) => {
+            this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
           },
     error: (error) => {

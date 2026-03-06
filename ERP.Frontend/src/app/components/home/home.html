@@ -9,7 +9,7 @@
     <div class="top-bar__right">
       <div class="top-bar__user">
         <div class="top-bar__avatar">
-            @switch(userProfile?.role){
+            @switch(userProfile?.roleName){
                 @case("SystemAdmin"){
                   <mat-icon>admin_panel_settings</mat-icon>
                 }
@@ -26,7 +26,7 @@
         </div>
         <div class="top-bar__user-meta">
           <span class="top-bar__email">{{ userProfile?.email }}</span>
-          <span class="top-bar__role">{{ userProfile?.role }}</span>
+          <span class="top-bar__role">{{ userProfile?.roleName}}</span>
         </div>
       </div>
       <button mat-icon-button class="top-bar__logout-btn" (click)="logout()" matTooltip="Logout">

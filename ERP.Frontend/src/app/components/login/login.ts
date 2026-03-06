@@ -1,5 +1,4 @@
-import { FullProfile, AuthService } from '../../services/auth.service';
-import { UsersService } from '../../services/users.service';
+import { AuthService } from '../../services/auth.service';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
+import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-login',
@@ -33,7 +33,7 @@ import { forkJoin } from 'rxjs';
 export class LoginComponent implements OnInit, OnDestroy {
 
 
-  userProfile: FullProfile | null=null;
+  userProfile: AuthUserGetResponseDto | null=null;
 
   credentials = { login: '', password: '' };
   showPassword = false;
@@ -43,7 +43,6 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private userService: UsersService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
@@ -64,26 +63,14 @@ export class LoginComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
 
-        forkJoin({
-                authUser: this.authService.getMe(),
-                profile: this.userService.getMe(),
-              }).subscribe({
-          next: ({ authUser, profile }) => {
-            this.userProfile = {
-              ...profile,
-              mustChangePassword: authUser.mustChangePassword,
-              lastLoginAt: authUser.lastLoginAt
-            };
+        this.authService.getMe().subscribe({
+          next: (authUser) => {
+            this.userProfile = authUser
             this.authService.setUserProfile(this.userProfile);
 
             if (response.mustChangePassword) {
               this.stopLoading();
               this.router.navigate(['/must-change-password']);
-              return;
-            }
-
-            if (!this.userProfile?.isProfileCompleted) {
-              this.router.navigate(['/complete-profile']);
               return;
             }
             this.router.navigate(['/home']);

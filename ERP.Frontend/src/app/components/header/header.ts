@@ -10,10 +10,8 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
-import { UsersService } from '../../services/users.service';
-import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { UserProfileResponseDto } from '../../interfaces/UserProfileDto';
+import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-header',
@@ -38,7 +36,7 @@ export class HeaderComponent implements OnInit {
   @Output() sidenavToggle = new EventEmitter<void>();
 
 
-  authUser: UserProfileResponseDto | null = null;
+  authUser: AuthUserGetResponseDto | null = null;
   allNavLinks: NavLink[] = [
     { label: 'Home', route: '/home', icon: 'home' },
     { label: 'Settings', route: '/settings', icon: 'settings'},
@@ -49,11 +47,10 @@ export class HeaderComponent implements OnInit {
   ];
 
   constructor(private authService: AuthService,
-              private userProfileService: UsersService,
             private snackBar: MatSnackBar){}
 
   ngOnInit(): void {
-    this.userProfileService.getMe().subscribe({
+    this.authService.getMe().subscribe({
       next: (profile) => {
         this.authUser = profile;
       },
