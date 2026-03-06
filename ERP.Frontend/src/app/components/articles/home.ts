@@ -1,5 +1,5 @@
-import { CurrencyConfigService } from './../../../services/currency-config.service';
-import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest } from './../../../services/articles.service';
+import { CurrencyConfigService } from '../../services/currency-config.service';
+import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest}  from './../../services/articles.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
