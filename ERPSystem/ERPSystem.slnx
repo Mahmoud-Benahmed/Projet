@@ -7,5 +7,4 @@
   <Project Path="ERP.ArticleService/ERP.ArticleService.csproj" Id="5e152382-11ef-4dd3-967a-14d58beb0116" />
   <Project Path="ERP.AuthService/ERP.AuthService.csproj" />
   <Project Path="ERP.Gateway/ERP.Gateway.csproj" Id="52856135-4d4e-43d2-8bc7-6285ae5e42f7" />
-  <Project Path="ERP.UserService/ERP.UserService.csproj" Id="67fc6eaf-4682-4246-b39c-e890c5eedbfd" />
 </Solution>
