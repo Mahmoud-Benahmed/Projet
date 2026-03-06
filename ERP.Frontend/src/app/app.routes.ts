@@ -8,14 +8,12 @@ import { ShellComponent } from './components/shell/shell';
 import { ProfileComponent } from './components/user/profile/profile';
 import { DeactivatedComponent } from './components/system-admin/users/deactivated/deactivated';
 import { MustChangePasswordComponent } from './components/user/must-change-password/must-change-password';
-import { CompleteProfileComponent } from './components/user/complete-profile/complete-profile';
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
 import { ArticleComponent } from './components/articles/home';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
   { path: 'must-change-password', component: MustChangePasswordComponent, canActivate: [authGuard] },
-  { path: 'complete-profile',     component: CompleteProfileComponent,    canActivate: [authGuard] },
   {
     path: '',                     component: ShellComponent,          canActivate: [authGuard],
     children: [
