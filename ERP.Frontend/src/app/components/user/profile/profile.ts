@@ -82,8 +82,7 @@ export class ProfileComponent implements OnInit {
     phone: '',
   };
 
-  constructor(private userProfileService: UserProfileService,
-              private authService: AuthService,
+  constructor(private authService: AuthService,
               private snackBar: MatSnackBar,
               private route: ActivatedRoute,
               private cdr: ChangeDetectorRef,
@@ -103,16 +102,9 @@ export class ProfileComponent implements OnInit {
       }
 
       if (this.authService.Role === 'SystemAdmin') {
-        forkJoin({
-          authUser: this.authService.getById(this.authUserId),
-          profile: this.userProfileService.getByAuthUserId(this.authUserId),
-        }).subscribe({
-          next: ({ authUser, profile }) => {
-            this.userProfile = {
-              ...profile,
-              mustChangePassword: authUser.mustChangePassword,
-              lastLoginAt: authUser.lastLoginAt
-            };
+        this.authService.getById(this.authUserId).subscribe({
+          next: (authUser) => {
+            this.userProfile = authUser;
             this.stopLoading('isLoading');
           },
           error: () => {
@@ -127,16 +119,9 @@ export class ProfileComponent implements OnInit {
               this.isLoading = false;
             } else {
                 // Cache miss (e.g. page refresh) — fetch fresh data
-                forkJoin({
-                  authUser: this.authService.getMe(),
-                  profile: this.userProfileService.getMe(),
-                }).subscribe({
-                  next: ({ authUser, profile }) => {
-                    this.userProfile = {
-                      ...profile,
-                      mustChangePassword: authUser.mustChangePassword,
-                      lastLoginAt: authUser.lastLoginAt,
-                    };
+                this.authService.getMe().subscribe({
+                  next: (authUser) => {
+                    this.userProfile = authUser;
                     this.authService.setUserProfile(this.userProfile);
                     this.stopLoading('isLoading');
                   },
@@ -181,7 +166,7 @@ export class ProfileComponent implements OnInit {
       };
 
       if (this.isOwnProfile) {
-        this.authService.changePassword(this.passwordForm).subscribe({ next: onSuccess, error: onError });
+        this.authService.changeProfilePassword(this.passwordForm).subscribe({ next: onSuccess, error: onError });
       } else if (['SystemAdmin', 'HRManager'].includes(this.authService.Role!)) {
         this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({ next: onSuccess, error: onError });
       }
@@ -225,7 +210,7 @@ export class ProfileComponent implements OnInit {
     if (!this.userProfile) return;
     this.isSaving = true;
 
-    this.userProfileService.completeProfile(this.userProfile.authUserId, this.editForm).subscribe({
+    this.authService.(this.userProfile.authUserId, this.editForm).subscribe({
       next: (updated) => {
           this.userProfile = {
             ...updated,
