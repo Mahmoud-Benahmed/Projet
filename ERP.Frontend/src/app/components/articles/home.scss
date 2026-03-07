@@ -292,6 +292,13 @@ $green-border:rgba(62, 207, 142, 0.3);
   white-space: nowrap;
 }
 
+.td--barCode {
+  font-family: 'Outfit', monospace;
+  font-size: 0.8rem;
+  color: $text-mid;
+  white-space: nowrap;
+}
+
 .td--name {
   font-weight: 600;
   color: $text-hi;
@@ -573,6 +580,10 @@ $green-border:rgba(62, 207, 142, 0.3);
   cursor: pointer;
   transition: all 0.15s;
   &:hover { background: rgba($red, 0.2); }
+}
+
+.text-red{
+  color: $red
 }
 
 // ========================

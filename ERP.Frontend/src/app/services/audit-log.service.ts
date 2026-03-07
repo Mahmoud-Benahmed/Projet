@@ -41,7 +41,7 @@ export interface PagedResultDto<T> {
 
 @Injectable({ providedIn: 'root' })
 export class AuditLogService {
-  private readonly baseUrl = `${environment.apiUrl}/auth/audit`;
+  private readonly baseUrl = `${environment.apiUrl}/audit`;
 
   constructor(private http: HttpClient) {}
 
@@ -60,15 +60,6 @@ export class AuditLogService {
       .set('pageSize', pageSize);
     return this.http.get<PagedResultDto<AuditLogResponseDto>>(
       `${this.baseUrl}/user/${userId}`, { params });
-  }
-
-  /** GET /auth/audit/action/{action} — Get logs filtered by action type */
-  getByAction(action: AuditAction, pageNumber = 1, pageSize = 20): Observable<PagedResultDto<AuditLogResponseDto>> {
-    const params = new HttpParams()
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize);
-    return this.http.get<PagedResultDto<AuditLogResponseDto>>(
-      `${this.baseUrl}/action/${action}`, { params });
   }
 
   /** GET /auth/audit/count — Get total audit log count */

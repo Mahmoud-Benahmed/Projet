@@ -1,21 +1,23 @@
 import { CurrencyConfigService } from '../../services/currency-config.service';
-import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest}  from './../../services/articles.service';
+import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest, ArticleStatsDto}  from './../../services/articles.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatInput } from "@angular/material/input";
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInput],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
 export class ArticleComponent implements OnInit {
   articles: Article[] = [];
   categories: Category[] = [];
+  stats: ArticleStatsDto | null= null;
   totalCount = 0;
   pageNumber = 1;
   pageSize = 10;
@@ -27,6 +29,8 @@ export class ArticleComponent implements OnInit {
   successMessage: string | null = null;
   searchQuery = '';
 
+  readonly barCodePattern= /^\d{13}$/.source;
+
   articleForm: FormGroup;
 
   constructor(private articleService: ArticleService,
@@ -37,19 +41,21 @@ export class ArticleComponent implements OnInit {
       libelle: ['', [Validators.required, Validators.minLength(2)]],
       prix: [0, [Validators.required, Validators.min(0)]],
       categoryId: ['', Validators.required],
+      barCode: ['', [Validators.required, Validators.maxLength(13), Validators.minLength(13)]]
     });
   }
 
   ngOnInit(): void {
     this.load();
     this.loadCategories();
+    this.loadStats();
   }
 
   // -------------------------------------------------------
   // Stats
   // -------------------------------------------------------
   get totalArticles(): number { return this.totalCount; }
-  get activeCount(): number { return this.articles.filter(a => a.isActive).length; }
+  get activeCount(): number { return this.articles.filter(a => a.isActive).length;}
   get inactiveCount(): number { return this.articles.filter(a => !a.isActive).length; }
   get categoryCount(): number { return this.categories.length; }
 
@@ -60,7 +66,8 @@ export class ArticleComponent implements OnInit {
     this.loading = true;
     this.error = null;
     this.articleService.getArticlesPagedByStatus(true, this.pageNumber, this.pageSize).subscribe({
-      next: (res) => { this.articles = res.items; this.totalCount = res.totalCount; this.loading = false; },
+      next: (res) => { this.articles = res.items; this.totalCount = res.totalCount; this.loading = false;
+      },
       error: () => { this.error = 'Failed to load articles.'; this.loading = false; },
     });
   }
@@ -71,6 +78,15 @@ export class ArticleComponent implements OnInit {
     });
   }
 
+  loadStats():void{
+    this.loading= true;
+    this.error= null;
+    this.articleService.getStats().subscribe({
+      next: (res)=> {this.stats= res;},
+      error: ()=> {this.error= 'Failed to load stats.'; this.loading= false;}
+    })
+  }
+
   // -------------------------------------------------------
   // Search
   // -------------------------------------------------------
@@ -79,7 +95,7 @@ export class ArticleComponent implements OnInit {
     const q = this.searchQuery.toLowerCase();
     return this.articles.filter(a =>
       a.libelle.toLowerCase().includes(q) ||
-      a.code.toLowerCase().includes(q) ||
+      a.codeRef.toLowerCase().includes(q) ||
       this.getCategoryName(a.categoryId).toLowerCase().includes(q)
     );
   }
@@ -103,7 +119,7 @@ export class ArticleComponent implements OnInit {
   openEdit(article: Article): void {
     this.viewMode = 'edit';
     this.selectedArticle = article;
-    this.articleForm.patchValue({ libelle: article.libelle, prix: article.prix, categoryId: article.categoryId });
+    this.articleForm.patchValue({ libelle: article.libelle, prix: article.prix, categoryId: article.categoryId, barCode: article.barCode});
   }
 
   openView(article: Article): void {

@@ -30,17 +30,6 @@
       <mat-icon matSuffix>person_search</mat-icon>
     </mat-form-field>
 
-    <!-- Action filter -->
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Action</mat-label>
-      <mat-select [(ngModel)]="selectedAction" (ngModelChange)="onFilterChange()">
-        <mat-option [value]="null">All Actions</mat-option>
-        <mat-option *ngFor="let a of allActions" [value]="a">
-          {{ formatAction(a) }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-
     <!-- Status filter -->
     <mat-button-toggle-group [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()" class="status-toggle">
       <mat-button-toggle [value]="null">All</mat-button-toggle>

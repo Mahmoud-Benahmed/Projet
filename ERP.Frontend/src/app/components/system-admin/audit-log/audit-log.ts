@@ -74,9 +74,7 @@ export class AuditLogComponent implements OnInit {
 
     const source$ = this.userIdFilter.trim()
       ? this.auditLogService.getByUser(this.userIdFilter.trim(), this.pageNumber, this.pageSize)
-      : this.selectedAction
-        ? this.auditLogService.getByAction(this.selectedAction, this.pageNumber, this.pageSize)
-        : this.auditLogService.getAll(this.pageNumber, this.pageSize);
+      : this.auditLogService.getAll(this.pageNumber, this.pageSize);
 
     source$.subscribe({
       next: (result) => {
@@ -161,4 +159,5 @@ export class AuditLogComponent implements OnInit {
 
     this.router.navigate(['/users', authUserId]);
   }
+
 }

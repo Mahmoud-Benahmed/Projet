@@ -214,7 +214,6 @@ export class ProfileComponent implements OnInit {
     if (!profile) return;
     this.noDataChange = this.editForm.email === profile.email
                     && this.editForm.fullName === profile.fullName;
-    console.log(this.noDataChange);
 
   }
 

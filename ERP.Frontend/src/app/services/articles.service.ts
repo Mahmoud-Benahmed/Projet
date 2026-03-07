@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
 
 // ========================
@@ -8,11 +8,19 @@ import { environment } from '../environment';
 // ========================
 export interface Article {
   id: string;
-  code: string;
+  codeRef: string;
+  barCode: string
   libelle: string;
   prix: number;
   categoryId: string;
   isActive: boolean;
+}
+
+export interface ArticleStatsDto{
+    TotalCount: number,
+    ActiveCount: number,
+    InActiveCount: number,
+    CategoriesCount: number
 }
 
 export interface Category {
@@ -44,6 +52,7 @@ export interface UpdateArticleRequest {
   providedIn: 'root',
 })
 export class ArticleService {
+
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.articles}`;
 
   private readonly articlesUrl = `${environment.apiUrl}${environment.routes.articles}`;
@@ -54,6 +63,17 @@ export class ArticleService {
   // -------------------------------------------------------
   // ARTICLES
   // -------------------------------------------------------
+
+  getStats(): Observable<ArticleStatsDto> {
+    return this.http.get<any>(`${this.articlesUrl}/stats`).pipe(
+      map(res => ({
+        TotalCount: res.totalCount,
+        ActiveCount: res.activeCount,
+        InActiveCount: res.inActiveCount,
+        CategoriesCount: res.categoriesCount
+      }))
+    );
+  }
 
   getAllArticles(): Observable<Article[]> {
     return this.http.get<Article[]>(this.articlesUrl);

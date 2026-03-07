@@ -151,8 +151,6 @@ export class RegisterComponent implements OnDestroy {
           }
 
           this.stopLoading();
-          console.log(this.credentials);
-
           // call the auth.service method to register the user in the backend
           this.register();
         },

@@ -81,7 +81,6 @@ export class DeactivatedComponent implements OnInit {
     this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items.filter(u => u.id !== this.authService.UserId);
-        console.log(this.dataSource.data);
 
         this.totalCount = result.totalCount - 1; // account for the filtered out user
         this.dataSource.sort = this.sort;
