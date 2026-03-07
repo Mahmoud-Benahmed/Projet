@@ -16,11 +16,10 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { UsersService } from '../../../../services/users.service';
-import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { Stats } from '../stats/stats';
+import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-home',
@@ -55,13 +54,13 @@ export class UsersHomeComponent implements OnInit {
   displayedColumns: string[] = [
     'fullName',
     'email',
-    'phone',
-    'isProfileCompleted',
+    'role',
     'createdAt',
+    'lastLoginAt',
     'actions',
   ];
 
-  dataSource = new MatTableDataSource<UserProfileResponseDto>([]);
+  dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
   // Pagination
   totalCount = 0;
@@ -75,7 +74,6 @@ export class UsersHomeComponent implements OnInit {
   pageTitle= 'Active Users'
 
   constructor(
-    private userProfileService: UsersService,
     private snackBar: MatSnackBar,
     private router: Router,
     private authService: AuthService,
@@ -101,12 +99,11 @@ export class UsersHomeComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
-    this.userProfileService
-      .getActive(this.pageNumber, this.pageSize)
+    this.authService.getActivatedUsers(this.pageNumber, this.pageSize)
       .subscribe({
-        next: (result: PagedResultDto<UserProfileResponseDto>) => {
-          this.dataSource.data = result.items;
-          this.totalCount = result.totalCount;
+        next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
+          this.dataSource.data = result.items.filter(u => u.id !== this.currentUserId);
+          this.totalCount = result.totalCount - 1; // account for the filtered out user
           this.dataSource.sort = this.sort;
           this.isLoading = false;
           this.statsComponent.loadStats();
@@ -136,7 +133,8 @@ export class UsersHomeComponent implements OnInit {
 
   loadByCompletionStatus(status: boolean): void {
     this.isLoading = true;
-    this.userProfileService.getPagedByCompletionStatus(status, this.pageNumber, this.pageSize).subscribe({
+    if(status){
+      this.authService.getActivatedUsers(this.pageNumber, this.pageSize).subscribe({
       next: (result) => {
         this.dataSource.data = result.items;   // no filter needed here
         this.totalCount = result.totalCount;   // no -1 either, current user isn't excluded
@@ -147,31 +145,34 @@ export class UsersHomeComponent implements OnInit {
       error: () => {
         this.isLoading = false;
         this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+      }});
+    }else{
+      this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
+        next: (result) => {
+          this.dataSource.data = result.items;   // no filter needed here
+          this.totalCount = result.totalCount;   // no -1 either, current user isn't excluded
+          this.dataSource.sort = this.sort;
+          this.isLoading = false;
+          this.statsComponent.loadStats();
+        },
+        error: () => {
+          this.isLoading = false;
+          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+        }});
       }
-    });
   }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-deactivateUser(user: UserProfileResponseDto): void {
-  this.userProfileService.deactivate(user.id).subscribe({
-    next: () => {
-      this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
-      this.reloadCurrentView();  // ← instead of loadUsers()
-    },
-    error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
-  });
-}
-
-  deleteUser(user: UserProfileResponseDto): void {
-    this.userProfileService.delete(user.id).subscribe({
+  deactivateUser(user: AuthUserGetResponseDto): void {
+    this.authService.deactivate(user.id).subscribe({
       next: () => {
-        this.snackBar.open('User deleted.', 'OK', { duration: 3000 });
+        this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
         this.reloadCurrentView();  // ← instead of loadUsers()
       },
-      error: () => this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 })
+      error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
     });
   }
 
@@ -186,7 +187,7 @@ deactivateUser(user: UserProfileResponseDto): void {
     }
   }
 
-  getInitials(user: UserProfileResponseDto): string {
+  getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {
       return user.fullName
         .split(' ')

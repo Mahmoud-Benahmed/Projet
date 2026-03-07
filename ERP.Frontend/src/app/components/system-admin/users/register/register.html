@@ -9,6 +9,21 @@
     <mat-card-content>
       <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
 
+        <!-- FullName -->
+        <mat-form-field appearance="outline">
+          <mat-label>FullName</mat-label>
+          <input matInput
+                 type="text"
+                 name="fullname"
+                 [(ngModel)]="credentials.fullName"
+                 required
+                 [pattern]="fullnamePattern"
+                 #fullNameInput="ngModel"/>
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-error *ngIf="fullNameInput.errors?.['required']">FullName is required</mat-error>
+          <mat-error *ngIf="fullNameInput.errors?.['pattern']">Invalid FullName</mat-error>
+        </mat-form-field>
+
         <mat-form-field appearance="outline">
           <mat-label>Login</mat-label>
           <input matInput

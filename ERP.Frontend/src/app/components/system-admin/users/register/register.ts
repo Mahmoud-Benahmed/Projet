@@ -13,10 +13,9 @@ import { ModalComponent } from '../../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
-import { RoleResponseDto, RolesService } from '../../../../services/role.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
-import { RegisterRequestDto } from '../../../../interfaces/AuthDto';
+import { RegisterRequestDto, RoleResponseDto } from '../../../../interfaces/AuthDto';
 
 @HostBinding('class')
 @Component({
@@ -40,8 +39,9 @@ export class RegisterComponent implements OnDestroy {
 
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
+  readonly fullnamePattern= /^\p{L}+(\s\p{L}+)*$/u.source;
 
-  credentials: RegisterRequestDto = { login:'', email: '', password: '', roleId: '' };
+  credentials: RegisterRequestDto = { login:'', email: '', fullName: '' , password: '', roleId: ''};
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
@@ -55,13 +55,12 @@ export class RegisterComponent implements OnDestroy {
 
   constructor(private router: Router,
               private authService: AuthService,
-              private roleService: RolesService,
               private cdr: ChangeDetectorRef,
               private dialog: MatDialog,
               private snackbar: MatSnackBar) {}
 
   ngOnInit(): void {
-    this.roleService.getAll().subscribe(
+    this.authService.getRoles().subscribe(
       roles => this.roles = roles
     );
   }
@@ -259,7 +258,7 @@ export class RegisterComponent implements OnDestroy {
   }
 
   resetForm(): void {
-    this.credentials = { login: '', email: '', password: '', roleId: '' };
+    this.credentials ={ login:'', email: '', fullName: '' , password: '', roleId: ''};
     this.passwordErrors = [];
     this.passwordScore = 0;
     this.passwordStrength = '';

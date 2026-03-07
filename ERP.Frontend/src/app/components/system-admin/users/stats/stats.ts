@@ -36,7 +36,11 @@ export class Stats implements OnInit{
     this.authService.getStats().subscribe({
       next: (stats) => {
         this.isLoading= false;
-        this.stats = stats;
+        this.stats = {
+          activeUsers: stats.activeUsers-1,
+          deactivatedUsers: stats.deactivatedUsers,
+          totalUsers: stats.totalUsers-1
+        };
         this.cdr.markForCheck();
       },
       error: () => {
