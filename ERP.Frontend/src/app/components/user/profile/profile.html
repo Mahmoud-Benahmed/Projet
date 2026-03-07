@@ -27,23 +27,14 @@
           <!-- Identity -->
           <div class="hero-identity">
             <h1 class="hero-identity__name">
-              {{ userProfile.fullName ?? 'No name set' }}
+              {{ userProfile.fullName }}
             </h1>
             <p class="hero-identity__email">{{ userProfile.login }}</p>
 
             <div class="hero-identity__chips">
               <mat-chip class="chip chip--role">
                 <mat-icon matChipAvatar>shield</mat-icon>
-                {{ userProfile.role }}
-              </mat-chip>
-
-              <mat-chip
-                [class.chip--complete]="userProfile.isProfileCompleted"
-                [class.chip--incomplete]="!userProfile.isProfileCompleted">
-                <mat-icon matChipAvatar>
-                  {{ userProfile.isProfileCompleted ? 'verified' : 'pending' }}
-                </mat-icon>
-                {{ userProfile.isProfileCompleted ? 'Profile Complete' : 'Incomplete Profile' }}
+                {{ userProfile.roleName }}
               </mat-chip>
             </div>
           </div>
@@ -121,13 +112,6 @@
 
                 <mat-divider></mat-divider>
 
-                <div class="info-row" *ngIf="userProfile.phone">
-                  <span class="info-row__label">
-                    <mat-icon>phone</mat-icon> Phone
-                  </span>
-                  <span class="info-row__value">{{ userProfile.phone}}</span>
-                </div>
-
                 <mat-divider></mat-divider>
 
                 <div class="info-row" *ngIf="memberSince">
@@ -152,30 +136,47 @@
           }
 
           <!-- EDIT MODE -->
-          <form class="edit-form" *ngIf="isEditing">
+          <form class="edit-form" *ngIf="isEditing"  #editFormRef="ngForm">
+
+           <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Full Name</mat-label>
+            <input matInput
+                  [(ngModel)]="editForm.fullName"
+                  name="fullName"
+                  required
+                  [pattern]="fullNamePattern"
+                  #fullNameInput="ngModel"
+                  (ngModelChange)="checkChanges()"/>
+            <mat-icon matPrefix>badge</mat-icon>
+            <mat-error *ngIf="fullNameInput.errors?.['required']">Full name requis</mat-error>
+            <mat-error *ngIf="fullNameInput.errors?.['pattern']">Lettres uniquement (ex: Jean Dupont)</mat-error>
+            <mat-hint *ngIf="noDataChange" class="warning-hint">
+              <mat-icon>warning</mat-icon> Crendentials hasn't been changed
+            </mat-hint>
+          </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Full Name</mat-label>
-              <input matInput [(ngModel)]="editForm.fullName" name="fullName" required />
-              <mat-icon matPrefix>badge</mat-icon>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Phone</mat-label>
-              <input matInput [(ngModel)]="editForm.phone" name="phone" required />
-              <mat-icon matPrefix>phone</mat-icon>
+              <mat-label>Email</mat-label>
+              <input matInput
+                    type="email"
+                    name="email"
+                    [(ngModel)]="editForm.email"
+                    required
+                    [pattern]="emailPattern"
+                    email
+                    #emailInput="ngModel"
+                    (ngModelChange)="checkChanges()"/>
+              <mat-icon matPrefix>email</mat-icon>
+              <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
+              <mat-error *ngIf="emailInput.errors?.['pattern']">Email invalide</mat-error>
             </mat-form-field>
 
             <div class="edit-form__actions">
               <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
                 Cancel
               </button>
-              <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving">
-                @if(isSaving){
-                  <mat-spinner diameter="16" >
-                    <mat-icon>check</mat-icon>
-                  </mat-spinner>
-                }
+              <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving || editFormRef.invalid || noDataChange">
+                  <mat-spinner diameter="16" *ngIf="isSaving"/>
                 {{ isSaving ? 'Saving…' : 'Save Changes' }}
               </button>
             </div>
@@ -205,7 +206,7 @@
             <mat-divider></mat-divider>
             <div class="info-row">
               <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
-              <span class="info-row__value mono small">{{ userProfile.authUserId }}</span>
+              <span class="info-row__value mono small">{{ userProfile.id }}</span>
             </div>
             <mat-divider></mat-divider>
             <div class="info-row">

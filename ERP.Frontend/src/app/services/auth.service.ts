@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../environment";
-import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UserStatsDto } from "../interfaces/AuthDto";
+import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../interfaces/AuthDto";
 import { Observable, tap } from 'rxjs';
 
 interface JwtPayload {
@@ -227,6 +227,13 @@ export class AuthService {
     );
   }
 
+  // ========================
+  // UPDATE
+  // ========================
+
+  update(id: string, request: UpdateProfileDto): Observable<AuthUserGetResponseDto>{
+    return this.http.put<AuthUserGetResponseDto>(`${this.baseUrl}/update/${id}`, request);
+  }
     // ── Auth: Activation ─────────────────────────────────────────────────────
 
   /** PATCH /auth/{id}/activate — Activate a user account */

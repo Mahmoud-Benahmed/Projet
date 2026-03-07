@@ -13,7 +13,7 @@ import { AuthService } from '../../../services/auth.service';
 import { NotSameAsDirective } from '../../../util/NotSameAsDirective';
 import { generatePassword, checkPassword } from '../../../util/PasswordUtil';
 import { SameAsDirective } from '../../../util/SameAsDirective';
-import { ChangePasswordRequestDto } from '../../../interfaces/AuthDto';
+import { ChangeProfilePasswordRequestDto } from '../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-must-change-password',
@@ -48,7 +48,7 @@ export class MustChangePasswordComponent implements OnInit{
   passwordScore: number = 0;
   passwordStrength: string = '';
 
-  passwordForm: ChangePasswordRequestDto = {
+  passwordForm: ChangeProfilePasswordRequestDto = {
     currentPassword: '',
     newPassword: '',
   };
@@ -65,18 +65,12 @@ export class MustChangePasswordComponent implements OnInit{
 
   onSubmit(): void {
     this.isLoading = true;
-    this.authService.changePassword(this.passwordForm).subscribe({
+    this.authService.changeProfilePassword(this.passwordForm).subscribe({
      next: () => {
         this.isLoading = false;
         if (this.mustChangePassword) this.authService.clearMustChangePassword();
         this.snackBar.open('Password changed successfully!', 'OK', { duration: 3000 });
-
-        const profile = this.authService.UserProfile;
-        if (profile?.isProfileCompleted) {
-          this.router.navigate(['/home']);
-        } else {
-          this.router.navigate(['/complete-profile']);
-        }
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.isLoading = false;

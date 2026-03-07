@@ -663,3 +663,16 @@ button[mat-stroked-button] {
 @media (prefers-reduced-motion: reduce) {
   .form-collapse { transition: none; }
 }
+
+.warning-hint {
+  color: orange;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}

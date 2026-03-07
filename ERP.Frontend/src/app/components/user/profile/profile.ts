@@ -12,15 +12,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
-import { UsersService as UserProfileService } from '../../../services/users.service';
-import { AuthService, FullProfile } from '../../../services/auth.service';
-import { CompleteProfileDto, UserProfileResponseDto } from '../../../interfaces/UserProfileDto';
-import { forkJoin } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 import { NgForm } from '@angular/forms';
 import { NotSameAsDirective } from '../../../util/NotSameAsDirective';
-import { AdminChangePasswordRequestDto, ChangePasswordRequestDto } from '../../../interfaces/AuthDto';
 import { SameAsDirective } from "../../../util/SameAsDirective";
 import { checkPassword, generatePassword } from '../../../util/PasswordUtil';
+import { AdminChangeProfileRequest, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, UpdateProfileDto } from '../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-profile',
@@ -49,12 +46,13 @@ export class ProfileComponent implements OnInit {
 
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
 
-  userProfile: FullProfile|null = null;
+  userProfile: AuthUserGetResponseDto|null = null;
   isLoading = true;
   isEditing = false;
   isSaving = false;
   role: string= '';
   authUserId: string | null =null;
+  noDataChange: boolean= true;
 
   showPasswordForm = false;
   isChangingPassword = false;
@@ -66,20 +64,22 @@ export class ProfileComponent implements OnInit {
   passwordStrength: string = '';
 
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
+  readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
+  readonly fullNamePattern = /^\p{L}+(\s\p{L}+)*$/u;
 
 
-  adminChangePasswordForm: AdminChangePasswordRequestDto = {
+  adminChangePasswordForm: AdminChangeProfileRequest = {
     newPassword: ''
   };
 
-  passwordForm: ChangePasswordRequestDto = {
+  passwordForm: ChangeProfilePasswordRequestDto = {
     currentPassword: '',
     newPassword: '',
   };
 
-  editForm: CompleteProfileDto = {
+  editForm: UpdateProfileDto = {
     fullName: '',
-    phone: '',
+    email: '',
   };
 
   constructor(private authService: AuthService,
@@ -101,7 +101,8 @@ export class ProfileComponent implements OnInit {
         return;
       }
 
-      if (this.authService.Role === 'SystemAdmin') {
+
+      if (this.authService.Role === 'SystemAdmin' && this.authService.UserId !== this.authUserId) {
         this.authService.getById(this.authUserId).subscribe({
           next: (authUser) => {
             this.userProfile = authUser;
@@ -113,13 +114,14 @@ export class ProfileComponent implements OnInit {
           }
         });
       } else {
-            const cached = this.authService.UserProfile;
-            if (cached) {
-              this.userProfile = cached;
-              this.isLoading = false;
-            } else {
-                // Cache miss (e.g. page refresh) — fetch fresh data
-                this.authService.getMe().subscribe({
+        const cached = this.authService.UserProfile;
+        if (cached) {
+          this.userProfile = cached;
+
+          this.isLoading = false;
+        } else {
+          // Cache miss (e.g. page refresh) — fetch fresh data
+          this.authService.getMe().subscribe({
                   next: (authUser) => {
                     this.userProfile = authUser;
                     this.authService.setUserProfile(this.userProfile);
@@ -197,8 +199,9 @@ export class ProfileComponent implements OnInit {
     if (!this.userProfile) return;
     this.editForm = {
       fullName: this.userProfile.fullName ?? '',
-      phone: this.userProfile.phone ?? '',
+      email: this.userProfile.email ?? '',
     };
+    this.noDataChange= true;
     this.isEditing = true;
   }
 
@@ -206,11 +209,20 @@ export class ProfileComponent implements OnInit {
     this.isEditing = false;
   }
 
+  checkChanges() {
+    const profile = this.authService.UserProfile;
+    if (!profile) return;
+    this.noDataChange = this.editForm.email === profile.email
+                    && this.editForm.fullName === profile.fullName;
+    console.log(this.noDataChange);
+
+  }
+
   saveProfile(): void {
     if (!this.userProfile) return;
     this.isSaving = true;
 
-    this.authService.(this.userProfile.authUserId, this.editForm).subscribe({
+    this.authService.update(this.userProfile.id, this.editForm).subscribe({
       next: (updated) => {
           this.userProfile = {
             ...updated,
@@ -270,7 +282,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get isOwnProfile(): boolean {
-    return this.userProfile?.authUserId === this.authService.UserId;
+    return this.userProfile?.id === this.authService.UserId;
   }
 
   get initials(): string {
