@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { AuthService } from '../../services/auth.service';
-import { UsersService } from '../../services/users.service';
 @Component({
   selector: 'app-shell',
   standalone: true,
@@ -13,7 +12,7 @@ import { UsersService } from '../../services/users.service';
 })
 export class ShellComponent implements OnInit {
 
-  constructor(private router: Router, private authService: AuthService, private usersService: UsersService) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {}
 

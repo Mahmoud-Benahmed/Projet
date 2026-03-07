@@ -10,6 +10,7 @@ import { DeactivatedComponent } from './components/system-admin/users/deactivate
 import { MustChangePasswordComponent } from './components/user/must-change-password/must-change-password';
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
 import { ArticleComponent } from './components/articles/home';
+import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
@@ -18,9 +19,10 @@ export const routes: Routes = [
     path: '',                     component: ShellComponent,          canActivate: [authGuard],
     children: [
       { path: 'home',               component: HomeComponent,           canActivate: [authGuard] },
+      { path: 'audit-log',               component: AuditLogComponent,  canActivate: [authGuard], data: {roles:['SystemAdmin']} },
       { path: 'profile',            component: ProfileComponent,        canActivate: [authGuard] },
-      { path: 'change-password',            component: MustChangePasswordComponent,        canActivate: [authGuard] },
-      { path: 'permissions',              component: PermissionMatrixComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
+      { path: 'change-password',    component: MustChangePasswordComponent,        canActivate: [authGuard] },
+      { path: 'permissions',        component: PermissionMatrixComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users',              component: UsersHomeComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/register',     component: RegisterComponent,       canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/deactivated',  component: DeactivatedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
