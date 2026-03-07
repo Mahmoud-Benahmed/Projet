@@ -38,17 +38,6 @@ namespace ERP.AuthService.Application.Services
                 pageSize);
         }
 
-        /// <summary>Get all logs filtered by a specific action type.</summary>
-        public async Task<PagedResultDto<AuditLogResponseDto>> GetByActionAsync(AuditAction action, int pageNumber, int pageSize)
-        {
-            var items = await _repository.GetByActionAsync(action, pageNumber, pageSize);
-            return new PagedResultDto<AuditLogResponseDto>(
-                items.Select(MapToDto).ToList(),
-                items.Count,
-                pageNumber,
-                pageSize);
-        }
-
         /// <summary>Get total count of all audit log entries.</summary>
         public async Task<long> CountAsync()
             => await _repository.CountAsync();

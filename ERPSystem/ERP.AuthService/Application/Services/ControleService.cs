@@ -26,10 +26,14 @@ namespace ERP.AuthService.Application.Services
         /// <summary>
         /// Get a controle by its ID.
         /// </summary>
-        public async Task<ControleResponseDto?> GetByIdAsync(Guid id)
+        public async Task<ControleResponseDto> GetByIdAsync(Guid id)
         {
             var controle = await _controleRepository.GetByIdAsync(id);
-            return controle is null ? null : MapToDto(controle);
+
+            if (controle is null)
+                throw new Exception($"Controle with id {id} not found");
+
+            return MapToDto(controle);
         }
 
         /// <summary>

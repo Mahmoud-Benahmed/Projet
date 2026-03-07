@@ -30,13 +30,6 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<AuditLog>> GetByActionAsync(AuditAction action, int pageNumber, int pageSize)
-            => await _collection.Find(x => x.Action == action)
-                .SortByDescending(x => x.Timestamp)
-                .Skip((pageNumber - 1) * pageSize)
-                .Limit(pageSize)
-                .ToListAsync();
-
         public async Task<List<AuditLog>> GetAllAsync(int pageNumber, int pageSize)
             => await _collection.Find(_ => true)
                 .SortByDescending(x => x.Timestamp)

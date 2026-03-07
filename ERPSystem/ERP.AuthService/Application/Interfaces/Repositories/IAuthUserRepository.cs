@@ -17,6 +17,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<bool> ExistsByLoginAsync(string login);
         Task<bool> ExistsByEmailAsync(string email);
         Task<long> CountAsync();
+        Task<long> CountByStatusAsync(bool status);
         Task<UserStatsDto> GetStatsAsync();
 
         Task DeleteAllAsync();

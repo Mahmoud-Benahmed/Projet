@@ -8,7 +8,6 @@ namespace ERP.AuthService.Application.Interfaces.Services
     {
         Task<PagedResultDto<AuditLogResponseDto>> GetAllAsync(int pageNumber, int pageSize);
         Task<PagedResultDto<AuditLogResponseDto>> GetByUserAsync(Guid userId, int pageNumber, int pageSize);
-        Task<PagedResultDto<AuditLogResponseDto>> GetByActionAsync(AuditAction action, int pageNumber, int pageSize);
         Task<long> CountAsync();
         Task ClearAsync();
     }

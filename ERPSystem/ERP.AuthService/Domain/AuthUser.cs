@@ -57,17 +57,15 @@ namespace ERP.AuthService.Domain
 
         public void UpdateProfile(string fullname, string email)
         {
-            bool invalidRequest= string.IsNullOrEmpty(fullname) || string.IsNullOrEmpty(email);
-            if (invalidRequest)
-            {
-                if (string.IsNullOrWhiteSpace(email))
-                    throw new ArgumentException("Email is required");
-                if (string.IsNullOrWhiteSpace(fullname))
-                    throw new ArgumentException("FullName is required");
-            }
+            if (string.IsNullOrWhiteSpace(fullname))
+                throw new ArgumentException("FullName is required");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required");
+
+            FullName = fullname;
             Email = email;
-            FullName= fullname;
-            UpdatedAt= DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void SetPasswordHash(string passwordHash)

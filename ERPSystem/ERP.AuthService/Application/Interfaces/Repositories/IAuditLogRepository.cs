@@ -7,7 +7,6 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
     {
         Task AddAsync(AuditLog log);
         Task<List<AuditLog>> GetByUserAsync(Guid userId, int pageNumber, int pageSize);
-        Task<List<AuditLog>> GetByActionAsync(AuditAction action, int pageNumber, int pageSize);
         Task<List<AuditLog>> GetAllAsync(int pageNumber, int pageSize);
         Task<long> CountAsync();
         Task ClearAsync();

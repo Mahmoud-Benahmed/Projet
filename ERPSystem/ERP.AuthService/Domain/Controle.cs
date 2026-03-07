@@ -21,7 +21,7 @@ namespace ERP.AuthService.Domain
             Id = Guid.NewGuid();
             Category = category;
             Libelle = libelle;
-            Category = description;
+            Description = description;
         }
 
 

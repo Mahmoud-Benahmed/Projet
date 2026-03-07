@@ -83,6 +83,10 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<long> CountAsync()
             => await _collection.CountDocumentsAsync(x=> x.IsActive);
 
+
+        public async Task<long> CountByStatusAsync(bool status) =>
+            await _collection.CountDocumentsAsync(x=> x.IsActive == status);
+
         public async Task DeleteAllAsync()
         {
             await _collection.DeleteManyAsync(FilterDefinition<AuthUser>.Empty);

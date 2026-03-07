@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ERP.AuthService.Controllers
 {
     [ApiController]
-    [Route("auth/audit")]
+    [Route("audit")]
     public class AuditLogController : ControllerBase
     {
         private readonly IAuditLogService _auditLogService;
@@ -17,7 +17,7 @@ namespace ERP.AuthService.Controllers
             _auditLogService = auditLogService;
         }
 
-        // GET auth/audit
+        // GET audit
         [HttpGet]
         [ProducesResponseType(typeof(PagedResultDto<AuditLogResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAll(
@@ -37,21 +37,6 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await _auditLogService.GetByUserAsync(userId, pageNumber, pageSize);
-            return Ok(result);
-        }
-
-        // GET auth/audit/action/{action}
-        [HttpGet("by-action/{action}")]
-        [ProducesResponseType(typeof(PagedResultDto<AuditLogResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetByAction(
-            string action,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20)
-        {
-            if (!Enum.TryParse<AuditAction>(action, ignoreCase: true, out var auditAction))
-                return BadRequest(new { message = $"'{action}' is not a valid audit action." });
-
-            var result = await _auditLogService.GetByActionAsync(auditAction, pageNumber, pageSize);
             return Ok(result);
         }
 
