@@ -1,0 +1,422 @@
+// ── Design tokens (matches existing theme) ───────────────────────────────────
+$surface:      #0f1117;
+$surface-2:    #181c27;
+$surface-3:    #1e2336;
+$surface-4:    #242840;
+$border:       rgba(255, 255, 255, 0.07);
+$border-hover: rgba(255, 255, 255, 0.12);
+$text-primary: #e8eaf0;
+$text-muted:   #6b7280;
+$text-dim:     #4b5563;
+$accent:       #4f8ef7;
+$accent-glow:  rgba(79, 142, 247, 0.15);
+$success:      #34d399;
+$success-glow: rgba(52, 211, 153, 0.12);
+$danger:       #f87171;
+$danger-glow:  rgba(248, 113, 113, 0.12);
+$warn:         #fbbf24;
+$radius:       12px;
+$radius-sm:    8px;
+$radius-xs:    6px;
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
+.audit-shell {
+  min-height: 100vh;
+  background: $surface;
+  padding: 2rem;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  color: $text-primary;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+
+.audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-sm;
+    background: rgba($accent, 0.1);
+    border: 1px solid rgba($accent, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      color: $accent;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  &__eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: $text-primary;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  &__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  &__sub {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
+.clear-btn {
+  color: $danger !important;
+  border-color: rgba($danger, 0.25) !important;
+  border-radius: $radius-sm !important;
+  font-size: 13px;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover {
+    border-color: rgba($danger, 0.5) !important;
+    background: $danger-glow !important;
+  }
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 1rem 1.5rem;
+  background: $surface-3;
+  border: 1px solid $border;
+  border-radius: $radius;
+}
+
+.filter-field {
+  width: 180px;
+  &--user { width: 260px; }
+
+  --mdc-outlined-text-field-outline-color:       #{$border};
+  --mdc-outlined-text-field-hover-outline-color: #{$border-hover};
+  --mdc-outlined-text-field-focus-outline-color: #{$accent};
+  --mdc-outlined-text-field-label-text-color:    #{$text-muted};
+  --mdc-outlined-text-field-input-text-color:    #{$text-primary};
+}
+
+.status-toggle {
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+
+  .mat-button-toggle {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-muted;
+    background: transparent;
+    border-color: $border !important;
+
+    &.mat-button-toggle-checked {
+      background: $accent-glow;
+      color: $accent;
+    }
+  }
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+
+.audit-card {
+  background: $surface-2 !important;
+  border: 1px solid $border !important;
+  border-radius: $radius !important;
+  box-shadow: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba($surface-2, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  ::ng-deep .mat-mdc-progress-spinner circle {
+    stroke: $accent !important;
+  }
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+
+.audit-table {
+  width: 100%;
+  background: transparent !important;
+
+  &.table--loading { opacity: 0.4; pointer-events: none; }
+
+  .mat-mdc-header-row {
+    background: rgba($surface-4, 0.5);
+  }
+
+  .mat-mdc-header-cell {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: $text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid $border;
+    padding: 10px 16px;
+    background: transparent;
+  }
+
+  .mat-mdc-cell {
+    border-bottom: 1px solid rgba($border, 0.5);
+    padding: 12px 16px;
+    color: $text-primary;
+    font-size: 0.85rem;
+  }
+}
+
+.audit-row {
+  transition: background 0.15s;
+
+  &:hover .mat-mdc-cell        { background: rgba($surface-3, 0.4); }
+  &--fail .mat-mdc-cell        { background: rgba($danger, 0.04); }
+  &--fail:hover .mat-mdc-cell  { background: rgba($danger, 0.07); }
+}
+
+// ── Status pip ───────────────────────────────────────────────────────────────
+
+.status-pip {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  &--ok   { background: $success; box-shadow: 0 0 6px rgba($success, 0.4); }
+  &--fail { background: $danger;  box-shadow: 0 0 6px rgba($danger, 0.4);  }
+}
+
+// ── Action cell ──────────────────────────────────────────────────────────────
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: $radius-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &--auth     { background: rgba($accent, 0.1);  border: 1px solid rgba($accent, 0.2);  color: $accent;  }
+  &--token    { background: rgba($warn, 0.1);    border: 1px solid rgba($warn, 0.2);    color: $warn;    }
+  &--password { background: rgba($warn, 0.1);    border: 1px solid rgba($warn, 0.2);    color: $warn;    }
+  &--user     { background: rgba($success, 0.1); border: 1px solid rgba($success, 0.2); color: $success; }
+}
+
+.action-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+// ── UID chips ────────────────────────────────────────────────────────────────
+
+.uid-chip {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  background: rgba($accent, 0.08);
+  color: $accent;
+  border: 1px solid rgba($accent, 0.15);
+  padding: 2px 8px;
+  border-radius: $radius-xs;
+  cursor: default;
+
+  &--target {
+    background: rgba($success, 0.08);
+    color: $success;
+    border-color: rgba($success, 0.15);
+  }
+  &:hover{
+    cursor: pointer;
+  }
+}
+
+.muted { color: $text-dim; }
+
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: $text-muted;
+}
+
+// ── Timestamp ────────────────────────────────────────────────────────────────
+
+.ts-cell { display: flex; flex-direction: column; gap: 2px; }
+
+.ts-date {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.ts-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: $text-dim;
+}
+
+// ── Detail button ────────────────────────────────────────────────────────────
+
+.detail-btn {
+  color: $text-dim !important;
+  &:hover { color: $accent !important; }
+}
+
+// ── Empty state ──────────────────────────────────────────────────────────────
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 20px;
+  color: $text-muted;
+  font-size: 0.9rem;
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    display: block;
+    margin: 0 auto 12px;
+    opacity: 0.3;
+  }
+
+  p { margin: 0; }
+}
+
+// ── Paginator ────────────────────────────────────────────────────────────────
+
+.mat-mdc-paginator {
+  background: $surface-3 !important;
+  color: $text-muted !important;
+  font-size: 0.8rem;
+  border-top: 1px solid $border;
+
+  ::ng-deep .mat-mdc-paginator-icon { fill: $text-muted; }
+}
+
+// ── Detail dialog ────────────────────────────────────────────────────────────
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px 0;
+
+  .action-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-sm;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0 0 2px;
+    padding: 0 !important;
+    letter-spacing: -0.02em;
+  }
+}
+
+.dialog-ts {
+  font-size: 0.72rem;
+  color: $text-dim;
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.detail-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: $danger-glow;
+  border: 1px solid rgba($danger, 0.25);
+  border-radius: $radius-sm;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  color: $danger;
+  font-size: 13px;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; }
+}
+
+.detail-section {
+  margin-bottom: 16px;
+
+  &__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-dim;
+    margin: 0 0 10px;
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px 16px;
+}
+
+.detail-key {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $text-muted;
+  align-self: start;
+  padding-top: 1px;
+}
+
+.detail-val {
+  font-size: 0.85rem;
+  color: $text-primary;
+  word-break: break-all;
+
+  &.small { font-size: 11px; line-height: 1.6; color: $text-muted; }
+}
