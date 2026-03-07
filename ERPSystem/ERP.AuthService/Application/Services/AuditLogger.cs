@@ -1,0 +1,59 @@
+﻿using ERP.AuthService.Application.Interfaces.Repositories;
+using ERP.AuthService.Application.Interfaces.Services;
+using ERP.AuthService.Domain;
+using ERP.AuthService.Domain.Logger;
+using Microsoft.Extensions.Logging;
+
+namespace ERP.AuthService.Application.Services
+{
+    public class AuditLogger : IAuditLogger
+    {
+        private readonly IAuditLogRepository _repository;
+        private readonly ILogger<AuditLogger> _logger;
+
+        public AuditLogger(IAuditLogRepository repository, ILogger<AuditLogger> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
+
+        public async Task LogAsync(
+            AuditAction action,
+            bool success,
+            Guid? performedBy = null,
+            Guid? targetUserId = null,
+            string? failureReason = null,
+            string? ipAddress = null,
+            string? userAgent = null,
+            Dictionary<string, string>? metadata = null)
+        {
+            var log = new AuditLog(
+                action,
+                success,
+                performedBy,
+                targetUserId,
+                failureReason,
+                ipAddress,
+                userAgent,
+                metadata);
+
+            try
+            {
+                await _repository.AddAsync(log);
+            }
+            catch (Exception ex)
+            {
+                // Never let audit logging failure break the main flow
+                _logger.LogError(ex, "Failed to persist audit log for action {Action}", action);
+            }
+
+            // Also write to structured console log for observability
+            if (success)
+                _logger.LogInformation("[AUDIT] {Action} | By: {PerformedBy} | Target: {TargetUserId} | IP: {IpAddress}",
+                    action, performedBy, targetUserId, ipAddress);
+            else
+                _logger.LogWarning("[AUDIT] {Action} FAILED | By: {PerformedBy} | Target: {TargetUserId} | Reason: {FailureReason} | IP: {IpAddress}",
+                    action, performedBy, targetUserId, failureReason, ipAddress);
+        }
+    }
+}

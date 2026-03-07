@@ -1,0 +1,15 @@
+﻿using ERP.AuthService.Application.DTOs.AuditLog;
+using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Domain.Logger;
+
+namespace ERP.AuthService.Application.Interfaces.Services
+{
+    public interface IAuditLogService
+    {
+        Task<PagedResultDto<AuditLogResponseDto>> GetAllAsync(int pageNumber, int pageSize);
+        Task<PagedResultDto<AuditLogResponseDto>> GetByUserAsync(Guid userId, int pageNumber, int pageSize);
+        Task<PagedResultDto<AuditLogResponseDto>> GetByActionAsync(AuditAction action, int pageNumber, int pageSize);
+        Task<long> CountAsync();
+        Task ClearAsync();
+    }
+}
