@@ -11,8 +11,8 @@
 
         public string Libelle { get; private set; }
         public decimal Prix { get; private set; }
-        
-        public bool IsActive { get; private set; }
+
+        public bool IsActive { get; private set; } = true;
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
 
@@ -36,7 +36,6 @@
             Prix = Math.Round(prix, 2);
             Category = category ?? throw new ArgumentException("Category is required");
             CategoryId = category.Id;
-            IsActive = true;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
