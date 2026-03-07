@@ -2,6 +2,7 @@
 using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
+using System.Security.Cryptography;
 
 namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 {
@@ -30,19 +31,21 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                 "Outillage",
             };
 
-                foreach (var name in categoryNames)
+            var random = new Random();
+            foreach (var name in categoryNames)
+            {
+                try
                 {
-                    try
-                    {
-                        await _categoryService.CreateAsync(name);
-                        _logger.LogInformation("Seeded category: '{Name}'", name);
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // CreateAsync throws if name already exists — safe to skip
-                        _logger.LogInformation("Category '{Name}' already exists, skipping.", name);
-                    }
+                    var tva = Math.Round((decimal)(random.NextDouble() * 19 + 1), 2);
+                    await _categoryService.CreateAsync(name, tva);
+                    _logger.LogInformation("Seeded category: '{Name}'", name);
                 }
+                catch (InvalidOperationException)
+                {
+                    // CreateAsync throws if name already exists — safe to skip
+                    _logger.LogInformation("Category '{Name}' already exists, skipping.", name);
+                }
+            }
             }
         }
     }

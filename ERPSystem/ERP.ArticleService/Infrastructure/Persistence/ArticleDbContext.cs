@@ -23,21 +23,34 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             {
                 entity.ToTable("Articles");
                 entity.HasKey(a => a.Id);
-                entity.Property(a => a.Code)
+                entity.Property(a => a.CodeRef)
                       .IsRequired()
                       .HasMaxLength(50);
+
                 entity.Property(a => a.Libelle)
                       .IsRequired()
                       .HasMaxLength(250);
+                
                 entity.Property(a => a.Prix)
                       .HasColumnType("decimal(18,2)");
+                
                 entity.Property(a => a.IsActive)
                       .HasDefaultValue(true);
+                
+                entity.Property(a => a.TVA)
+                      .HasPrecision(5, 2);
+                
+                entity.Property(a => a.BarCode)
+                      .HasMaxLength(13);
+                
                 entity.Property(a => a.CreatedAt)
                       .HasDefaultValueSql("GETUTCDATE()");
+                
                 entity.Property(a => a.UpdatedAt)
                       .HasDefaultValueSql("GETUTCDATE()");
+                
 
+                
                 // Relationship to Category
                 entity.HasOne(a => a.Category)
                       .WithMany()
@@ -63,10 +76,15 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.ToTable("Categories");
+
                 entity.HasKey(c => c.Id);
+
                 entity.Property(c => c.Name)
                       .IsRequired()
                       .HasMaxLength(100);
+
+                entity.Property(c => c.TVA)
+                      .HasPrecision(5, 2);
             });
         }
     }

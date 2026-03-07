@@ -80,6 +80,14 @@ namespace ERP.ArticleService.API.Controllers
             }
         }
 
+        [HttpGet(ApiRoutes.Articles.Stats)]
+        [ProducesResponseType(typeof(ArticleStatsDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetStats()
+        {
+            var result = await _articleService.GetStatsAsync();
+            return Ok(result);
+        }
+
         // =========================
         // GET PAGED BY STATUS
         // =========================
@@ -130,12 +138,11 @@ namespace ERP.ArticleService.API.Controllers
         // CREATE
         // =========================
         [HttpPost(ApiRoutes.Articles.Create)]
-        public async Task<ActionResult<Article>> Create([FromBody] CreateArticleRequest request)
+        public async Task<ActionResult<Article>> Create([FromBody] CreateArticleRequestDto request)
         {
             try
             {
-                var article = await _articleService.CreateAsync(
-                    request.Libelle, request.Prix, request.CategoryId);
+                var article = await _articleService.CreateAsync(request);
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = article.Id },
@@ -157,12 +164,11 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPut(ApiRoutes.Articles.Update)]
         public async Task<ActionResult<Article>> Update(
             [FromRoute] Guid id,
-            [FromBody] UpdateArticleRequest request)
+            [FromBody] UpdateArticleRequestDto request)
         {
             try
             {
-                var article = await _articleService.UpdateAsync(
-                    id, request.Libelle, request.Prix, request.CategoryId);
+                var article = await _articleService.UpdateAsync(id, request);
                 return Ok(article);
             }
             catch (KeyNotFoundException ex)

@@ -4,30 +4,39 @@
     {
         public Guid Id { get; private set; }
         public string Name { get; private set; }
+        public decimal TVA { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
 
         private Category() { }
 
-        public Category(string name)
+        public Category(string name, decimal tva)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Category name is required");
 
+            if (tva < 0)
+                throw new ArgumentException("TVA cannot be below 0");
+
             Id = Guid.NewGuid();
             Name = name.Trim();
+            TVA = tva;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void UpdateName(string name)
+        public void Update(string name, decimal tva)
         {
+            if (tva < 0) 
+                throw new ArgumentException("TVA cannot be below 0");
+
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Category name is required");
 
             if (Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
                 return;
 
+            TVA= tva;
             Name = name.Trim();
             UpdatedAt = DateTime.UtcNow;
         }

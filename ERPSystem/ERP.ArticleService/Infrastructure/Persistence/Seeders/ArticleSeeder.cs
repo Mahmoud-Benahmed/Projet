@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Application.Interfaces;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,6 +63,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                 ("Kit d'outils informatiques",              99.99m, "Outillage"),
             };
 
+            var random= new Random();
             foreach (var (libelle, prix, categoryName) in seedData)
             {
                 if (!categoryMap.TryGetValue(categoryName, out var categoryId))
@@ -74,9 +76,19 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
                 try
                 {
-                    var article = await _articleService.CreateAsync(libelle, prix, categoryId);
+
+                    var tva = Math.Round((decimal)(random.NextDouble() * 19 + 1), 2);
+                    var barCode = GenerateEAN13();
+                    var article = await _articleService.CreateAsync(new CreateArticleRequestDto(
+                        Libelle: libelle,
+                        Prix: prix,
+                        CategoryId: categoryId,
+                        BarCode: barCode,
+                        TVA:  tva
+                    ));
+
                     _logger.LogInformation(
-                        "Seeded article: '{Code}' - {Libelle}", article.Code, article.Libelle);
+                        "Seeded article: '{Code}' - {Libelle}", article.CodeRef, article.Libelle);
                 }
                 catch (Exception ex)
                 {
@@ -84,6 +96,23 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                         "Failed to seed article '{Libelle}'.", libelle);
                 }
             }
+        }
+
+        private static string GenerateEAN13()
+        {
+            var random = new Random();
+            var digits = new int[12];
+            for (int i = 0; i < 12; i++)
+                digits[i] = random.Next(0, 10);
+
+            // Calculate check digit
+            int sum = 0;
+            for (int i = 0; i < 12; i++)
+                sum += digits[i] * (i % 2 == 0 ? 1 : 3);
+
+            int checkDigit = (10 - (sum % 10)) % 10;
+
+            return string.Concat(digits) + checkDigit;
         }
     }
 }

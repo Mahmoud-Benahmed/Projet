@@ -16,8 +16,11 @@ namespace ERP.ArticleService.API
             public const string GetPagedByName = Controller + "/paged/by-name";
             public const string GetPagedByDateRange = Controller + "/paged/by-date-range";
             public const string Create = Controller;
-            public const string UpdateName = Controller + "/{id:guid}/name";
+            public const string Update = Controller + "/{id:guid}";
             public const string Delete = Controller + "/{id:guid}";
+            public const string GetBelowTVA = Controller + "/tva/below";
+            public const string GetHigherThanTVA = Controller + "/tva/higher";
+            public const string GetBetweenTVA = Controller + "/tva/between";
         }
 
         public static class Articles
@@ -35,6 +38,8 @@ namespace ERP.ArticleService.API
             public const string Activate = Controller + "/{id:guid}/activate";
             public const string Deactivate = Controller + "/{id:guid}/deactivate";
             public const string Delete = Controller + "/{id:guid}";
+            public const string Stats = Controller + "/stats";
+
         }
     }
 }

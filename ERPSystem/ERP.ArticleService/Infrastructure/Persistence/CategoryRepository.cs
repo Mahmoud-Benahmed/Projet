@@ -40,6 +40,43 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         }
 
         // =========================
+        // READ - BY TVA
+        // =========================
+        public async Task<List<Category>> GetBelowTVAAsync(decimal tva)
+        {
+            return await _context.Categories
+                .Where(c => c.TVA < tva)
+                .OrderBy(c => c.TVA)
+                .ToListAsync();
+        }
+
+        public async Task<List<Category>> GetHigherThanTVAAsync(decimal tva)
+        {
+            return await _context.Categories
+                .Where(c => c.TVA > tva)
+                .OrderBy(c => c.TVA)
+                .ToListAsync();
+        }
+
+        public async Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max)
+        {
+            if (min > max)
+                throw new ArgumentException("'min' TVA must be less than or equal to 'max' TVA.");
+
+            return await _context.Categories
+                .Where(c => c.TVA >= min && c.TVA <= max)
+                .OrderBy(c => c.TVA)
+                .ToListAsync();
+        }
+
+        public async Task<Category?> GetByTVAsync(decimal tva)
+        {
+            return await _context.Categories
+                .FirstOrDefaultAsync(c => c.TVA == tva);
+        }
+
+
+        // =========================
         // READ - ALL
         // =========================
         public async Task<List<Category>> GetAllAsync()

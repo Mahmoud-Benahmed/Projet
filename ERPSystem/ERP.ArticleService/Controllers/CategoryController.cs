@@ -1,4 +1,5 @@
 ﻿using ERP.ArticleService.API;
+using ERP.ArticleService.Application.DTOs;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 using Microsoft.AspNetCore.Mvc;
@@ -103,6 +104,51 @@ namespace ERP.ArticleService.API.Controllers
             }
         }
 
+        [HttpGet(ApiRoutes.Categories.GetBelowTVA)]
+        public async Task<ActionResult<List<Category>>> GetBelowTVA([FromQuery] decimal tva)
+        {
+            try
+            {
+                var result = await _categoryService.GetBelowTVAAsync(tva);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(ApiRoutes.Categories.GetHigherThanTVA)]
+        public async Task<ActionResult<List<Category>>> GetHigherThanTVA([FromQuery] decimal tva)
+        {
+            try
+            {
+                var result = await _categoryService.GetHigherThanTVAAsync(tva);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet(ApiRoutes.Categories.GetBetweenTVA)]
+        public async Task<ActionResult<List<Category>>> GetBetweenTVA(
+            [FromQuery] decimal min,
+            [FromQuery] decimal max)
+        {
+            try
+            {
+                var result = await _categoryService.GetBetweenTVAAsync(min, max);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         // =========================
         // GET PAGED BY DATE RANGE
         // =========================
@@ -133,11 +179,11 @@ namespace ERP.ArticleService.API.Controllers
         // CREATE
         // =========================
         [HttpPost(ApiRoutes.Categories.Create)]
-        public async Task<ActionResult<Category>> Create([FromBody] string name)
+        public async Task<ActionResult<Category>> Create([FromBody] UpdateCategoryRequestDto request)
         {
             try
             {
-                var category = await _categoryService.CreateAsync(name);
+                var category = await _categoryService.CreateAsync(request.Name, request.TVA);
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = category.Id },
@@ -156,14 +202,14 @@ namespace ERP.ArticleService.API.Controllers
         // =========================
         // UPDATE NAME
         // =========================
-        [HttpPut(ApiRoutes.Categories.UpdateName)]
-        public async Task<ActionResult<Category>> UpdateName(
+        [HttpPut(ApiRoutes.Categories.Update)]
+        public async Task<ActionResult<Category>> Update(
             [FromRoute] Guid id,
-            [FromBody] string newName)
+            [FromBody]  UpdateCategoryRequestDto request)
         {
             try
             {
-                var category = await _categoryService.UpdateNameAsync(id, newName);
+                var category = await _categoryService.UpdateAsync(id, request.Name, request.TVA);
                 return Ok(category);
             }
             catch (KeyNotFoundException ex)

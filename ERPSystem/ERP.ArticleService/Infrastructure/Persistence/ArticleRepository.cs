@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Application.Interfaces;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         public async Task<Article?> GetByCodeAsync(string code)
         {
             return await BaseQuery()
-                .FirstOrDefaultAsync(a => a.Code == code);
+                .FirstOrDefaultAsync(a => a.CodeRef == code);
         }
 
         // =========================
@@ -99,6 +100,25 @@ namespace ERP.ArticleService.Infrastructure.Persistence
 
             return await PaginationHelper.ToPagedResultAsync(
                 query, pageNumber, pageSize, q => q.OrderBy(a => a.Libelle));
+        }
+
+        // ========================
+        // STATS
+        // ========================
+        public async Task<ArticleStatsDto> GetStatsAsync()
+        {
+            var total = await _context.Articles.CountAsync();
+            var active = await _context.Articles.CountAsync(a => a.IsActive);
+            var deactivated = total - active;
+            var categoriesCount = await _context.Categories.CountAsync();
+
+            return new ArticleStatsDto
+            (
+                TotalCount : total,
+                ActiveCount : active,
+                InActiveCount : deactivated,
+                CategoriesCount : categoriesCount
+            );
         }
     }
 }
