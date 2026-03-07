@@ -16,14 +16,14 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // CREATE
         // =========================
-        public async Task<Category> CreateAsync(string name)
+        public async Task<Category> CreateAsync(string name, decimal tva)
         {
             var existing = await _categoryRepository.GetByNameAsync(name);
             if (existing is not null)
                 throw new InvalidOperationException(
                     $"A category with the name '{name}' already exists.");
 
-            var category = new Category(name);
+            var category = new Category(name, tva);
             await _categoryRepository.AddAsync(category);
             await _categoryRepository.SaveChangesAsync();
             return category;
@@ -55,10 +55,39 @@ namespace ERP.ArticleService.Application.Services
             return await _categoryRepository.GetAllAsync();
         }
 
+
+        public async Task<List<Category>> GetBelowTVAAsync(decimal tva)
+        {
+            if (tva <= 0)
+                throw new ArgumentException("TVA must be greater than zero.");
+
+            return await _categoryRepository.GetBelowTVAAsync(tva);
+        }
+
+        public async Task<List<Category>> GetHigherThanTVAAsync(decimal tva)
+        {
+            if (tva <= 0)
+                throw new ArgumentException("TVA must be greater than zero.");
+
+            return await _categoryRepository.GetHigherThanTVAAsync(tva);
+        }
+
+        public async Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max)
+        {
+            if (min <= 0)
+                throw new ArgumentException("Min TVA must be greater than zero.");
+            if (max <= 0)
+                throw new ArgumentException("Max TVA must be greater than zero.");
+            if (min > max)
+                throw new ArgumentException("'min' TVA must be less than or equal to 'max' TVA.");
+
+            return await _categoryRepository.GetBetweenTVAAsync(min, max);
+        }
+
         // =========================
         // UPDATE
         // =========================
-        public async Task<Category> UpdateNameAsync(Guid id, string newName)
+        public async Task<Category> UpdateAsync(Guid id, string newName, decimal tva)
         {
             var category = await GetByIdAsync(id);
 
@@ -67,7 +96,7 @@ namespace ERP.ArticleService.Application.Services
                 throw new InvalidOperationException(
                     $"A category with the name '{newName}' already exists.");
 
-            category.UpdateName(newName);
+            category.Update(newName, tva);
             await _categoryRepository.SaveChangesAsync();
             return category;
         }

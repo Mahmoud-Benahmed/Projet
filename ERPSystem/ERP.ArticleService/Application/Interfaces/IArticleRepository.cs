@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Domain;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Domain;
 namespace ERP.ArticleService.Application.Interfaces
 {
 
@@ -16,5 +17,7 @@ namespace ERP.ArticleService.Application.Interfaces
         Task<(List<Article> Items, int TotalCount)> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize);
         Task<(List<Article> Items, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
         Task<(List<Article> Items, int TotalCount)> GetPagedByLibelleAsync(string libelleFilter, int pageNumber, int pageSize);
+
+        Task<ArticleStatsDto> GetStatsAsync();
     }
 }

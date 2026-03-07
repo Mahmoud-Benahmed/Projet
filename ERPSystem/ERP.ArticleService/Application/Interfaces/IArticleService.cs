@@ -8,7 +8,7 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // CREATE
         // =========================
-        Task<Article> CreateAsync(string libelle, decimal prix, Guid categoryId);
+        Task<Article> CreateAsync(CreateArticleRequestDto request);
 
         // =========================
         // READ
@@ -20,7 +20,7 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // UPDATE
         // =========================
-        Task<Article> UpdateAsync(Guid id, string libelle, decimal prix, Guid categoryId);
+        Task<Article> UpdateAsync(Guid id, UpdateArticleRequestDto request);
 
         // =========================
         // ACTIVATE / DEACTIVATE
@@ -50,5 +50,8 @@ namespace ERP.ArticleService.Application.Interfaces
             string libelleFilter,
             int pageNumber,
             int pageSize);
+
+
+        Task<ArticleStatsDto> GetStatsAsync();
     }
 }

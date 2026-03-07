@@ -9,6 +9,13 @@ namespace ERP.ArticleService.Application.Interfaces
         Task<Category?> GetByNameAsync(string name);
         Task<List<Category>> GetAllAsync();
 
+
+        Task<Category?> GetByTVAsync(decimal tva);
+        Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max);
+        Task<List<Category>> GetHigherThanTVAAsync(decimal tva);
+        Task<List<Category>> GetBelowTVAAsync(decimal tva);
+
+
         void Remove(Category category);
         Task SaveChangesAsync();
 

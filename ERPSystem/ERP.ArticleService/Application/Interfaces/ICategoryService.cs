@@ -8,7 +8,7 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // CREATE
         // =========================
-        Task<Category> CreateAsync(string name);
+        Task<Category> CreateAsync(string name, decimal tva);
 
         // =========================
         // READ
@@ -18,9 +18,16 @@ namespace ERP.ArticleService.Application.Interfaces
         Task<List<Category>> GetAllAsync();
 
         // =========================
+        // TVA FILTERING
+        // =========================
+        Task<List<Category>> GetBelowTVAAsync(decimal tva);
+        Task<List<Category>> GetHigherThanTVAAsync(decimal tva);
+        Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max);
+
+        // =========================
         // UPDATE
         // =========================
-        Task<Category> UpdateNameAsync(Guid id, string newName);
+        Task<Category> UpdateAsync(Guid id, string newName, decimal tva);
 
         // =========================
         // DELETE

@@ -23,15 +23,15 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // CREATE
         // =========================
-        public async Task<Article> CreateAsync(string libelle, decimal prix, Guid categoryId)
+        public async Task<Article> CreateAsync(CreateArticleRequestDto request)
         {
-            var category = await _categoryRepository.GetByIdAsync(categoryId)
+            var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new KeyNotFoundException(
-                    $"Category with id '{categoryId}' was not found.");
+                    $"Category with id '{request.CategoryId}' was not found.");
 
             var code = await _articleCodeService.GenerateArticleCodeAsync();
 
-            var article = new Article(code, libelle, prix, category);
+            var article = new Article(code, request.Libelle, request.Prix, category, request.BarCode, request.TVA);
             await _articleRepository.AddAsync(article);
             await _articleRepository.SaveChangesAsync();
             return article;
@@ -66,15 +66,16 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // UPDATE
         // =========================
-        public async Task<Article> UpdateAsync(Guid id, string libelle, decimal prix, Guid categoryId)
+        public async Task<Article> UpdateAsync(Guid id, UpdateArticleRequestDto request)
         {
             var article = await GetByIdAsync(id);
 
-            var category = await _categoryRepository.GetByIdAsync(categoryId)
+            var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new KeyNotFoundException(
-                    $"Category with id '{categoryId}' was not found.");
+                    $"Category with id '{request.CategoryId}' was not found.");
 
-            article.Update(libelle, prix, category);
+            article.Update(request.Libelle, request.Prix, category, request.BarCode, request.TVA);
+
             await _articleRepository.SaveChangesAsync();
             return article;
         }
@@ -143,6 +144,15 @@ namespace ERP.ArticleService.Application.Services
             var (items, totalCount) = await _articleRepository
                 .GetPagedByLibelleAsync(libelleFilter, pageNumber, pageSize);
             return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+        }
+
+
+        // ======================
+        // STATS
+        // ======================
+        public async Task<ArticleStatsDto> GetStatsAsync()
+        {
+            return await _articleRepository.GetStatsAsync();
         }
 
         // =========================
