@@ -1,4 +1,5 @@
 ﻿using ERP.AuthService.Domain;
+using ERP.AuthService.Domain.Logger;
 using MongoDB.Driver;
 
 namespace ERP.AuthService.Infrastructure.Persistence
@@ -26,6 +27,24 @@ namespace ERP.AuthService.Infrastructure.Persistence
                         .Ascending(p => p.RoleId)
                         .Ascending(p => p.ControleId),
                     new CreateIndexOptions { Unique = true }));
+
+            // AuditLogs — query by user, action, and timestamp
+            await context.AuditLogs.Indexes.CreateManyAsync([
+                // for GetByUserAsync — filters on PerformedBy or TargetUserId
+
+                // lets MongoDB satisfy both the filter and the sort without a separate in-memory sort step.
+                new CreateIndexModel<AuditLog>(
+                    Builders<AuditLog>.IndexKeys
+                        .Ascending(x => x.PerformedBy)
+                        .Descending(x => x.Timestamp)),
+
+                new CreateIndexModel<AuditLog>(
+                    Builders<AuditLog>.IndexKeys.Ascending(x => x.TargetUserId)),
+
+                // for GetByActionAsync
+                new CreateIndexModel<AuditLog>(
+                    Builders<AuditLog>.IndexKeys.Ascending(x => x.Action)),
+            ]);
         }
     }
 }

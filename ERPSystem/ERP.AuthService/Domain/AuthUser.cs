@@ -19,9 +19,9 @@ namespace ERP.AuthService.Domain
 
         public string PasswordHash { get; set; } = default!;
 
-        public bool MustChangePassword { get; private set; } = true;
+        public bool MustChangePassword { get; set; } = true;
 
-        public bool IsActive { get; private set; } = false;
+        public bool IsActive { get; private set; } = true;
 
         [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid RoleId { get; private set; }
@@ -105,7 +105,7 @@ namespace ERP.AuthService.Domain
 
         public bool CanLogin()
         {
-            if (!IsActive && HasLoggedInBefore())
+            if (!IsActive)
                 return false;
             return true;
         }
@@ -116,9 +116,6 @@ namespace ERP.AuthService.Domain
                 throw new ArgumentException("Password hash is required");
 
             PasswordHash = newPasswordHash;
-
-            if (MustChangePassword)
-                MustChangePassword = false;
 
             UpdatedAt = DateTime.UtcNow;
         }

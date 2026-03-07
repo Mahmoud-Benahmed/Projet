@@ -1,6 +1,7 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
+using Microsoft.IdentityModel.Logging;
 using MongoDB.Driver;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
@@ -18,10 +19,10 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => await _collection.InsertOneAsync(user);
 
         public async Task<AuthUser?> GetByLoginAsync(string login)
-            => await _collection.Find(x => x.Login == login).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Login == login && x.IsActive).FirstOrDefaultAsync();
 
         public async Task<AuthUser?> GetByEmailAsync(string email)
-            => await _collection.Find(x => x.Email == email).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Email == email && x.IsActive).FirstOrDefaultAsync();
 
         public async Task<AuthUser?> GetByIdAsync(Guid id)
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
@@ -41,7 +42,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize)
         {
-            var filter = Builders<AuthUser>.Filter.Eq(x => x.IsActive, isActive);
+            var filter = Builders<AuthUser>.Filter.Where(x => x.IsActive == isActive);
 
             var totalCount =(int) await _collection.CountAsync(filter);
 
@@ -56,7 +57,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<(List<AuthUser>, int)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize)
         {
-            var filter = Builders<AuthUser>.Filter.Eq(x => x.RoleId, role);
+            var filter = Builders<AuthUser>.Filter.Where(x => x.RoleId == role && x.IsActive);
 
             var totalCount = (int) await _collection.CountDocumentsAsync(filter);
 
@@ -69,10 +70,10 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return (items, totalCount);
         }
         public async Task<bool> ExistsByEmailAsync(string email)
-            => await _collection.Find(x => x.Email == email).AnyAsync();
+            => await _collection.Find(x => x.Email == email && x.IsActive).AnyAsync();
 
         public async Task<bool> ExistsByLoginAsync(string login)
-            => await _collection.Find(x => x.Login == login).AnyAsync();
+            => await _collection.Find(x => x.Login == login && x.IsActive).AnyAsync();
 
         public async Task<AuthUser?> UpdateAsync(AuthUser user)
         {
@@ -80,7 +81,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return result.ModifiedCount > 0 ? user : null;
         }
         public async Task<long> CountAsync()
-            => await _collection.CountDocumentsAsync(_ => true);
+            => await _collection.CountDocumentsAsync(x=> x.IsActive);
 
         public async Task DeleteAllAsync()
         {

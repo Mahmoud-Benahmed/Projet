@@ -95,12 +95,19 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IControleRepository, ControleRepository>();
 builder.Services.AddScoped<IPrivilegeRepository, PrivilegeRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthUserService, AuthUserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
-builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>(); // ← keep only this
+builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
+
+builder.Services.AddScoped<IAuditLogger, AuditLogger>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+builder.Services.AddHttpContextAccessor();
+
 //builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();
@@ -112,8 +119,10 @@ await MongoDbInitializer.InitializeAsync(mongoContext);
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
+
     var services = scope.ServiceProvider;
     await AuthServiceSeeder.SeedAsync(
+        services.GetRequiredService<IAuditLogRepository>(),
         services.GetRequiredService<IAuthUserRepository>(),
         services.GetRequiredService<IRoleRepository>(),
         services.GetRequiredService<IControleRepository>(),

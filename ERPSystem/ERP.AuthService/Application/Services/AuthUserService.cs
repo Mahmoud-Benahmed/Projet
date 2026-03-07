@@ -1,4 +1,5 @@
-﻿using ERP.AuthService.Application.DTOs;
+﻿using Confluent.Kafka;
+using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions.AuthUser;
@@ -6,6 +7,7 @@ using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Domain.Logger;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using System.Globalization;
@@ -18,6 +20,8 @@ namespace ERP.AuthService.Application.Services
 {
     public class AuthUserService : IAuthUserService
     {
+        private readonly IAuditLogger _auditLogger;
+        private readonly IHttpContextAccessor _httpContext;
         private readonly IAuthUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
@@ -28,6 +32,8 @@ namespace ERP.AuthService.Application.Services
         //private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
+            IAuditLogger auditLogger,
+            IHttpContextAccessor httpContextAccessor,
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IRefreshTokenRepository refreshTokenRepository,
@@ -45,6 +51,9 @@ namespace ERP.AuthService.Application.Services
             _passwordHasher = passwordHasher;
             _controleRepository = controleRepository;
             _privilegeRepository = privilegeRepository;
+            _auditLogger = auditLogger;
+            _httpContext = httpContextAccessor;
+
             //_eventPublisher = eventPublisher;
         }
 
@@ -129,7 +138,16 @@ namespace ERP.AuthService.Application.Services
             user.UpdateProfile(request.FullName, request.Email);
 
             var updated= await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                AuditAction.ProfileUpdated,
+                success: true,
+                performedBy: id,
+                targetUserId: id,
+                metadata: new() { ["email"] = request.Email, ["fullName"] = request.FullName },
+                ipAddress: GetIp());
             return await MapToDtoAsync(updated);
+
 
         }
 
@@ -153,34 +171,74 @@ namespace ERP.AuthService.Application.Services
 
             await _userRepository.AddAsync(user);
 
+            await _auditLogger.LogAsync(
+                AuditAction.UserRegistered,
+                success: true,
+                targetUserId: user.Id,
+                metadata: new() { ["login"] = request.Login, ["email"] = request.Email },
+                ipAddress: GetIp());
+            
             return await MapToDtoAsync(user);
         }
         
         
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _userRepository.GetByLoginAsync(request.Login)
-                ?? throw new InvalidCredentialsException();
+            try
+            {
+                var user = await _userRepository.GetByLoginAsync(request.Login)
+                    ?? throw new InvalidCredentialsException();
 
-            if (!user.CanLogin())
-                throw new UserInactiveException();
+                if (!user.CanLogin())
+                    throw new UserInactiveException();
 
 
-            var result = _passwordHasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                request.Password
-            );
+                var result = _passwordHasher.VerifyHashedPassword(
+                    user,
+                    user.PasswordHash,
+                    request.Password
+                );
 
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
+                if (result == PasswordVerificationResult.Failed)
+                    throw new InvalidCredentialsException();
 
-            bool isFirstLogin = !user.IsActive && !user.HasLoggedInBefore();
+                bool isFirstLogin = !user.IsActive && !user.HasLoggedInBefore();
 
-            user.RecordLogin();
-            await _userRepository.UpdateAsync(user);
+                user.RecordLogin();
+                await _userRepository.UpdateAsync(user);
 
-            return await GenerateAuthResponseAsync(user);
+                var token = await GenerateAuthResponseAsync(user);
+                await _auditLogger.LogAsync(
+                        AuditAction.Login,
+                        success: true,
+                        performedBy: user.Id,
+                        metadata: new() { ["login"] = request.Login },
+                        ipAddress: GetIp(),
+                        userAgent: GetUserAgent());
+                return token;
+            }
+            catch (InvalidCredentialsException ex)
+            {
+                await _auditLogger.LogAsync(
+                        AuditAction.Login,
+                        success: false,
+                        failureReason: "Invalid credentials",
+                        metadata: new() { ["login"] = request.Login },
+                        ipAddress: GetIp(),
+                        userAgent: GetUserAgent());
+                throw;
+            }
+            catch (UserInactiveException)
+            {
+                await _auditLogger.LogAsync(
+                    AuditAction.Login,
+                    success: false,
+                    failureReason: "Account inactive",
+                    metadata: new() { ["login"] = request.Login },
+                    ipAddress: GetIp(),
+                    userAgent: GetUserAgent());
+                throw;
+            }
         }
 
 
@@ -213,7 +271,15 @@ namespace ERP.AuthService.Application.Services
             // Rotate token
             await RevokeRefreshTokenAsyncPrivate(token);// revoke the token to refresh before getting a fresh one
 
-            return await GenerateAuthResponseAsync(user);
+            var result=await GenerateAuthResponseAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.TokenRefreshed,
+                    success: true,
+                    performedBy: user.Id,
+                    ipAddress: GetIp());
+
+            return result;
         }
 
         public async Task RevokeRefreshTokenAsync(string refreshToken)
@@ -222,6 +288,11 @@ namespace ERP.AuthService.Application.Services
                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
             await RevokeRefreshTokenAsyncPrivate(token);
+            await _auditLogger.LogAsync(
+                AuditAction.TokenRevoked,
+                success: true,
+                performedBy: token.UserId,
+                ipAddress: GetIp());
         }
 
 
@@ -298,14 +369,11 @@ namespace ERP.AuthService.Application.Services
             var user = await _userRepository.GetByIdAsync(id)
                         ?? throw new UserNotFoundException(id);
 
+            if (!user.IsActive)
+                throw new UserInactiveException();
 
-            if (CryptographicOperations.FixedTimeEquals(
-                                Encoding.UTF8.GetBytes(currPassword),
-                                Encoding.UTF8.GetBytes(newPassword))
-                )
-            {
+            if (currPassword.Equals(newPassword))
                 throw new ArgumentException("The new password cannot be the same as the current password.");
-            }
 
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currPassword);
@@ -315,8 +383,17 @@ namespace ERP.AuthService.Application.Services
 
             var newHashedPassword = _passwordHasher.HashPassword(user, newPassword);
             user.ChangePassword(newHashedPassword);
+            if (user.MustChangePassword) user.MustChangePassword = false;
 
             await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                  AuditAction.PasswordChanged,
+                  success: true,
+                  performedBy: id,
+                  targetUserId: id,
+                  ipAddress: GetIp(),
+                  metadata: new() { ["login"]= user.Login ,["oldPassword"] = currPassword });
         }
 
         public async Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId)
@@ -327,8 +404,14 @@ namespace ERP.AuthService.Application.Services
             var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
 
             user.ChangePassword(hashedNewPassword);
+            user.MustChangePassword = true;
 
             await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserActivated,
+                    success: true,
+                    targetUserId: userId,
+                    ipAddress: GetIp());
         }
 
 
@@ -354,6 +437,11 @@ namespace ERP.AuthService.Application.Services
 
             user.Deactivate();
             await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                AuditAction.UserDeactivated,
+                success: true,
+                targetUserId: user.Id,
+                ipAddress: GetIp());
         }
 
 
@@ -390,5 +478,13 @@ namespace ERP.AuthService.Application.Services
                 LastLoginAt: user.LastLoginAt
             );
         }
+
+
+        private string? GetIp()
+            => _httpContext?.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        private string? GetUserAgent()
+            => _httpContext?.HttpContext?.Request.Headers["User-Agent"].ToString();
+
     }
 }

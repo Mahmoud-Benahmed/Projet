@@ -52,7 +52,11 @@ namespace ERP.AuthService.Controllers
             if (!Guid.TryParse(sub, out var requesterId))
                 throw new UnauthorizedAccessException("Invalid token.");
 
+            var user = await _authService.GetByIdAsync(id);
             bool isSelf = requesterId == id;
+            if (isSelf && !user.IsActive)
+                Forbid();
+
             bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
 
             if (!isSelf && !isAdmin)
@@ -148,7 +152,7 @@ namespace ERP.AuthService.Controllers
             return await _authService.ExistsByEmail(email);
         }
 
-        [HttpGet("/stats")]
+        [HttpGet("stats")]
         [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStats()
         {

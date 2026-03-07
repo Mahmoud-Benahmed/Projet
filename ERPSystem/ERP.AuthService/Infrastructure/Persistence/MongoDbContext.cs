@@ -1,4 +1,5 @@
 ﻿using ERP.AuthService.Domain;
+using ERP.AuthService.Domain.Logger;
 using MongoDB.Driver;
 
 namespace ERP.AuthService.Infrastructure.Persistence
@@ -12,6 +13,9 @@ namespace ERP.AuthService.Infrastructure.Persistence
             var client = new MongoClient(connectionString);
             _database = client.GetDatabase(dbName);
         }
+
+        public IMongoCollection<AuditLog> AuditLogs => 
+            _database.GetCollection<AuditLog>("AuditLogs");
 
         public IMongoCollection<AuthUser> AuthUsers =>
             _database.GetCollection<AuthUser>("AuthUsers");

@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 
 namespace ERP.AuthService.Infrastructure.Persistence
@@ -9,6 +10,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
     public static class AuthServiceSeeder
     {
         public static async Task SeedAsync(
+            IAuditLogRepository auditLogRepository,
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IControleRepository controleRepository,
@@ -16,6 +18,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
             IConfiguration configuration)
         {
+            await auditLogRepository.ClearAsync();
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
