@@ -98,7 +98,7 @@ namespace ERP.ArticleService.Tests.Integration.Controllers
             _serviceMock.Setup(s => s.CreateAsync("Électronique", 19m)).ReturnsAsync(category);
 
 
-            var result = await _controller.Create(new UpdateCategoryRequestDto (Name: "Électronique", TVA: 19m ));
+            var result = await _controller.Create(new CategoryRequestDto (Name: "Électronique", TVA: 19m ));
 
             result.Result.Should().BeOfType<CreatedAtActionResult>();
         }
@@ -109,7 +109,7 @@ namespace ERP.ArticleService.Tests.Integration.Controllers
             _serviceMock.Setup(s => s.CreateAsync(It.IsAny<string>(), It.IsAny<decimal>()))
                         .ThrowsAsync(new InvalidOperationException("Already exists"));
 
-            var result = await _controller.Create(new UpdateCategoryRequestDto(Name: "Électronique", TVA: 19m));
+            var result = await _controller.Create(new CategoryRequestDto(Name: "Électronique", TVA: 19m));
 
             result.Result.Should().BeOfType<ConflictObjectResult>();
         }
@@ -124,7 +124,7 @@ namespace ERP.ArticleService.Tests.Integration.Controllers
             _serviceMock.Setup(s => s.UpdateAsync(category.Id, "Informatique", 15m))
                         .ReturnsAsync(category);
 
-            var result = await _controller.Update(category.Id, new UpdateCategoryRequestDto(
+            var result = await _controller.Update(category.Id, new CategoryRequestDto(
                 Name: "Informatique",
                 TVA: 15m
             ));
@@ -138,7 +138,7 @@ namespace ERP.ArticleService.Tests.Integration.Controllers
             _serviceMock.Setup(s => s.UpdateAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<decimal>()))
                         .ThrowsAsync(new KeyNotFoundException("Not found"));
 
-            var result = await _controller.Update(Guid.NewGuid(), new UpdateCategoryRequestDto
+            var result = await _controller.Update(Guid.NewGuid(), new CategoryRequestDto
             (
                 Name: "Informatique",
                 TVA: 15m

@@ -179,7 +179,7 @@ namespace ERP.ArticleService.API.Controllers
         // CREATE
         // =========================
         [HttpPost(ApiRoutes.Categories.Create)]
-        public async Task<ActionResult<Category>> Create([FromBody] UpdateCategoryRequestDto request)
+        public async Task<ActionResult<Category>> Create([FromBody] CategoryRequestDto request)
         {
             try
             {
@@ -205,7 +205,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPut(ApiRoutes.Categories.Update)]
         public async Task<ActionResult<Category>> Update(
             [FromRoute] Guid id,
-            [FromBody]  UpdateCategoryRequestDto request)
+            [FromBody]  CategoryRequestDto request)
         {
             try
             {
