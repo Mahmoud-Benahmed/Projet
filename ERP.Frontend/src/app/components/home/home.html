@@ -1,77 +1,43 @@
-<div class="home-shell">
+<div class="home">
 
-  <!-- TOP BAR -->
-  <div class="top-bar">
+  <!-- Welcome Banner -->
+  <div class="home__banner">
     <div>
-      <span class="top-bar__label">Dashboard</span>
-      <h1 class="top-bar__title">Welcome back<span *ngIf="userProfile?.fullName">, </span>{{ userProfile?.fullName ?? '' }} 👋</h1>
-    </div>
-    <div class="top-bar__right">
-      <div class="top-bar__user">
-        <div class="top-bar__avatar">
-            @switch(userProfile?.roleName){
-                @case("SystemAdmin"){
-                  <mat-icon>admin_panel_settings</mat-icon>
-                }
-                @case("Accountant"){
-                  <mat-icon>receipt_long</mat-icon>
-                }
-                @case("SalesManager"){
-                  <mat-icon>analytics</mat-icon>
-                }
-                @case("StockManager"){
-                  <mat-icon>inventory_2</mat-icon>
-                }
-            }
-        </div>
-        <div class="top-bar__user-meta">
-          <span class="top-bar__email">{{ userProfile?.email }}</span>
-          <span class="top-bar__role">{{ userProfile?.roleName}}</span>
-        </div>
+      <h1 class="home__welcome">Welcome back, {{ userProfile?.fullName ?? '' }} 👋</h1>
+      <div class="home__meta">
+        <span class="home__role-badge">{{ userRole }}</span>
+        <span class="home__last-login">Last login: {{ lastLogin }}</span>
       </div>
-      <button mat-icon-button class="top-bar__logout-btn" (click)="logout()" matTooltip="Logout">
-        <mat-icon>logout</mat-icon>
-      </button>
     </div>
   </div>
 
-  <!-- QUICK LINKS -->
-  <div class="quick-links">
-    <span class="section-label">Quick Access</span>
-    <div class="quick-links__grid">
-      <a class="quick-card" routerLink="/profile">
-        <div class="quick-card__icon-wrap quick-card__icon-wrap--accent">
-          <mat-icon>person</mat-icon>
-        </div>
-        <span class="quick-card__label">My Profile</span>
-        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
-      </a>
-      <a class="quick-card" routerLink="/users" *ngIf="userRole==='SystemAdmin'">
-        <div class="quick-card__icon-wrap quick-card__icon-wrap--success">
-          <mat-icon>group</mat-icon>
-        </div>
-        <span class="quick-card__label">Manage Users</span>
-        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
-      </a>
-      <a class="quick-card" routerLink="/users/register" *ngIf="userRole === 'SystemAdmin'">
-        <div class="quick-card__icon-wrap quick-card__icon-wrap--warn">
-          <mat-icon>person_add</mat-icon>
-        </div>
-        <span class="quick-card__label">Register User</span>
-        <mat-icon class="quick-card__arrow">arrow_forward</mat-icon>
-      </a>
-    </div>
-  </div>
+  <!-- Quick Access -->
+  <div class="home__quick-grid">
 
-  <!-- INFO CARD -->
-  <div class="info-card">
-    <div class="info-card__icon-wrap">
-      <mat-icon>info</mat-icon>
-    </div>
-    <div class="info-card__body">
-      <span class="info-card__title">You're signed in as <strong>{{ userRole }}</strong></span>
-      <span class="info-card__sub">{{ userProfile?.email }}</span>
-    </div>
+    <a class="home__quick-card" routerLink="/profile">
+      <div class="home__quick-icon home__quick-icon--blue">
+        <mat-icon>person</mat-icon>
+      </div>
+      <span class="home__quick-label">My Profile</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/users" *ngIf="userRole === 'SystemAdmin'">
+      <div class="home__quick-icon home__quick-icon--green">
+        <mat-icon>group</mat-icon>
+      </div>
+      <span class="home__quick-label">Manage Users</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/users/register" *ngIf="userRole === 'SystemAdmin'">
+      <div class="home__quick-icon home__quick-icon--blue">
+        <mat-icon>person_add</mat-icon>
+      </div>
+      <span class="home__quick-label">Register User</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
   </div>
 
 </div>

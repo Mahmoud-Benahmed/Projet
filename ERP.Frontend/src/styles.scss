@@ -5,7 +5,37 @@
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
+:root {
+  --sidebar-w: 210px;
+  --sidebar-w-sm: 60px;
+  --topbar-h: 54px;
+  --bg: #0c0d11;
+  --sidebar-bg: #111318;
+  --sidebar-border: #1d1f28;
+  --surface: #161820;
+  --surface2: #1c1f2b;
+  --text: #e4e6f0;
+  --text-soft: #8b90a8;
+  --text-muted: #4e526a;
+  --accent: #4f7cff;
+  --accent-bg: rgba(79, 124, 255, 0.1);
+  --accent-border: rgba(79, 124, 255, 0.25);
+  --danger: #ff5c72;
+  --border: #1d1f28;
+  --radius: 8px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+  background: var(--bg) !important;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
 html {
   height: 100%;
   @include mat.theme((
@@ -17,7 +47,12 @@ html {
     density: 0,
   ));
 }
-
+body, html {
+  margin: 0;
+  padding: 0;
+  background: #0d0d0f !important;
+  min-height: 100vh;
+}
 body {
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the

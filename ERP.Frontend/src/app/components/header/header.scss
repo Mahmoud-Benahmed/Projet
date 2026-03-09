@@ -2,8 +2,8 @@
 $surface:     #0f1117;
 $surface-2:   #181c27;
 $border:      rgba(255, 255, 255, 0.07);
-$text-dark:#343434;
-$text-light : #ede7e7;
+$text-dark:   #343434;
+$text-light:  #ede7e7;
 $text-muted:  #6b7280;
 $accent:      #4f8ef7;
 $accent-glow: rgba(79, 142, 247, 0.15);
@@ -54,10 +54,33 @@ $danger:      #f87171;
   flex-shrink: 0;
 
   &-icon {
-    color: $accent;
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: $accent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(79, 142, 247, 0.35);
+    font-family: 'DM Sans', 'Inter', Arial, sans-serif !important;
+    font-feature-settings: normal !important;
+    letter-spacing: normal !important;
+    text-rendering: auto !important;
+    -webkit-font-smoothing: auto !important;
+    flex-shrink: 0;
+    user-select: none;
+
+    span {
+      font-family: 'DM Sans', 'Inter', Arial, sans-serif !important;
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 1;
+      font-feature-settings: normal !important;
+      letter-spacing: normal !important;
+    }
   }
 
   &-text {
@@ -150,7 +173,7 @@ $danger:      #f87171;
     background: #fff !important;
 
     .avatar-info__name {
-      color: $text-dark;   // cascade hover down to the name
+      color: $text-dark;
     }
   }
 }
@@ -177,7 +200,7 @@ $danger:      #f87171;
   transition: color 0.15s;
 
   .avatar-btn:hover & {
-    color: $text-dark;   // chevron also reacts to button hover
+    color: $text-dark;
   }
 }
 

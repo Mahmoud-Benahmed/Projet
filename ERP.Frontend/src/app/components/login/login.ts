@@ -1,5 +1,5 @@
 import { AuthService } from '../../services/auth.service';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,7 +11,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { forkJoin } from 'rxjs';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 
 @Component({
@@ -28,12 +27,12 @@ import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
     MatDialogModule
   ],
   templateUrl: './login.html',
-  styleUrl: './login.scss'
+  styleUrl: './login.scss',
+  encapsulation: ViewEncapsulation.None
 })
 export class LoginComponent implements OnInit, OnDestroy {
 
-
-  userProfile: AuthUserGetResponseDto | null=null;
+  userProfile: AuthUserGetResponseDto | null = null;
 
   credentials = { login: '', password: '' };
   showPassword = false;
@@ -61,11 +60,11 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
-        this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
+        this.authService.storeTokens(response);
 
         this.authService.getMe().subscribe({
           next: (authUser) => {
-            this.userProfile = authUser
+            this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
 
             if (response.mustChangePassword) {
@@ -74,7 +73,6 @@ export class LoginComponent implements OnInit, OnDestroy {
               return;
             }
             this.router.navigate(['/home']);
-
           },
           error: () => {
             this.authService.logout();
@@ -93,8 +91,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.router.navigate(['/register']);
   }
 
-  stopLoading(){
-    this.isLoading= false;
+  stopLoading() {
+    this.isLoading = false;
     this.cdr.markForCheck();
   }
 
