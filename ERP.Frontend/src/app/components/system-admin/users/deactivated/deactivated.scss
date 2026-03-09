@@ -1,17 +1,17 @@
 // ── TOKENS ────────────────────────────────────────
-$surface:      #0f1117;
-$surface-2:    #181c27;
-$surface-3:    #1e2336;
-$border:       rgba(255, 255, 255, 0.07);
-$text-primary: #e8eaf0;
-$text-muted:   #6b7280;
-$accent:       #4f8ef7;
-$accent-glow:  rgba(79, 142, 247, 0.15);
-$success:      #34d399;
-$warn:         #fbbf24;
-$danger:       #f87171;
-$radius:       12px;
-$radius-sm:    8px;
+$surface:       #0f1117;
+$surface-2:     #181c27;
+$surface-3:     #1e2336;
+$border:        rgba(255, 255, 255, 0.07);
+$text-primary:  #e8eaf0;
+$text-muted:    #6b7280;
+$accent:        #4f8ef7;
+$accent-glow:   rgba(79, 142, 247, 0.15);
+$success:       #34d399;
+$warn:          #fbbf24;
+$danger:        #f87171;
+$radius:        12px;
+$radius-sm:     8px;
 
 // ── SHELL ─────────────────────────────────────────
 .home-shell {
@@ -37,7 +37,7 @@ $radius-sm:    8px;
     display: block;
     font-size: 10px;
     letter-spacing: 0.2em;
-    color: $warn; // amber to signal deactivated context
+    color: $accent;
     font-weight: 600;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -80,19 +80,13 @@ $radius-sm:    8px;
   gap: 12px;
   padding: 20px 24px;
   background: rgba($success, 0.08);
-  border: 1px solid rgba($success, 0.2);
+  border: 1px solid rgba($success, 0.25);
   border-radius: $radius;
   color: $success;
-  font-size: 14px;
   font-weight: 500;
+  font-size: 14px;
 
-  mat-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
-  }
-
-  p { margin: 0; }
+  mat-icon { font-size: 22px; width: 22px; height: 22px; }
 }
 
 // ── TABLE CARD ────────────────────────────────────
@@ -104,9 +98,13 @@ $radius-sm:    8px;
   position: relative;
   overflow: hidden;
 
-  mat-card-content { padding: 0 !important; overflow-x: auto; }
+  mat-card-content {
+    padding: 0 !important;
+    overflow-x: auto;
+  }
 }
 
+// ── LOADING OVERLAY ───────────────────────────────
 .loading-overlay {
   position: absolute;
   inset: 0;
@@ -120,7 +118,10 @@ $radius-sm:    8px;
   ::ng-deep circle { stroke: $accent !important; }
 }
 
-.table--loading { opacity: 0.4; pointer-events: none; }
+.table--loading {
+  opacity: 0.4;
+  pointer-events: none;
+}
 
 // ── TABLE ─────────────────────────────────────────
 .users-table {
@@ -137,6 +138,14 @@ $radius-sm:    8px;
     text-transform: uppercase;
     border-bottom: 1px solid $border !important;
     background: transparent;
+
+    &.actions-header {
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+      text-align: right;
+      padding-right: 16px;
+    }
   }
 
   ::ng-deep .mat-mdc-cell {
@@ -144,10 +153,17 @@ $radius-sm:    8px;
     border-bottom: 1px solid $border !important;
     background: transparent;
     font-size: 14px;
-    opacity: 0.75; // slightly dimmed to reinforce deactivated state
   }
 
-  ::ng-deep .mat-sort-header-arrow { color: $warn !important; }
+  ::ng-deep .mat-sort-header-arrow { color: $accent !important; }
+
+  // Pin actions column width to prevent stretching
+  ::ng-deep .mat-column-actions {
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+    text-align: right;
+  }
 }
 
 .table-row {
@@ -155,7 +171,6 @@ $radius-sm:    8px;
 
   &:hover ::ng-deep .mat-mdc-cell {
     background: rgba(255,255,255,0.03) !important;
-    opacity: 1 !important;
   }
 }
 
@@ -164,13 +179,14 @@ $radius-sm:    8px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 6px;
-  border-radius: $radius-sm;
   cursor: pointer;
+  border-radius: 8px;
+  padding: 4px 6px;
+  margin: -4px -6px;
   transition: background 0.15s;
 
   &:hover {
-    background: rgba(255,255,255,0.04);
+    background: rgba(79, 142, 247, 0.08);
     .user-meta__name { color: $accent; }
   }
 }
@@ -187,10 +203,11 @@ $radius-sm:    8px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
+  letter-spacing: 0.5px;
 
   &--inactive {
-    background: linear-gradient(135deg, #374151, #4b5563); // grey for deactivated
-    filter: grayscale(0.5);
+    background: linear-gradient(135deg, #3a3f52, #2a2e3e);
+    opacity: 0.7;
   }
 }
 
@@ -199,54 +216,95 @@ $radius-sm:    8px;
   flex-direction: column;
   gap: 2px;
 
-  &__name { font-weight: 600; font-size: 14px; }
-  &__id { font-size: 11px; color: $text-muted; font-family: 'Fira Code', monospace; }
+  &__name {
+    font-weight: 600;
+    font-size: 14px;
+    transition: color 0.15s;
+  }
+
+  &__id {
+    font-size: 11px;
+    color: $text-muted;
+    font-family: 'Fira Code', monospace;
+  }
 }
 
-.mono { font-family: 'Fira Code', monospace; font-size: 13px; color: $text-muted; }
-.date-cell { font-size: 13px; color: $text-muted; }
+.mono {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.date-cell {
+  font-size: 13px;
+  color: $text-muted;
+}
 
 // ── CHIPS ─────────────────────────────────────────
 .chip--complete {
+  ::ng-deep {
+    .mdc-evolution-chip__text-label { color: $success !important; }
+    .mat-mdc-chip-graphic mat-icon { color: $success !important; }
+    .mdc-evolution-chip__cell { background: rgba($success, 0.12) !important; }
+  }
   background: rgba($success, 0.12) !important;
   border: 1px solid rgba($success, 0.3) !important;
-  font-size: 12px !important; font-weight: 600 !important; height: 26px !important;
-  ::ng-deep { .mdc-evolution-chip__text-label { color: $success !important; } }
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  height: 26px !important;
 }
 
 .chip--incomplete {
+  ::ng-deep {
+    .mdc-evolution-chip__text-label { color: $warn !important; }
+    .mat-mdc-chip-graphic mat-icon { color: $warn !important; }
+  }
   background: rgba($warn, 0.1) !important;
   border: 1px solid rgba($warn, 0.25) !important;
-  font-size: 12px !important; font-weight: 600 !important; height: 26px !important;
-  ::ng-deep { .mdc-evolution-chip__text-label { color: $warn !important; } }
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  height: 26px !important;
 }
 
 // ── ACTION BUTTONS ────────────────────────────────
 .actions-cell {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  justify-content: flex-end;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  text-align: right;
+  padding-right: 16px !important;
+  white-space: nowrap;
 }
 
-.action-btn {
-  width: 32px !important;
+.reactivate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px !important;
   height: 32px !important;
-  line-height: 32px !important;
   border-radius: 6px !important;
-  transition: background 0.15s, color 0.15s;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  color: $success !important;
+  border-color: rgba($success, 0.35) !important;
+  background: rgba($success, 0.06) !important;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s !important;
 
-  mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
-
-  &--success {
-    color: $success;
-    &:hover { background: rgba($success, 0.1) !important; }
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
   }
 
-  &--danger {
-    color: $danger;
-    &:hover { background: rgba($danger, 0.1) !important; }
+  &:hover {
+    background: rgba($success, 0.14) !important;
+    border-color: rgba($success, 0.6) !important;
+    transform: translateY(-1px);
   }
+
+  &:active { transform: translateY(0); }
 }
 
 // ── EMPTY STATE ───────────────────────────────────
@@ -255,13 +313,23 @@ $radius-sm:    8px;
   padding: 64px 24px !important;
   color: $text-muted;
 
-  mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: 0.4; display: block; margin: 0 auto 12px; }
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.4;
+    display: block;
+    margin: 0 auto 12px;
+  }
+
   p { margin: 0; font-size: 14px; }
 }
 
 // ── PAGINATOR ─────────────────────────────────────
 .table-paginator {
   background: transparent !important;
+  color: $text-muted !important;
+  border-top: none;
 
   ::ng-deep {
     .mat-mdc-paginator-container { padding: 8px 16px; }
@@ -269,7 +337,7 @@ $radius-sm:    8px;
     .mat-mdc-paginator-range-label { color: $text-muted; font-size: 13px; }
     .mat-mdc-icon-button {
       color: $text-muted;
-      &:not([disabled]):hover { color: $warn; background: rgba($warn, 0.08); }
+      &:not([disabled]):hover { color: $accent; background: $accent-glow; }
       &[disabled] { opacity: 0.3; }
     }
   }

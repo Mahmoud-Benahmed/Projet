@@ -257,6 +257,14 @@ $radius-sm:     8px;
     text-transform: uppercase;
     border-bottom: 1px solid $border !important;
     background: transparent;
+
+    &.actions-header {
+      width: 130px;
+      min-width: 130px;
+      max-width: 130px;
+      text-align: right;
+      padding-right: 16px;
+    }
   }
 
   ::ng-deep .mat-mdc-cell {
@@ -268,6 +276,14 @@ $radius-sm:     8px;
 
   ::ng-deep .mat-sort-header-arrow {
     color: $accent !important;
+  }
+
+  // Pin actions column width to prevent stretching
+  ::ng-deep .mat-column-actions {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    text-align: right;
   }
 }
 
@@ -282,6 +298,9 @@ $radius-sm:     8px;
 
 // ── USER CELL ─────────────────────────────────────
 .user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   cursor: pointer;
   border-radius: 8px;
   padding: 4px 6px;
@@ -292,7 +311,7 @@ $radius-sm:     8px;
     background: rgba(79, 142, 247, 0.08);
 
     .user-meta__name {
-      color: #4f8ef7;
+      color: $accent;
     }
   }
 }
@@ -320,6 +339,7 @@ $radius-sm:     8px;
   &__name {
     font-weight: 600;
     font-size: 14px;
+    transition: color 0.15s;
   }
 
   &__id {
@@ -338,6 +358,20 @@ $radius-sm:     8px;
 .date-cell {
   font-size: 13px;
   color: $text-muted;
+}
+
+// ── ROLE BADGE ────────────────────────────────────
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: rgba($accent, 0.1);
+  color: $accent;
+  border: 1px solid rgba($accent, 0.2);
 }
 
 // ── CHIPS ─────────────────────────────────────────
@@ -368,39 +402,49 @@ $radius-sm:     8px;
 
 // ── ACTION BUTTONS ────────────────────────────────
 .actions-cell {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  justify-content: flex-end;
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  text-align: right;
+  padding-right: 16px !important;
+  white-space: nowrap;
 }
 
-.action-btn {
-  width: 32px !important;
+.deactivate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px !important;
   height: 32px !important;
-  line-height: 32px !important;
   border-radius: 6px !important;
-  transition: background 0.15s, color 0.15s;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  color: $danger !important;
+  border-color: rgba($danger, 0.35) !important;
+  background: rgba($danger, 0.06) !important;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s !important;
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
   }
 
-  &--view {
-    color: $accent;
-    &:hover { background: $accent-glow !important; }
+  &:hover:not([disabled]) {
+    background: rgba($danger, 0.14) !important;
+    border-color: rgba($danger, 0.6) !important;
+    transform: translateY(-1px);
   }
 
-  &--warn {
-    color: $warn;
-    &:hover { background: rgba($warn, 0.1) !important; }
+  &:active:not([disabled]) {
+    transform: translateY(0);
   }
 
-  &--danger {
-    color: $danger;
-    &:hover { background: rgba($danger, 0.1) !important; }
+  &[disabled] {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 }
 
