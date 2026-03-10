@@ -1,4 +1,4 @@
-// components/modal/modal.scss
+@use 'shared' as *;
 
 .icon--primary { color: var(--mat-sys-primary); }
 .icon--danger  { color: var(--mat-sys-error)}

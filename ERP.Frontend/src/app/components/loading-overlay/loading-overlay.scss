@@ -1,7 +1,9 @@
+@use 'shared' as *;
+
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.4);
+  background: $gray;
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
