@@ -55,16 +55,18 @@ export class HeaderComponent implements OnInit {
         public themeService: ThemeService,){}
 
   ngOnInit(): void {
-    this.authService.getMe().subscribe({
-      next: (profile) => {
-        this.authUser = profile;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
-        this.cdr.markForCheck();
-      }
+    this.authUser = this.authService.UserProfile;
+    this.authService.userProfile$.subscribe(profile => {
+      this.authUser = profile;
+      this.cdr.markForCheck();
     });
+    
+    if (!this.authService.UserProfile) {
+      this.authService.getMe().subscribe({
+        next: (profile) => this.authService.setUserProfile(profile),
+        error: () => this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 })
+      });
+    }
   }
 
   get navLinks(): NavLink[] {

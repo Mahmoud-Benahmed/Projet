@@ -4,7 +4,7 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../environment";
 import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../interfaces/AuthDto";
-import { Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
@@ -21,7 +21,11 @@ export class AuthService {
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
-  private _userProfile: AuthUserGetResponseDto | null = null;
+  private readonly PROFILE_KEY = 'userProfile';
+  private _userProfile$ = new BehaviorSubject<AuthUserGetResponseDto | null>(
+    this.loadProfileFromStorage()  // rehydrate immediately on construction
+  );
+  readonly userProfile$ = this._userProfile$.asObservable();
 
   constructor(private http: HttpClient,   private router: Router) {}
 
@@ -58,6 +62,7 @@ export class AuthService {
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem('expiresAt');
     localStorage.removeItem('mustChangePassword');
+    localStorage.removeItem(this.PROFILE_KEY);
   }
 
   isLoggedIn(): boolean {
@@ -121,16 +126,26 @@ export class AuthService {
   // =========================
   // USER PROFILE CACHE
   // =========================
+  private loadProfileFromStorage(): AuthUserGetResponseDto | null {
+    const raw = localStorage.getItem(this.PROFILE_KEY);
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
   get UserProfile(): AuthUserGetResponseDto | null {
-    return this._userProfile;
+    return this._userProfile$.value;
   }
 
   setUserProfile(profile: AuthUserGetResponseDto): void {
-    this._userProfile = profile;
+    localStorage.setItem(this.PROFILE_KEY, JSON.stringify(profile));
+    this._userProfile$.next(profile);
   }
 
   clearUserProfile(): void {
-    this._userProfile = null;
+    localStorage.removeItem(this.PROFILE_KEY);
+    this._userProfile$.next(null);
   }
 
   // =========================
