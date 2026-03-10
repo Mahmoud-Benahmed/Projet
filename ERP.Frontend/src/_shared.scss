@@ -20,6 +20,11 @@ $blue:        #4e7cff;
 $blue-bg:     rgba(78, 124, 255, 0.12);
 $blue-border: rgba(78, 124, 255, 0.3);
 
+$purple:       #7c4dff;
+$purple-light: #b388ff;
+$purple-bg:    rgba(124, 77, 255, 0.12);
+$purple-border:rgba(124, 77, 255, 0.3);
+
 $amber:       #f5a623;
 $amber-bg:    rgba(245, 166, 35, 0.12);
 $amber-border:rgba(245, 166, 35, 0.3);
@@ -42,6 +47,12 @@ $green-border:rgba(62, 207, 142, 0.3);
   color: $text-hi;
   padding: 2rem 2.5rem;
   box-sizing: border-box;
+  
+  animation: fadeRight .5s ease both;
+  @keyframes fadeRight {
+    from { opacity: 0; transform: translateX(-100px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
 }
 
 // ========================
@@ -227,7 +238,7 @@ $green-border:rgba(62, 207, 142, 0.3);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, transform 0.1s;
-  &:hover    { background: lighten($blue, 8%); }
+  &:hover    { background: #6b94ff }
   &:active   { transform: scale(0.98); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -639,13 +650,85 @@ $green-border:rgba(62, 207, 142, 0.3);
 
 .user-meta {
   display: flex; flex-direction: column; gap: 2px;
-  &__name { font-size: 0.88rem; font-weight: 600; color: $text-hi; }
+  &__name {
+    font-size: 0.88rem; font-weight: 600; color: $text-hi;
+    &:hover{
+      cursor:pointer; color: $blue;
+    }
+  }
   &__id   { font-size: 0.72rem; color: $text-lo; font-family: monospace; }
 }
 
 .mono      { font-family: monospace; font-size: 0.82rem; color: $text-mid; }
 .date-cell { font-size: 0.82rem; color: $text-mid; }
 .muted     { color: $text-lo; font-size: 0.85rem; }
+
+
+// ========================
+// Shell / Layout
+// ========================
+:root {
+  --sidebar-w:    210px;
+  --sidebar-w-sm: 60px;
+  --topbar-h:     54px;
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ========================
+// Shell Avatar (topbar + sidebar share same pattern)
+// ========================
+.shell-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: $blue-bg;
+  border: 1.5px solid $blue-border;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: $blue;
+  flex-shrink: 0;
+}
+
+// ========================
+// Shell Icon Button (sidebar toggle, menu-btn, logout share same base)
+// ========================
+.shell-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $text-lo;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color .2s, background .2s;
+  flex-shrink: 0;
+
+  &:hover              { color: $text-hi; background: $bg-card-hi; }
+  &--danger:hover      { color: $red;     background: $red-bg; }
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ========================
+// Shell Topbar Theme Button
+// ========================
+.shell-topbar__theme-btn {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text-mid;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .2s, background .2s, border-color .2s;
+
+  &:hover {
+    color: $text-hi;
+    background: $bg-card-hi;
+    border-color: $blue-border;
+  }
+}
 
 // ========================
 // Theme toggle
