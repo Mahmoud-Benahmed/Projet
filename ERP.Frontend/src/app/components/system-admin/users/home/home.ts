@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -78,12 +78,11 @@ export class UsersHomeComponent implements OnInit {
     private snackBar: MatSnackBar,
     private router: Router,
     private authService: AuthService,
-    private route: ActivatedRoute
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadUsers();
-    this.loadStats();
+    this.reload();
   }
 
   loadUsers(): void {
@@ -115,8 +114,8 @@ export class UsersHomeComponent implements OnInit {
 
 
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
-  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.reload(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.reload(); } }
 
 
   applyFilter(): void {
@@ -127,12 +126,17 @@ export class UsersHomeComponent implements OnInit {
     this.authService.deactivate(user.id).subscribe({
       next: () => {
         this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
-        this.loadUsers();  // ← instead of loadUsers()
+        this.reload();
       },
       error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
     });
   }
 
+  private reload(){
+    this.loadUsers();  // ← instead of loadUsers()
+        this.loadStats();
+        this.cdr.markForCheck();
+  }
   getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {
       return user.fullName

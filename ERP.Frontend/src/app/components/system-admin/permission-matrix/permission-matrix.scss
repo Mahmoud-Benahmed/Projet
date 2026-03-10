@@ -1,12 +1,11 @@
 @use 'shared' as *;
 
-.page-header { display: flex; justify-content: space-between; align-items: flex-end; }
-.btn-refresh { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; &:disabled { opacity: 0.4; cursor: not-allowed; } }
-.loading-overlay--page { position: static; flex-direction: column; gap: 12px; padding: 6rem 0; background: transparent; backdrop-filter: none; }
-.loading-text { font-size: 0.85rem; color: $text-lo; }
+// ── All removed (already in shared):
+// .page-header, .btn-refresh, .loading-overlay--page, .loading-text
 
 .legend-card { margin-bottom: 1rem; }
-.legend { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 1.25rem;
+.legend {
+  display: flex; align-items: center; gap: 1.5rem; padding: 1rem 1.25rem;
   &__label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; color: $text-lo; text-transform: uppercase; white-space: nowrap; min-width: 180px; }
   &__roles { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 }
@@ -25,13 +24,13 @@
 .controle-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.85rem 1.25rem; border-bottom: 1px solid $border; transition: background 0.15s;
-  &:hover { background: $bg-card-hi; }
-  &--last { border-bottom: none; }
+  &:hover    { background: $bg-card-hi; }
+  &--last    { border-bottom: none; }
 }
 
-.controle-info  { display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
-.controle-name  { font-size: 0.88rem; font-weight: 500; color: $text-hi; }
-.controle-desc  { font-size: 0.75rem; color: $text-lo; }
+.controle-info { display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
+.controle-name { font-size: 0.88rem; font-weight: 500; color: $text-hi; }
+.controle-desc { font-size: 0.75rem; color: $text-lo; }
 .controle-cells { display: flex; gap: 0.5rem; }
 
 .cell-wrapper { width: 80px; display: flex; justify-content: center; }
@@ -40,12 +39,17 @@
   width: 32px; height: 32px; border-radius: 8px; border: 1px solid $border;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.15s; background: transparent;
-  &--granted { background: $green-bg; border-color: $green-border; color: $green; &:hover { background: rgba($green, 0.22); border-color: $green; } }
-  &--denied  { background: $red-bg;   border-color: $red-border;   color: $red;   &:hover { background: rgba($red, 0.22);   border-color: $red; } }
+  &--granted { background: $green-bg; border-color: $green-border; color: $green; &:hover { background: rgba(62, 207, 142, 0.22); border-color: $green; } }
+  &--denied  { background: $red-bg;   border-color: $red-border;   color: $red;   &:hover { background: rgba(224, 82, 82, 0.22);  border-color: $red; } }
   &--loading { cursor: default; border-color: $border; background: $bg-card-hi; }
 }
 
-.matrix-footer { display: flex; align-items: center; justify-content: center; gap: 2rem; padding: 1.5rem; margin-top: 1rem; background: $bg-card; border: 1px solid $border; border-radius: 12px; }
+.matrix-footer {
+  display: flex; align-items: center; justify-content: center; gap: 2rem;
+  padding: 1.5rem; margin-top: 1rem;
+  background: $bg-card; border: 1px solid $border; border-radius: 12px;
+}
+
 .matrix-stat {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   &__value   { font-size: 1.5rem; font-weight: 700; color: $text-hi; letter-spacing: -0.04em; line-height: 1; }
