@@ -9,9 +9,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
+import { ModalComponent } from '../modal/modal';
+import { HttpError } from '../../interfaces/ErrorDto';
 
 @Component({
   selector: 'app-login',
@@ -42,13 +44,17 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()!) {
       this.router.navigate(['/home']);
+    }
+    this.credentials={
+      login: "admin_erp1234",
+      password: "Admin@1234"
     }
   }
 
@@ -82,7 +88,18 @@ export class LoginComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.stopLoading();
         if (error.status === 0) return;
-        this.snackBar.open('Failed to login. Unexpected error', 'Dismiss', { duration: 3000 });
+        let err = error.error as HttpError
+        this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: "Error",
+                message: err.message,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'danger'
+              }
+          });
       }
     });
   }

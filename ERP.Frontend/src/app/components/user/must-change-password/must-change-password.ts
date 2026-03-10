@@ -60,6 +60,7 @@ export class MustChangePasswordComponent implements OnInit{
   ) {}
 
   ngOnInit(){
+    this.passwordForm = { newPassword: 'Admin@12345', currentPassword: 'Admin@1234' };
     this.mustChangePassword = this.authService.getMustChangePassword()
   }
 

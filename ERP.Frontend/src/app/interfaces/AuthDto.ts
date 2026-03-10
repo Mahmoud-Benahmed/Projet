@@ -38,7 +38,7 @@ export interface RegisterRequestDto {
   email: string;
   fullName: string;
   password: string;
-  roleId: string;
+  roleId: string | null;
 }
 
 export interface ChangeProfilePasswordRequestDto {

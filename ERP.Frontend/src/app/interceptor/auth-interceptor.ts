@@ -1,10 +1,10 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, switchMap, throwError } from 'rxjs';
-import { AuthService } from '../services/auth.service';
-import { MatDialog } from '@angular/material/dialog';
-import { ModalComponent } from '../components/modal/modal';
+import { inject } from "@angular/core";
+import { catchError, switchMap, throwError } from "rxjs";
+import { AuthService } from "../services/auth.service";
+import { Router } from "@angular/router";
+import { MatDialog } from "@angular/material/dialog";
+import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
+import { ModalComponent } from "../components/modal/modal";
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -19,13 +19,13 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // server unreachable
+      // ── Server unreachable
       if (error.status === 0) {
         dialog.open(ModalComponent, {
           width: '400px',
           data: {
-            title: 'Serveur inaccessible',
-            message: 'Impossible de se connecter au serveur. Vérifiez votre connexion ou réessayez plus tard.',
+            title: 'Server Unreachable',
+            message: 'Unable to connect to the server. Check your connection or try again later.',
             confirmText: 'OK',
             showCancel: false,
             icon: 'cloud_off',
@@ -36,36 +36,98 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // token expired — attempt refresh
-      if (error.status === 401
-          && !req.url.includes('change-password')
-          && !req.url.includes('revoke')
-          && !req.url.includes('refresh'))
-      {
-        const refreshToken = auth.getRefreshToken();
+      // ── Rate limit
+      if (error.status === 429) {
+        const retryAfter = error.headers.get('Retry-After');
+        const content = error.error?.content
+          ?? `Too many requests. Please wait ${retryAfter ?? 60} seconds before retrying.`;
 
-        if (!refreshToken) {
+        dialog.open(ModalComponent, {
+          width: '400px',
+          data: {
+            title: 'Rate Limit Reached',
+            message: content,
+            confirmText: 'OK',
+            showCancel: false,
+            icon: 'timer',
+            iconColor: 'warn'
+          }
+        });
+        return throwError(() => error);
+      }
+
+      // ── Forbidden
+      if (error.status === 403) {
+          const code = error.error?.code;
+
+          const isInactive = code === 'USER_INACTIVE';
+
+          dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: isInactive ? 'Account Deactivated' : 'Access Denied',
+              message: error.error?.content ?? 'You do not have permission to perform this action.',
+              confirmText: 'OK',
+              showCancel: false,
+              icon: isInactive ? 'person_off' : 'block',
+              iconColor: 'danger'
+            }
+          }).afterClosed().subscribe(() => {
+            if (isInactive) auth.logout();
+          });
+          return throwError(()=> error);
+      }
+      
+      if (error.status === 401)
+      {
+          const code = error.error?.code;
+
+          // ── User no longer exists
+          if (code === 'USER_NOT_FOUND' || code === 'USER_INACTIVE') {
+            dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Session Expired',
+                message: error.error?.content ?? 'Your session is no longer valid. You will be logged out.',
+                confirmText: 'OK',
+                showCancel: false,
+                icon: 'person_off',
+                iconColor: 'danger'
+              }
+            }).afterClosed().subscribe(() => auth.logout());
+            return throwError(() => error);
+          }
+
+          // ── Token expired — attempt refresh
+          if (!req.url.includes('change-password')
+            && !req.url.includes('revoke')
+            && !req.url.includes('refresh'))
+          {
+            const refreshToken = auth.getRefreshToken();
+
+            if (!refreshToken) {
+              auth.logout();
+              return throwError(() => error);
+            }
+
+            return auth.refresh({ refreshToken }).pipe(
+              switchMap((response) => {
+                const retryReq = req.clone({
+                  setHeaders: { Authorization: `Bearer ${response.accessToken}` }
+                });
+                return next(retryReq);
+              }),
+              catchError((refreshError) => {
+                auth.logout();
+                return throwError(() => refreshError);
+              })
+            );
+          }
+
           auth.logout();
           return throwError(() => error);
         }
-
-        return auth.refresh({ refreshToken }).pipe(
-          switchMap((response) => {
-            // storeTokens is already called inside auth.refresh() via tap()
-            // so just retry the original request
-            const retryReq = req.clone({
-              setHeaders: { Authorization: `Bearer ${response.accessToken}` }
-            });
-            return next(retryReq);
-          }),
-          catchError((refreshError) => {
-            auth.logout();
-            return throwError(() => refreshError);
-          })
-        );
-      }
-
-      return throwError(() => error);
+        return throwError(() => error);
     })
   );
 };
