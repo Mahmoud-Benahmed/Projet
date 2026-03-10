@@ -31,6 +31,14 @@ namespace ERP.AuthService.Tests.Unit.Services
 
         public AuthUserServiceTests()
         {
+            _privilegeRepoMock
+                .Setup(p => p.GetByRoleIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new List<Privilege>());
+
+            _controleRepoMock
+                .Setup(c => c.GetAllAsync())
+                .ReturnsAsync(new List<Controle>());
+
             _service = new AuthUserService(
                 _auditMock.Object,
                 _httpMock.Object,
@@ -200,6 +208,8 @@ namespace ERP.AuthService.Tests.Unit.Services
 
             _userRepoMock.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
             _roleRepoMock.Setup(r => r.GetByIdAsync(user.RoleId)).ReturnsAsync(_role);
+            _privilegeRepoMock.Setup(p => p.GetByRoleIdAsync(user.RoleId))
+                                .ReturnsAsync(new List<Privilege>());
 
             var request = new UpdateProfileDto("jane@example.com", "Jane Doe");
             var result = await _service.UpdateProfile(user.Id, request);
@@ -225,11 +235,12 @@ namespace ERP.AuthService.Tests.Unit.Services
         [Fact]
         public async Task GetAllAsync_ShouldReturnPagedResult()
         {
+            var user = MakeUser();
             var users = new List<AuthUser> { MakeUser("user1"), MakeUser("user2") };
-            _userRepoMock.Setup(r => r.GetAllAsync(1, 10)).Returns(Task.FromResult((users, 2)));
+            _userRepoMock.Setup(r => r.GetAllAsync(1, 10, user.Id)).Returns(Task.FromResult((users, 2)));
             _roleRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(_role);
 
-            var result = await _service.GetAllAsync(1, 10);
+            var result = await _service.GetAllAsync(1, 10, user.Id);
 
             result.Items.Should().HaveCount(2);
             result.TotalCount.Should().Be(2);
@@ -259,10 +270,16 @@ namespace ERP.AuthService.Tests.Unit.Services
         public async Task LoginAsync_ValidCredentials_ShouldReturnAuthResponse()
         {
             var user = MakeUser();
+
             _userRepoMock.Setup(r => r.GetByLoginAsync("john_doe")).ReturnsAsync(user);
             _roleRepoMock.Setup(r => r.GetByIdAsync(user.RoleId)).ReturnsAsync(_role);
+
+            _privilegeRepoMock.Setup(p => p.GetByRoleIdAsync(user.RoleId))
+                        .ReturnsAsync(new List<Privilege>());
+
             _hasherMock.Setup(h => h.VerifyHashedPassword(user, user.PasswordHash, "Password1!"))
                        .Returns(PasswordVerificationResult.Success);
+
             _jwtMock.Setup(j => j.GenerateAccessToken(user.Id, user.Login, _role.Libelle, It.IsAny<IEnumerable<string>>()))
                     .Returns(("access_token", DateTime.UtcNow.AddHours(1)));
             _jwtMock.Setup(j => j.GenerateRefreshToken()).Returns("refresh_token");
@@ -287,6 +304,7 @@ namespace ERP.AuthService.Tests.Unit.Services
         public async Task LoginAsync_InactiveUser_ShouldThrowUserInactiveException()
         {
             var user = MakeUser();
+
             user.Deactivate();
             _userRepoMock.Setup(r => r.GetByLoginAsync("john_doe")).ReturnsAsync(user);
 

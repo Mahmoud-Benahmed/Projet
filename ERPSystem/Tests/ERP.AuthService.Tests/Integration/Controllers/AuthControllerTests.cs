@@ -140,7 +140,7 @@ namespace ERP.AuthService.Tests.Integration.Controllers
         {
             var paged = new PagedResultDto<AuthUserGetResponseDto>(
                 new List<AuthUserGetResponseDto> { MakeDto() }, 1, 1, 10);
-            _serviceMock.Setup(s => s.GetAllAsync(1, 10)).ReturnsAsync(paged);
+            _serviceMock.Setup(s => s.GetAllAsync(1, 10, _userId)).ReturnsAsync(paged);
 
             var result = await _controller.GetAll(1, 10);
 
