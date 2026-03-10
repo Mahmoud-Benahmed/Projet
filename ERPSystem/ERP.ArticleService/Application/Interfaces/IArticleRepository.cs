@@ -8,6 +8,8 @@ namespace ERP.ArticleService.Application.Interfaces
         Task AddAsync(Article article);
         Task<Article?> GetByIdAsync(Guid id);
         Task<Article?> GetByCodeAsync(string code);
+        Task<Article?> GetByBarCodeAsync(string barCode);
+
         Task<List<Article>> GetAllAsync();
 
         void Remove(Article article);

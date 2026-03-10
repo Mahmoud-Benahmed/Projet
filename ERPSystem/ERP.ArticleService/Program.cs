@@ -3,6 +3,8 @@ using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Application.Services;
 using ERP.ArticleService.Infrastructure.Persistence;
 using ERP.ArticleService.Infrastructure.Persistence.Seeders;
+using ERP.ArticleService.Middleware;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,24 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // ── Database
 builder.Services.AddDbContext<ArticleDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var message = string.Join(" | ", context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage));
+
+        return new BadRequestObjectResult(new
+        {
+            statusCode = 400,
+            code = "VALIDATION ERROR",
+            message
+        });
+    };
+});
 
 // =========================
 // REPOSITORIES
@@ -76,10 +96,16 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-//app.UseAuthentication(); // must be before UseAuthorization
-//app.UseAuthorization();
-//app.UseMiddleware<GlobalExceptionMiddleware>();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
+
+app.UseAuthentication(); // must be before UseAuthorization
+app.UseAuthorization();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 
 app.Run();

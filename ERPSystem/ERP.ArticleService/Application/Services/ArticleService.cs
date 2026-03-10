@@ -1,4 +1,5 @@
 ﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 
@@ -29,6 +30,10 @@ namespace ERP.ArticleService.Application.Services
                 ?? throw new KeyNotFoundException(
                     $"Category with id '{request.CategoryId}' was not found.");
 
+            var existing = await _articleRepository.GetByBarCodeAsync(request.BarCode);
+            if (existing is not null)
+                throw new ArticleAlreadyExistsException(existing.BarCode);
+
             var code = await _articleCodeService.GenerateArticleCodeAsync();
 
             var article = new Article(code, request.Libelle, request.Prix, category, request.BarCode, request.TVA);
@@ -44,8 +49,7 @@ namespace ERP.ArticleService.Application.Services
         {
             var article = await _articleRepository.GetByIdAsync(id);
             if (article is null)
-                throw new KeyNotFoundException(
-                    $"Article with id '{id}' was not found.");
+                throw new ArticleNotFoundException(id);
             return article;
         }
 
@@ -53,8 +57,7 @@ namespace ERP.ArticleService.Application.Services
         {
             var article = await _articleRepository.GetByCodeAsync(code);
             if (article is null)
-                throw new KeyNotFoundException(
-                    $"Article with code '{code}' was not found.");
+                throw new ArticleNotFoundException(code);
             return article;
         }
 
@@ -71,8 +74,7 @@ namespace ERP.ArticleService.Application.Services
             var article = await GetByIdAsync(id);
 
             var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
-                ?? throw new KeyNotFoundException(
-                    $"Category with id '{request.CategoryId}' was not found.");
+                ?? throw new CategoryNotFoundException(request.CategoryId);
 
             article.Update(request.Libelle, request.Prix, category, request.BarCode, request.TVA);
 
@@ -86,6 +88,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task ActivateAsync(Guid id)
         {
             var article = await GetByIdAsync(id);
+            if (article.IsActive)
+                throw new ArticleAlreadyActiveException(id);
+
             article.Activate();
             await _articleRepository.SaveChangesAsync();
         }
@@ -93,6 +98,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task DeactivateAsync(Guid id)
         {
             var article = await GetByIdAsync(id);
+            if (!article.IsActive)
+                throw new ArticleAlreadyInactiveException(id);
+
             article.Deactivate();
             await _articleRepository.SaveChangesAsync();
         }
@@ -103,6 +111,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task DeleteAsync(Guid id)
         {
             var article = await GetByIdAsync(id);
+            if (article is null)
+                throw new ArticleNotFoundException(id);
+
             _articleRepository.Remove(article);
             await _articleRepository.SaveChangesAsync();
         }

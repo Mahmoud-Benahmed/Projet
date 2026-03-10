@@ -45,6 +45,16 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         }
 
         // =========================
+        // READ - BY CODE
+        // =========================
+
+        public async Task<Article?> GetByBarCodeAsync(string barCode)
+        {
+            return await BaseQuery()
+                .FirstOrDefaultAsync(a => a.BarCode== barCode);
+        }
+
+        // =========================
         // READ - ALL
         // =========================
         public async Task<List<Article>> GetAllAsync()

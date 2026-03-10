@@ -1,6 +1,7 @@
-﻿using ERP.ArticleService.Application.Interfaces;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Exceptions;
+using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
-using ERP.ArticleService.Application.DTOs;
 
 namespace ERP.ArticleService.Application.Services
 {
@@ -20,8 +21,7 @@ namespace ERP.ArticleService.Application.Services
         {
             var existing = await _categoryRepository.GetByNameAsync(name);
             if (existing is not null)
-                throw new InvalidOperationException(
-                    $"A category with the name '{name}' already exists.");
+                throw new CategoryAlreadyExistsException(name);
 
             var category = new Category(name, tva);
             await _categoryRepository.AddAsync(category);
@@ -36,8 +36,7 @@ namespace ERP.ArticleService.Application.Services
         {
             var category = await _categoryRepository.GetByIdAsync(id);
             if (category is null)
-                throw new KeyNotFoundException(
-                    $"Category with id '{id}' was not found.");
+                throw new CategoryNotFoundException(id);
             return category;
         }
 
@@ -45,8 +44,7 @@ namespace ERP.ArticleService.Application.Services
         {
             var category = await _categoryRepository.GetByNameAsync(name);
             if (category is null)
-                throw new KeyNotFoundException(
-                    $"Category with name '{name}' was not found.");
+                throw new CategoryNotFoundException(name);
             return category;
         }
 
@@ -93,8 +91,7 @@ namespace ERP.ArticleService.Application.Services
 
             var existing = await _categoryRepository.GetByNameAsync(newName);
             if (existing is not null && existing.Id != id)
-                throw new InvalidOperationException(
-                    $"A category with the name '{newName}' already exists.");
+                throw new CategoryAlreadyExistsException(newName);
 
             category.Update(newName, tva);
             await _categoryRepository.SaveChangesAsync();
