@@ -462,7 +462,7 @@ docker-compose.override.yml
 # ── OS ────────────────────────────────────────
 .DS_Store
 Thumbs.db
-*/appsettings.Development.json 
-*/appsettings.Docker.json
-scripts/ 
-start-kafka.sh
+**/appsettings.Development.json 
+**/appsettings.Docker.json
+**/scripts/ 
+**/start-kafka.sh
