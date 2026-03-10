@@ -61,9 +61,9 @@ namespace ERP.AuthService.Application.Services
         // READ
         // ============================================
 
-        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId)
         {
-            var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize);
+            var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
 
@@ -74,9 +74,9 @@ namespace ERP.AuthService.Application.Services
                 pageSize);
         }
 
-        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId)
         {
-            var (items, totalCount) = await _userRepository.GetPagedByStatusAsync(isActive, pageNumber, pageSize);
+            var (items, totalCount) = await _userRepository.GetPagedByStatusAsync(isActive, pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
 
@@ -87,9 +87,9 @@ namespace ERP.AuthService.Application.Services
                 pageSize);
         }
 
-        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize, Guid? excludeId)
         {
-            var (items, totalCount) = await _userRepository.GetPagedByRoleAsync(roleId, pageNumber, pageSize);
+            var (items, totalCount) = await _userRepository.GetPagedByRoleAsync(roleId, pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
 
@@ -180,8 +180,7 @@ namespace ERP.AuthService.Application.Services
             
             return await MapToDtoAsync(user);
         }
-        
-        
+                
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
             try
@@ -445,13 +444,13 @@ namespace ERP.AuthService.Application.Services
         }
 
 
-        
+
         // ======================
         // STATS
         // ======================
-        public async Task<UserStatsDto> GetStatsAsync()
+        public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {
-            return await _userRepository.GetStatsAsync();
+            return await _userRepository.GetStatsAsync(excludeId);
         }
 
 

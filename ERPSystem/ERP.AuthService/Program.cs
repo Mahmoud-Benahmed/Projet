@@ -11,6 +11,7 @@ using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
@@ -89,6 +90,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var message = string.Join(" | ", context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage));
+
+        return new BadRequestObjectResult(new
+        {
+            statusCode = 400,
+            code = "VALIDATION ERROR",
+            message
+        });
+    };
+});
+
 // ── Dependency Injection
 builder.Services.AddScoped<IAuthUserRepository, AuthUserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -132,6 +150,9 @@ using (var scope = app.Services.CreateScope())
     );
 }
 
+// =========================
+// PIPELINE
+// =========================
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -143,6 +164,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<ValidateUserMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
+
 app.Run();

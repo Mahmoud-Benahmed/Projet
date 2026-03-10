@@ -22,12 +22,12 @@ namespace ERP.AuthService.Application.Interfaces.Services
 
         Task<AuthUserGetResponseDto> GetByIdAsync(Guid id);
         Task<AuthUserGetResponseDto> GetByLoginAsync(string login);
-        Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageN, int pageSize); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
-        Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
-        Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
+        Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageN, int pageSize, Guid? excludeId); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
+        Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
+        Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize, Guid? excludeId); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-        Task<UserStatsDto> GetStatsAsync(); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
+        Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 

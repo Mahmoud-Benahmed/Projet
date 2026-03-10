@@ -103,7 +103,7 @@ namespace ERP.AuthService.Domain
 
         public bool CanLogin()
         {
-            if (!IsActive)
+            if (!IsActive && HasLoggedInBefore())
                 return false;
             return true;
         }

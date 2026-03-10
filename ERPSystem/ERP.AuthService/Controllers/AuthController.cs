@@ -83,7 +83,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _authService.GetAllAsync(pageNumber, pageSize);
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetAllAsync(pageNumber, pageSize, excludeId);
             return Ok(result);
         }
 
@@ -93,7 +96,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize);
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, excludeId);
             return Ok(result);
         }
 
@@ -103,7 +109,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize);
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, excludeId);
             return Ok(result);
         }
 
@@ -133,7 +142,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize);
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, excludeId);
             return Ok(result);
         }
 
@@ -156,7 +168,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStats()
         {
-            var result = await _authService.GetStatsAsync();
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetStatsAsync(excludeId);
             return Ok(result);
         }
 
@@ -165,16 +180,8 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {
-            try
-            {
-                var result = await _authService.RegisterAsync(request);
-                return Ok(result);
-            }
-            catch (EmailAlreadyExistsException ex)
-            {
-                ModelState.AddModelError("Email", ex.Message);
-                return ValidationProblem(ModelState);
-            }
+            var result = await _authService.RegisterAsync(request);
+            return Ok(result);
         }
 
         [HttpPut("update/{id:guid}")]
@@ -196,20 +203,8 @@ namespace ERP.AuthService.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
         {
-            try
-            {
-                var result = await _authService.LoginAsync(request);
-                return Ok(result);
-            }
-            catch (InvalidCredentialsException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (UserInactiveException ex)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden,
-                    new { message = ex.Message });
-            }
+            var result = await _authService.LoginAsync(request);
+            return Ok(result);
         }
 
 
@@ -221,27 +216,12 @@ namespace ERP.AuthService.Controllers
             if (requesterId is null || !Guid.TryParse(requesterId, out var id))
                 return Unauthorized(new { message = "Invalid token." });
 
-            try
-            {
-                await _authService.ChangeAuthPasswordAsync(
+            await _authService.ChangeAuthPasswordAsync(
                     id,
                     request.CurrentPassword,
                     request.NewPassword);
 
                 return NoContent();
-            }
-            catch (UserNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (InvalidCredentialsException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
         }
 
 
@@ -256,61 +236,25 @@ namespace ERP.AuthService.Controllers
             if (!roles.Contains("SystemAdmin"))
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Only admins can change passwords." });
 
-            try
-            {
-                await _authService.ChangePasswordByAdminAsync(userId, request.NewPassword, adminId);
-                return NoContent();
-            }
-            catch (UserNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            await _authService.ChangePasswordByAdminAsync(userId, request.NewPassword, adminId);
+            return NoContent();
         }
 
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenRequestDto request)
         {
-            try
-            {
-                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
-                return Ok(result);
-            }
-            catch (InvalidCredentialsException)
-            {
-                return Unauthorized(new { message = "Invalid refresh token." });
-            }
-            catch (SecurityException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (TokenAlreadyRevokedException te)
-            {
-                return Unauthorized(new { message = te.Message });
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                return Unauthorized(new { message = e.Message });
-            }
+            
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return Ok(result);
         }
 
 
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke(RefreshTokenRequestDto request)
         {
-            try
-            {
-                await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
-                return NoContent();
-            }
-            catch (TokenAlreadyRevokedException te)
-            {
-                return Unauthorized(new { message = te.Message });
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                return Unauthorized(new { message = e.Message });
-            }
+            await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+            return NoContent();
         }
 
     }
