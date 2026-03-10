@@ -91,11 +91,10 @@ export class AuditLogComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageNumber = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.load();
-  }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.load(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.load(); } }
+
 
   onFilterChange(): void {
     this.pageNumber = 1;

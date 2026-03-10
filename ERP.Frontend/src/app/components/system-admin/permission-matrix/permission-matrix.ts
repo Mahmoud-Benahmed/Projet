@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { environment } from  '../../../environment';
 import { forkJoin } from 'rxjs';
+import { MatDialogActions, MatDialogContent } from "@angular/material/dialog";
 
 interface RoleDto {
   id: string;
@@ -47,7 +48,9 @@ interface MatrixCell {
     MatTooltipModule,
     MatIconModule,
     MatButtonModule,
-  ],
+    MatDialogActions,
+    MatDialogContent
+],
   templateUrl: './permission-matrix.html',
   styleUrl: './permission-matrix.scss',
 })

@@ -1,169 +1,154 @@
-<div class="audit-shell">
+<div class="page">
 
-  <!-- ── HEADER ── -->
-  <header class="audit-header">
-    <div class="audit-header__left">
-      <span class="audit-header__eyebrow">SYSTEM ADMIN</span>
-      <h1 class="audit-header__title">Audit Logs</h1>
-      <p class="audit-header__sub">Track all security and user management events</p>
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+    <div>
+      <p class="breadcrumb">SYSTEM ADMIN</p>
+      <h1 class="page-title">Audit Logs</h1>
     </div>
-    <div class="audit-header__actions" style="display: flex; gap: 14px;">
-      <button mat-stroked-button class="refresh-btn" (click)="load()">
-        <mat-icon>refresh</mat-icon>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-secondary btn-icon" (click)="load()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
         Refresh Logs
       </button>
-
-      <button mat-stroked-button class="clear-btn" (click)="confirmClear()">
-        <mat-icon>delete_sweep</mat-icon>
+      <button class="btn-danger btn-icon" (click)="confirmClear()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
         Clear Logs
       </button>
     </div>
-  </header>
+  </div>
 
   <!-- ── FILTERS ── -->
   <div class="filters-bar">
-
-    <!-- User ID filter -->
-    <mat-form-field appearance="outline" class="filter-field filter-field--user">
-      <mat-label>Filter by User ID</mat-label>
-      <input matInput [(ngModel)]="userIdFilter" (ngModelChange)="onFilterChange()" placeholder="Paste a UUID…" />
-      <mat-icon matSuffix>person_search</mat-icon>
-    </mat-form-field>
-
-    <!-- Status filter -->
-    <mat-button-toggle-group [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()" class="status-toggle">
-      <mat-button-toggle [value]="null">All</mat-button-toggle>
-      <mat-button-toggle [value]="true">Success</mat-button-toggle>
-      <mat-button-toggle [value]="false">Failed</mat-button-toggle>
-    </mat-button-toggle-group>
-
-  </div>
-
-  <!-- ── TABLE ── -->
-  <mat-card class="audit-card">
-
-    <div class="loading-overlay" *ngIf="isLoading">
-      <mat-spinner diameter="36"></mat-spinner>
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Filter by User ID…"
+        [(ngModel)]="userIdFilter"
+        (ngModelChange)="onFilterChange()" />
     </div>
 
-    <mat-card-content>
-      <table mat-table [dataSource]="dataSource" class="audit-table" [class.table--loading]="isLoading">
+    <div class="status-toggle">
+      <button class="toggle-btn" [class.toggle-btn--active]="selectedStatus === null"
+        (click)="selectedStatus = null; onFilterChange()">All</button>
+      <button class="toggle-btn toggle-btn--success" [class.toggle-btn--active]="selectedStatus === true"
+        (click)="selectedStatus = true; onFilterChange()">Success</button>
+      <button class="toggle-btn toggle-btn--fail" [class.toggle-btn--active]="selectedStatus === false"
+        (click)="selectedStatus = false; onFilterChange()">Failed</button>
+    </div>
+  </div>
 
-        <!-- Status -->
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let log">
+  <!-- ── TABLE CARD ── -->
+  <div class="table-card">
+
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="spinner"></div>
+    </div>
+
+    <table class="table" *ngIf="!isLoading">
+      <thead>
+        <tr>
+          <th style="width:32px"></th>
+          <th>ACTION</th>
+          <th>PERFORMED BY</th>
+          <th>TARGET</th>
+          <th>IP ADDRESS</th>
+          <th>TIMESTAMP</th>
+          <th style="width:40px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of dataSource.data"
+          class="table__row"
+          [class.table__row--fail]="!log.success">
+
+          <td>
             <span class="status-pip"
-                  [class.status-pip--ok]="log.success"
-                  [class.status-pip--fail]="!log.success"
-                  [matTooltip]="log.success ? 'Success' : (log.failureReason ?? 'Failed')">
+              [class.status-pip--ok]="log.success"
+              [class.status-pip--fail]="!log.success">
             </span>
           </td>
-        </ng-container>
 
-        <!-- Action -->
-        <ng-container matColumnDef="action">
-          <th mat-header-cell *matHeaderCellDef>Action</th>
-          <td mat-cell *matCellDef="let log">
+          <td>
             <div class="action-cell">
-              <span class="action-icon-wrap" [ngClass]="'action-icon-wrap--' + getActionCategory(log.action)">
+              <span class="action-icon" [ngClass]="'action-icon--' + getActionCategory(log.action)">
                 <mat-icon>{{ getActionIcon(log.action) }}</mat-icon>
               </span>
               <span class="action-label">{{ formatAction(log.action) }}</span>
             </div>
           </td>
-        </ng-container>
 
-        <!-- Performed By -->
-        <ng-container matColumnDef="performedBy">
-          <th mat-header-cell *matHeaderCellDef>Performed By</th>
-          <td mat-cell *matCellDef="let log">
-            <span class="uid-chip" *ngIf="log.performedBy; else dash" (click)="goToProfile(log.performedBy)"
-                  [matTooltip]="log.performedBy">
+          <td>
+            <span class="uid-chip" *ngIf="log.performedBy; else dash1"
+              (click)="goToProfile(log.performedBy)"
+              [title]="log.performedBy">
               {{ log.performedBy | slice:0:8 }}…
             </span>
-            <ng-template #dash><span class="muted">—</span></ng-template>
+            <ng-template #dash1><span class="muted">—</span></ng-template>
           </td>
-        </ng-container>
 
-        <!-- Target -->
-        <ng-container matColumnDef="targetUserId">
-          <th mat-header-cell *matHeaderCellDef>Target</th>
-          <td mat-cell *matCellDef="let log">
+          <td>
             <span class="uid-chip uid-chip--target" *ngIf="log.targetUserId; else dash2"
-                  [matTooltip]="log.targetUserId">
+              [title]="log.targetUserId">
               {{ log.targetUserId | slice:0:8 }}…
             </span>
             <ng-template #dash2><span class="muted">—</span></ng-template>
           </td>
-        </ng-container>
 
-        <!-- IP -->
-        <ng-container matColumnDef="ipAddress">
-          <th mat-header-cell *matHeaderCellDef>IP Address</th>
-          <td mat-cell *matCellDef="let log">
-            <span class="mono">{{ log.ipAddress ?? '—' }}</span>
-          </td>
-        </ng-container>
+          <td><span class="mono">{{ log.ipAddress ?? '—' }}</span></td>
 
-        <!-- Timestamp -->
-        <ng-container matColumnDef="timestamp">
-          <th mat-header-cell *matHeaderCellDef>Timestamp</th>
-          <td mat-cell *matCellDef="let log">
+          <td>
             <div class="ts-cell">
               <span class="ts-date">{{ log.timestamp | date:'dd MMM yyyy' }}</span>
               <span class="ts-time">{{ log.timestamp | date:'HH:mm:ss' }}</span>
             </div>
           </td>
-        </ng-container>
 
-        <!-- Details -->
-        <ng-container matColumnDef="details">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let log">
-            <button mat-icon-button class="detail-btn"
-                    *ngIf="hasDetails(log)"
-                    (click)="openDetail(log)"
-                    matTooltip="View details">
-              <mat-icon>chevron_right</mat-icon>
+          <td>
+            <button class="icon-btn icon-btn--view" *ngIf="hasDetails(log)"
+              (click)="openDetail(log)" title="View details">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
             </button>
           </td>
-        </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-            class="audit-row"
-            [class.audit-row--fail]="!row.success">
         </tr>
 
-        <tr class="mat-row" *matNoDataRow>
-          <td class="empty-state" [attr.colspan]="displayedColumns.length">
-            <mat-icon>manage_search</mat-icon>
-            <p>No audit logs found</p>
-          </td>
+        <tr *ngIf="dataSource.data.length === 0">
+          <td colspan="7" class="td--empty">No audit logs found.</td>
         </tr>
+      </tbody>
+    </table>
 
-      </table>
-    </mat-card-content>
+    <!-- PAGINATION -->
+    <div class="pagination" *ngIf="totalPages > 1 && !isLoading">
+      <button class="page-btn" (click)="prevPage()" [disabled]="pageNumber === 1">‹ Previous</button>
+      <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
+      <button class="page-btn" (click)="nextPage()" [disabled]="pageNumber === totalPages">Next ›</button>
+    </div>
 
-    <mat-divider></mat-divider>
-
-    <mat-paginator
-      [length]="totalCount"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[10, 20, 50, 100]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons>
-    </mat-paginator>
-
-  </mat-card>
+  </div>
 
 </div>
 
 <!-- ── DETAIL DIALOG ── -->
 <ng-template #detailDialog let-log>
   <div class="dialog-header">
-    <span class="action-icon-wrap" [ngClass]="'action-icon-wrap--' + getActionCategory(log.action)">
+    <span class="action-icon" [ngClass]="'action-icon--' + getActionCategory(log.action)">
       <mat-icon>{{ getActionIcon(log.action) }}</mat-icon>
     </span>
     <div>
@@ -173,14 +158,14 @@
   </div>
 
   <mat-dialog-content>
-
-    <!-- Failure reason -->
     <div class="detail-alert" *ngIf="log.failureReason">
-      <mat-icon>error_outline</mat-icon>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
       <span>{{ log.failureReason }}</span>
     </div>
 
-    <!-- Metadata -->
     <div class="detail-section" *ngIf="metadataEntries(log).length">
       <p class="detail-section__title">Metadata</p>
       <div class="detail-grid">
@@ -191,15 +176,13 @@
       </div>
     </div>
 
-    <!-- User Agent -->
     <div class="detail-section" *ngIf="log.userAgent">
       <p class="detail-section__title">User Agent</p>
       <p class="detail-val mono small">{{ log.userAgent }}</p>
     </div>
-
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Close</button>
+    <button class="btn-secondary" mat-dialog-close>Close</button>
   </mat-dialog-actions>
 </ng-template>
