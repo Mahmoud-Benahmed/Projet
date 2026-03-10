@@ -1,303 +1,50 @@
-// ── TOKENS ────────────────────────────────────────
-$surface:      #0f1117;
-$surface-2:    #181c27;
-$surface-3:    #1e2336;
-$border:       rgba(255, 255, 255, 0.07);
-$text-primary: #e8eaf0;
-$text-muted:   #6b7280;
-$accent:       #4f8ef7;
-$accent-glow:  rgba(79, 142, 247, 0.15);
-$danger:       #f87171;
-$warn:         #fbbf24;
-$success:      #34d399;
-$radius:       12px;
-$radius-sm:    8px;
+@use 'shared' as *;
 
-// ── SHELL ─────────────────────────────────────────
-.register-shell {
-  min-height: 100vh;
-  background: $surface;
-  padding: 32px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  font-family: 'DM Sans', 'Segoe UI', sans-serif;
-  color: $text-primary;
+.panel {
+  max-width: 720px;
+  &__title-wrap { display: flex; align-items: center; gap: 0.75rem; }
+  &__icon { width: 38px; height: 38px; border-radius: 10px; background: $blue-bg; border: 1px solid $blue-border; color: $blue; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  &__subtitle { font-size: 0.78rem; color: $text-lo; margin: 2px 0 0; }
 }
 
-// ── PAGE HEADER ───────────────────────────────────
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-
-  &__label {
-    display: block;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    color: $accent;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  &__title {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin: 0;
-    color: $text-primary;
-  }
+.form__input-wrap {
+  position: relative; display: flex; align-items: center;
+  .form__input { padding-right: 2.5rem; }
 }
 
-// ── CARD ──────────────────────────────────────────
-.register-card {
-  background: $surface-2 !important;
-  border: 1px solid $border !important;
-  border-radius: $radius !important;
-  box-shadow: none !important;
-  padding: 28px 32px 24px !important;
-  max-width: 760px;   // matches screenshot width — not full-width, not centered
-
-  mat-card-content {
-    padding: 0 !important;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  &__icon-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: $radius-sm;
-    background: $accent-glow;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-
-    mat-icon {
-      color: $accent;
-      font-size: 22px;
-      width: 22px;
-      height: 22px;
-    }
-  }
-
-  &__title {
-    font-size: 16px;
-    font-weight: 700;
-    color: $text-primary;
-    margin: 0 0 3px;
-  }
-
-  &__subtitle {
-    font-size: 13px;
-    color: $text-muted;
-    margin: 0;
-  }
-}
-
-// ── FORM ──────────────────────────────────────────
-.register-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-// Two-column rows
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-// ── FORM FIELDS ───────────────────────────────────
-mat-form-field {
-  width: 100%;
-
-  ::ng-deep {
-    .mdc-notched-outline__leading,
-    .mdc-notched-outline__notch,
-    .mdc-notched-outline__trailing {
-      border-color: $border !important;
-    }
-
-    &:hover .mdc-notched-outline__leading,
-    &:hover .mdc-notched-outline__notch,
-    &:hover .mdc-notched-outline__trailing {
-      border-color: rgba($accent, 0.4) !important;
-    }
-
-    &.mat-focused .mdc-notched-outline__leading,
-    &.mat-focused .mdc-notched-outline__notch,
-    &.mat-focused .mdc-notched-outline__trailing {
-      border-color: $accent !important;
-    }
-
-    input,
-    .mat-mdc-select-value-text {
-      color: $text-primary !important;
-      caret-color: $accent;
-    }
-
-    .mat-mdc-floating-label { color: $text-muted !important; }
-    .mat-mdc-form-field-icon-prefix mat-icon { color: $text-muted; }
-    .mat-mdc-icon-button mat-icon { color: $text-muted; }
-    .mat-mdc-select-arrow { color: $text-muted !important; }
-    .mat-mdc-form-field-subscript-wrapper { background: transparent; }
-  }
-}
-
-// ── SELECT PANEL ──────────────────────────────────
-::ng-deep .mat-mdc-select-panel {
-  background: $surface-3 !important;
-  border: 1px solid $border !important;
-  border-radius: $radius-sm !important;
-
-  .mat-mdc-option {
-    color: $text-primary !important;
-
-    &:hover,
-    &.mat-mdc-option-active { background: rgba($accent, 0.1) !important; }
-    &.mdc-list-item--selected { color: $accent !important; }
-  }
-}
-
-// ── PASSWORD GROUP ────────────────────────────────
-.password-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.password-field { width: 100%; }
-
-// Meter + generate button on same row
-.password-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: 28px;
-}
-
-// ── PASSWORD METER ────────────────────────────────
-.password-meter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-
-  &__bars {
-    display: flex;
-    gap: 4px;
-    flex: 1;
-
-    .bar {
-      flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      background: $surface-3;
-      transition: background 0.3s;
-
-      &--filled {
-        &.strength--weak        { background: $danger; }
-        &.strength--fair        { background: $warn; }
-        &.strength--strong      { background: $success; }
-        &.strength--very-strong { background: $accent; }
-      }
-    }
-  }
-
-  &__label {
-    font-size: 12px;
-    font-weight: 600;
-    min-width: 56px;
-    text-align: right;
-
-    &.strength--weak        { color: $danger; }
-    &.strength--fair        { color: $warn; }
-    &.strength--strong      { color: $success; }
-    &.strength--very-strong { color: $accent; }
-  }
-}
-
-// ── PASSWORD ERRORS ───────────────────────────────
-.password-errors {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
-  background: rgba($danger, 0.06);
-  border: 1px solid rgba($danger, 0.15);
-  border-radius: $radius-sm;
-
-  .password-error {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: $danger;
-
-    mat-icon { font-size: 14px; width: 14px; height: 14px; }
-  }
-}
-
-// ── GENERATE BUTTON ───────────────────────────────
-.generate-btn {
-  color: $text-muted !important;
-  border-color: $border !important;
-  border-radius: $radius-sm !important;
-  font-size: 12px !important;
-  font-weight: 500;
-  height: 32px !important;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  mat-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
-    color: $accent;
-  }
-
-  &:hover {
-    border-color: rgba($accent, 0.4) !important;
-    color: $text-primary !important;
-    background: rgba($accent, 0.05) !important;
-  }
-}
-
-// ── FOOTER / SUBMIT ───────────────────────────────
-.form-footer {
-  margin-top: 8px;
-}
-
-.submit-btn {
-  background: $accent !important;
-  color: #fff !important;
-  border-radius: $radius-sm !important;
-  font-weight: 600 !important;
-  height: 42px;
-  padding: 0 28px !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
+.form__toggle {
+  position: absolute; right: 10px;
+  background: none; border: none; cursor: pointer;
+  color: $text-lo; display: flex; align-items: center;
+  padding: 4px; border-radius: 4px; transition: color 0.15s;
+  &:hover { color: $text-mid; }
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-  &:disabled { opacity: 0.5; }
 }
 
-.btn-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #fff;
-  font-size: 14px;
+.form__actions { justify-content: space-between !important; border-top: 1px solid $border; padding-top: 1.25rem !important; margin-top: 0.5rem; }
+
+.password-group { margin-top: -0.5rem; }
+
+.password-meter {
+  display: flex; align-items: center; gap: 10px;
+  &__bars { display: flex; gap: 4px; flex: 1; }
+  .bar { flex: 1; height: 4px; border-radius: 2px; background: $border; transition: background 0.3s;
+    &--filled {
+      &.strength-weak   { background: $red; }
+      &.strength-fair   { background: $amber; }
+      &.strength-good   { background: #8bc34a; }
+      &.strength-strong { background: $green; }
+    }
+  }
+  &__label {
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    &.strength-weak   { color: $red; }
+    &.strength-fair   { color: $amber; }
+    &.strength-good   { color: #8bc34a; }
+    &.strength-strong { color: $green; }
+  }
 }
+
+.password-errors { display: flex; flex-direction: column; gap: 4px; margin-top: -0.5rem; }
+.password-error  { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: $red;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; } }
