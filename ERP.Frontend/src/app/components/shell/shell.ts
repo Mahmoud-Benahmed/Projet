@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,7 +34,7 @@ export class ShellComponent implements OnInit {
     '/profile': 'My Profile',
   };
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private router: Router, private authService: AuthService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     // Set breadcrumb on route change
@@ -61,6 +61,7 @@ export class ShellComponent implements OnInit {
     if (this.router.url.startsWith('/users') || this.router.url.startsWith('/permissions')) {
       this.openGroups['auth'] = true;
     }
+    this.cdr.markForCheck();
   }
 
   toggleSidebar(): void {

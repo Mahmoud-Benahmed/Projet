@@ -189,7 +189,11 @@
       <form [formGroup]="articleForm" (ngSubmit)="submit()" class="form">
 
         <div class="form__field">
-          <label class="form__label">Article Name</label>
+          <div class="form__label">
+            <label>Article Name</label>
+            <mat-icon>new_label</mat-icon>
+          </div>
+
           <input
             class="form__input"
             type="text"
@@ -204,7 +208,10 @@
 
         <div class="form__row">
           <div class="form__field">
-            <label class="form__label">Unit Price</label>
+            <div class="form__label">
+              <label class="form__label">Unit Price</label>
+              <mat-icon>euro_symbol</mat-icon>
+            </div>
             <input
               class="form__input"
               type="number"
@@ -220,7 +227,10 @@
           </div>
 
           <div class="form__field">
-              <label class="form__label">Bar Code</label>
+              <div class="form__label">
+                <label>Bar Code</label>
+                <span class="material-symbols-outlined">barcode</span>
+              </div>
               <input
                 class="form__input"
                 type="text"
@@ -241,7 +251,10 @@
           </div>
 
           <div class="form__field">
-            <label class="form__label">Category</label>
+            <div class="form__label">
+              <label class="form__label">Category</label>
+              <mat-icon>category</mat-icon>
+            </div>
             <select
               class="form__input form__select"
               formControlName="categoryId"

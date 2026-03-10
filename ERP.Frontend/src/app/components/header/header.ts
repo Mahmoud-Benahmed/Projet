@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -12,6 +12,7 @@ import { NavLink } from '../../interfaces/NavLink';
 import { AuthService } from '../../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -49,15 +50,19 @@ export class HeaderComponent implements OnInit {
   ];
 
   constructor(private authService: AuthService,
-            private snackBar: MatSnackBar){}
+            private snackBar: MatSnackBar,
+          private cdr: ChangeDetectorRef,
+        public themeService: ThemeService,){}
 
   ngOnInit(): void {
     this.authService.getMe().subscribe({
       next: (profile) => {
         this.authUser = profile;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+        this.cdr.markForCheck();
       }
     });
   }

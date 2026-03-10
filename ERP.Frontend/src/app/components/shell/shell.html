@@ -4,7 +4,11 @@
   <aside class="sidebar">
 
     <!-- Logo -->
-    <div class="sidebar__logo">
+    <div class="sidebar__logo"
+          [routerLink]="['/home']"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          style="cursor: pointer;">
       <div class="sidebar__logo-icon">E</div>
       <span class="sidebar__logo-text">ERPSuite</span>
       <button class="sidebar__toggle" (click)="toggleSidebar()" type="button">
@@ -61,7 +65,11 @@
 
     <!-- Footer / User -->
     <div class="sidebar__footer">
-      <div class="sidebar__user">
+      <div class="sidebar__user"
+          [routerLink]="['/profile']"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          style="cursor: pointer;">
         <div class="sidebar__avatar">{{ initials }}</div>
         <div class="sidebar__user-info">
           <span class="sidebar__user-name">{{ userName }}</span>

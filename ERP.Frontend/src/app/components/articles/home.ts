@@ -1,16 +1,20 @@
 import { CurrencyConfigService } from '../../services/currency-config.service';
 import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest, ArticleStatsDto}  from './../../services/articles.service';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatInput } from "@angular/material/input";
+import { ModalComponent } from '../modal/modal';
+import { MatDialog } from '@angular/material/dialog';
+import { HttpError } from '../../interfaces/ErrorDto';
+import { MatIcon } from "@angular/material/icon";
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInput],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInput, MatIcon],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
@@ -35,7 +39,9 @@ export class ArticleComponent implements OnInit {
 
   constructor(private articleService: ArticleService,
               private fb: FormBuilder,
-              private currencyConfig: CurrencyConfigService)
+              private currencyConfig: CurrencyConfigService,
+            private dialog: MatDialog,
+          private cdr: ChangeDetectorRef)
   {
     this.articleForm = this.fb.group({
       libelle: ['', [Validators.required, Validators.minLength(2)]],
@@ -49,6 +55,7 @@ export class ArticleComponent implements OnInit {
     this.load();
     this.loadCategories();
     this.loadStats();
+    this.cdr.markForCheck();
   }
 
   // -------------------------------------------------------
@@ -74,7 +81,7 @@ export class ArticleComponent implements OnInit {
 
   loadCategories(): void {
     this.articleService.getAllCategories().subscribe({
-      next: (cats) => (this.categories = cats),
+      next: (cats) => {this.categories = cats; this.cdr.markForCheck()},
     });
   }
 
@@ -82,8 +89,8 @@ export class ArticleComponent implements OnInit {
     this.loading= true;
     this.error= null;
     this.articleService.getStats().subscribe({
-      next: (res)=> {this.stats= res;},
-      error: ()=> {this.error= 'Failed to load stats.'; this.loading= false;}
+      next: (res)=> {this.stats= res; this.cdr.markForCheck()},
+      error: ()=> {this.error= 'Failed to load stats.'; this.loading= false; this.cdr.markForCheck()}
     })
   }
 
@@ -120,11 +127,13 @@ export class ArticleComponent implements OnInit {
     this.viewMode = 'edit';
     this.selectedArticle = article;
     this.articleForm.patchValue({ libelle: article.libelle, prix: article.prix, categoryId: article.categoryId, barCode: article.barCode});
+    this.cdr.markForCheck()
   }
 
   openView(article: Article): void {
     this.viewMode = 'view';
     this.selectedArticle = article;
+    this.cdr.markForCheck()
   }
 
   cancel(): void { this.viewMode = 'list'; this.selectedArticle = null; this.articleForm.reset(); }
@@ -134,8 +143,36 @@ export class ArticleComponent implements OnInit {
     const val = this.articleForm.value;
     if (this.viewMode === 'create') {
       this.articleService.createArticle(val as CreateArticleRequest).subscribe({
-        next: () => { this.flash('Article created successfully.'); this.cancel(); this.load(); },
-        error: () => (this.error = 'Failed to create article.'),
+        next: () => {
+          this.flash('');
+          this.dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'User Registered',
+              message: `Article created successfully.`,
+              confirmText: 'Ok',
+              showCancel: false,
+              icon: 'check_circle',
+              iconColor: 'success'
+            }
+          });
+          this.cancel();
+          this.load(); },
+        error: (error) => {
+          let err = error.error as HttpError;
+
+          this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: "Error",
+                message: err.message,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'danger'
+              }
+          });
+        }
       });
     } else if (this.viewMode === 'edit' && this.selectedArticle) {
       this.articleService.updateArticle(this.selectedArticle.id, val as UpdateArticleRequest).subscribe({
