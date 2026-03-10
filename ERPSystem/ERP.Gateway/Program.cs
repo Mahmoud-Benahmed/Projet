@@ -199,27 +199,28 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = 429;
         context.HttpContext.Response.ContentType = "application/json";
 
-        // check if a Retry-After value is available
-        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-        {
-            context.HttpContext.Response.Headers.RetryAfter =
-                ((int)retryAfter.TotalSeconds).ToString();
-        }
-        var endpoint = context.HttpContext.GetEndpoint();
         var policyName = context.HttpContext.Items["RateLimitPolicyName"]?.ToString();
+        var retrySeconds = policyName switch
+        {
+            "LoginPolicy" => 5 * 60,   // 5 minute window
+            "WritePolicy" => 60,        // 1 minute window
+            "UserPolicy" => 60,        // 1 minute window
+            _ => 60         // global fallback
+        };
+        context.HttpContext.Response.Headers.RetryAfter = retrySeconds.ToString();
+        Console.WriteLine($"retryAfter: {retrySeconds}");
 
         var message = policyName switch
         {
-            "LoginPolicy" => $"Too many login attempts. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
-            "WritePolicy" => $"Too many write operations. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
-            "UserPolicy" => $"Request limit reached. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying.",
-            _ => $"Too many requests. Please wait {(int)retryAfter.TotalSeconds} seconds before retrying."
+            "LoginPolicy" => $"Too many login attempts. Please wait {retrySeconds} seconds before retrying.",
+            "WritePolicy" => $"Too many write operations. Please wait {retrySeconds} seconds before retrying.",
+            "UserPolicy" => $"Request limit reached. Please wait {retrySeconds} seconds before retrying.",
+            _ => $"Too many requests. Please wait {retrySeconds} seconds before retrying."
         };
 
         await context.HttpContext.Response.WriteAsync(
-            $$"""{"message": "{{message}}", "retryAfterSeconds": {{(int)(retryAfter.TotalSeconds)}}}""",
+            $$"""{"statusCode": 429, "code": "RATE_LIMIT", "content": "{{message}}", "retryAfterSeconds": {{retrySeconds}}}""",
             token);
-
     };
 });
 
