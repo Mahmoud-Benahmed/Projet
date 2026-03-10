@@ -1,3 +1,5 @@
+@use 'shared' as *;
+
 .home {
   animation: fadeUp .3s ease both;
 
@@ -9,18 +11,17 @@
 
 // Banner
 .home__banner {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 12px;
   padding: 24px 28px;
   margin-bottom: 16px;
 }
 
 .home__welcome {
-  font-family: 'Syne', sans-serif;
   font-size: clamp(18px, 2vw, 24px);
   font-weight: 700;
-  color: var(--text);
+  color: $text-hi;
   letter-spacing: -.3px;
   margin-bottom: 10px;
 }
@@ -32,9 +33,9 @@
 }
 
 .home__role-badge {
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
+  background: $blue-bg;
+  color: $blue;
+  border: 1px solid $blue-border;
   font-size: 12px;
   font-weight: 600;
   padding: 2px 10px;
@@ -43,7 +44,7 @@
 
 .home__last-login {
   font-size: 13px;
-  color: var(--text-muted);
+  color: $text-mid;
 }
 
 // Quick Grid
@@ -52,48 +53,38 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
 }
 
 .home__quick-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 12px;
   padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  display: flex; align-items: center; gap: 14px;
   text-decoration: none;
-  color: var(--text);
+  color: $text-hi;
   transition: border-color .18s, background .18s, transform .15s;
 
   &:hover {
-    border-color: var(--accent);
-    background: var(--surface2);
+    border-color: $blue;
+    background: $bg-card-hi;
     transform: translateY(-2px);
 
-    .home__quick-arrow {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    .home__quick-arrow { opacity: 1; }
   }
 }
 
 .home__quick-icon {
-  width: 38px;
-  height: 38px;
+  width: 38px; height: 38px;
   border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 
   mat-icon { font-size: 19px; }
 
-  &--blue   { background: rgba(79, 124, 255, .12); color: #4f7cff; }
-  &--green  { background: rgba(34, 201, 122, .12); color: #22c97a; }
+  &--blue  { background: $blue-bg;  color: $blue; }
+  &--green { background: $green-bg; color: $green; }
 }
 
 .home__quick-label {
@@ -104,9 +95,8 @@
 
 .home__quick-arrow {
   font-size: 18px;
-  color: var(--text-muted);
+  color: $text-lo;
   opacity: 0.5;
-  transform: translateX(0);
-  transition: opacity .18s, transform .18s;
+  transition: opacity .18s;
   margin-left: auto;
 }
