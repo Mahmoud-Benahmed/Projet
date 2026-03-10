@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../services/auth.service';
 import { filter } from 'rxjs/operators';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-shell',
@@ -34,7 +35,9 @@ export class ShellComponent implements OnInit {
     '/profile': 'My Profile',
   };
 
-  constructor(private router: Router, private authService: AuthService, private cdr: ChangeDetectorRef) {}
+  constructor(private router: Router, private authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
+    this.theme.init();
+  }
 
   ngOnInit(): void {
     // Set breadcrumb on route change
@@ -49,12 +52,15 @@ export class ShellComponent implements OnInit {
     });
 
     // Load user info from cache
-    const profile = this.authService.UserProfile;
-    if (profile) {
-      this.userName = profile.fullName ?? profile.email ?? '';
-      this.userRole = profile.roleName ?? '';
-      this.initials = this.buildInitials(this.userName || profile.email || 'U');
-    }
+    // Subscribe so it updates when profile loads/changes
+    this.authService.userProfile$.subscribe(profile => {
+      if (profile) {
+        this.userName = profile.fullName ?? profile.email ?? '';
+        this.userRole = profile.roleName ?? '';
+        this.initials = this.buildInitials(this.userName || profile.email || 'U');
+        this.cdr.markForCheck();
+      }
+    });
 
     // Set initial breadcrumb
     this.currentPage = this.pageMap[this.router.url] ?? 'Dashboard';
