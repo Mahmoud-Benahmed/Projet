@@ -52,7 +52,7 @@ export class HeaderComponent implements OnInit {
   constructor(private authService: AuthService,
             private snackBar: MatSnackBar,
           private cdr: ChangeDetectorRef,
-        public themeService: ThemeService,){}
+  ){}
 
   ngOnInit(): void {
     this.authUser = this.authService.UserProfile;
@@ -60,7 +60,7 @@ export class HeaderComponent implements OnInit {
       this.authUser = profile;
       this.cdr.markForCheck();
     });
-    
+
     if (!this.authService.UserProfile) {
       this.authService.getMe().subscribe({
         next: (profile) => this.authService.setUserProfile(profile),
