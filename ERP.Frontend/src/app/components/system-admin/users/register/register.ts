@@ -16,6 +16,8 @@ import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { RegisterRequestDto, RoleResponseDto } from '../../../../interfaces/AuthDto';
+import { M } from '@angular/cdk/keycodes';
+import { HttpError } from '../../../../interfaces/ErrorDto';
 
 @HostBinding('class')
 @Component({
@@ -39,9 +41,9 @@ export class RegisterComponent implements OnDestroy {
 
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
-  readonly fullnamePattern= /^\p{L}+(\s\p{L}+)*$/u.source;
+  readonly fullnamePattern= /^\p{L}+(\s\p{L}+)*$/u;
 
-  credentials: RegisterRequestDto = { login:'', email: '', fullName: '' , password: '', roleId: ''};
+  credentials: RegisterRequestDto = { login:'', email: '', fullName: '' , password: '', roleId: null};
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
@@ -154,9 +156,10 @@ export class RegisterComponent implements OnDestroy {
           // call the auth.service method to register the user in the backend
           this.register();
         },
-        error: () => {
+        error: (err) => {
           this.stopLoading();
-          this.snackbar.open('Failed to check availability.', 'Dismiss', { duration: 3000 });
+          let error= err.error as HttpError;
+          this.snackbar.open(error.message, 'Dismiss', { duration: 3000 });
         }
       });
   }
@@ -166,13 +169,36 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register(this.credentials).subscribe({
         next: (registeredUser) => {
           this.stopLoading();
-          this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
+          const dialogRef= this.dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'User Registered',
+              message: `Account for ${registeredUser.fullName} has been created successfully.`,
+              confirmText: 'Ok',
+              showCancel: false,
+              icon: 'check_circle',
+              iconColor: 'success'
+            }
+          });
+          dialogRef.afterClosed().subscribe(() => this.resetForm());
           setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
           this.stopLoading();
-          if (error.status === 0) return;
-          this.snackbar.open('Failed to register user', 'Dismiss', { duration: 3000 });
+          let err = error.error as HttpError
+
+
+          this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: "Error",
+                message: err.message,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'danger'
+              }
+          });
         }
     });
   }
@@ -216,20 +242,20 @@ export class RegisterComponent implements OnDestroy {
 
   getStrengthClass(): string {
     const map: Record<string, string> = {
-      'weak': 'strength--weak',
-      'fair': 'strength--fair',
-      'strong': 'strength--strong',
-      'very strong': 'strength--very-strong',
+      'weak':       'strength-weak',
+      'fair':       'strength-fair',
+      'strong':     'strength-good',
+      'very strong':'strength-strong',
     };
     return map[this.passwordStrength] ?? '';
   }
 
   getStrengthLabel(): string {
     const map: Record<string, string> = {
-      'weak': 'Faible',
-      'fair': 'Moyen',
-      'strong': 'Fort',
-      'very strong': 'Très fort',
+      'weak':       'Weak',
+      'fair':       'Fair',
+      'strong':     'Good',
+      'very strong':'Strong',
     };
     return map[this.passwordStrength] ?? '';
   }
@@ -256,7 +282,7 @@ export class RegisterComponent implements OnDestroy {
   }
 
   resetForm(): void {
-    this.credentials ={ login:'', email: '', fullName: '' , password: '', roleId: ''};
+    this.credentials ={ login:'', email: '', fullName: '' , password: '', roleId: null};
     this.passwordErrors = [];
     this.passwordScore = 0;
     this.passwordStrength = '';

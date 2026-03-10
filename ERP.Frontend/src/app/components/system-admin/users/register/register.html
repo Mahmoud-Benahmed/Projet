@@ -1,166 +1,211 @@
-<div class="register-shell">
+<div class="page">
 
   <!-- ── PAGE HEADER ── -->
-  <header class="page-header">
-    <div class="page-header__left">
-      <span class="page-header__label">USER MANAGEMENT</span>
-      <h1 class="page-header__title">Register User</h1>
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">USER MANAGEMENT</p>
+      <h1 class="page-title">Register User</h1>
     </div>
-  </header>
+  </div>
 
   <!-- ── FORM CARD ── -->
-  <mat-card class="register-card">
-
-    <div class="register-card__header">
-      <div class="register-card__icon-wrap">
-        <mat-icon>person_add</mat-icon>
-      </div>
-      <div>
-        <h2 class="register-card__title">Register New User</h2>
-        <p class="register-card__subtitle">Password will be auto-generated or set manually</p>
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title-wrap">
+        <div class="panel__icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <line x1="12" y1="3" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="panel__title">Register New User</h2>
+          <p class="panel__subtitle">Password will be auto-generated or set manually</p>
+        </div>
       </div>
     </div>
 
-    <mat-card-content>
-      <form (ngSubmit)="onSubmit()" #registerForm="ngForm" class="register-form">
+    <div class="panel__body">
+      <form (ngSubmit)="onSubmit()" #registerForm="ngForm" class="form">
 
         <!-- Row 1: FullName + Login -->
-        <div class="form-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Full Name</mat-label>
-            <input matInput
-                   type="text"
-                   name="fullname"
-                   [(ngModel)]="credentials.fullName"
-                   required
-                   [pattern]="fullnamePattern"
-                   #fullNameInput="ngModel"/>
-            <mat-icon matPrefix>badge</mat-icon>
-            <mat-error *ngIf="fullNameInput.errors?.['required']">Full name is required</mat-error>
-            <mat-error *ngIf="fullNameInput.errors?.['pattern']">Invalid full name</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Username</mat-label>
-            <input matInput
-                   type="text"
-                   name="login"
-                   [(ngModel)]="credentials.login"
-                   required
-                   pattern="^[a-zA-Z0-9_ ]+$"
-                   [minLength]="5"
-                   [maxlength]="50"
-                   #loginInput="ngModel"/>
-            <mat-icon matPrefix>alternate_email</mat-icon>
-            <mat-error *ngIf="loginInput.errors?.['required']">Username is required</mat-error>
-            <mat-error *ngIf="loginInput.errors?.['pattern']">Letters, digits and underscores only</mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Row 2: Email + Role -->
-        <div class="form-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Email</mat-label>
-            <input matInput
-                   type="email"
-                   name="email"
-                   [(ngModel)]="credentials.email"
-                   required
-                   [pattern]="emailPattern"
-                   email
-                   #emailInput="ngModel"/>
-            <mat-icon matPrefix>email</mat-icon>
-            <mat-error *ngIf="emailInput.errors?.['required']">Email is required</mat-error>
-            <mat-error *ngIf="emailInput.errors?.['pattern']">Invalid email address</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Role</mat-label>
-            <mat-select name="role"
-                        [(ngModel)]="credentials.roleId"
-                        required
-                        #roleInput="ngModel">
-              @for (role of roles; track role.libelle) {
-                <mat-option [value]="role.id">{{ role.libelle }}</mat-option>
-              }
-            </mat-select>
-            <mat-icon matPrefix>shield</mat-icon>
-            <mat-error *ngIf="roleInput.errors?.['required']">Role is required</mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Row 3: Password full-width -->
-        <div class="password-group">
-          <mat-form-field appearance="outline" class="password-field">
-            <mat-label>Password</mat-label>
-            <input matInput
-                   [type]="showPassword ? 'text' : 'password'"
-                   name="password"
-                   [(ngModel)]="credentials.password"
-                   (ngModelChange)="onPasswordChange()"
-                   required
-                   [pattern]="passwordPattern"
-                   minlength="8"
-                   #passwordInput="ngModel"/>
-            <mat-icon matPrefix>lock</mat-icon>
-            <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
-              <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-            </button>
-            <mat-error *ngIf="passwordInput.errors?.['required']">Password is required</mat-error>
-            <mat-error *ngIf="passwordInput.errors?.['pattern']">Password cannot contain &lt; &gt; &amp; " ' /</mat-error>
-            <mat-error *ngIf="passwordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
-          </mat-form-field>
-
-          <!-- Strength meter + generate button inline -->
-          <div class="password-actions">
-            <div class="password-meter" *ngIf="credentials.password">
-              <div class="password-meter__bars">
-                <div class="bar"
-                     *ngFor="let bar of [1,2,3,4]"
-                     [class.bar--filled]="getScore() >= bar"
-                     [ngClass]="getStrengthClass()">
-                </div>
-              </div>
-              <span class="password-meter__label" [ngClass]="getStrengthClass()">
-                {{ getStrengthLabel() }}
-              </span>
+        <div class="form__row">
+          <div class="form__field">
+            <div class="form__label">
+              <label>Full Name</label>
+              <mat-icon>badge</mat-icon>
             </div>
-
-            <button mat-stroked-button type="button" class="generate-btn" (click)="generatePassword()">
-              <mat-icon>auto_fix_high</mat-icon>
-              Generate password
-            </button>
+            <input
+              class="form__input"
+              type="text"
+              name="fullname"
+              placeholder="Enter full name"
+              [(ngModel)]="credentials.fullName"
+              required
+              [pattern]="fullnamePattern"
+              #fullNameInput="ngModel"
+              [class.form__input--error]="fullNameInput.invalid && fullNameInput.touched"/>
+            <span class="form__error" *ngIf="fullNameInput.errors?.['required'] && fullNameInput.touched">
+              Full name is required
+            </span>
+            <span class="form__error" *ngIf="fullNameInput.errors?.['pattern'] && fullNameInput.touched">
+              Invalid full name
+            </span>
           </div>
 
-          <div class="password-errors" *ngIf="passwordErrors.length > 0 && credentials.password">
-            <span *ngFor="let error of passwordErrors" class="password-error">
-              <mat-icon>error_outline</mat-icon>{{ error }}
+          <div class="form__field">
+            <div class="form__label">
+              <label>Login</label>
+              <mat-icon>alternate_email</mat-icon>
+            </div>
+            <input
+              class="form__input"
+              type="text"
+              name="login"
+              placeholder="Enter login"
+              [(ngModel)]="credentials.login"
+              required
+              pattern="^[a-zA-Z0-9_ ]+$"
+              minlength="5"
+              maxlength="50"
+              #loginInput="ngModel"
+              [class.form__input--error]="loginInput.invalid && loginInput.touched"/>
+            <span class="form__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
+              Username is required
+            </span>
+            <span class="form__error" *ngIf="loginInput.errors?.['pattern'] && loginInput.touched">
+              Letters, digits and underscores only
             </span>
           </div>
         </div>
 
-        <!-- Submit -->
-        <div class="form-footer">
-          <button mat-raised-button
-                  color="primary"
-                  type="submit"
-                  class="submit-btn"
-                  [disabled]="!registerForm.valid || isLoading">
-            @if (isLoading) {
-              <div class="btn-loading">
-                <mat-progress-spinner diameter="18" mode="indeterminate" color="accent"></mat-progress-spinner>
-                Creating account…
+        <!-- Row 2: Email + Role -->
+        <div class="form__row">
+          <div class="form__field">
+            <div class="form__label">
+              <label>Email</label>
+              <mat-icon>email</mat-icon>
+            </div>
+            <input
+              class="form__input"
+              type="email"
+              name="email"
+              placeholder="Enter email address"
+              [(ngModel)]="credentials.email"
+              required
+              [pattern]="emailPattern"
+              #emailInput="ngModel"
+              [class.form__input--error]="emailInput.invalid && emailInput.touched"/>
+            <span class="form__error" *ngIf="emailInput.errors?.['required'] && emailInput.touched">
+              Email is required
+            </span>
+            <span class="form__error" *ngIf="emailInput.errors?.['pattern'] && emailInput.touched">
+              Invalid email address
+            </span>
+          </div>
+
+          <div class="form__field">
+            <div class="form__label">
+              <label>Role</label>
+              <mat-icon>shield</mat-icon>
+            </div>
+            <select
+              class="form__input form__select"
+              name="role"
+              [(ngModel)]="credentials.roleId"
+              required
+              #roleInput="ngModel"
+              (ngModelChange)="credentials.roleId = $event || null"
+              [class.form__input--error]="roleInput.invalid && roleInput.touched">
+
+              <option [ngValue]="null" disabled selected>Select a role</option>
+
+              @for (role of roles; track role.id) {
+                <option [value]="role.id">{{ role.libelle }}</option>
+              }
+            </select>
+            <span class="form__error" *ngIf="roleInput.errors?.['required'] && roleInput.touched">
+              Role is required
+            </span>
+          </div>
+        </div>
+
+        <!-- Row 3: Password -->
+        <div class="form__field">
+          <div class="form__label">
+            <label>Password</label>
+            <mat-icon>lock</mat-icon>
+          </div>
+          <div class="form__input-wrap">
+            <input
+              class="form__input"
+              [type]="showPassword ? 'text' : 'password'"
+              name="password"
+              placeholder="Enter password"
+              [(ngModel)]="credentials.password"
+              (ngModelChange)="onPasswordChange()"
+              required
+              [pattern]="passwordPattern"
+              minlength="8"
+              #passwordInput="ngModel"
+              [class.form__input--error]="passwordInput.invalid && passwordInput.touched"/>
+            <button class="form__toggle" type="button" (click)="togglePasswordVisibility()">
+              <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          <span class="form__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
+            Password is required
+          </span>
+          <span class="form__error" *ngIf="passwordInput.errors?.['pattern'] && passwordInput.touched">
+            Password cannot contain &lt; &gt; &amp; " ' /
+          </span>
+          <span class="form__error" *ngIf="passwordInput.errors?.['minlength'] && passwordInput.touched">
+            Minimum 8 characters
+          </span>
+        </div>
+
+        <!-- Password meter + generate -->
+        <div class="password-group" *ngIf="credentials.password">
+          <div class="password-meter">
+            <div class="password-meter__bars">
+              <div class="bar"
+                *ngFor="let bar of [1,2,3,4]"
+                [class.bar--filled]="getScore() >= bar"
+                [ngClass]="getStrengthClass()">
               </div>
+            </div>
+            <span class="password-meter__label" [ngClass]="getStrengthClass()">
+              {{ getStrengthLabel() }}
+            </span>
+          </div>
+        </div>
+
+        <div class="password-errors" *ngIf="passwordErrors.length > 0 && credentials.password">
+          <span *ngFor="let error of passwordErrors" class="password-error">
+            <mat-icon>error_outline</mat-icon>{{ error }}
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="form__actions">
+          <button type="button" class="btn-secondary" (click)="generatePassword()">
+            <mat-icon style="font-size:16px;width:16px;height:16px;margin-right:4px;">auto_fix_high</mat-icon>
+            Generate Password
+          </button>
+          <button type="submit" class="btn-add"
+            [disabled]="!registerForm.valid || isLoading">
+            @if (isLoading) {
+              <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+              Creating…
             } @else {
-              <mat-icon>person_add</mat-icon>
-              Register User
+              + Register User
             }
           </button>
         </div>
 
       </form>
-    </mat-card-content>
-
-  </mat-card>
+    </div>
+  </div>
 
 </div>

@@ -3,13 +3,13 @@ import { MatCardContent, MatCard } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { Router, RouterEvent, RouterLink, RouterLinkActive, RouterLinkWithHref } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { UserStatsDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-stats',
-  imports: [MatCardContent, MatIcon, MatCard, MatProgressSpinner],
+  imports: [MatCardContent, MatIcon, MatCard, MatProgressSpinner, RouterLinkActive, RouterLinkWithHref],
   templateUrl: './stats.html',
   styleUrl: './stats.scss',
 })
@@ -24,7 +24,6 @@ export class Stats implements OnInit{
   isLoading: boolean= false;
   constructor(private authService: AuthService,
               private snackbar: MatSnackBar,
-              private router: Router,
               private cdr: ChangeDetectorRef) {}
 
   ngOnInit(){
@@ -36,11 +35,7 @@ export class Stats implements OnInit{
     this.authService.getStats().subscribe({
       next: (stats) => {
         this.isLoading= false;
-        this.stats = {
-          activeUsers: stats.activeUsers-1,
-          deactivatedUsers: stats.deactivatedUsers,
-          totalUsers: stats.totalUsers-1
-        };
+        this.stats = stats;
         this.cdr.markForCheck();
       },
       error: () => {
@@ -48,23 +43,6 @@ export class Stats implements OnInit{
         this.snackbar.open("Failed to load stats.", "Dismiss", {duration: 3000});
       }
     });
-  }
-
-
-  goToDeactivated(){
-    this.router.navigate(['/users/deactivated']);
-  }
-
-  goToUsers(){
-    this.router.navigate(['/users']);
-  }
-
-  goToCompleted(){
-      this.router.navigate(['/users'], { queryParams: { status: true } });
-  }
-
-  goToIncompleted(){
-      this.router.navigate(['/users'], { queryParams: { status: false } });
   }
 
 }

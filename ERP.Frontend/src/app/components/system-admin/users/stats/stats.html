@@ -5,8 +5,15 @@
       </div>
     }
 
-    <mat-card class="stat-card stat-card--active" (click)="stats.activeUsers > 0 && goToUsers()"
-              [class.stat-card--disabled]="stats.activeUsers < 1">
+    <mat-card class="stat-card stat-card--active"
+              [routerLink]="stats.activeUsers > 0 ? '/users' : null"
+              routerLinkActive="stat-card--current"
+              #usersLink="routerLinkActive"
+              [routerLinkActiveOptions]="{ exact: true }"
+              (click)="!usersLink.isActive && stats.activeUsers > 0"
+              [class.stat-card--disabled]="usersLink.isActive || stats.activeUsers < 1"
+      >
+
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>group</mat-icon>
@@ -21,8 +28,13 @@
 
 
     <mat-card class="stat-card stat-card--inactive"
-              (click)="stats.deactivatedUsers > 0 && goToDeactivated()"
-              [class.stat-card--disabled]="stats.deactivatedUsers < 1">
+              [routerLink]="stats.deactivatedUsers > 0 ? '/users/deactivated' : null"
+              routerLinkActive="stat-card--current"
+              #disabledLink="routerLinkActive"
+              [routerLinkActiveOptions]="{exact: true}"
+              (click)="stats.deactivatedUsers > 0 || !disabledLink.isActive"
+              [class.stat-card--disabled]="disabledLink.isActive || stats.deactivatedUsers < 1"
+    >
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>person_off</mat-icon>

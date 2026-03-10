@@ -16,10 +16,10 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import { Stats } from '../stats/stats';
-import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/AuthDto';
+import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-home',
@@ -42,14 +42,14 @@ import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/A
     MatBadgeModule,
     MatDividerModule,
     MatSnackBarModule,
-    Stats
+    RouterLinkActive,
+    RouterLink
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class UsersHomeComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(Stats) statsComponent!: Stats;
 
   displayedColumns: string[] = [
     'fullName',
@@ -71,7 +71,8 @@ export class UsersHomeComponent implements OnInit {
   isLoading = false;
   searchTerm = '';
 
-  pageTitle= 'Active Users'
+  pageTitle= 'Active Users';
+  stats: UserStatsDto | null= null;
 
   constructor(
     private snackBar: MatSnackBar,
@@ -81,20 +82,8 @@ export class UsersHomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      const status = params['status'];
-
-      if (status === 'true') {
-        this.pageTitle = 'Completed Profiles';
-        this.loadByCompletionStatus(true);
-      } else if (status === 'false') {
-        this.pageTitle = 'Incomplete Profiles';
-        this.loadByCompletionStatus(false);
-      } else {
-        this.pageTitle = 'Active Users';
-        this.loadUsers();
-      }
-    });
+    this.loadUsers();
+    this.loadStats();
   }
 
   loadUsers(): void {
@@ -103,10 +92,9 @@ export class UsersHomeComponent implements OnInit {
       .subscribe({
         next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
           this.dataSource.data = result.items.filter(u => u.id !== this.currentUserId);
-          this.totalCount = result.totalCount - 1; // account for the filtered out user
+          this.totalCount = result.totalCount;
           this.dataSource.sort = this.sort;
           this.isLoading = false;
-          this.statsComponent.loadStats();
         },
         error: () => {
           this.isLoading = false;
@@ -115,52 +103,21 @@ export class UsersHomeComponent implements OnInit {
       });
   }
 
-
-
-  onPageChange(event: PageEvent): void {
-    this.pageNumber = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-
-    const status = this.route.snapshot.queryParams['status'];
-    if (status === 'true') {
-      this.loadByCompletionStatus(true);
-    } else if (status === 'false') {
-      this.loadByCompletionStatus(false);
-    } else {
-      this.loadUsers();
-    }
-  }
-
-  loadByCompletionStatus(status: boolean): void {
-    this.isLoading = true;
-    if(status){
-      this.authService.getActivatedUsers(this.pageNumber, this.pageSize).subscribe({
-      next: (result) => {
-        this.dataSource.data = result.items;   // no filter needed here
-        this.totalCount = result.totalCount;   // no -1 either, current user isn't excluded
-        this.dataSource.sort = this.sort;
-        this.isLoading = false;
-        this.statsComponent.loadStats();
-      },
-      error: () => {
-        this.isLoading = false;
-        this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
-      }});
-    }else{
-      this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
-        next: (result) => {
-          this.dataSource.data = result.items;   // no filter needed here
-          this.totalCount = result.totalCount;   // no -1 either, current user isn't excluded
-          this.dataSource.sort = this.sort;
-          this.isLoading = false;
-          this.statsComponent.loadStats();
-        },
-        error: () => {
+  loadStats(){
+      this.authService.getStats().subscribe({
+        next: (result) => this.stats = result,
+        error: () =>{
           this.isLoading = false;
           this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
-        }});
       }
+    });
   }
+
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
+
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
@@ -170,21 +127,10 @@ export class UsersHomeComponent implements OnInit {
     this.authService.deactivate(user.id).subscribe({
       next: () => {
         this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
-        this.reloadCurrentView();  // ← instead of loadUsers()
+        this.loadUsers();  // ← instead of loadUsers()
       },
       error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
     });
-  }
-
-  private reloadCurrentView(): void {
-    const status = this.route.snapshot.queryParams['status'];
-    if (status === 'true') {
-      this.loadByCompletionStatus(true);
-    } else if (status === 'false') {
-      this.loadByCompletionStatus(false);
-    } else {
-      this.loadUsers();
-    }
   }
 
   getInitials(user: AuthUserGetResponseDto): string {

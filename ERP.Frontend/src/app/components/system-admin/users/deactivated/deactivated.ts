@@ -14,10 +14,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Stats } from "../stats/stats";
 import { AuthService } from '../../../../services/auth.service';
-import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/AuthDto';
+import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-deactivated',
@@ -38,22 +38,23 @@ import { AuthUserGetResponseDto, PagedResultDto } from '../../../../interfaces/A
     MatTooltipModule,
     MatDividerModule,
     MatSnackBarModule,
-    Stats
+    RouterLinkActive,
+    RouterLink
 ],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
 })
 export class DeactivatedComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(Stats) statsComponent!: Stats;
 
+  stats: UserStatsDto | null= null;
 
   displayedColumns: string[] = [
     'fullName',
     'email',
-    'phone',
-    'isProfileCompleted',
+    'role',
     'createdAt',
+    'lastLoginAt',
     'actions',
   ];
 
@@ -68,7 +69,6 @@ export class DeactivatedComponent implements OnInit {
 
   constructor(
     private snackBar: MatSnackBar,
-    private router: Router,
     private authService: AuthService
   ) {}
 
@@ -80,12 +80,13 @@ export class DeactivatedComponent implements OnInit {
     this.isLoading = true;
     this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
-        this.dataSource.data = result.items.filter(u => u.id !== this.authService.UserId);
+        this.dataSource.data = result.items;
 
-        this.totalCount = result.totalCount - 1; // account for the filtered out user
+        this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
         this.isLoading = false;
-        this.statsComponent.loadStats();
+        this.loadStats();
+
       },
       error: () => {
         this.isLoading = false;
@@ -94,11 +95,20 @@ export class DeactivatedComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageNumber = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.loadUsers();
+  loadStats(){
+      this.authService.getStats().subscribe({
+        next: (result) => this.stats = result,
+        error: () =>{
+          this.isLoading = false;
+          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+      }
+    });
   }
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
+
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
@@ -116,10 +126,6 @@ export class DeactivatedComponent implements OnInit {
       error: () =>
         this.snackBar.open('Failed to reactivate user.', 'Dismiss', { duration: 3000 }),
     });
-  }
-
-  goToProfile(authUserId: string): void {
-    this.router.navigate(['/users', authUserId]);
   }
 
   getInitials(user: AuthUserGetResponseDto): string {
