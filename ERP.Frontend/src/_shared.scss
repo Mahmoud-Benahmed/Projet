@@ -89,6 +89,17 @@ $green-border:rgba(62, 207, 142, 0.3);
   letter-spacing: -0.03em;
 }
 
+.page-size-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238b92a8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 1.75rem;
+
+  option { background: $bg-card; color: $text-hi; }
+}
+
 // ========================
 // Alerts
 // ========================
@@ -121,7 +132,7 @@ $green-border:rgba(62, 207, 142, 0.3);
 // ========================
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 1.75rem;
   @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
@@ -150,6 +161,7 @@ $green-border:rgba(62, 207, 142, 0.3);
   &--current {
     cursor: default;
     pointer-events: none;
+
     &.stat-card--green { background: $green-bg; border-color: $green; .stat-card__value { color: $green; } }
     &.stat-card--red   { background: $red-bg;   border-color: $red;   .stat-card__value { color: $red; } }
   }
@@ -599,6 +611,20 @@ $green-border:rgba(62, 207, 142, 0.3);
 // ========================
 // Shared Buttons
 // ========================
+.btn-success {
+  background: $green-bg;
+  border: 1px solid $green-border;
+  border-radius: 8px;
+  color: $text-mid;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover { background: rgba($green-bg, 0.2); color: $text-hi; }
+}
+
 .btn-secondary {
   background: $bg-card-hi;
   border: 1px solid $border;
@@ -610,7 +636,7 @@ $green-border:rgba(62, 207, 142, 0.3);
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   transition: all 0.15s;
-  &:hover { border-color: $border-hi; color: $text-hi; }
+  &:hover { background: rgba($gray-bg, 0.2); color: $text-hi;}
 }
 
 .btn-danger {
