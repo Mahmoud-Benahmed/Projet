@@ -13,7 +13,8 @@
 
 <mat-dialog-actions align="end">
   @if(data.showCancel !== false) {
-    <button mat-button (click)="cancel()">
+    <!-- FIX: was mat-button with no styling — invisible in dark mode -->
+    <button mat-button class="btn-secondary" (click)="cancel()">
       {{ data.cancelText || 'Annuler' }}
     </button>
   }
@@ -21,4 +22,3 @@
     {{ data.confirmText || 'Confirmer' }}
   </button>
 </mat-dialog-actions>
-
