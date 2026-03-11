@@ -2,16 +2,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-$sidebar-bg:     #111318;
-$sidebar-border: #1d1f28;
-$surface2:       #1c1f2b;
-
 $sidebar-w:      240px;
 $sidebar-w-sm:   80px;
 $topbar-h:       54px;
-$sidebar-bg:     #111318;
-$sidebar-border: #1d1f28;
-$surface2:       #1c1f2b;
+$sidebar-bg:     var(--sidebar-bg);
+$sidebar-border: var(--sidebar-border);    // light: #e2e6f0  dark: #252a38
+$surface2:       var(--bg-card-hi);
 $ease:           cubic-bezier(0.4, 0, 0.2, 1);
 
 

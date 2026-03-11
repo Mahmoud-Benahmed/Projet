@@ -18,7 +18,11 @@ import { ThemeService } from '../../services/theme.service';
 export class ShellComponent implements OnInit {
 
   collapsed = false;
-  openGroups: Record<string, boolean> = { auth: false };
+  openGroups: Record<string, boolean> = {
+    auth: false,
+    articles: false  // FIX 3: add missing key
+  };
+
   currentPage = 'Home';
   userName = '';
   userRole = '';
@@ -37,10 +41,10 @@ export class ShellComponent implements OnInit {
   };
 
   constructor(private router: Router, private authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
-    this.theme.init();
   }
 
   ngOnInit(): void {
+    this.theme.init();
     // Set breadcrumb on route change
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
@@ -49,6 +53,11 @@ export class ShellComponent implements OnInit {
       // Auto-open auth group if on an auth route
       if (e.urlAfterRedirects.startsWith('/users') || e.urlAfterRedirects.startsWith('/permissions')) {
         this.openGroups['auth'] = true;
+      }
+
+      // FIX 5: auto-open articles group on article routes
+      if (e.urlAfterRedirects.startsWith('/articles')) {
+        this.openGroups['articles'] = true;
       }
     });
 
@@ -63,10 +72,14 @@ export class ShellComponent implements OnInit {
       }
     });
 
-    // Set initial breadcrumb
     this.currentPage = this.pageMap[this.router.url] ?? 'Dashboard';
-    if (this.router.url.startsWith('/users') || this.router.url.startsWith('/permissions')) {
+    if (this.router.url.startsWith('/users') ||
+        this.router.url.startsWith('/permissions')) {
       this.openGroups['auth'] = true;
+    }
+    // FIX 5 continued: also set on initial load
+    if (this.router.url.startsWith('/articles')) {
+      this.openGroups['articles'] = true;
     }
     this.cdr.markForCheck();
   }
