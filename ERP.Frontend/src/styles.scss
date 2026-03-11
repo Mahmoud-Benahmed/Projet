@@ -1,5 +1,4 @@
 @use '@angular/material' as mat;
-@use 'shared' as *;  // ← MUST be first
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -33,6 +32,11 @@
   --text-hi:    #e2e6f0;
   --text-mid:   #8b92a8;
   --text-lo:    #555e75;
+  --sidebar-bg:     #111318;
+  --sidebar-border: #1d1f28;
+  --chip-role-bg:     rgba(124, 77, 255, 0.12);
+  --chip-role-border: rgba(124, 77, 255, 0.3);
+  --chip-role-color:  #c6b2ff;
 }
 
 [data-theme="light"] {
@@ -44,13 +48,17 @@
   --text-hi:    #111827;
   --text-mid:   #4b5563;
   --text-lo:    #9ca3af;
+  --sidebar-bg:     #ffffff;
+  --sidebar-border: #e2e6f0;
+  --chip-role-bg:     rgba(124, 77, 255, 0.15);
+  --chip-role-border: rgba(124, 77, 255, 0.4);
+  --chip-role-color:  #522fb9; // darker purple for readability on white
+
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body, html {
-  background: var(--bg) !important;
-  color: var(--text);
   font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
   margin: 0;
@@ -59,7 +67,15 @@ body, html {
   overflow-y: auto;
 }
 
+body {
+  background-color: var(--bg-page); // ← theme-aware
+  color: var(--text-hi);            // ← theme-aware
+  font: var(--mat-sys-body-medium);
+  height: 100%;
+}
+
 html {
+  color-scheme: dark;
   height: 100%;
   @include mat.theme((
     color: (
@@ -69,12 +85,4 @@ html {
     typography: Roboto,
     density: 0,
   ));
-}
-
-body {
-  color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-  height: 100%;
 }

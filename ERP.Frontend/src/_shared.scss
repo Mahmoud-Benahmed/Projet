@@ -1,50 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 // ========================
-// Tokens
+// Tokens — CSS var bridges
 // ========================
-$bg-page:     #0d0f14;
-$bg-card:     #161922;
-$bg-card-hi:  #1c2030;
-$border:      #252a38;
-$border-hi:   #2e3548;
-$text-hi:     #e2e6f0;
-$text-mid:    #8b92a8;
-$text-lo:     #555e75;
+$bg-page:     var(--bg-page);
+$bg-card:     var(--bg-card);
+$bg-card-hi:  var(--bg-card-hi);
+$border:      var(--border);
+$border-hi:   var(--border-hi);
+$text-hi:     var(--text-hi);
+$text-mid:    var(--text-mid);
+$text-lo:     var(--text-lo);
 
-$gray:        #8b92a8;
-$gray-bg:     rgba(139, 146, 168, 0.12);
-$gray-border: rgba(139, 146, 168, 0.3);
-
-$blue:        #4e7cff;
-$blue-bg:     rgba(78, 124, 255, 0.12);
-$blue-border: rgba(78, 124, 255, 0.3);
-
+// Color accents stay hardcoded — they don't change between themes
+$blue:         #4e7cff;
+$blue-bg:      rgba(78, 124, 255, 0.12);
+$blue-border:  rgba(78, 124, 255, 0.3);
+$red:          #e05252;
+$red-bg:       rgba(224, 82, 82, 0.12);
+$red-border:   rgba(224, 82, 82, 0.3);
+$green:        #3ecf8e;
+$green-bg:     rgba(62, 207, 142, 0.12);
+$green-border: rgba(62, 207, 142, 0.3);
+$amber:        #f5a623;
+$amber-bg:     rgba(245, 166, 35, 0.12);
+$amber-border: rgba(245, 166, 35, 0.3);
+$orange:       #d36300;
+$orange-bg:    rgba(211, 98, 0, 0.41);
+$orange-border:rgba(211, 99, 0, 0.3);
+$gray:         #8b92a8;
+$gray-bg:      rgba(139, 146, 168, 0.12);
+$gray-border:  rgba(139, 146, 168, 0.3);
 $purple:       #7c4dff;
 $purple-light: #b388ff;
 $purple-bg:    rgba(124, 77, 255, 0.12);
 $purple-border:rgba(124, 77, 255, 0.3);
-
-$yellow:        #ffc107;
-$yellow-bg:     rgba(255, 193, 7, 0.12);
-$yellow-border: rgba(255, 193, 7, 0.3);
-
-$orange:        #d36300;
-$orange-bg:     rgba(211, 98, 0, 0.409);
-$orange-border: rgba(211, 99, 0, 0.3);
-
-
-$amber:       #f5a623;
-$amber-bg:    rgba(245, 166, 35, 0.12);
-$amber-border:rgba(245, 166, 35, 0.3);
-
-$red:         #e05252;
-$red-bg:      rgba(224, 82, 82, 0.12);
-$red-border:  rgba(224, 82, 82, 0.3);
-
-$green:       #3ecf8e;
-$green-bg:    rgba(62, 207, 142, 0.12);
-$green-border:rgba(62, 207, 142, 0.3);
+$yellow:       #ffc107;
+$yellow-bg:    rgba(255, 193, 7, 0.12);
+$yellow-border:rgba(255, 193, 7, 0.3);
 
 // ========================
 // Base
@@ -362,6 +355,36 @@ $green-border:rgba(62, 207, 142, 0.3);
   border: 1px solid $blue-border;
 }
 
+
+// =======================
+// Chips
+// =======================
+.mat-mdc-chip {
+  --mdc-chip-outline-width: 0 !important;
+  --mdc-chip-outline-color: transparent !important;
+  --mdc-chip-elevated-container-color: transparent;
+}
+
+.hero-identity__chips {
+  .mat-mdc-chip {
+    --mdc-chip-elevated-container-color: var(--chip-role-bg);
+    --mdc-chip-outline-width: 0;
+    --mdc-chip-outline-color: transparent;
+    border: 1px solid var(--chip-role-border) !important;
+    height: 28px;
+    font-size: 12px;
+    font-weight: 600;
+
+    // FIX: target the actual rendered text span directly
+    .mdc-evolution-chip__text-label {
+      color: var(--chip-role-color) !important;
+    }
+
+    .mat-icon { color: var(--chip-role-color); font-size: 15px; }
+    .mdc-chip__ripple,
+    .mat-mdc-chip-ripple { display: none; }
+  }
+}
 // ========================
 // Action Buttons
 // ========================
@@ -383,6 +406,22 @@ $green-border:rgba(62, 207, 142, 0.3);
   &--delete:hover     { background: $red-bg;   border-color: $red-border;   color: $red; }
   &--deactivate:hover { background: $orange-bg;   border-color: $orange-border;   color: $orange;}
   &--reactivate:hover { background: $green-bg; border-color: $green-border; color: $green; }
+}
+
+// ========================
+// Dialogs (Modal)
+// ========================
+// Add to _shared.scss
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--bg-card) !important;
+  --mdc-dialog-subhead-color:   var(--text-hi) !important;
+  --mdc-dialog-supporting-text-color: var(--text-mid) !important;
+
+  .mdc-dialog__surface {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border);
+    border-radius: 14px !important;
+  }
 }
 
 // ========================
