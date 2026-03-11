@@ -47,9 +47,7 @@ interface MatrixCell {
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatIconModule,
-    MatButtonModule,
-    MatDialogActions,
-    MatDialogContent
+    MatButtonModule
 ],
   templateUrl: './permission-matrix.html',
   styleUrl: './permission-matrix.scss',

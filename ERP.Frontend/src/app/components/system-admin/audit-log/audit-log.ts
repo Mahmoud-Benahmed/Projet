@@ -20,11 +20,16 @@ import { MatInput, MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 
+interface ActionMeta {
+  icon: string;
+  category: 'auth' | 'user' | 'admin' | 'danger' | 'password'|'default';
+}
+
 @Component({
   selector: 'app-audit-log',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, KeyValuePipe,
+    CommonModule, FormsModule,
     MatTableModule, MatPaginatorModule, MatCardModule,
     MatButtonModule, MatIconModule, MatFormFieldModule,
     MatSelectModule, MatButtonToggleModule, MatProgressSpinnerModule,
@@ -49,11 +54,21 @@ export class AuditLogComponent implements OnInit {
   selectedStatus: boolean | null = null;
   userIdFilter = '';
 
-  allActions: AuditAction[] = [
-    'Login', 'Logout', 'TokenRefreshed', 'TokenRevoked',
-    'UserRegistered', 'PasswordChanged', 'PasswordChangedByAdmin',
-    'ProfileUpdated', 'UserActivated', 'UserDeactivated',
-  ];
+  readonly ACTION_MAP: Record<AuditAction, ActionMeta> = {
+    Login:                    { icon: 'login',              category: 'auth' },
+    Logout:                   { icon: 'logout',             category: 'auth' },
+    TokenRefreshed:           { icon: 'refresh',            category: 'auth' },
+    TokenRevoked:             { icon: 'block',              category: 'danger' },
+    UserRegistered:           { icon: 'person_add',         category: 'user' },
+    PasswordChanged:          { icon: 'lock_reset',         category: 'password' },
+    PasswordChangedByAdmin:   { icon: 'admin_panel_settings', category: 'admin' },
+    ProfileUpdated:           { icon: 'edit',               category: 'user' },
+    UserActivated:            { icon: 'check_circle',       category: 'user' },
+    UserDeactivated:          { icon: 'block',              category: 'danger' },
+    UserDeleted:              { icon: 'auto_delete',        category: 'danger' },
+    UserRecovered:            { icon: 'restore_from_trash', category: 'user' },
+    UserDeletedPermanently:   { icon: 'delete_forever',     category: 'danger' },
+  };
 
   constructor(
     private authService: AuthService,
@@ -120,23 +135,12 @@ export class AuditLogComponent implements OnInit {
     return action.replace(/([A-Z])/g, ' $1').trim();
   }
 
-  getActionIcon(action: AuditAction): string {
-    const map: Record<AuditAction, string> = {
-      Login: 'login', Logout: 'logout',
-      TokenRefreshed: 'refresh', TokenRevoked: 'block',
-      UserRegistered: 'person_add', PasswordChanged: 'lock_reset',
-      PasswordChangedByAdmin: 'admin_panel_settings',
-      ProfileUpdated: 'edit', UserActivated: 'check_circle',
-      UserDeactivated: 'cancel',
-    };
-    return map[action] ?? 'circle';
+ getActionIcon(action: AuditAction): string {
+    return this.ACTION_MAP[action]?.icon ?? 'circle';
   }
 
   getActionCategory(action: AuditAction): string {
-    if (['Login', 'Logout'].includes(action))                           return 'auth';
-    if (['TokenRefreshed', 'TokenRevoked'].includes(action))            return 'token';
-    if (['PasswordChanged', 'PasswordChangedByAdmin'].includes(action)) return 'password';
-    return 'user';
+    return this.ACTION_MAP[action]?.category ?? 'default';
   }
 
   hasDetails(log: AuditLogResponseDto): boolean {

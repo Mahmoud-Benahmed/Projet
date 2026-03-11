@@ -106,7 +106,7 @@
               [routerLink]="['/users', user.id]">
               <div class="user-avatar user-avatar--inactive">{{ getInitials(user) }}</div>
               <div class="user-meta">
-                <span class="user-meta__name">{{ user.fullName ?? '—' }}</span>
+                <span class="user-meta__name">{{ user.fullName}}</span>
                 <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
               </div>
             </div>
@@ -114,7 +114,7 @@
 
           <td><span class="mono">{{ user.email }}</span></td>
 
-          <td><span class="role-badge">{{ user.roleName ?? '—' }}</span></td>
+          <td><span class="role-badge">{{ user.roleName}}</span></td>
 
           <td><span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span></td>
 

@@ -285,13 +285,16 @@ export class ProfileComponent implements OnInit {
   }
 
   get initials(): string {
-    const name:string = this.userProfile?.fullName ?? this.userProfile?.email ?? '?';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+    const name: string = this.userProfile?.fullName ?? this.userProfile?.email ?? '?';
+    const words = name.split(' ').filter(w => w.length > 0); // remove empty strings
+
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0][0].toUpperCase();
+
+    const firstLetter = words[0][0];
+    const lastLetter = words[words.length - 1][0];
+
+    return (firstLetter + lastLetter).toUpperCase();
   }
 
   get memberSince(): string {

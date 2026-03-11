@@ -14,7 +14,7 @@ type ViewMode = 'list' | 'create' | 'edit' | 'view';
 @Component({
   selector: 'app-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInput, MatIcon],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })

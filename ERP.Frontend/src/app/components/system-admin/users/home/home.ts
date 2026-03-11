@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -20,6 +20,9 @@ import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/r
 import { AuthService } from '../../../../services/auth.service';
 import { Stats } from '../stats/stats';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalComponent } from '../../../modal/modal';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-home',
@@ -49,6 +52,7 @@ import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../.
   styleUrl: './home.scss',
 })
 export class UsersHomeComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   @ViewChild(MatSort) sort!: MatSort;
 
   displayedColumns: string[] = [
@@ -77,8 +81,9 @@ export class UsersHomeComponent implements OnInit {
   constructor(
     private snackBar: MatSnackBar,
     private router: Router,
-    private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    public authService: AuthService,
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -106,7 +111,6 @@ export class UsersHomeComponent implements OnInit {
       this.authService.getStats().subscribe({
         next: (result) => this.stats = result,
         error: () =>{
-          this.isLoading = false;
           this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
       }
     });
@@ -132,10 +136,92 @@ export class UsersHomeComponent implements OnInit {
     });
   }
 
-  private reload(){
-    this.loadUsers();  // ← instead of loadUsers()
-        this.loadStats();
-        this.cdr.markForCheck();
+  softDeleteUser(user: AuthUserGetResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete User',
+        message: `${user.fullName ?? user.login} will be moved to deleted users. You can restore them later.`,
+        confirmText: 'Delete',
+        showCancel: true,
+        icon: 'delete_outline',
+        iconColor: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+
+        this.authService.softDelete(user.id).subscribe({
+          next: () => {
+            this.snackBar.open(
+              `${user.fullName ?? user.login} has been deleted.`,
+              'OK',
+              { duration: 3000 }
+            );
+            this.reload();
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 });
+          }
+        });
+      });
+  }
+
+  recoverUser(user: AuthUserGetResponseDto): void {
+    this.authService.recover(user.id).subscribe({
+      next: () => {
+        this.snackBar.open(`${user.fullName ?? user.login} recovered.`, 'OK', { duration: 3000 });
+        this.reload();
+      },
+      error: () => this.snackBar.open('Failed to recover user.', 'Dismiss', { duration: 3000 })
+    });
+  }
+
+  deleteUser(user: AuthUserGetResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title: 'This action is irreversible',
+        message: `${user.fullName} will be deleted permanently.
+                    Once you confirm you cannot recover this user.
+                    If you are not ure Cancel or temporarly move the user to Deleted users.
+                    Are you sure you want to procceed ?`,
+        confirmText: 'Delete',
+        showCancel: true,
+        icon: 'delete_outline',
+        iconColor: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+
+        this.authService.delete(user.id).subscribe({
+          next: () => {
+            this.snackBar.open(
+              `${user.fullName ?? user.login} has been deleted.`,
+              'OK',
+              { duration: 3000 }
+            );
+            this.reload();
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 });
+          }
+        });
+      });
+  }
+
+  private reload() {
+    this.loadUsers();
+    this.loadStats();
   }
   getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {

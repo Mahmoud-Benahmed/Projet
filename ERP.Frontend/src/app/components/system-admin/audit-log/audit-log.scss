@@ -26,14 +26,31 @@
 .action-cell { display: flex; align-items: center; gap: 8px; }
 
 .action-icon {
-  width: 28px; height: 28px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  mat-icon { font-size: 15px; width: 15px; height: 15px; }
-  &--auth    { background: $blue-bg;  color: $blue;  border: 1px solid $blue-border; }
-  &--user    { background: $green-bg; color: $green; border: 1px solid $green-border; }
-  &--admin   { background: $amber-bg; color: $amber; border: 1px solid $amber-border; }
-  &--danger  { background: $red-bg;   color: $red;   border: 1px solid $red-border; }
-  &--default { background: $gray-bg;  color: $gray;  border: 1px solid $gray-border; }
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  // Categories from ACTION_MAP
+  &--auth { background: $blue-bg; color: $blue; border: 1px solid $blue-border; }
+
+  &--user { background: $green-bg; color: $green; border: 1px solid $green-border; }
+
+  &--admin { background: $amber-bg; color: $amber; border: 1px solid $amber-border;}
+
+  &--danger { background: $red-bg; color: $red; border: 1px solid $red-border;}
+
+  &--password { background: $yellow-bg; color: $yellow; border: 1px solid $yellow-border;}
+
+  &--default { background: $gray-bg; color: $gray; border: 1px solid $gray-border;}
 }
 
 .action-label { font-size: 0.85rem; font-weight: 500; color: $text-hi; }
@@ -44,7 +61,7 @@
   background: $blue-bg; color: $blue; border: 1px solid $blue-border;
   cursor: pointer; transition: background 0.15s;
   &:hover { background: rgba($blue, 0.2); }
-  &--target { background: $amber-bg; color: $amber; border-color: $amber-border; cursor: default; &:hover { background: $amber-bg; } }
+  &--target { background: $amber-bg; color: $amber; border-color: $amber-border; &:hover { background: $amber-bg; } }
 }
 
 .muted { color: $text-lo; font-size: 0.85rem; }
@@ -67,6 +84,6 @@
 }
 
 .detail-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: baseline; }
-.detail-key  { font-size: 0.78rem; color: $text-lo; font-weight: 500; white-space: nowrap; }
-.detail-val  { font-size: 0.85rem; color: $text-hi; word-break: break-all;
+.detail-key  { font-size: 1rem; color: $text-lo; font-weight: 500; white-space: nowrap; }
+.detail-val  { font-size: 1rem; color: $text-lo; word-break: break-all;
   &.small { font-size: 0.75rem; color: $text-lo; } }

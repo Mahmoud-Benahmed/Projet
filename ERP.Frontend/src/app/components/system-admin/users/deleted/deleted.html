@@ -4,20 +4,19 @@
   <div class="page-header">
     <div>
       <p class="breadcrumb">USER MANAGEMENT</p>
-      <h1 class="page-title">{{ pageTitle }}</h1>
+      <h1 class="page-title">Deleted Users</h1>
     </div>
   </div>
 
   <!-- ── STAT CARDS ── -->
   <div class="stats-grid">
 
-    <!-- Active Users → /users -->
     <div class="stat-card stat-card--green"
       [routerLink]="(stats?.activeUsers ?? 0) > 0 ? '/users' : null"
       routerLinkActive="stat-card--current"
       #usersLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="usersLink.isActive || !stats?.activeUsers">
+      [class.stat-card--disabled]="!(stats?.activeUsers)">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Active Users</p>
@@ -31,13 +30,12 @@
       </div>
     </div>
 
-    <!-- Deactivated → /users/deactivated -->
     <div class="stat-card stat-card--red"
       [routerLink]="(stats?.deactivatedUsers ?? 0) > 0 ? '/users/deactivated' : null"
       routerLinkActive="stat-card--current"
       #deactivatedLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="deactivatedLink.isActive || !stats?.deactivatedUsers">
+      [class.stat-card--disabled]="!(stats?.deactivatedUsers)">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Deactivated</p>
@@ -46,6 +44,21 @@
         <div class="stat-card__icon stat-card__icon--red">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+        <div class="stat-card stat-card--gray">
+      <div class="stat-card__body">
+        <div>
+          <p class="stat-card__label">Deleted Users</p>
+          <p class="stat-card__value">{{ stats?.deletedUsers }}</p>
+        </div>
+        <div class="stat-card__icon stat-card__icon--gray">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
       </div>
@@ -80,13 +93,11 @@
         [(ngModel)]="searchTerm"
         (ngModelChange)="applyFilter()" />
     </div>
-    <button class="btn-add" (click)="goToRegister()">
-      + Add User
-    </button>
   </div>
 
   <!-- ── TABLE CARD ── -->
   <div class="table-card">
+
     <div class="loading-overlay" *ngIf="isLoading">
       <div class="spinner"></div>
     </div>
@@ -107,10 +118,8 @@
 
           <td>
             <div class="user-cell"
-              [routerLink]="['/users', user.id]"
-              routerLinkActive="user-cell--active"
-              [routerLinkActiveOptions]="{ exact: true }">
-              <div class="user-avatar">{{ getInitials(user) }}</div>
+              [routerLink]="['/users', user.id]">
+              <div class="user-avatar user-avatar--inactive">{{ getInitials(user) }}</div>
               <div class="user-meta">
                 <span class="user-meta__name">{{ user.fullName }}</span>
                 <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
@@ -126,54 +135,32 @@
 
           <td>
             <span class="date-cell">
-              {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
+              {{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
             </span>
           </td>
 
           <td class="td--actions">
-            <button class="icon-btn icon-btn--view"
-              title="View"
-              (click)="goToProfile(user.id)">
+           <button class="icon-btn icon-btn--view"
+                  title="View"
+                  [routerLink]="['/users', user.id]">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+            </button>
+            <button class="icon-btn icon-btn--reactivate"
+              title="Recover"
+              (click)="recover(user)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                <polyline points="20 6 9 17 4 12"/>
               </svg>
             </button>
-            <button class="icon-btn icon-btn--deactivate"
-              title="Deactivate"
-              [disabled]="user.id === currentUserId"
-              [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-              (click)="deactivateUser(user)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-              </svg>
-            </button>
-            <button class="icon-btn icon-btn--delete"
-                  title="Delete"
-                  [disabled]="user.id === currentUserId"
-                  [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-                  (click)="softDeleteUser(user)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                  <path fill="currentColor" d="M7 6v13zm4.25 15H7q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v4.3q-.425-.125-.987-.213T17 10V6H7v13h3.3q.15.525.4 1.038t.55.962M9 17h1q0-1.575.5-2.588L11 13.4V8H9zm4-5.75q.425-.275.963-.55T15 10.3V8h-2zm.463 9.288Q12 19.075 12 17t1.463-3.537T17 12t3.538 1.463T22 17t-1.463 3.538T17 22t-3.537-1.463m5.187-1.187l.7-.7l-1.85-1.85V14h-1v3.2z"/>
-                </svg>
-            </button>
-            <!-- @if(authService.hasPrivilege("DeleteUsers")){ -->
-            @if(authService.Role==="SystemAdmin"){
-                <button class="icon-btn icon-btn--delete"
-                    title="Delete Permanently"
-                    [disabled]="user.id === currentUserId"
-                    [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-                    (click)="deleteUser(user)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                    <path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM7 6v13zm5 7.9l1.9 1.9q.275.275.7.275t.7-.275t.275-.7t-.275-.7l-1.9-1.9l1.9-1.9q.275-.275.275-.7t-.275-.7t-.7-.275t-.7.275L12 11.1l-1.9-1.9q-.275-.275-.7-.275t-.7.275t-.275.7t.275.7l1.9 1.9l-1.9 1.9q-.275.275-.275.7t.275.7t.7.275t.7-.275z"/></svg>
-                </button>
-            }
           </td>
 
         </tr>
 
         <tr *ngIf="dataSource.filteredData.length === 0">
           <td colspan="6" class="td--empty">
-            No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
+            No deactivated users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
           </td>
         </tr>
       </tbody>

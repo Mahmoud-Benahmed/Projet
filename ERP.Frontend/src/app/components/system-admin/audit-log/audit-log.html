@@ -102,6 +102,7 @@
 
           <td>
             <span class="uid-chip uid-chip--target" *ngIf="log.targetUserId; else dash2"
+              (click)="goToProfile(log.targetUserId)"
               [title]="log.targetUserId">
               {{ log.targetUserId | slice:0:8 }}…
             </span>
