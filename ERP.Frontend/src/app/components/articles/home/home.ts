@@ -1,30 +1,36 @@
-import { CurrencyConfigService } from '../../services/currency-config.service';
-import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest, ArticleStatsDto}  from './../../services/articles.service';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { CurrencyConfigService } from '../../../services/currency-config.service';
+import { ArticleService, Article, Category, CreateArticleRequest, UpdateArticleRequest, ArticleStatsDto}  from '../../../services/articles.service';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatInput } from "@angular/material/input";
-import { ModalComponent } from '../modal/modal';
+import { ModalComponent } from '../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
-import { HttpError } from '../../interfaces/ErrorDto';
+import { HttpError } from '../../../interfaces/ErrorDto';
 import { MatIcon } from "@angular/material/icon";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink, RouterLinkActive } from "@angular/router";
+import { PaginationComponent } from "../../pagination/pagination";
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, RouterLink, RouterLinkActive, PaginationComponent],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
 export class ArticleComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   articles: Article[] = [];
   categories: Category[] = [];
   stats: ArticleStatsDto | null= null;
-  totalCount = 0;
+
   pageNumber = 1;
   pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalCount: number =0;
 
   viewMode: ViewMode = 'list';
   selectedArticle: Article | null = null;
@@ -52,18 +58,14 @@ export class ArticleComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.load();
-    this.loadCategories();
-    this.loadStats();
-    this.cdr.markForCheck();
+    this.reload();
   }
 
   // -------------------------------------------------------
   // Stats
   // -------------------------------------------------------
-  get totalArticles(): number { return this.totalCount; }
-  get activeCount(): number { return this.articles.filter(a => a.isActive).length;}
-  get inactiveCount(): number { return this.articles.filter(a => !a.isActive).length; }
+  get activeCount(): number { return this.stats?.ActiveCount ?? this.articles.filter(a => !a.isDeleted).length;}
+  get deletedCount(): number { return this.stats?.DeletedCount ?? this.articles.filter(a => a.isDeleted).length; }
   get categoryCount(): number { return this.categories.length; }
 
   // -------------------------------------------------------
@@ -72,8 +74,9 @@ export class ArticleComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = null;
-    this.articleService.getArticlesPagedByStatus(true, this.pageNumber, this.pageSize).subscribe({
-      next: (res) => { this.articles = res.items; this.totalCount = res.totalCount; this.loading = false;
+    this.articleService.getAllArticles(this.pageNumber, this.pageSize).subscribe({
+      next: (res) => {
+        this.articles = res.items; this.totalCount= res.totalCount;
       },
       error: () => { this.error = 'Failed to load articles.'; this.loading = false; },
     });
@@ -89,7 +92,7 @@ export class ArticleComponent implements OnInit {
     this.loading= true;
     this.error= null;
     this.articleService.getStats().subscribe({
-      next: (res)=> {this.stats= res; this.cdr.markForCheck()},
+      next: (res)=> {this.stats= res; this.cdr.markForCheck(); },
       error: ()=> {this.error= 'Failed to load stats.'; this.loading= false; this.cdr.markForCheck()}
     })
   }
@@ -111,8 +114,8 @@ export class ArticleComponent implements OnInit {
   // Pagination
   // -------------------------------------------------------
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.load(); } }
-  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.load(); } }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.reload(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.reload(); } }
 
   // -------------------------------------------------------
   // CRUD
@@ -157,7 +160,7 @@ export class ArticleComponent implements OnInit {
             }
           });
           this.cancel();
-          this.load(); },
+          this.reload(); },
         error: (error) => {
           let err = error.error as HttpError;
 
@@ -176,33 +179,54 @@ export class ArticleComponent implements OnInit {
       });
     } else if (this.viewMode === 'edit' && this.selectedArticle) {
       this.articleService.updateArticle(this.selectedArticle.id, val as UpdateArticleRequest).subscribe({
-        next: () => { this.flash('Article updated successfully.'); this.cancel(); this.load(); },
+        next: () => { this.flash('Article updated successfully.'); this.cancel(); this.reload(); },
         error: () => (this.error = 'Failed to update article.'),
       });
     }
   }
 
   delete(article: Article): void {
-    if (!confirm(`Delete "${article.libelle}"?`)) return;
-    this.articleService.deleteArticle(article.id).subscribe({
-      next: () => { this.flash('Article deleted.'); this.load(); },
-      error: () => (this.error = 'Failed to delete article.'),
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Article',
+        message: `Article ${article.libelle} will be moved to deleted articles. You can restore it later.`,
+        confirmText: 'Delete',
+        showCancel: true,
+        icon: 'auto_delete',
+        iconColor: 'danger'
+      }
     });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+          this.articleService.delete(article.id).subscribe({
+            next: () => {
+              this.flash('Article deleted.');
+              this.reload();
+            },
+            error: () => (this.error = 'Failed to delete article.'),
+          });
+        }
+      );
   }
 
-  toggleStatus(article: Article): void {
-    const action$ = article.isActive
-      ? this.articleService.deactivateArticle(article.id)
-      : this.articleService.activateArticle(article.id);
-    action$.subscribe({
-      next: () => { this.flash(`Article ${article.isActive ? 'deactivated' : 'activated'}.`); this.load(); },
-      error: () => (this.error = 'Status update failed.'),
-    });
+  reload(): void{
+    this.load();
+    this.loadCategories();
+    this.loadStats();
+    this.cdr.markForCheck();
   }
-
   // -------------------------------------------------------
   // Helpers
   // -------------------------------------------------------
+  onPageSizeChange(): void {
+    this.pageNumber = 1; // reset to first page on size change
+    this.reload();
+  }
+
   getCategoryName(id: string): string {
     return this.categories.find(c => c.id === id)?.name ?? '—';
   }

@@ -13,13 +13,13 @@ export interface Article {
   libelle: string;
   prix: number;
   categoryId: string;
-  isActive: boolean;
+  isDeleted: boolean;
 }
 
 export interface ArticleStatsDto{
     TotalCount: number,
     ActiveCount: number,
-    InActiveCount: number,
+    DeletedCount: number,
     CategoriesCount: number
 }
 
@@ -69,14 +69,26 @@ export class ArticleService {
       map(res => ({
         TotalCount: res.totalCount,
         ActiveCount: res.activeCount,
-        InActiveCount: res.inActiveCount,
+        DeletedCount: res.deletedCount,
         CategoriesCount: res.categoriesCount
       }))
     );
   }
 
-  getAllArticles(): Observable<Article[]> {
-    return this.http.get<Article[]>(this.articlesUrl);
+  getAllArticles(pageNumber: number = 1,
+                  pageSize: number = 10): Observable<PagedResult<Article>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber)
+      .set('pageSize', pageSize);
+    return this.http.get<PagedResult<Article>>(this.articlesUrl, {params});
+  }
+
+  getDeletedArticles(pageNumber: number = 1,
+                  pageSize: number = 10): Observable<PagedResult<Article>> {
+    const params = new HttpParams()
+      .set('pageNumber', pageNumber)
+      .set('pageSize', pageSize);
+    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/deleted`, {params});
   }
 
   getArticleById(id: string): Observable<Article> {
@@ -99,18 +111,6 @@ export class ArticleService {
     return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/paged/by-category`, { params });
   }
 
-  getArticlesPagedByStatus(
-    isActive: boolean,
-    pageNumber: number = 1,
-    pageSize: number = 10
-  ): Observable<PagedResult<Article>> {
-    const params = new HttpParams()
-      .set('isActive', isActive)
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/paged/by-status`, { params });
-  }
-
   getArticlesPagedByLibelle(
     libelleFilter: string,
     pageNumber: number = 1,
@@ -131,17 +131,14 @@ export class ArticleService {
     return this.http.put<Article>(`${this.articlesUrl}/${id}`, request);
   }
 
-  activateArticle(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.articlesUrl}/${id}/activate`, {});
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/delete/${id}`);
   }
 
-  deactivateArticle(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.articlesUrl}/${id}/deactivate`, {});
+  recover(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/restore/${id}`, {});
   }
 
-  deleteArticle(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.articlesUrl}/${id}`);
-  }
 
   // -------------------------------------------------------
   // CATEGORIES
