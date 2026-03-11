@@ -15,7 +15,10 @@ export type AuditAction =
   | 'PasswordChangedByAdmin'
   | 'ProfileUpdated'
   | 'UserActivated'
-  | 'UserDeactivated';
+  | 'UserDeactivated'
+  | 'UserDeleted'
+  | 'UserRecovered'
+  | 'UserDeletedPermanently';
 
 export interface AuditLogResponseDto {
   id: string;

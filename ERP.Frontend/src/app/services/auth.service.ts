@@ -4,7 +4,7 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../environment";
 import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../interfaces/AuthDto";
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, take, tap } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
@@ -22,6 +22,8 @@ export class AuthService {
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
   private readonly PROFILE_KEY = 'userProfile';
+  private _cachedPayload: JwtPayload | null = null;
+  private _cachedToken: string | null = null;
   private _userProfile$ = new BehaviorSubject<AuthUserGetResponseDto | null>(
     this.loadProfileFromStorage()  // rehydrate immediately on construction
   );
@@ -80,13 +82,16 @@ export class AuthService {
   // CLAIM GETTERS
   // =========================
   private getPayload(): JwtPayload | null {
-    const token = this.getAccessToken();
-    if (!token) return null;
-    try {
-      return jwtDecode<JwtPayload>(token);
-    } catch {
-      return null;
-    }
+      const token = this.getAccessToken();
+      if (!token) return null;
+      if (token === this._cachedToken) return this._cachedPayload;
+      try {
+          this._cachedPayload = jwtDecode<JwtPayload>(token);
+          this._cachedToken = token;
+          return this._cachedPayload;
+      } catch {
+          return null;
+      }
   }
 
   get UserId(): string | null {
@@ -207,6 +212,16 @@ export class AuthService {
                                                                   { params });
   }
 
+  /** GET /auth/deleted — Get deleted users (paginated) */
+  getDeleted(
+    pageNumber: number = 1,
+    pageSize: number = 10): Observable<PagedResultDto<AuthUserGetResponseDto>> {
+    const params = new HttpParams().set('pageNumber', pageNumber)
+                                  .set('pageSize', pageSize);
+    return this.http.get<PagedResultDto<AuthUserGetResponseDto>>(`${this.baseUrl}/deleted`,
+                                                                  { params });
+  }
+
 
   // =========================
   // EXISTS BY LOGIN
@@ -260,6 +275,22 @@ export class AuthService {
   deactivate(id: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/deactivate`, {});
   }
+
+  /** DELETE /auth/delete/soft/{id} — Soft delete: set IsDeleted to true */
+  softDelete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/delete/soft/${id}`);
+  }
+
+  /** PATCH /auth/recover/{id} — Recover: reset IsDeleted to false */
+  recover(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/recover/${id}`, {});
+  }
+
+  /** DELETE /auth/delete/hard/{id} — Activate a user account */
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/delete/hard/${id}`);
+  }
+
 
 
   // ── Auth: Password Management ────────────────────────────────────────────
@@ -353,9 +384,9 @@ export class AuthService {
     this.clearUserProfile();
 
     if (refreshToken) {
-      this.revoke({ refreshToken }).subscribe({
-        error: () => {} // silently ignore failures
-      });
+        this.revoke({ refreshToken })
+            .pipe(take(1))
+            .subscribe({ error: () => {} });
     }
 
     this.router.navigate(['/login']);

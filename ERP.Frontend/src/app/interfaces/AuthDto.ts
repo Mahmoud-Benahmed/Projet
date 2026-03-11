@@ -63,6 +63,7 @@ export interface UserStatsDto {
   totalUsers: number;
   activeUsers: number;
   deactivatedUsers: number;
+  deletedUsers: number;
 }
 
 export interface RoleResponseDto {
