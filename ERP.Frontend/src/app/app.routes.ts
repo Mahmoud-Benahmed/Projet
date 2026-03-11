@@ -9,9 +9,10 @@ import { ProfileComponent } from './components/user/profile/profile';
 import { DeactivatedComponent } from './components/system-admin/users/deactivated/deactivated';
 import { MustChangePasswordComponent } from './components/user/must-change-password/must-change-password';
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
-import { ArticleComponent } from './components/articles/home';
+import { ArticleComponent } from './components/articles/home/home';
 import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
-import { DeletedComponent } from './components/system-admin/users/deleted/deleted';
+import {DeletedUsersComponent } from './components/system-admin/users/deleted/deleted';
+import { DeletedArticlesComponent } from './components/articles/deleted/deleted';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
@@ -27,9 +28,10 @@ export const routes: Routes = [
       { path: 'users',              component: UsersHomeComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/register',     component: RegisterComponent,       canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/deactivated',  component: DeactivatedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
-      { path: 'users/deleted',  component: DeletedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
+      { path: 'users/deleted',  component: DeletedUsersComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/:authUserId',  component: ProfileComponent,        canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'articles',              component: ArticleComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin', 'StockManager'] } },
+      { path: 'articles/deleted',              component: DeletedArticlesComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
 
       { path: '',                   redirectTo: 'home',                 pathMatch: 'full' },
     ]

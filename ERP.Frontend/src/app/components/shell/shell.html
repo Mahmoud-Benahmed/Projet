@@ -49,11 +49,25 @@
       </div>
 
       <!-- Articles -->
-      <a class="sidebar__item" routerLink="/articles" routerLinkActive="sidebar__item--active">
-        <mat-icon>inventory_2</mat-icon>
-        <span>Articles</span>
-      </a>
+      <div class="sidebar__group">
+        <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('articles')" type="button"
+                [class.sidebar__item--group-open]="openGroups['articles']">
+          <mat-icon>warehouse</mat-icon>
+          <span>Articles</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['articles']">expand_more</mat-icon>
+        </button>
 
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
+          <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Articles</span>
+          </a>
+          <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active">
+            <mat-icon>recycling</mat-icon>
+            <span>Deleted</span>
+          </a>
+        </div>
+      </div>
       <!-- Audit Log -->
       <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active">
         <mat-icon>history</mat-icon>

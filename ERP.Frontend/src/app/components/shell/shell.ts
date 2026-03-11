@@ -31,6 +31,7 @@ export class ShellComponent implements OnInit {
     '/users/register': 'Register',
     '/permissions': 'Permissions',
     '/articles': 'Articles',
+    '/articles/deleted': 'Deleted Articles',
     '/audit-log': 'Audit Log',
     '/profile': 'My Profile',
   };
