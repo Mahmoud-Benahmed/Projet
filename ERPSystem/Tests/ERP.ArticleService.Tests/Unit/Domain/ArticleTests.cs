@@ -22,7 +22,7 @@ namespace ERP.ArticleService.Tests.Unit.Domain
             article.CategoryId.Should().Be(_category.Id);
             article.BarCode.Should().Be("1234567890128");
             article.TVA.Should().Be(19m);
-            article.IsActive.Should().BeTrue();
+            article.IsDeleted.Should().BeFalse();
             article.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
         }
 
@@ -96,7 +96,7 @@ namespace ERP.ArticleService.Tests.Unit.Domain
         {
             var article = new Article("ART-2026-000001", "Écran 27 pouces", 1299.99m, _category, "1234567890128", 19m);
             var newCategory = new Category("Informatique", 15m);
-            var before = article.UpdatedAt;
+            var before = DateTime.Now;
 
             article.Update("Écran 32 pouces", 1599.99m, newCategory, "9876543210987", 15m);
 
@@ -151,43 +151,6 @@ namespace ERP.ArticleService.Tests.Unit.Domain
             Action act = () => article.Update("Écran", prix, _category, "1234567890128", 19m);
             act.Should().Throw<ArgumentException>()
                .WithMessage("*Prix must be positive*");
-        }
-
-        // =========================
-        // ACTIVATE / DEACTIVATE
-        // =========================
-        [Fact]
-        public void Activate_WhenInactive_ShouldActivate()
-        {
-            var article = new Article("ART-2026-000001", "Écran", 100m, _category, "1234567890128", 19m);
-            article.Deactivate();
-            article.Activate();
-            article.IsActive.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Activate_WhenAlreadyActive_ShouldRemainActive()
-        {
-            var article = new Article("ART-2026-000001", "Écran", 100m, _category, "1234567890128", 19m);
-            article.Activate(); // already active
-            article.IsActive.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Deactivate_WhenActive_ShouldDeactivate()
-        {
-            var article = new Article("ART-2026-000001", "Écran", 100m, _category, "1234567890128", 19m);
-            article.Deactivate();
-            article.IsActive.Should().BeFalse();
-        }
-
-        [Fact]
-        public void Deactivate_WhenAlreadyInactive_ShouldRemainInactive()
-        {
-            var article = new Article("ART-2026-000001", "Écran", 100m, _category, "1234567890128", 19m);
-            article.Deactivate();
-            article.Deactivate(); // already inactive
-            article.IsActive.Should().BeFalse();
         }
     }
 }
