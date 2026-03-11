@@ -11,6 +11,7 @@ import { MustChangePasswordComponent } from './components/user/must-change-passw
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
 import { ArticleComponent } from './components/articles/home';
 import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
+import { DeletedComponent } from './components/system-admin/users/deleted/deleted';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'users',              component: UsersHomeComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/register',     component: RegisterComponent,       canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/deactivated',  component: DeactivatedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
+      { path: 'users/deleted',  component: DeletedComponent,    canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'users/:authUserId',  component: ProfileComponent,        canActivate: [authGuard], data: { roles: ['SystemAdmin'] } },
       { path: 'articles',              component: ArticleComponent,      canActivate: [authGuard], data: { roles: ['SystemAdmin', 'StockManager'] } },
 

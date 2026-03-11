@@ -25,6 +25,15 @@ $purple-light: #b388ff;
 $purple-bg:    rgba(124, 77, 255, 0.12);
 $purple-border:rgba(124, 77, 255, 0.3);
 
+$yellow:        #ffc107;
+$yellow-bg:     rgba(255, 193, 7, 0.12);
+$yellow-border: rgba(255, 193, 7, 0.3);
+
+$orange:        #d36300;
+$orange-bg:     rgba(211, 98, 0, 0.409);
+$orange-border: rgba(211, 99, 0, 0.3);
+
+
 $amber:       #f5a623;
 $amber-bg:    rgba(245, 166, 35, 0.12);
 $amber-border:rgba(245, 166, 35, 0.3);
@@ -47,7 +56,7 @@ $green-border:rgba(62, 207, 142, 0.3);
   color: $text-hi;
   padding: 2rem 2.5rem;
   box-sizing: border-box;
-  
+
   animation: fadeRight .5s ease both;
   @keyframes fadeRight {
     from { opacity: 0; transform: translateX(-100px); }
@@ -360,6 +369,7 @@ $green-border:rgba(62, 207, 142, 0.3);
   &--view:hover       { background: $blue-bg;  border-color: $blue-border;  color: $blue; }
   &--edit:hover       { background: $amber-bg; border-color: $amber-border; color: $amber; }
   &--delete:hover     { background: $red-bg;   border-color: $red-border;   color: $red; }
+  &--deactivate:hover { background: $orange-bg;   border-color: $orange-border;   color: $orange;}
   &--reactivate:hover { background: $green-bg; border-color: $green-border; color: $green; }
 }
 
