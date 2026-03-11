@@ -11,7 +11,7 @@
         bool MustChangePassword,
         bool IsActive,
         DateTime CreatedAt,
-        DateTime UpdatedAt,
+        DateTime? UpdatedAt,
         DateTime? LastLoginAt
     );
 }

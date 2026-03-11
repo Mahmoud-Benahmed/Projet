@@ -291,9 +291,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
 
-                var user = new AuthUser(login, email, fullName);
-
-                user.SetRole(roleId);
+                var user = new AuthUser(login, email, fullName, roleId);
 
 
                 var hashedPassword = passwordHasher.HashPassword(user, password);

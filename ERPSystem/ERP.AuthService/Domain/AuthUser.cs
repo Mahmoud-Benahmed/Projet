@@ -29,7 +29,7 @@ namespace ERP.AuthService.Domain
         public Guid RoleId { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
 
         public DateTime? LastLoginAt { get; private set; }
 
@@ -37,7 +37,7 @@ namespace ERP.AuthService.Domain
 
         private AuthUser() { }
 
-        public AuthUser(string login, string email, string fullName)
+        public AuthUser(string login, string email, string fullName, Guid roleId)
         {
             if (string.IsNullOrWhiteSpace(fullName))
                 throw new ArgumentNullException("FullName is required");
@@ -52,9 +52,8 @@ namespace ERP.AuthService.Domain
             Email = email;
             Login = login;
             FullName = fullName;
+            RoleId = roleId;
             CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
-
         }
 
         public void UpdateProfile(string fullname, string email)
@@ -76,6 +75,7 @@ namespace ERP.AuthService.Domain
                 throw new ArgumentException("Password hash is required");
             PasswordHash = passwordHash;
         }
+
         public void SetRole(Guid roleId)
         {
             RoleId = roleId;

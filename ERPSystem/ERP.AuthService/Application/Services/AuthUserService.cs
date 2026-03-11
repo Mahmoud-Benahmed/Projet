@@ -63,6 +63,8 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId)
         {
+            ValidatePaging(pageNumber, pageSize);
+
             var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
@@ -76,6 +78,9 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId)
         {
+
+            ValidatePaging(pageNumber, pageSize);
+
             var (items, totalCount) = await _userRepository.GetPagedByStatusAsync(isActive, pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
@@ -89,6 +94,9 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize, Guid? excludeId)
         {
+
+            ValidatePaging(pageNumber, pageSize);
+
             var (items, totalCount) = await _userRepository.GetPagedByRoleAsync(roleId, pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
@@ -162,10 +170,9 @@ namespace ERP.AuthService.Application.Services
 
             string capitalizedFullName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(request.FullName.ToLower());
 
-            var user = new AuthUser(request.Login, request.Email, capitalizedFullName);
+            var user = new AuthUser(request.Login, request.Email, capitalizedFullName, role.Id);
             var hashedPassword = _passwordHasher.HashPassword(user, request.Password);
             user.SetPasswordHash(hashedPassword);
-            user.SetRole(role.Id);
 
             await _userRepository.AddAsync(user);
 
@@ -502,6 +509,7 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId)
         {
+            ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _userRepository.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
@@ -587,5 +595,15 @@ namespace ERP.AuthService.Application.Services
         private string? GetUserAgent()
             => _httpContext?.HttpContext?.Request.Headers["User-Agent"].ToString();
 
+
+        private static void ValidatePaging(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
+                    "Page number must be greater than zero.");
+            if (pageSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageSize),
+                    "Page size must be greater than zero.");
+        }
     }
 }

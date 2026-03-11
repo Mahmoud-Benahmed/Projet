@@ -81,6 +81,7 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
+
             var currentUserId = User.FindFirstValue("sub");
             Guid.TryParse(currentUserId, out var excludeId);
 
@@ -153,6 +154,9 @@ namespace ERP.AuthService.Controllers
                 return Forbid();
             }
 
+            if (requesterId.Equals(id))
+                return Forbid();
+
             await _authService.SoftDeleteAsync(id, requesterId);
             return NoContent();
         }
@@ -195,6 +199,9 @@ namespace ERP.AuthService.Controllers
             {
                 return Forbid();
             }
+            
+            if (requesterId.Equals(id))
+                return Forbid();
 
             await _authService.DeleteAsync(id, requesterId);
             return NoContent();
