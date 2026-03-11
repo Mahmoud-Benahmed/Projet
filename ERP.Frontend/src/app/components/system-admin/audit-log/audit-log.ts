@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule, formatNumber, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -19,6 +19,8 @@ import { AuditAction, AuditLogResponseDto, AuditLogService } from '../../../serv
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { ModalComponent } from '../../modal/modal';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface ActionMeta {
   icon: string;
@@ -40,6 +42,7 @@ interface ActionMeta {
   styleUrl: './audit-log.scss',
 })
 export class AuditLogComponent implements OnInit {
+  private destroyRef= inject(DestroyRef);
   @ViewChild('detailDialog') detailDialog!: TemplateRef<any>;
 
   displayedColumns = ['status', 'action', 'performedBy', 'targetUserId', 'ipAddress', 'timestamp', 'details'];
@@ -121,13 +124,33 @@ export class AuditLogComponent implements OnInit {
   }
 
   confirmClear(): void {
-    if (!confirm('Clear all audit logs? This cannot be undone.')) return;
-    this.auditLogService.clear().subscribe({
-      next: () => {
-        this.snackBar.open('Audit logs cleared.', 'OK', { duration: 3000 });
-        this.load();
-      },
-      error: () => this.snackBar.open('Failed to clear logs.', 'Dismiss', { duration: 3000 })
+    const dialogRef = this.dialog.open(ModalComponent, {
+          width: '400px',
+          data: {
+            title: 'Clear Logs',
+            message: `Are you sure you want to clear the logs ?`,
+            confirmText: 'Ok',
+            showCancel: true,
+            icon: 'contract_delete',
+            iconColor: 'warn',
+          },
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result) {
+              this.auditLogService.clear().subscribe({
+                next: () => {
+                    this.snackBar.open('Audit logs cleared.', 'OK', { duration: 3000 });
+                    this.load();
+                    this.cdr.markForCheck();
+                },
+                error: () => this.snackBar.open('Failed to clear logs.', 'Dismiss', { duration: 3000 })
+              });
+        }else{
+          return;
+        }
     });
   }
 
