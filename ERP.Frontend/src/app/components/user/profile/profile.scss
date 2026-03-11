@@ -31,12 +31,14 @@
 }
 
 // ── HERO CARD ─────────────────────────────────────
+// FIX: was targeting mat-card + mat-card-content — now targets plain div
 .hero-card {
-  background: $bg-card !important;
-  border: 1px solid $border !important;
-  border-radius: 20px !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 64px rgba(0,0,0,0.5) !important;
-  position: relative; overflow: hidden !important;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 20px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 64px rgba(0,0,0,0.5);
+  position: relative; overflow: hidden;
+  padding: 20px 28px; // FIX: padding moved here from mat-card-content override
 
   &::before {
     content: '';
@@ -50,11 +52,9 @@
     content: '';
     position: absolute; bottom: -40px; left: 100px;
     width: 180px; height: 180px;
-    background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(124,77,255,0.06) 0%, transparent 70%);
     pointer-events: none;
   }
-
-  mat-card-content { padding: 20px 28px !important; }
 }
 
 .hero-card__layout {
@@ -63,7 +63,7 @@
   @media (max-width: 640px) { flex-direction: column; align-items: flex-start; }
 }
 
-// Avatar
+// ── AVATAR ────────────────────────────────────────
 .hero-avatar {
   position: relative; flex-shrink: 0;
 
@@ -84,7 +84,7 @@
   }
 }
 
-// Identity
+// ── IDENTITY ──────────────────────────────────────
 .hero-identity {
   flex: 1; min-width: 0;
 
@@ -97,71 +97,58 @@
   &__email {
     font-size: 13px; color: $text-mid;
     font-family: 'Fira Code', monospace;
+    margin-bottom: 8px;
   }
 
-  &__chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  &__chips {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
 }
 
-// Actions
+// ── HERO ACTIONS ──────────────────────────────────
 .hero-actions {
   display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;
   @media (max-width: 640px) { flex-direction: row; width: 100%; }
 }
 
 .edit-btn {
-  border: 1px solid $blue-border !important;
-  color: $blue !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important; font-size: 13px !important;
-  height: 40px; transition: all 0.2s !important;
-  background: $blue-bg !important;
-  mat-icon { margin-right: 6px; font-size: 18px; }
+  border: 1px solid $blue-border;
+  color: $blue; border-radius: 8px;
+  font-weight: 600; font-size: 13px; height: 40px;
+  background: $blue-bg; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; transition: all 0.2s;
+  mat-icon { font-size: 18px; }
   &:hover {
-    background: rgba(78,124,255,0.2) !important;
-    border-color: $blue !important;
-    box-shadow: 0 0 16px $blue-border !important;
+    background: rgba(78,124,255,0.2);
+    border-color: $blue;
+    box-shadow: 0 0 16px $blue-border;
   }
 }
 
 .password-btn {
-  border: 1px solid $border !important;
-  color: $text-mid !important;
-  border-radius: 8px !important;
-  font-weight: 500 !important; font-size: 13px !important;
-  height: 40px; text-decoration: none;
-  display: flex; align-items: center; transition: all 0.2s !important;
-  mat-icon { margin-right: 6px; font-size: 18px; }
-  &:hover {
-    border-color: $border-hi !important;
-    color: $text-hi !important;
-    background: rgba(255,255,255,0.04) !important;
-  }
+  border: 1px solid $border;
+  color: $text-mid; border-radius: 8px;
+  font-weight: 500; font-size: 13px; height: 40px;
+  background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; transition: all 0.2s;
+  mat-icon { font-size: 18px; }
+  &:hover { border-color: $border-hi; color: $text-hi; background: rgba(255,255,255,0.04); }
 }
 
 // ── CHIPS ─────────────────────────────────────────
 .chip {
-  font-size: 12px !important; font-weight: 600 !important;
-  height: 28px !important; letter-spacing: 0.02em !important;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  height: 28px; letter-spacing: 0.02em;
 
+  // FIX: $purple-light was not defined — replaced with $purple
   &--role {
-    background: rgba(139,92,246,0.12) !important;
-    border: 1px solid rgba(139,92,246,0.3) !important;
-    color: $purple-light !important;
-    ::ng-deep mat-icon { color: $purple-light !important; font-size: 15px !important; }
-  }
-
-  &--complete {
-    background: $green-bg !important;
-    border: 1px solid $green-border !important;
-    color: $green !important;
-    ::ng-deep mat-icon { color: $green !important; font-size: 15px !important; }
-  }
-
-  &--incomplete {
-    background: $amber-bg !important;
-    border: 1px solid $amber-border !important;
-    color: $amber !important;
-    ::ng-deep mat-icon { color: $amber !important; font-size: 15px !important; }
+    background: $purple-bg; color: $purple;
+    mat-icon { color: $purple; font-size: 15px; }
   }
 }
 
@@ -172,27 +159,22 @@
   @media (max-width: 960px) { grid-template-columns: 1fr; }
 }
 
-// ── SHARED CARD STYLES ────────────────────────────
+// ── CARD BASE ─────────────────────────────────────
+// FIX: removed mat-card-content padding override — template uses div.panel__body
 .info-card,
-.account-card,
-.password-card {
-  background: $bg-card !important;
-  border: 1px solid $border !important;
-  border-radius: 14px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+.account-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   overflow: hidden; transition: border-color 0.2s;
-  &:hover { border-color: $border-hi !important; }
-  mat-card-content { padding: 0 !important; }
-  ::ng-deep mat-divider { border-color: $border !important; }
+  &:hover { border-color: $border-hi; }
 }
 
-.password-card { margin-bottom: 4px; }
-
 .card-title {
-  display: flex !important; align-items: center; gap: 10px;
-  font-size: 14px !important; font-weight: 700 !important;
-  color: $text-hi !important; padding: 14px 20px 10px !important;
-  letter-spacing: 0.01em;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 700; color: $text-hi;
+  padding: 14px 20px 10px; letter-spacing: 0.01em; margin: 0;
 
   mat-icon {
     color: $blue; font-size: 19px; width: 19px; height: 19px;
@@ -207,6 +189,8 @@
 .info-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 20px; gap: 16px; transition: background 0.15s;
+  border-bottom: 1px solid $border;
+  &:last-child { border-bottom: none; }
   &:hover { background: rgba(255,255,255,0.02); }
 
   &__label {
@@ -222,8 +206,8 @@
   }
 }
 
-.mono  { font-family: 'Fira Code', monospace !important; font-size: 13px !important; }
-.small { font-size: 11px !important; color: $text-mid !important; letter-spacing: 0.02em; }
+.mono  { font-family: 'Fira Code', monospace; font-size: 13px; }
+.small { font-size: 11px; color: $text-mid; letter-spacing: 0.02em; }
 
 // ── STATUS DOT ────────────────────────────────────
 .status-dot {
@@ -236,7 +220,7 @@
 
 // ── EDIT FORM ─────────────────────────────────────
 .edit-form {
-  padding: 24px; display: flex; flex-direction: column; gap: 8px;
+  padding: 20px; display: flex; flex-direction: column; gap: 8px;
   animation: slideDown 0.2s ease;
   &__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 }
@@ -265,41 +249,32 @@
 }
 
 .cancel-btn {
-  color: $text-lo !important; border-radius: 8px !important; font-size: 13px !important;
-  &:hover { color: $text-hi !important; background: rgba(255,255,255,0.04) !important; }
+  color: $text-lo; border-radius: 8px; font-size: 13px;
+  background: none; border: none; cursor: pointer;
+  padding: 0 12px; height: 36px;
+  transition: color 0.15s, background 0.15s;
+  &:hover { color: $text-hi; background: $blue-bg; }
 }
 
 .save-btn {
-  background: $blue !important;
-  color: #fff !important; border-radius: 8px !important;
-  font-weight: 600 !important; font-size: 13px !important;
-  display: flex !important; align-items: center; gap: 6px;
-  box-shadow: 0 4px 16px $blue-border !important;
-  transition: box-shadow 0.2s, opacity 0.2s !important;
-  &:hover   { box-shadow: 0 6px 24px rgba(78,124,255,0.5) !important; }
-  &:disabled { opacity: 0.6 !important; }
+  background: $blue; color: $blue;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 36px;
+  box-shadow: 0 4px 16px $blue-border;
+  transition: box-shadow 0.2s, opacity 0.2s;
+  &:hover   { box-shadow: 0 6px 24px rgba(78,124,255,0.5); }
+  &:disabled { cursor: not-allowed; color:$blue}
   mat-icon { font-size: 17px; }
   ::ng-deep circle { stroke: #fff !important; }
-}
-
-// ── CARD ACTIONS ──────────────────────────────────
-.card-actions {
-  padding: 10px 16px !important;
-  background: rgba(255,255,255,0.01);
-}
-
-.action-link {
-  color: $text-lo !important; font-size: 13px !important;
-  text-decoration: none; border-radius: 8px !important;
-  transition: color 0.15s !important;
-  mat-icon { font-size: 17px; margin-right: 6px; }
-  &:hover { color: $blue !important; background: $blue-bg !important; }
 }
 
 // ── SECTION HEADER ────────────────────────────────
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px; cursor: pointer;
+  border-top: 1px solid $border;
   transition: background 0.15s; user-select: none;
   &:hover { background: rgba(255,255,255,0.03); }
 
@@ -315,9 +290,29 @@
   }
 }
 
+// ── FORM COLLAPSE ─────────────────────────────────
+.form-collapse {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height 300ms ease-out, opacity 250ms ease-out;
+  &--open {
+    max-height: 600px; opacity: 1;
+    transition: max-height 300ms ease-in, opacity 250ms ease-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) { .form-collapse { transition: none; } }
+
+// ── PASSWORD FORM ─────────────────────────────────
+.password-form {
+  padding: 16px 20px 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  animation: slideDown 0.2s ease;
+  &__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+}
+
 // ── PASSWORD METER ────────────────────────────────
 .password-meter {
-  display: flex; align-items: center; gap: 0.5rem;
+  display: flex; align-items: center; gap: 0.5rem; margin: 4px 0 8px;
 
   &__bars {
     display: flex; gap: 4px; flex: 1;
@@ -345,7 +340,7 @@
 // ── PASSWORD ERRORS ───────────────────────────────
 .password-errors {
   display: flex; flex-direction: column; gap: 4px;
-  padding: 8px 12px;
+  padding: 8px 12px; margin: 4px 0;
   background: $red-bg; border: 1px solid $red-border; border-radius: 8px;
   .password-error {
     display: flex; align-items: center; gap: 6px;
@@ -355,43 +350,17 @@
 }
 
 // ── GENERATE BUTTON ───────────────────────────────
-button[mat-stroked-button] {
-  color: $text-lo !important; border-color: $border !important;
-  border-radius: 8px !important; font-size: 13px; font-weight: 500;
-  align-self: flex-start;
+// FIX: replaced broad `button[mat-stroked-button]` selector with scoped class
+.btn-generate {
+  color: $text-lo; border: 1px solid $border;
+  border-radius: 8px; font-size: 13px; font-weight: 500;
+  background: transparent; cursor: pointer;
+  align-self: flex-start; padding: 6px 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
   mat-icon { font-size: 16px; width: 16px; height: 16px; color: $blue; }
-  &:hover {
-    border-color: $blue-border !important;
-    color: $text-hi !important;
-    background: $blue-bg !important;
-  }
+  &:hover { border-color: $blue-border; color: $text-hi; background: $blue; }
 }
-
-// ── PASSWORD FORM ─────────────────────────────────
-.password-form {
-  padding: 16px 20px 20px;
-  display: flex; flex-direction: column; gap: 4px;
-  animation: slideDown 0.2s ease;
-
-  &__fields {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px;
-    @media (max-width: 640px) { grid-template-columns: 1fr; }
-  }
-
-  &__actions { display: flex; justify-content: space-between ; margin-top: 4px; }
-}
-
-// ── FORM COLLAPSE ─────────────────────────────────
-.form-collapse {
-  max-height: 0; overflow: hidden; opacity: 0;
-  transition: max-height 300ms ease-out, opacity 250ms ease-out;
-  &--open {
-    max-height: 500px; opacity: 1;
-    transition: max-height 300ms ease-in, opacity 250ms ease-in;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) { .form-collapse { transition: none; } }
 
 // ── WARNING HINT ──────────────────────────────────
 .warning-hint {
