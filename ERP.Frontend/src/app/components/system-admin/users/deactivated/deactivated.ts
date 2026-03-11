@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
@@ -18,6 +18,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Stats } from "../stats/stats";
 import { AuthService } from '../../../../services/auth.service';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
+import { PaginationComponent } from "../../../pagination/pagination";
 
 @Component({
   selector: 'app-deactivated',
@@ -39,7 +40,8 @@ import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../.
     MatDividerModule,
     MatSnackBarModule,
     RouterLinkActive,
-    RouterLink
+    RouterLink,
+    PaginationComponent
 ],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
@@ -63,13 +65,15 @@ export class DeactivatedComponent implements OnInit {
   totalCount = 0;
   pageNumber = 1;
   pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
 
   isLoading = false;
   searchTerm = '';
 
   constructor(
     private snackBar: MatSnackBar,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -138,5 +142,16 @@ export class DeactivatedComponent implements OnInit {
         .toUpperCase();
     }
     return user.email[0].toUpperCase();
+  }
+
+  onPageSizeChange(): void {
+    this.pageNumber = 1; // reset to first page on size change
+    this.reload();
+  }
+
+  reload():void{
+    this.loadStats();
+    this.loadUsers();
+    this.cdr.markForCheck();
   }
 }

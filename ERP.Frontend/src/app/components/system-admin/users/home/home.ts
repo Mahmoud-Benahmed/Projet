@@ -141,10 +141,10 @@ export class UsersHomeComponent implements OnInit {
       width: '400px',
       data: {
         title: 'Delete User',
-        message: `${user.fullName ?? user.login} will be moved to deleted users. You can restore them later.`,
+        message: `${user.fullName ?? user.login} will be moved to deleted users. You can restore it later.`,
         confirmText: 'Delete',
         showCancel: true,
-        icon: 'delete_outline',
+        icon: 'auto_delete',
         iconColor: 'danger'
       }
     });
@@ -176,6 +176,7 @@ export class UsersHomeComponent implements OnInit {
       next: () => {
         this.snackBar.open(`${user.fullName ?? user.login} recovered.`, 'OK', { duration: 3000 });
         this.reload();
+        this.cdr.markForCheck();
       },
       error: () => this.snackBar.open('Failed to recover user.', 'Dismiss', { duration: 3000 })
     });
@@ -192,7 +193,7 @@ export class UsersHomeComponent implements OnInit {
                     Are you sure you want to procceed ?`,
         confirmText: 'Delete',
         showCancel: true,
-        icon: 'delete_outline',
+        icon: 'delete_forever',
         iconColor: 'danger'
       }
     });
@@ -222,6 +223,7 @@ export class UsersHomeComponent implements OnInit {
   private reload() {
     this.loadUsers();
     this.loadStats();
+    this.cdr.markForCheck();
   }
   getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {

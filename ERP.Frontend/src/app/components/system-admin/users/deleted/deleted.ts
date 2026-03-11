@@ -46,7 +46,7 @@ import { MatDialog } from '@angular/material/dialog';
   templateUrl: './deleted.html',
   styleUrl: './deleted.scss',
 })
-export class DeletedComponent implements OnInit {
+export class DeletedUsersComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
   private readonly destroyRef= inject(DestroyRef);
 
@@ -88,6 +88,7 @@ export class DeletedComponent implements OnInit {
         this.dataSource.data = result.items;
 
         this.totalCount = result.totalCount;
+
         this.dataSource.sort = this.sort;
         this.isLoading = false;
 
@@ -129,7 +130,7 @@ export class DeletedComponent implements OnInit {
             message: `${user.fullName ?? user.login} is recovered but still deactivated. You can activate it later.`,
             confirmText: 'Ok',
             showCancel: false,
-            icon: 'check_circle',
+            icon: 'settings_backup_restore',
             iconColor: 'success'
           }
         });
