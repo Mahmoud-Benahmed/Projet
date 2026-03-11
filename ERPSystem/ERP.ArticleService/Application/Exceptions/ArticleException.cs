@@ -20,7 +20,7 @@ namespace ERP.ArticleService.Application.Exceptions
     public class ArticleAlreadyActiveException : Exception
     {
         public ArticleAlreadyActiveException(Guid id)
-            : base($"Article with id '{id}' is already active.") { }
+            : base($"Article with id '{id}' is already recovered.") { }
     }
 
     public class ArticleAlreadyInactiveException : Exception

@@ -34,8 +34,8 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                 entity.Property(a => a.Prix)
                       .HasColumnType("decimal(18,2)");
                 
-                entity.Property(a => a.IsActive)
-                      .HasDefaultValue(true);
+                entity.Property(a => a.IsDeleted)
+                      .HasDefaultValue(false);
                 
                 entity.Property(a => a.TVA)
                       .HasPrecision(5, 2);
@@ -45,9 +45,9 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                 
                 entity.Property(a => a.CreatedAt)
                       .HasDefaultValueSql("GETUTCDATE()");
-                
+
                 entity.Property(a => a.UpdatedAt)
-                      .HasDefaultValueSql("GETUTCDATE()");
+                        .IsRequired(false);
                 
 
                 

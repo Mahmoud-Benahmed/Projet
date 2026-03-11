@@ -19,10 +19,35 @@ namespace ERP.ArticleService.API.Controllers
         // GET ALL
         // =========================
         [HttpGet(ApiRoutes.Articles.GetAll)]
-        public async Task<ActionResult<List<Article>>> GetAll()
+        public async Task<ActionResult> GetAllPagedAsync([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            var articles = await _articleService.GetAllAsync();
-            return Ok(articles);
+            try
+            {
+                var result = await _articleService.GetAllAsync(pageNumber, pageSize);
+                return Ok(new { result.Items, result.TotalCount });
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        // =========================
+        // GET DELETED
+        // =========================
+        [HttpGet(ApiRoutes.Articles.GetDeletedRoute)]
+        public async Task<ActionResult> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
+                return Ok(new { result.Items, result.TotalCount });
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // =========================
@@ -63,15 +88,11 @@ namespace ERP.ArticleService.API.Controllers
         // GET PAGED BY CATEGORY
         // =========================
         [HttpGet(ApiRoutes.Articles.GetPagedByCategory)]
-        public async Task<ActionResult> GetPagedByCategory(
-            [FromQuery] Guid categoryId,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<ActionResult> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var result = await _articleService.GetPagedByCategoryIdAsync(
-                    categoryId, pageNumber, pageSize);
+                var result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
                 return Ok(new { result.Items, result.TotalCount });
             }
             catch (ArgumentOutOfRangeException ex)
@@ -88,26 +109,6 @@ namespace ERP.ArticleService.API.Controllers
             return Ok(result);
         }
 
-        // =========================
-        // GET PAGED BY STATUS
-        // =========================
-        [HttpGet(ApiRoutes.Articles.GetPagedByStatus)]
-        public async Task<ActionResult> GetPagedByStatus(
-            [FromQuery] bool isActive,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
-        {
-            try
-            {
-                var result = await _articleService.GetPagedByStatusAsync(
-                    isActive, pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
 
         // =========================
         // GET PAGED BY LIBELLE
@@ -162,9 +163,7 @@ namespace ERP.ArticleService.API.Controllers
         // UPDATE
         // =========================
         [HttpPut(ApiRoutes.Articles.Update)]
-        public async Task<ActionResult<Article>> Update(
-            [FromRoute] Guid id,
-            [FromBody] UpdateArticleRequestDto request)
+        public async Task<ActionResult<Article>> Update([FromRoute] Guid id, [FromBody] UpdateArticleRequestDto request)
         {
             try
             {
@@ -182,31 +181,14 @@ namespace ERP.ArticleService.API.Controllers
         }
 
         // =========================
-        // ACTIVATE
+        // RESTORE
         // =========================
-        [HttpPatch(ApiRoutes.Articles.Activate)]
-        public async Task<ActionResult> Activate([FromRoute] Guid id)
+        [HttpPatch(ApiRoutes.Articles.Restore)]
+        public async Task<ActionResult> Restore([FromRoute] Guid id)
         {
             try
             {
-                await _articleService.ActivateAsync(id);
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-        }
-
-        // =========================
-        // DEACTIVATE
-        // =========================
-        [HttpPatch(ApiRoutes.Articles.Deactivate)]
-        public async Task<ActionResult> Deactivate([FromRoute] Guid id)
-        {
-            try
-            {
-                await _articleService.DeactivateAsync(id);
+                await _articleService.RestoreAsync(id);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)

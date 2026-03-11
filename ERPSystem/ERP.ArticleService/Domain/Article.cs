@@ -14,9 +14,9 @@
         public decimal Prix { get; private set; }
         public decimal TVA { get; private set; }
 
-        public bool IsActive { get; private set; } = true;
+        public bool IsDeleted { get; private set; } = false;
         public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
 
 
         private Article() { }
@@ -40,8 +40,8 @@
             CategoryId = category.Id;
             BarCode= barCode;
             TVA = tva ?? category.TVA;
+            IsDeleted = false;
             CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Update(string libelle, decimal prix, Category category, string barCode, decimal? tva)
@@ -73,17 +73,17 @@
         }
 
 
-        public void Activate()
+        public void Delete()
         {
-            if (IsActive) return;
-            IsActive = true;
+            if (IsDeleted) return;
+            IsDeleted = true;
 
         }
 
-        public void Deactivate()
+        public void Restore()
         {
-            if (!IsActive) return;
-            IsActive = false;
+            if (!IsDeleted) return;
+            IsDeleted = false;
             
         }
     }

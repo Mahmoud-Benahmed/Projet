@@ -48,7 +48,7 @@ namespace ERP.ArticleService.Application.Services
         public async Task<Article> GetByIdAsync(Guid id)
         {
             var article = await _articleRepository.GetByIdAsync(id);
-            if (article is null)
+            if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(id);
             return article;
         }
@@ -56,14 +56,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task<Article> GetByCodeAsync(string code)
         {
             var article = await _articleRepository.GetByCodeAsync(code);
-            if (article is null)
+            if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(code);
             return article;
-        }
-
-        public async Task<List<Article>> GetAllAsync()
-        {
-            return await _articleRepository.GetAllAsync();
         }
 
         // =========================
@@ -71,7 +66,10 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task<Article> UpdateAsync(Guid id, UpdateArticleRequestDto request)
         {
-            var article = await GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdAsync(id);
+
+            if(article.IsDeleted || article is null)
+                throw new ArticleNotFoundException(id);
 
             var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new CategoryNotFoundException(request.CategoryId);
@@ -83,70 +81,60 @@ namespace ERP.ArticleService.Application.Services
         }
 
         // =========================
-        // ACTIVATE / DEACTIVATE
+        // RESTORE
         // =========================
-        public async Task ActivateAsync(Guid id)
+        public async Task RestoreAsync(Guid id)
         {
             var article = await GetByIdAsync(id);
-            if (article.IsActive)
-                throw new ArticleAlreadyActiveException(id);
+            if (!article.IsDeleted)
+                return;
 
-            article.Activate();
+            article.Restore();
             await _articleRepository.SaveChangesAsync();
         }
 
-        public async Task DeactivateAsync(Guid id)
-        {
-            var article = await GetByIdAsync(id);
-            if (!article.IsActive)
-                throw new ArticleAlreadyInactiveException(id);
-
-            article.Deactivate();
-            await _articleRepository.SaveChangesAsync();
-        }
 
         // =========================
-        // DELETE
+        // RESTORE
         // =========================
         public async Task DeleteAsync(Guid id)
         {
             var article = await GetByIdAsync(id);
-            if (article is null)
-                throw new ArticleNotFoundException(id);
+            if (article.IsDeleted)
+                return;
 
-            _articleRepository.Remove(article);
+            article.Delete();
             await _articleRepository.SaveChangesAsync();
         }
 
         // =========================
         // PAGING / FILTERING
         // =========================
-        public async Task<PagedResultDto<Article>> GetPagedByCategoryIdAsync(
-            Guid categoryId,
-            int pageNumber,
-            int pageSize)
+        public async Task<PagedResultDto<Article>> GetAllAsync(int pageNumber, int pageSize)
+        {
+            ValidatePaging(pageNumber, pageSize);
+
+            var (items, totalCount) = await _articleRepository.GetAllAsync(pageNumber, pageSize);
+            return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+        }
+        
+        public async Task<PagedResultDto<Article>> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _articleRepository
                 .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
             return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
         }
-
-        public async Task<PagedResultDto<Article>> GetPagedByStatusAsync(
-            bool isActive,
-            int pageNumber,
-            int pageSize)
+        
+        public async Task<PagedResultDto<Article>> GetPagedDeletedAsync(int pageNumber,int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _articleRepository
-                .GetPagedByStatusAsync(isActive, pageNumber, pageSize);
+                .GetPagedDeletedAsync(pageNumber, pageSize);
             return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
         }
-
-        public async Task<PagedResultDto<Article>> GetPagedByLibelleAsync(
-            string libelleFilter,
-            int pageNumber,
-            int pageSize)
+        
+        public async Task<PagedResultDto<Article>> GetPagedByLibelleAsync(string libelleFilter, int pageNumber,int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             if (string.IsNullOrWhiteSpace(libelleFilter))

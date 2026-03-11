@@ -10,15 +10,13 @@ namespace ERP.ArticleService.Application.Interfaces
         Task<Article?> GetByCodeAsync(string code);
         Task<Article?> GetByBarCodeAsync(string barCode);
 
-        Task<List<Article>> GetAllAsync();
-
-        void Remove(Article article);
         Task SaveChangesAsync();
 
         // Paging & filtering
+        Task<(List<Article> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize);
         Task<(List<Article> Items, int TotalCount)> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize);
-        Task<(List<Article> Items, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize);
         Task<(List<Article> Items, int TotalCount)> GetPagedByLibelleAsync(string libelleFilter, int pageNumber, int pageSize);
+        Task<(List<Article> Items, int TotalCount)> GetPagedDeletedAsync(int pageNumber, int pageSize);
 
         Task<ArticleStatsDto> GetStatsAsync();
     }

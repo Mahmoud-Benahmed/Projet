@@ -3,7 +3,7 @@
     public record ArticleStatsDto(
         int TotalCount,
         int ActiveCount,
-        int InActiveCount,
+        int DeletedCount,
         int CategoriesCount
     );
 }

@@ -15,7 +15,6 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         Task<Article> GetByIdAsync(Guid id);
         Task<Article> GetByCodeAsync(string code);
-        Task<List<Article>> GetAllAsync();
 
         // =========================
         // UPDATE
@@ -25,8 +24,7 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // ACTIVATE / DEACTIVATE
         // =========================
-        Task ActivateAsync(Guid id);
-        Task DeactivateAsync(Guid id);
+        Task RestoreAsync(Guid id);
 
         // =========================
         // DELETE
@@ -41,8 +39,11 @@ namespace ERP.ArticleService.Application.Interfaces
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Article>> GetPagedByStatusAsync(
-            bool isActive,
+        Task<PagedResultDto<Article>> GetPagedDeletedAsync(
+            int pageNumber,
+            int pageSize);
+
+        Task<PagedResultDto<Article>> GetAllAsync(
             int pageNumber,
             int pageSize);
 

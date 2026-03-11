@@ -6,7 +6,7 @@
         public string Name { get; private set; }
         public decimal TVA { get; private set; }
         public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
 
         private Category() { }
 
@@ -22,7 +22,6 @@
             Name = name.Trim();
             TVA = tva;
             CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Update(string name, decimal tva)
