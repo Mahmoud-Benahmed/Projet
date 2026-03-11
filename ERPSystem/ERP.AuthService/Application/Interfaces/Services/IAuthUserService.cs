@@ -1,5 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Domain;
 
 namespace ERP.AuthService.Application.Interfaces.Services
 {
@@ -12,8 +13,15 @@ namespace ERP.AuthService.Application.Interfaces.Services
         Task ChangeAuthPasswordAsync(Guid id, string currentPassword, string newPassword);
         Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId);
         
-        Task ActivateAsync(Guid authUserId);
-        Task DeactivateAsync(Guid authUserId);
+        Task ActivateAsync(Guid authUserId, Guid performedById);
+        Task DeactivateAsync(Guid authUserId, Guid performedById);
+
+
+        Task SoftDeleteAsync(Guid userId, Guid performedById);
+        Task RecoverAsync(Guid userId, Guid performedById);
+        Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId);
+
+        Task DeleteAsync(Guid userId, Guid performedById);
 
         Task<bool> ExistsByLogin(string login);
         Task<bool> ExistsByEmail(string email);

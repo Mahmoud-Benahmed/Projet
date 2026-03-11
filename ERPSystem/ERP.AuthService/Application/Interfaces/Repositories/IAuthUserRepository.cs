@@ -1,5 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Domain;
+using MongoDB.Driver;
 
 namespace ERP.AuthService.Application.Interfaces.Repositories
 {
@@ -12,6 +13,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<(List<AuthUser>, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId);
         Task<(List<AuthUser>, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId);
         Task<(List<AuthUser>, int TotalCount)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId);
+        Task<(List<AuthUser>, int TotalCount)> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId);
 
         Task<AuthUser?> UpdateAsync(AuthUser user);
         Task<bool> ExistsByLoginAsync(string login);
@@ -20,6 +22,8 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<long> CountByStatusAsync(bool status);
         Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default);
 
-        Task DeleteAllAsync();
+        Task<long> DeleteAsync(Guid userId);
+        Task<long> DeleteAllAsync();
+        
     }
 }

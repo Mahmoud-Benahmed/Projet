@@ -62,9 +62,7 @@ namespace ERP.AuthService.Controllers
             if (!isSelf && !isAdmin)
                 throw new UnauthorizedAccessException("You are not authorized to access this resource.");
 
-
-            var result = await _authService.GetByIdAsync(id);
-            return Ok(result);
+            return Ok(user);
         }
 
 
@@ -120,7 +118,12 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Activate(Guid id)
         {
-            await _authService.ActivateAsync(id);
+            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
+            {
+                return Forbid();
+            }
+            await _authService.ActivateAsync(id, requesterId);
             return NoContent();
         }
 
@@ -129,7 +132,71 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Deactivate(Guid id)
         {
-            await _authService.DeactivateAsync(id);
+            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
+            {
+                return Forbid();
+            }
+            await _authService.DeactivateAsync(id, requesterId);
+            return NoContent();
+        }
+
+
+        [HttpDelete("delete/soft/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteSoft(Guid id)
+        {
+            // Extract authUserId from the JWT claim
+            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
+            {
+                return Forbid();
+            }
+
+            await _authService.SoftDeleteAsync(id, requesterId);
+            return NoContent();
+        }
+
+        [HttpPatch("recover/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Recover(Guid id)
+        {
+            // Extract authUserId from the JWT claim
+            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
+            {
+                return Forbid();
+            }
+
+            await _authService.RecoverAsync(id, requesterId);
+            return NoContent();
+        }
+
+        [HttpGet("deleted")]
+        [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetDeleted(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var currentUserId = User.FindFirstValue("sub");
+            Guid.TryParse(currentUserId, out var excludeId);
+
+            var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
+            return Ok(result);
+        }
+
+        [HttpDelete("delete/hard/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            // Extract authUserId from the JWT claim
+            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
+            {
+                return Forbid();
+            }
+
+            await _authService.DeleteAsync(id, requesterId);
             return NoContent();
         }
 
@@ -152,9 +219,10 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("exists-login/{login}")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<bool> ExistsByLogin(string login)
+        public async Task<IActionResult> ExistsByLogin(string login)
         {
-            return await _authService.ExistsByLogin(login);
+            var result = await _authService.ExistsByLogin(login);
+            return Ok(result);
         }
 
         [HttpGet("exists-email/{email}")]
@@ -181,7 +249,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {
             var result = await _authService.RegisterAsync(request);
-            return Ok(result);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpPut("update/{id:guid}")]

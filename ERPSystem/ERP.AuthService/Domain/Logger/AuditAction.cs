@@ -22,5 +22,8 @@
         // Account status
         UserActivated,
         UserDeactivated,
+        UserDeleted,
+        UserRecovered,
+        UserDeletedPermanently,
     }
 }

@@ -144,11 +144,9 @@ namespace ERP.AuthService.Application.Services
                 success: true,
                 performedBy: id,
                 targetUserId: id,
-                metadata: new() { ["email"] = request.Email, ["fullName"] = request.FullName },
+                metadata: new() { ["email"] = user.Email, ["fullName"] = user.FullName },
                 ipAddress: GetIp());
             return await MapToDtoAsync(updated);
-
-
         }
 
 
@@ -417,30 +415,123 @@ namespace ERP.AuthService.Application.Services
         // ======================
         // ACTIVATE/DEACTIVATE 
         // ======================
-        public async Task ActivateAsync(Guid authUserId)
+        public async Task ActivateAsync(Guid authUserId, Guid performedById)
         {
             var user = await _userRepository.GetByIdAsync(authUserId)
                        ?? throw new UserNotFoundException(authUserId);
+
+
+            var performedBy= await _userRepository.GetByIdAsync(performedById)
+                       ?? throw new UserNotFoundException(performedById);
+
             if (user.IsActive)
                 throw new UserActiveException();
             user.Activate();
             await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserActivated,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp());
         }
 
-        public async Task DeactivateAsync(Guid authUserId)
+        public async Task DeactivateAsync(Guid authUserId, Guid performedById)
         {
             var user = await _userRepository.GetByIdAsync(authUserId)
                        ?? throw new UserNotFoundException(authUserId);
             if (!user.IsActive)
                 throw new UserInactiveException();
 
+            var performedBy = await _userRepository.GetByIdAsync(performedById)
+                       ?? throw new UserNotFoundException(performedById);
+
             user.Deactivate();
             await _userRepository.UpdateAsync(user);
             await _auditLogger.LogAsync(
-                AuditAction.UserDeactivated,
-                success: true,
-                targetUserId: user.Id,
-                ipAddress: GetIp());
+                    AuditAction.UserDeactivated,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp());
+        }
+
+        // ======================
+        // SOFT DELETE
+        // ======================
+        public async Task SoftDeleteAsync(Guid deletedId, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(deletedId)
+                        ?? throw new UserNotFoundException(deletedId);
+
+            var performedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
+
+            if (user.IsDeleted) return; // no need to update
+
+            user.Delete();
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.UserDeleted,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
+        }
+
+        public async Task RecoverAsync(Guid id, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(id)
+                        ?? throw new UserNotFoundException(id);
+
+            var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
+
+            if (!user.IsDeleted) return; // no need to update
+            user.Recover();
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.UserRecovered,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["recovered"] = user.Login, ["recoveredBy"] = performedById.ToString() });
+        }
+
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId)
+        {
+            var (items, totalCount) = await _userRepository.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
+
+            var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
+
+            return new PagedResultDto<AuthUserGetResponseDto>(
+                mapped,
+                totalCount,
+                pageNumber,
+                pageSize);
+        }
+
+
+
+        // ======================
+        // HARD DELETE
+        // ======================
+        public async Task DeleteAsync(Guid id, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
+
+            var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
+
+            await _userRepository.DeleteAsync(id);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserDeletedPermanently,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString() });
         }
 
 
@@ -480,7 +571,18 @@ namespace ERP.AuthService.Application.Services
 
 
         private string? GetIp()
-            => _httpContext?.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        {
+            var ip = _httpContext?.HttpContext?.Connection.RemoteIpAddress;
+
+            if (ip == null)
+                return null;
+
+            // Convert IPv6-mapped IPv4 to normal IPv4
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                ip = ip.MapToIPv4();
+
+            return ip.ToString();
+        }
 
         private string? GetUserAgent()
             => _httpContext?.HttpContext?.Request.Headers["User-Agent"].ToString();

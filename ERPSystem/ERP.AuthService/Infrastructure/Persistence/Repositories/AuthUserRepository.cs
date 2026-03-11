@@ -3,6 +3,7 @@ using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
 using Microsoft.IdentityModel.Logging;
 using MongoDB.Driver;
+using static System.Net.WebRequestMethods;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {
@@ -27,67 +28,29 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<AuthUser?> GetByIdAsync(Guid id)
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        public async Task<(List<AuthUser>, int)> GetAllAsync(
-            int pageNumber,
-            int pageSize,
-            Guid? excludeId = default)
+        public async Task<(List<AuthUser>, int)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null)
         {
-            var filter = Builders<AuthUser>.Filter.Empty;
-
-            if (excludeId.HasValue && excludeId != default)
-                filter &= Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value);
-
-            var totalCount = (int)await _collection.CountDocumentsAsync(filter);
-            var items = await _collection
-                .Find(filter)
-                .Skip((pageNumber - 1) * pageSize)
-                .Limit(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
+            return await GetPagedAsync(pageNumber, pageSize, excludeId);
         }
 
-        public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(
-            bool isActive,
-            int pageNumber,
-            int pageSize,
-            Guid? excludeId = default)
+        public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null)
         {
-            var filter = Builders<AuthUser>.Filter.Where(x => x.IsActive == isActive);
+            var filter = Builders<AuthUser>.Filter.Where(u => u.IsActive == status);
 
-            if (excludeId.HasValue && excludeId != default)
-                filter &= Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value);
-
-            var totalCount = (int)await _collection.CountDocumentsAsync(filter);
-            var items = await _collection
-                .Find(filter)
-                .Skip((pageNumber - 1) * pageSize)
-                .Limit(pageSize)
-                .ToListAsync();
-
-            return (items, totalCount);
+            return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
         }
 
-        public async Task<(List<AuthUser>, int)> GetPagedByRoleAsync(
-            Guid role,
-            int pageNumber,
-            int pageSize,
-            Guid? excludeId = default)
+        public async Task<(List<AuthUser>, int)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId = null)
         {
-                var filter = Builders<AuthUser>.Filter.Where(x => x.RoleId == role && x.IsActive);
+            var filter = Builders<AuthUser>.Filter.Where(u => u.RoleId == role && u.IsActive);
 
-                if (excludeId.HasValue && excludeId != default)
-                    filter &= Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value);
+            return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
+        }
 
-                var totalCount = (int)await _collection.CountDocumentsAsync(filter);
-                var items = await _collection
-                    .Find(filter)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Limit(pageSize)
-                    .ToListAsync();
-
-                return (items, totalCount);
-            }
+        public async Task<(List<AuthUser>, int)> GetDeletedPagedAsync(int pageNumber, int pageSize,Guid? excludeId = null)
+        {
+            return await GetPagedAsync(pageNumber, pageSize, excludeId, includeDeleted: true);
+        }
 
         public async Task<bool> ExistsByEmailAsync(string email)
             => await _collection.Find(x => x.Email == email && x.IsActive).AnyAsync();
@@ -107,29 +70,92 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<long> CountByStatusAsync(bool status) =>
             await _collection.CountDocumentsAsync(x=> x.IsActive == status);
 
-        public async Task DeleteAllAsync()
+        public async Task<long> DeleteAsync(Guid userId)
         {
-            await _collection.DeleteManyAsync(FilterDefinition<AuthUser>.Empty);
+            var result= await _collection.DeleteOneAsync(u => u.Id == userId);
+            return result.DeletedCount;
+        }
+        public async Task<long> DeleteAllAsync()
+        {
+            var result =await _collection.DeleteManyAsync(FilterDefinition<AuthUser>.Empty);
+            return result.DeletedCount;
         }
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {
-            var excludeFilter = excludeId.HasValue && excludeId != default
-                ? Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value)
-                : Builders<AuthUser>.Filter.Empty;
+            var baseFilter = excludeId.HasValue
+                                ? Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value)
+                                : Builders<AuthUser>.Filter.Empty;
 
-            var totalUsers = (int)await _collection.CountDocumentsAsync(excludeFilter);
-            var activeFilter = excludeFilter & Builders<AuthUser>.Filter.Where(x => x.IsActive);
-            var inactiveFilter = excludeFilter & Builders<AuthUser>.Filter.Where(x => !x.IsActive);
+            var notDeletedFilter = Builders<AuthUser>.Filter.And(baseFilter,
+                Builders<AuthUser>.Filter.Where(x => !x.IsDeleted));
+
+            var deletedFilter = Builders<AuthUser>.Filter.And(baseFilter,
+                Builders<AuthUser>.Filter.Where(x => x.IsDeleted));
+
+            var activeFilter = Builders<AuthUser>.Filter.And(notDeletedFilter,
+                Builders<AuthUser>.Filter.Where(x => x.IsActive));
+
+            var inactiveFilter = Builders<AuthUser>.Filter.And(notDeletedFilter,
+                Builders<AuthUser>.Filter.Where(x => !x.IsActive));
+
+            var totalUsers = (int)await _collection.CountDocumentsAsync(notDeletedFilter);
             var activeUsers = (int)await _collection.CountDocumentsAsync(activeFilter);
             var deactivatedUsers = (int)await _collection.CountDocumentsAsync(inactiveFilter);
+            var deletedUsers = (int)await _collection.CountDocumentsAsync(deletedFilter);
 
             return new UserStatsDto
             {
                 TotalUsers = totalUsers,
                 ActiveUsers = activeUsers,
-                DeactivatedUsers = deactivatedUsers
+                DeactivatedUsers = deactivatedUsers,
+                DeletedUsers = deletedUsers
             };
+        }
+
+
+        private async Task<(List<AuthUser>, int)> GetPagedAsync(
+            int pageNumber,
+            int pageSize,
+            Guid? excludeId = null,
+            FilterDefinition<AuthUser>? filter = null,
+            SortDefinition<AuthUser>? sort = null,
+            bool includeDeleted = false
+        )
+        {
+            pageNumber = Math.Max(pageNumber, 1);
+            pageSize = Math.Max(pageSize, 1);
+
+            var filters = new List<FilterDefinition<AuthUser>>();
+
+            // deleted filter
+            if (!includeDeleted)
+                filters.Add(Builders<AuthUser>.Filter.Where(u => !u.IsDeleted));
+            else
+                filters.Add(Builders<AuthUser>.Filter.Where(u => u.IsDeleted));
+
+            // custom filter
+            if (filter != null)
+                filters.Add(filter);
+
+            // excludeId filter
+            if (excludeId.HasValue)
+                filters.Add(Builders<AuthUser>.Filter.Where(u => u.Id != excludeId.Value));
+
+            var finalFilter = Builders<AuthUser>.Filter.And(filters);
+
+            sort ??= Builders<AuthUser>.Sort.Ascending(u => u.CreatedAt);
+
+            var totalCount = (int)await _collection.CountDocumentsAsync(finalFilter);
+
+            var items = await _collection
+                .Find(finalFilter)
+                .Sort(sort)
+                .Skip((pageNumber - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }
