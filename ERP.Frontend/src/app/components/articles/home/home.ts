@@ -11,6 +11,7 @@ import { MatIcon } from "@angular/material/icon";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from "@angular/router";
 import { PaginationComponent } from "../../pagination/pagination";
+import { AuthService } from '../../../services/auth.service';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -43,11 +44,12 @@ export class ArticleComponent implements OnInit {
 
   articleForm: FormGroup;
 
-  constructor(private articleService: ArticleService,
+  constructor(public authService: AuthService,
+              private articleService: ArticleService,
               private fb: FormBuilder,
               private currencyConfig: CurrencyConfigService,
-            private dialog: MatDialog,
-          private cdr: ChangeDetectorRef)
+              private dialog: MatDialog,
+              private cdr: ChangeDetectorRef)
   {
     this.articleForm = this.fb.group({
       libelle: ['', [Validators.required, Validators.minLength(2)]],
@@ -190,7 +192,7 @@ export class ArticleComponent implements OnInit {
       width: '400px',
       data: {
         title: 'Delete Article',
-        message: `Article ${article.libelle} will be moved to deleted articles. You can restore it later.`,
+        message: `Article ${article.libelle} will be deleted. Do you want to procceed ?`,
         confirmText: 'Delete',
         showCancel: true,
         icon: 'auto_delete',

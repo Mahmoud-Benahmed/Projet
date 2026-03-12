@@ -47,7 +47,8 @@
             routerLinkActive="stat-card--current"
             #deletedLink="routerLinkActive"
             [routerLinkActiveOptions]="{ exact: true }"
-            [class.stat-card--disabled]="!(stats?.DeletedCount)">
+            [class.stat-card--disabled]="!(stats?.DeletedCount)"
+            *ngIf="authService.isSystemAdmin">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Deleted</p>
