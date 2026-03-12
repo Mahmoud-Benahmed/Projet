@@ -54,6 +54,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManageUsers", p => p.RequireClaim("privilege", "ManageUsers"));
     options.AddPolicy("AssignRoles", p => p.RequireClaim("privilege", "AssignRoles"));
 
+    // Audit-Log
+    options.AddPolicy("ManageAuditLogs", p => p.RequireClaim("privilege", "ManageAuditLogs"));
+
     // ── Clients
     options.AddPolicy("ViewClients", p => p.RequireClaim("privilege", "ViewClients"));
     options.AddPolicy("CreateClient", p => p.RequireClaim("privilege", "CreateClient"));
@@ -86,10 +89,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ViewReports", p => p.RequireClaim("privilege", "ViewReports"));
     options.AddPolicy("ExportReports", p => p.RequireClaim("privilege", "ExportReports"));
 
-    // ── Composite policies (convenience combinations for the router)
-    options.AddPolicy("CanManageUsers", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ManageUsers") ||
-        ctx.User.HasClaim("privilege", "AssignRoles")));
 
     options.AddPolicy("CanManageArticles", p => p.RequireAssertion(ctx =>
         ctx.User.HasClaim("privilege", "ViewArticles") ||
