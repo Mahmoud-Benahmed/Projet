@@ -37,11 +37,12 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 // Auth
                 ("Auth", "ManageUsers",     "Create, update, deactivate users"),
                 ("Auth", "AssignRoles",     "Assign roles and manage privileges"),
+                ("Auth", "ManageAuditLogs", "View, clear Authentication-related audit logs"),
 
                 // Clients
                 ("Clients", "ViewClients",   "View client list and details"),
                 ("Clients", "CreateClient",  "Create a new client"),
-                ("Clients", "UpdateClient",    "Edit an existing client"),
+                ("Clients", "UpdateClient",  "Edit an existing client"),
                 ("Clients", "DeleteClient",  "Delete a client"),
 
                 // Articles
@@ -139,13 +140,14 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 // ── SystemAdmin — full access ──────────────
                 (RoleEnum.SystemAdmin, "ManageUsers",     true),
                 (RoleEnum.SystemAdmin, "AssignRoles",     true),
+                (RoleEnum.SystemAdmin, "ManageAuditLogs", true),
                 (RoleEnum.SystemAdmin, "ViewClients",     true),
                 (RoleEnum.SystemAdmin, "CreateClient",    true),
                 (RoleEnum.SystemAdmin, "UpdateClient",    true),
                 (RoleEnum.SystemAdmin, "DeleteClient",    true),
                 (RoleEnum.SystemAdmin, "ViewArticles",    true),
                 (RoleEnum.SystemAdmin, "CreateArticle",   true),
-                (RoleEnum.SystemAdmin, "UpdateArticle",     true),
+                (RoleEnum.SystemAdmin, "UpdateArticle",   true),
                 (RoleEnum.SystemAdmin, "DeleteArticle",   true),
                 (RoleEnum.SystemAdmin, "ViewInvoices",    true),
                 (RoleEnum.SystemAdmin, "CreateInvoice",   true),
@@ -163,13 +165,14 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 // ── SalesManager ───────────────────────────
                 (RoleEnum.SalesManager, "ManageUsers",     false),
                 (RoleEnum.SalesManager, "AssignRoles",     false),
+                (RoleEnum.SystemAdmin, "ManageAuditLogs",  false),
                 (RoleEnum.SalesManager, "ViewClients",     true),
                 (RoleEnum.SalesManager, "CreateClient",    true),
-                (RoleEnum.SalesManager, "UpdateClient",      true),
+                (RoleEnum.SalesManager, "UpdateClient",    true),
                 (RoleEnum.SalesManager, "DeleteClient",    false),
                 (RoleEnum.SalesManager, "ViewArticles",    true),
                 (RoleEnum.SalesManager, "CreateArticle",   false),
-                (RoleEnum.SalesManager, "UpdateArticle",     false),
+                (RoleEnum.SalesManager, "UpdateArticle",   false),
                 (RoleEnum.SalesManager, "DeleteArticle",   false),
                 (RoleEnum.SalesManager, "ViewInvoices",    true),
                 (RoleEnum.SalesManager, "CreateInvoice",   true),
@@ -187,6 +190,7 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 // ── StockManager ───────────────────────────
                 (RoleEnum.StockManager, "ManageUsers",     false),
                 (RoleEnum.StockManager, "AssignRoles",     false),
+                (RoleEnum.SystemAdmin, "ManageAuditLogs",  false),
                 (RoleEnum.StockManager, "ViewClients",     false),
                 (RoleEnum.StockManager, "CreateClient",    false),
                 (RoleEnum.StockManager, "UpdateClient",      false),
@@ -211,13 +215,14 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 // ── Accountant ─────────────────────────────
                 (RoleEnum.Accountant, "ManageUsers",     false),
                 (RoleEnum.Accountant, "AssignRoles",     false),
+                (RoleEnum.SystemAdmin, "ManageAuditLogs",false),
                 (RoleEnum.Accountant, "ViewClients",     true),
                 (RoleEnum.Accountant, "CreateClient",    false),
-                (RoleEnum.Accountant, "UpdateClient",      false),
+                (RoleEnum.Accountant, "UpdateClient",    false),
                 (RoleEnum.Accountant, "DeleteClient",    false),
                 (RoleEnum.Accountant, "ViewArticles",    false),
                 (RoleEnum.Accountant, "CreateArticle",   false),
-                (RoleEnum.Accountant, "UpdateArticle",     false),
+                (RoleEnum.Accountant, "UpdateArticle",   false),
                 (RoleEnum.Accountant, "DeleteArticle",   false),
                 (RoleEnum.Accountant, "ViewInvoices",    true),
                 (RoleEnum.Accountant, "CreateInvoice",   false),
