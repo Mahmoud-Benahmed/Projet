@@ -114,6 +114,43 @@ export class AuthService {
       : [payload.privilege];
   }
 
+    get canSeeUsers(): boolean {
+    return this.hasPrivilege('ManageUsers')
+        || this.hasPrivilege('AssignRoles');
+  }
+
+  get canRegisterUsers(): boolean {
+    return this.hasPrivilege('ManageUsers');
+  }
+
+  get canSeePermissions(): boolean {
+    return this.hasPrivilege('AssignRoles');
+  }
+
+
+  get canViewArticles(): boolean {
+    return this.hasPrivilege('ViewArticles');
+  }
+
+  get canManageArticles(): boolean {
+    return this.hasPrivilege('ViewArticles')
+        || this.hasPrivilege('CreateArticle')
+        || this.hasPrivilege('UpdateArticle')
+        || this.hasPrivilege('DeleteArticle');
+  }
+
+  get canSeeAuditLog(): boolean {
+    return this.hasPrivilege('ManageAuditLogs');
+  }
+
+  get isSystemAdmin(): boolean {
+    return this.Role === 'SystemAdmin';
+  }
+
+  get isStockManager(): boolean {
+    return this.Role === 'StockManager';
+  }
+
   hasPrivilege(privilege: string): boolean {
     return this.Privileges.includes(privilege);
   }
