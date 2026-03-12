@@ -22,7 +22,7 @@
       </a>
 
       <!-- Auth & Users (collapsible group) -->
-      <div class="sidebar__group" *ngIf="canSeeUsers">
+      <div class="sidebar__group" *ngIf="authService.canSeeUsers">
         <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
                 [class.sidebar__item--group-open]="openGroups['auth']">
           <mat-icon>manage_accounts</mat-icon>
@@ -34,26 +34,26 @@
             <mat-icon>group</mat-icon> Users
           </a>
           <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
-              *ngIf="canSeeUsers">
+              *ngIf="authService.canSeeUsers">
             <mat-icon>person_off</mat-icon> Deactivated
           </a>
           <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
-              *ngIf="isSystemAdmin">
+              *ngIf="authService.isSystemAdmin">
             <mat-icon>group_remove</mat-icon> Deleted
           </a>
           <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
-              *ngIf="canRegisterUsers">
+              *ngIf="authService.canRegisterUsers">
             <mat-icon>person_add</mat-icon> Register
           </a>
           <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
-              *ngIf="canSeePermissions">
+              *ngIf="authService.canSeePermissions">
             <mat-icon>shield</mat-icon> Permissions
           </a>
         </div>
       </div>
 
       <!-- Articles -->
-      <div class="sidebar__group" *ngIf="canManageArticles">
+      <div class="sidebar__group" *ngIf="authService.canManageArticles">
         <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('articles')" type="button"
                 [class.sidebar__item--group-open]="openGroups['articles']">
           <mat-icon>warehouse</mat-icon>
@@ -63,12 +63,12 @@
 
         <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
           <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}"
-              *ngIf="canViewArticles">
+              *ngIf="authService.canViewArticles">
             <mat-icon>inventory_2</mat-icon>
             <span>Articles</span>
           </a>
           <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
-              *ngIf="isSystemAdmin">
+              *ngIf="authService.isSystemAdmin">
             <mat-icon>recycling</mat-icon>
             <span>Deleted</span>
           </a>
@@ -77,7 +77,7 @@
 
       <!-- Audit Log -->
       <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
-          *ngIf="canSeeAuditLog">
+          *ngIf="authService.canSeeAuditLog">
         <mat-icon>history</mat-icon>
         <span>Audit Log</span>
       </a>
