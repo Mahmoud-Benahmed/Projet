@@ -99,4 +99,42 @@ export class ShellComponent implements OnInit {
   private buildInitials(name: string): string {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'U';
   }
+
+
+  get canSeeUsers(): boolean {
+    return this.authService.hasPrivilege('ManageUsers')
+        || this.authService.hasPrivilege('AssignRoles');
+  }
+
+  get canRegisterUsers(): boolean {
+    return this.authService.hasPrivilege('ManageUsers');
+  }
+
+  get canSeePermissions(): boolean {
+    return this.authService.hasPrivilege('AssignRoles');
+  }
+
+
+  get canViewArticles(): boolean {
+    return this.authService.hasPrivilege('ViewArticles');
+  }
+
+  get canManageArticles(): boolean {
+    return this.authService.hasPrivilege('ViewArticles')
+        || this.authService.hasPrivilege('CreateArticle')
+        || this.authService.hasPrivilege('UpdateArticle')
+        || this.authService.hasPrivilege('DeleteArticle');
+  }
+
+  get canSeeAuditLog(): boolean {
+    return this.authService.hasPrivilege('ManageAuditLogs');
+  }
+
+  get isSystemAdmin(): boolean {
+    return this.authService.Role === 'SystemAdmin';
+  }
+
+  get isStockManager(): boolean {
+    return this.authService.Role === 'StockManager';
+  }
 }
