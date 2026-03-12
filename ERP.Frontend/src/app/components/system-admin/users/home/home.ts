@@ -141,7 +141,7 @@ export class UsersHomeComponent implements OnInit {
       width: '400px',
       data: {
         title: 'Delete User',
-        message: `${user.fullName ?? user.login} will be moved to deleted users. You can restore it later.`,
+        message: `${user.fullName ?? user.login} will be deleted. Do you want to procceed ?`,
         confirmText: 'Delete',
         showCancel: true,
         icon: 'auto_delete',
