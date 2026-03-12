@@ -175,12 +175,15 @@ export class ProfileComponent implements OnInit {
   }
 
   onPasswordChange(): void {
-    const result = checkPassword(this.passwordForm.newPassword);
+    const pwd = this.hasPrivilege
+      ? this.adminChangePasswordForm.newPassword
+      : this.passwordForm.newPassword;
+
+    const result = checkPassword(pwd);
     this.passwordErrors = result.errors;
     this.passwordScore = result.score;
     this.passwordStrength = result.strength;
 
-    // revalidate currentPassword when newPassword changes
     const currentPwdControl = this.passwordFormRef?.controls?.['currentPassword'];
     if (currentPwdControl) {
       currentPwdControl.updateValueAndValidity();
@@ -243,7 +246,13 @@ export class ProfileComponent implements OnInit {
 
 
   generatePassword(): void {
-    this.passwordForm.newPassword = generatePassword();
+    const pwd = generatePassword();
+
+    if (this.hasPrivilege) {
+      this.adminChangePasswordForm.newPassword = pwd;
+    } else {
+      this.passwordForm.newPassword = pwd;
+    }
     if (!this.showNewPassword) this.showNewPassword = true;
     this.onPasswordChange();
   }

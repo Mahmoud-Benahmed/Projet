@@ -238,20 +238,32 @@
               <form class="password-form" #passwordFormRef="ngForm">
 
                 @if(hasPrivilege){
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>New Password</mat-label>
-                    <input matInput
-                          [type]="showNewPassword ? 'text' : 'password'"
-                          [(ngModel)]="adminChangePasswordForm.newPassword"
-                          name="newPassword"
-                          required
-                          [pattern]="passwordPattern"
-                          #newPasswordInput="ngModel" />
-                    <mat-icon matPrefix>lock_open</mat-icon>
-                    <button mat-icon-button matSuffix type="button"
-                            (click)="showNewPassword = !showNewPassword">
-                      <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-                    </button>
+                  <div class="password-group">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>New Password</mat-label>
+                      <input matInput
+                            [type]="showNewPassword ? 'text' : 'password'"
+                            [(ngModel)]="adminChangePasswordForm.newPassword"
+                            (ngModelChange)="onPasswordChange()"
+                            name="newPassword"
+                            required
+                            [pattern]="passwordPattern"
+                            #newPasswordInput="ngModel" />
+                      <mat-icon matPrefix>lock_open</mat-icon>
+                      <button mat-icon-button matSuffix type="button"
+                              (click)="showNewPassword = !showNewPassword">
+                        <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+                      </button>
+                      <mat-error *ngIf="newPasswordInput.errors?.['required'] && newPasswordInput.touched">
+                        New password is required.
+                      </mat-error>
+                      <mat-error *ngIf="newPasswordInput.errors?.['minlength'] && newPasswordInput.touched">
+                        Minimum 8 characters.
+                      </mat-error>
+                      <mat-error *ngIf="newPasswordInput.errors?.['pattern'] && newPasswordInput.touched">
+                        Password contains invalid characters.
+                      </mat-error>
+                    </mat-form-field>
 
                     <!-- Password Meter -->
                     <div class="password-meter" *ngIf="adminChangePasswordForm.newPassword">
@@ -274,14 +286,12 @@
                       </span>
                     </div>
 
-                    <mat-error *ngIf="newPasswordInput.errors?.['minlength']">Minimum 8 characters</mat-error>
-                    <mat-error *ngIf="newPasswordInput.errors?.['sameAsOld']">Must differ from current password</mat-error>
-                  </mat-form-field>
-                  <!-- Generate Button -->
-                  <button mat-stroked-button type="button" (click)="generatePassword()">
-                    <mat-icon>auto_fix_high</mat-icon>
-                    Generate Password
-                  </button>
+                    <!-- Generate Button -->
+                    <button mat-stroked-button type="button" (click)="generatePassword()">
+                      <mat-icon>auto_fix_high</mat-icon>
+                      Generate Password
+                    </button>
+                  </div>
                 }
                 @else{
                         <!-- Current Password -->
@@ -366,7 +376,6 @@
                             Generate Password
                           </button>
                         </div>
-
                 }
 
                 <div class="password-form__actions">
