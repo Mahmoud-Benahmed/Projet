@@ -18,7 +18,11 @@
     &:hover { background: rgba(255,255,255,0.15); }
   }
 
-  @media (max-width: 768px) { padding: 16px; }
+  @media (max-width: 768px) {
+    height: auto;
+    overflow-y: visible;
+    padding: 16px;
+  }
 }
 
 // ── LOADING ───────────────────────────────────────
@@ -118,7 +122,7 @@
   font-weight: 600; font-size: 13px; height: 40px;
   background: $blue-bg; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 14px; transition: all 0.2s;
+  padding: 1rem; transition: all 0.2s;
   mat-icon { font-size: 18px; }
   &:hover {
     background: rgba(78,124,255,0.2);
@@ -366,4 +370,49 @@
 .warning-hint {
   color: $amber; display: flex; align-items: center; gap: 4px;
   mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+// ── CARD COLLAPSE ─────────────────────────────────
+mat-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 1rem; // room for the button
+}
+
+.card-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $text-lo;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: color .2s, background .2s;
+
+  &:hover { color: $text-hi; background: rgba(255,255,255,0.06); }
+
+  mat-icon {
+    font-size: 20px; width: 20px; height: 20px;
+    transition: transform .25s cubic-bezier(0.4, 0, 0.2, 1);
+    &.rotated { transform: rotate(180deg); }
+  }
+}
+
+.card-collapse {
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height .3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity .25s ease;
+  opacity: 1;
+
+  &--closed {
+    max-height: 0;
+    opacity: 0;
+  }
 }

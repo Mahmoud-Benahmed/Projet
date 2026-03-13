@@ -64,293 +64,216 @@
     </mat-card>
 
     <div class="content-grid">
+        <!-- ── INFO CARD ── -->
+        <mat-card class="info-card">
+          <mat-card-header>
+            <mat-card-title class="card-title">
+              <mat-icon>person</mat-icon>
+              Personal Information
+            </mat-card-title>
+            <button class="card-collapse-btn" (click)="infoCollapsed = !infoCollapsed" type="button">
+              <mat-icon [class.rotated]="infoCollapsed">expand_more</mat-icon>
+            </button>
+          </mat-card-header>
 
-      <!-- ── INFO CARD ── -->
-      <mat-card class="info-card">
-        <mat-card-header>
-          <mat-card-title class="card-title">
-            <mat-icon>person</mat-icon>
-            Personal Information
-          </mat-card-title>
-        </mat-card-header>
+          <mat-divider></mat-divider>
 
-        <mat-divider></mat-divider>
+          <div class="card-collapse" [class.card-collapse--closed]="infoCollapsed">
+              <mat-card-content>
 
-        <mat-card-content>
+                <!-- VIEW MODE -->
+                @if(!isEditing){
+                    <div class="info-list">
 
-          <!-- VIEW MODE -->
-          @if(!isEditing){
-              <div class="info-list">
-
-                <div class="info-row" *ngIf="userProfile.fullName">
-                  <span class="info-row__label">
-                    <mat-icon>person</mat-icon> Full Name
-                  </span>
-                  <span class="info-row__value">{{ userProfile.fullName }}</span>
-                </div>
-
-                <mat-divider></mat-divider>
-
-                <div class="info-row" *ngIf="userProfile.login">
-                  <span class="info-row__label">
-                    <mat-icon>badge</mat-icon> Login
-                  </span>
-                  <span class="info-row__value mono">{{ userProfile.login }}</span>
-                </div>
-
-
-
-                <mat-divider></mat-divider>
-
-                <div class="info-row" *ngIf="userProfile.email">
-                  <span class="info-row__label">
-                    <mat-icon>email</mat-icon> Email
-                  </span>
-                  <span class="info-row__value mono">{{ userProfile.email }}</span>
-                </div>
-
-                <mat-divider></mat-divider>
-
-                <mat-divider></mat-divider>
-
-                <div class="info-row" *ngIf="memberSince">
-                  <span class="info-row__label">
-                    <mat-icon>calendar_today</mat-icon> Member Since
-                  </span>
-                  <span class="info-row__value">{{ memberSince }}</span>
-                </div>
-
-                <mat-divider *ngIf="userProfile.updatedAt"></mat-divider>
-
-                <div class="info-row" *ngIf="userProfile.updatedAt">
-                  <span class="info-row__label">
-                    <mat-icon>update</mat-icon> Last Updated
-                  </span>
-                  <span class="info-row__value">
-                    {{ userProfile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
-                  </span>
-                </div>
-
-              </div>
-          }
-
-          <!-- EDIT MODE -->
-          <form class="edit-form" *ngIf="isEditing"  #editFormRef="ngForm">
-
-           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Full Name</mat-label>
-            <input matInput
-                  [(ngModel)]="editForm.fullName"
-                  name="fullName"
-                  required
-                  [pattern]="fullNamePattern"
-                  #fullNameInput="ngModel"
-                  (ngModelChange)="checkChanges()"/>
-            <mat-icon matPrefix>badge</mat-icon>
-            <mat-error *ngIf="fullNameInput.errors?.['required']">Full name requis</mat-error>
-            <mat-error *ngIf="fullNameInput.errors?.['pattern']">Lettres uniquement (ex: Jean Dupont)</mat-error>
-            <mat-hint *ngIf="noDataChange" class="warning-hint">
-              <mat-icon>warning</mat-icon> Crendentials hasn't been changed
-            </mat-hint>
-          </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Email</mat-label>
-              <input matInput
-                    type="email"
-                    name="email"
-                    [(ngModel)]="editForm.email"
-                    required
-                    [pattern]="emailPattern"
-                    email
-                    #emailInput="ngModel"
-                    (ngModelChange)="checkChanges()"/>
-              <mat-icon matPrefix>email</mat-icon>
-              <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
-              <mat-error *ngIf="emailInput.errors?.['pattern']">Email invalide</mat-error>
-            </mat-form-field>
-
-            <div class="edit-form__actions">
-              <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
-                Cancel
-              </button>
-              <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving || editFormRef.invalid || noDataChange">
-                  <mat-spinner diameter="16" *ngIf="isSaving"/>
-                {{ isSaving ? 'Saving…' : 'Save Changes' }}
-              </button>
-            </div>
-
-          </form>
-
-        </mat-card-content>
-      </mat-card>
-
-      <!-- ── ACCOUNT CARD ── -->
-      <mat-card class="account-card">
-        <mat-card-header>
-          <mat-card-title class="card-title">
-            <mat-icon>manage_accounts</mat-icon>
-            Account Details
-          </mat-card-title>
-        </mat-card-header>
-
-        <mat-divider></mat-divider>
-
-        <mat-card-content>
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
-              <span class="info-row__value mono small">{{ userProfile.id }}</span>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="info-row">
-              <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
-              <span class="info-row__value">
-                <span class="status-dot" [class.status-dot--active]="userProfile.isActive"></span>
-                {{ userProfile.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="info-row">
-              <span class="info-row__label"><mat-icon>login</mat-icon> Last Login</span>
-              <span class="info-row__value">
-                {{ userProfile.lastLoginAt| date:('dd MMM yyyy, HH:mm') : '—' }}
-              </span>
-            </div>
-          </div>
-        </mat-card-content>
-
-        <ng-container *ngIf="canEditProfile">
-            <mat-divider></mat-divider>
-
-            <div class="section-header" (click)="togglePasswordForm()">
-              <span class="section-header__title">
-                <mat-icon>lock_reset</mat-icon>
-                Change Password
-              </span>
-              <mat-icon class="section-header__chevron"
-                        [class.section-header__chevron--open]="showPasswordForm">
-                expand_more
-              </mat-icon>
-            </div>
-
-            <div class="form-collapse" [class.form-collapse--open]="showPasswordForm">
-              <form class="password-form" #passwordFormRef="ngForm">
-
-                @if(hasPrivilege){
-                  <div class="password-group">
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>New Password</mat-label>
-                      <input matInput
-                            [type]="showNewPassword ? 'text' : 'password'"
-                            [(ngModel)]="adminChangePasswordForm.newPassword"
-                            (ngModelChange)="onPasswordChange()"
-                            name="newPassword"
-                            required
-                            [pattern]="passwordPattern"
-                            #newPasswordInput="ngModel" />
-                      <mat-icon matPrefix>lock_open</mat-icon>
-                      <button mat-icon-button matSuffix type="button"
-                              (click)="showNewPassword = !showNewPassword">
-                        <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
-                      </button>
-                      <mat-error *ngIf="newPasswordInput.errors?.['required'] && newPasswordInput.touched">
-                        New password is required.
-                      </mat-error>
-                      <mat-error *ngIf="newPasswordInput.errors?.['minlength'] && newPasswordInput.touched">
-                        Minimum 8 characters.
-                      </mat-error>
-                      <mat-error *ngIf="newPasswordInput.errors?.['pattern'] && newPasswordInput.touched">
-                        Password contains invalid characters.
-                      </mat-error>
-                    </mat-form-field>
-
-                    <!-- Password Meter -->
-                    <div class="password-meter" *ngIf="adminChangePasswordForm.newPassword">
-                      <div class="password-meter__bars">
-                        <div class="bar"
-                          *ngFor="let bar of [1,2,3,4]"
-                          [class.bar--filled]="getScore() >= bar"
-                          [ngClass]="getStrengthClass()">
-                        </div>
+                      <div class="info-row" *ngIf="userProfile.fullName">
+                        <span class="info-row__label">
+                          <mat-icon>person</mat-icon> Full Name
+                        </span>
+                        <span class="info-row__value">{{ userProfile.fullName }}</span>
                       </div>
-                      <span class="password-meter__label" [ngClass]="getStrengthClass()">
-                        {{ getStrengthLabel() }}
-                      </span>
-                    </div>
 
-                    <!-- Password Errors -->
-                    <div class="password-errors" *ngIf="passwordErrors.length > 0 && adminChangePasswordForm.newPassword">
-                      <span *ngFor="let error of passwordErrors" class="password-error">
-                        <mat-icon>error_outline</mat-icon>{{ error }}
-                      </span>
-                    </div>
+                      <mat-divider></mat-divider>
 
-                    <!-- Generate Button -->
-                    <button mat-stroked-button type="button" (click)="generatePassword()">
-                      <mat-icon>auto_fix_high</mat-icon>
-                      Generate Password
+                      <div class="info-row" *ngIf="userProfile.login">
+                        <span class="info-row__label">
+                          <mat-icon>badge</mat-icon> Login
+                        </span>
+                        <span class="info-row__value mono">{{ userProfile.login }}</span>
+                      </div>
+
+
+
+                      <mat-divider></mat-divider>
+
+                      <div class="info-row" *ngIf="userProfile.email">
+                        <span class="info-row__label">
+                          <mat-icon>email</mat-icon> Email
+                        </span>
+                        <span class="info-row__value mono">{{ userProfile.email }}</span>
+                      </div>
+
+                      <mat-divider></mat-divider>
+
+                      <mat-divider></mat-divider>
+
+                      <div class="info-row" *ngIf="memberSince">
+                        <span class="info-row__label">
+                          <mat-icon>calendar_today</mat-icon> Member Since
+                        </span>
+                        <span class="info-row__value">{{ memberSince }}</span>
+                      </div>
+
+                      <mat-divider *ngIf="userProfile.updatedAt"></mat-divider>
+
+                      <div class="info-row" *ngIf="userProfile.updatedAt">
+                        <span class="info-row__label">
+                          <mat-icon>update</mat-icon> Last Updated
+                        </span>
+                        <span class="info-row__value">
+                          {{ userProfile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
+                        </span>
+                      </div>
+
+                    </div>
+                }
+
+                <!-- EDIT MODE -->
+                <form class="edit-form" *ngIf="isEditing"  #editFormRef="ngForm">
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Full Name</mat-label>
+                  <input matInput
+                        [(ngModel)]="editForm.fullName"
+                        name="fullName"
+                        required
+                        [pattern]="fullNamePattern"
+                        #fullNameInput="ngModel"
+                        (ngModelChange)="checkChanges()"/>
+                  <mat-icon matPrefix>badge</mat-icon>
+                  <mat-error *ngIf="fullNameInput.errors?.['required']">Full name requis</mat-error>
+                  <mat-error *ngIf="fullNameInput.errors?.['pattern']">Lettres uniquement (ex: Jean Dupont)</mat-error>
+                  <mat-hint *ngIf="noDataChange" class="warning-hint">
+                    <mat-icon>warning</mat-icon> Crendentials hasn't been changed
+                  </mat-hint>
+                </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Email</mat-label>
+                    <input matInput
+                          type="email"
+                          name="email"
+                          [(ngModel)]="editForm.email"
+                          required
+                          [pattern]="emailPattern"
+                          email
+                          #emailInput="ngModel"
+                          (ngModelChange)="checkChanges()"/>
+                    <mat-icon matPrefix>email</mat-icon>
+                    <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
+                    <mat-error *ngIf="emailInput.errors?.['pattern']">Email invalide</mat-error>
+                  </mat-form-field>
+
+                  <div class="edit-form__actions">
+                    <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
+                      Cancel
+                    </button>
+                    <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving || editFormRef.invalid || noDataChange">
+                        <mat-spinner diameter="16" *ngIf="isSaving"/>
+                      {{ isSaving ? 'Saving…' : 'Save Changes' }}
                     </button>
                   </div>
-                }
-                @else{
-                        <!-- Current Password -->
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Current Password</mat-label>
-                          <mat-icon matPrefix>lock</mat-icon>
-                          <input matInput
-                            [type]="showCurrentPassword ? 'text' : 'password'"
-                            name="currentPassword"
-                            [sameAs]="'newPassword'"
-                            [pattern]="passwordPattern"
-                            [(ngModel)]="passwordForm.currentPassword"
-                            (ngModelChange)="onCurrentPasswordChange()"
-                            required
-                            #currentPwd="ngModel"/>
-                          <button mat-icon-button matSuffix type="button"
-                            (click)="showCurrentPassword = !showCurrentPassword">
-                            <mat-icon>{{ showCurrentPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-                          </button>
-                          <mat-error *ngIf="currentPwd.errors?.['required'] && currentPwd.touched">
-                            Current password is required.
-                          </mat-error>
-                          <mat-error *ngIf="currentPwd.errors?.['sameAs'] && currentPwd.touched">
-                            Current password must differ from the new one.
-                          </mat-error>
-                        </mat-form-field>
 
+                </form>
 
-                         <!-- New Password -->
+              </mat-card-content>
+          </div>
+        </mat-card>
+
+        <!-- ── ACCOUNT CARD ── -->
+        <mat-card class="account-card">
+          <mat-card-header>
+            <mat-card-title class="card-title">
+              <mat-icon>manage_accounts</mat-icon>
+              Account Details
+            </mat-card-title>
+            <button class="card-collapse-btn" (click)="accountCollapsed = !accountCollapsed" type="button">
+              <mat-icon [class.rotated]="accountCollapsed">expand_more</mat-icon>
+            </button>
+          </mat-card-header>
+
+          <mat-divider></mat-divider>
+
+          <div class="card-collapse" [class.card-collapse--closed]="accountCollapsed">
+            <mat-card-content>
+              <div class="info-list">
+                <div class="info-row">
+                  <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
+                  <span class="info-row__value mono small">{{ userProfile.id }}</span>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="info-row">
+                  <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
+                  <span class="info-row__value">
+                    <span class="status-dot" [class.status-dot--active]="userProfile.isActive"></span>
+                    {{ userProfile.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="info-row">
+                  <span class="info-row__label"><mat-icon>login</mat-icon> Last Login</span>
+                  <span class="info-row__value">
+                    {{ userProfile.lastLoginAt| date:('dd MMM yyyy, HH:mm') : '—' }}
+                  </span>
+                </div>
+              </div>
+              
+              <ng-container *ngIf="canEditProfile">
+                  <mat-divider></mat-divider>
+
+                  <div class="section-header" (click)="togglePasswordForm()">
+                    <span class="section-header__title">
+                      <mat-icon>lock_reset</mat-icon>
+                      Change Password
+                    </span>
+                    <mat-icon class="section-header__chevron"
+                              [class.section-header__chevron--open]="showPasswordForm">
+                      expand_more
+                    </mat-icon>
+                  </div>
+
+                  <div class="form-collapse" [class.form-collapse--open]="showPasswordForm">
+                    <form class="password-form" #passwordFormRef="ngForm">
+
+                      @if(hasPrivilege){
                         <div class="password-group">
                           <mat-form-field appearance="outline" class="full-width">
                             <mat-label>New Password</mat-label>
-                            <mat-icon matPrefix>lock_open</mat-icon>
                             <input matInput
-                              [type]="showNewPassword ? 'text' : 'password'"
-                              name="newPassword"
-                              [(ngModel)]="passwordForm.newPassword"
-                              (ngModelChange)="onPasswordChange()"
-                              required
-                              [pattern]="passwordPattern"
-                              [notSameAs]="'currentPassword'"
-                              #newPwd="ngModel"/>
+                                  [type]="showNewPassword ? 'text' : 'password'"
+                                  [(ngModel)]="adminChangePasswordForm.newPassword"
+                                  (ngModelChange)="onPasswordChange()"
+                                  name="newPassword"
+                                  required
+                                  [pattern]="passwordPattern"
+                                  #newPasswordInput="ngModel" />
+                            <mat-icon matPrefix>lock_open</mat-icon>
                             <button mat-icon-button matSuffix type="button"
-                              (click)="showNewPassword = !showNewPassword">
-                              <mat-icon>{{ showNewPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                    (click)="showNewPassword = !showNewPassword">
+                              <mat-icon>{{ showNewPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
                             </button>
-                            <mat-error *ngIf="newPwd.errors?.['required'] && newPwd.touched">
+                            <mat-error *ngIf="newPasswordInput.errors?.['required'] && newPasswordInput.touched">
                               New password is required.
                             </mat-error>
-                            <mat-error *ngIf="newPwd.errors?.['minlength'] && newPwd.touched">
+                            <mat-error *ngIf="newPasswordInput.errors?.['minlength'] && newPasswordInput.touched">
                               Minimum 8 characters.
                             </mat-error>
-                            <mat-error *ngIf="newPwd.errors?.['notSameAs'] && newPwd.touched">
-                              New password must differ from the current one.
+                            <mat-error *ngIf="newPasswordInput.errors?.['pattern'] && newPasswordInput.touched">
+                              Password contains invalid characters.
                             </mat-error>
                           </mat-form-field>
 
                           <!-- Password Meter -->
-                          <div class="password-meter" *ngIf="passwordForm.newPassword">
+                          <div class="password-meter" *ngIf="adminChangePasswordForm.newPassword">
                             <div class="password-meter__bars">
                               <div class="bar"
                                 *ngFor="let bar of [1,2,3,4]"
@@ -364,7 +287,7 @@
                           </div>
 
                           <!-- Password Errors -->
-                          <div class="password-errors" *ngIf="passwordErrors.length > 0 && passwordForm.newPassword">
+                          <div class="password-errors" *ngIf="passwordErrors.length > 0 && adminChangePasswordForm.newPassword">
                             <span *ngFor="let error of passwordErrors" class="password-error">
                               <mat-icon>error_outline</mat-icon>{{ error }}
                             </span>
@@ -376,26 +299,113 @@
                             Generate Password
                           </button>
                         </div>
-                }
+                      }
+                      @else{
+                              <!-- Current Password -->
+                              <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Current Password</mat-label>
+                                <mat-icon matPrefix>lock</mat-icon>
+                                <input matInput
+                                  [type]="showCurrentPassword ? 'text' : 'password'"
+                                  name="currentPassword"
+                                  [sameAs]="'newPassword'"
+                                  [pattern]="passwordPattern"
+                                  [(ngModel)]="passwordForm.currentPassword"
+                                  (ngModelChange)="onCurrentPasswordChange()"
+                                  required
+                                  #currentPwd="ngModel"/>
+                                <button mat-icon-button matSuffix type="button"
+                                  (click)="showCurrentPassword = !showCurrentPassword">
+                                  <mat-icon>{{ showCurrentPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                </button>
+                                <mat-error *ngIf="currentPwd.errors?.['required'] && currentPwd.touched">
+                                  Current password is required.
+                                </mat-error>
+                                <mat-error *ngIf="currentPwd.errors?.['sameAs'] && currentPwd.touched">
+                                  Current password must differ from the new one.
+                                </mat-error>
+                              </mat-form-field>
 
-                <div class="password-form__actions">
-                  <button mat-button class="cancel-btn" type="button"
-                          (click)="togglePasswordForm()" [disabled]="isChangingPassword">
-                    Cancel
-                  </button>
-                  <button mat-flat-button class="save-btn" type="button"
-                          (click)="changePassword(passwordFormRef)"
-                          [disabled]="passwordFormRef.invalid || isChangingPassword">
-                    <mat-spinner diameter="16" *ngIf="isChangingPassword"></mat-spinner>
-                    <mat-icon *ngIf="!isChangingPassword">check</mat-icon>
-                    {{ isChangingPassword ? 'Saving…' : 'Update Password' }}
-                  </button>
-                </div>
 
-              </form>
-            </div>
-        </ng-container>
+                              <!-- New Password -->
+                              <div class="password-group">
+                                <mat-form-field appearance="outline" class="full-width">
+                                  <mat-label>New Password</mat-label>
+                                  <mat-icon matPrefix>lock_open</mat-icon>
+                                  <input matInput
+                                    [type]="showNewPassword ? 'text' : 'password'"
+                                    name="newPassword"
+                                    [(ngModel)]="passwordForm.newPassword"
+                                    (ngModelChange)="onPasswordChange()"
+                                    required
+                                    [pattern]="passwordPattern"
+                                    [notSameAs]="'currentPassword'"
+                                    #newPwd="ngModel"/>
+                                  <button mat-icon-button matSuffix type="button"
+                                    (click)="showNewPassword = !showNewPassword">
+                                    <mat-icon>{{ showNewPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                  </button>
+                                  <mat-error *ngIf="newPwd.errors?.['required'] && newPwd.touched">
+                                    New password is required.
+                                  </mat-error>
+                                  <mat-error *ngIf="newPwd.errors?.['minlength'] && newPwd.touched">
+                                    Minimum 8 characters.
+                                  </mat-error>
+                                  <mat-error *ngIf="newPwd.errors?.['notSameAs'] && newPwd.touched">
+                                    New password must differ from the current one.
+                                  </mat-error>
+                                </mat-form-field>
 
-      </mat-card>
+                                <!-- Password Meter -->
+                                <div class="password-meter" *ngIf="passwordForm.newPassword">
+                                  <div class="password-meter__bars">
+                                    <div class="bar"
+                                      *ngFor="let bar of [1,2,3,4]"
+                                      [class.bar--filled]="getScore() >= bar"
+                                      [ngClass]="getStrengthClass()">
+                                    </div>
+                                  </div>
+                                  <span class="password-meter__label" [ngClass]="getStrengthClass()">
+                                    {{ getStrengthLabel() }}
+                                  </span>
+                                </div>
 
+                                <!-- Password Errors -->
+                                <div class="password-errors" *ngIf="passwordErrors.length > 0 && passwordForm.newPassword">
+                                  <span *ngFor="let error of passwordErrors" class="password-error">
+                                    <mat-icon>error_outline</mat-icon>{{ error }}
+                                  </span>
+                                </div>
+
+                                <!-- Generate Button -->
+                                <button mat-stroked-button type="button" (click)="generatePassword()">
+                                  <mat-icon>auto_fix_high</mat-icon>
+                                  Generate Password
+                                </button>
+                              </div>
+                      }
+
+                      <div class="password-form__actions">
+                        <button mat-button class="cancel-btn" type="button"
+                                (click)="togglePasswordForm()" [disabled]="isChangingPassword">
+                          Cancel
+                        </button>
+                        <button mat-flat-button class="save-btn" type="button"
+                                (click)="changePassword(passwordFormRef)"
+                                [disabled]="passwordFormRef.invalid || isChangingPassword">
+                          <mat-spinner diameter="16" *ngIf="isChangingPassword"></mat-spinner>
+                          <mat-icon *ngIf="!isChangingPassword">check</mat-icon>
+                          {{ isChangingPassword ? 'Saving…' : 'Update Password' }}
+                        </button>
+                      </div>
+
+                    </form>
+                  </div>
+              </ng-container>
+            </mat-card-content>
+          </div>
+        </mat-card>
+    </div>
+
+  </ng-container>
 </div>
