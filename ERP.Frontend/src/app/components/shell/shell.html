@@ -1,4 +1,101 @@
 <div class="shell-layout" [class.shell-layout--collapsed]="collapsed">
+  <!-- ══════════ MOBILE NAV DRAWER ══════════ -->
+  <div class="mobile-nav" *ngIf="mobileNavOpen"
+      [class.mobile-nav--closing]="mobileNavClosing">
+    <div class="mobile-nav__backdrop" (click)="closeMobileNav()"></div>
+    <nav class="mobile-nav__drawer">
+
+      <!-- Logo / close -->
+      <div class="sidebar__logo" style="justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div class="sidebar__logo-icon">E</div>
+          <span class="sidebar__logo-text">ERPSuite</span>
+        </div>
+        <button class="sidebar__toggle" (click)="closeMobileNav()" type="button">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Reuse exact same nav items as the sidebar -->
+      <div style="padding: 10px 8px; flex:1;">
+
+        <a class="sidebar__item" routerLink="/home" routerLinkActive="sidebar__item--active"
+          [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+          <mat-icon>home</mat-icon><span>Home</span>
+        </a>
+
+        <div class="sidebar__group" *ngIf="authService.canSeeUsers">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['auth']">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>Auth & Users</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['auth']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['auth']">
+            <a class="sidebar__subitem" routerLink="/users" routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+              <mat-icon>group</mat-icon> Users
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canSeeUsers" (click)="closeMobileNav()">
+              <mat-icon>person_off</mat-icon> Deactivated
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.isSystemAdmin" (click)="closeMobileNav()">
+              <mat-icon>group_remove</mat-icon> Deleted
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRegisterUsers" (click)="closeMobileNav()">
+              <mat-icon>person_add</mat-icon> Register
+            </a>
+            <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canSeePermissions" (click)="closeMobileNav()">
+              <mat-icon>shield</mat-icon> Permissions
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar__group" *ngIf="authService.canManageArticles">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('articles')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['articles']">
+            <mat-icon>warehouse</mat-icon>
+            <span>Articles</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['articles']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
+            <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active"
+              [routerLinkActiveOptions]="{exact:true}" *ngIf="authService.canViewArticles" (click)="closeMobileNav()">
+              <mat-icon>inventory_2</mat-icon><span>Articles</span>
+            </a>
+            <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
+              *ngIf="authService.isSystemAdmin" (click)="closeMobileNav()">
+              <mat-icon>recycling</mat-icon><span>Deleted</span>
+            </a>
+          </div>
+        </div>
+
+        <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
+          *ngIf="authService.canSeeAuditLog" (click)="closeMobileNav()">
+          <mat-icon>history</mat-icon><span>Audit Log</span>
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <div class="sidebar__footer">
+        <div class="sidebar__user" [routerLink]="['/profile']" (click)="closeMobileNav()" style="cursor:pointer;">
+          <div class="sidebar__avatar">{{ initials }}</div>
+          <div class="sidebar__user-info">
+            <span class="sidebar__user-name">{{ userName }}</span>
+            <span class="sidebar__user-role">{{ userRole }}</span>
+          </div>
+        </div>
+        <button class="sidebar__logout" (click)="onLogout()" matTooltip="Logout" type="button">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+
+    </nav>
+  </div>
 
   <!-- ══════════ SIDEBAR ══════════ -->
   <aside class="sidebar">
@@ -110,9 +207,9 @@
     <!-- Topbar -->
     <header class="shell-topbar">
       <div class="shell-topbar__left">
-        <span class="shell-topbar__menu-btn">
+        <button class="shell-topbar__menu-btn" (click)="toggleNav()" type="button">
           <mat-icon>menu</mat-icon>
-        </span>
+        </button>
         <div class="shell-topbar__breadcrumb">
           <span class="shell-topbar__breadcrumb-root">ERPSuite</span>
           <mat-icon>chevron_right</mat-icon>
@@ -139,7 +236,7 @@
           <mat-icon>notifications</mat-icon>
           <span class="shell-topbar__badge">3</span>
         </div>
-        <div class="shell-topbar__profile">
+        <div class="shell-topbar__profile" [routerLink]="['/profile']" style="cursor:pointer;">
           <div class="shell-topbar__avatar">{{ initials }}</div>
           <div class="shell-topbar__profile-info">
             <span class="shell-topbar__profile-name">{{ userName }}</span>

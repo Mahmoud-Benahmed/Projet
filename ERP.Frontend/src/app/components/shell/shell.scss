@@ -278,3 +278,100 @@ body, html {
   padding: 26px 28px;
   background: $bg-page;
 }
+
+// ══════════════════════════════════
+// MOBILE  (≤ 768px)
+// ══════════════════════════════════
+$bp-mobile: 768px;
+
+@media (max-width: $bp-mobile) {
+
+  .sidebar { display: none; }
+
+  // ── Fix scroll chain
+  .shell-layout {
+    flex-direction: column;
+    height: auto;        // ← don't lock to viewport
+  }
+
+  .shell-main {
+    margin-left: 0 !important;
+    width: 100%;
+    min-height: unset;   // ← this is the main culprit
+    overflow: visible;
+  }
+
+  .shell-content {
+    padding: 16px 14px;
+    overflow: visible;
+    height: auto;
+  }
+
+  .shell-topbar {
+    padding: 0 14px;
+    &__profile-info { display: none; }
+  }
+
+  // ← This is the only place menu-btn display is overridden
+  .shell-topbar__menu-btn {
+    display: flex;
+  }
+
+
+  .mobile-nav {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+
+    &__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      animation: fadeIn .2s ease forwards;
+    }
+
+    &__drawer {
+      position: relative;
+      width: 260px;
+      max-width: 80vw;
+      background: $sidebar-bg;
+      border-right: 1px solid $sidebar-border;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInLeft .22s $ease forwards;
+    }
+
+    // ── Closing state: reverse both animations
+    &--closing {
+      .mobile-nav__backdrop {
+        animation: fadeOut .2s ease forwards;
+      }
+      .mobile-nav__drawer {
+        animation: slideOutLeft .22s $ease forwards;
+      }
+    }
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes slideOutLeft {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+}
