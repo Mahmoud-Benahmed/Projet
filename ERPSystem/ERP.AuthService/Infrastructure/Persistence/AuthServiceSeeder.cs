@@ -44,23 +44,27 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 ("Clients", "CreateClient",  "Create a new client"),
                 ("Clients", "UpdateClient",  "Edit an existing client"),
                 ("Clients", "DeleteClient",  "Delete a client"),
+                ("Clients", "RestoreClient",  "Restore deleted client"),
 
                 // Articles
                 ("Articles", "ViewArticles",  "View article list and details"),
                 ("Articles", "CreateArticle", "Create a new article"),
                 ("Articles", "UpdateArticle",   "Edit an existing article"),
                 ("Articles", "DeleteArticle", "Delete an article"),
+                ("Articles", "RestoreArticle", "Restore deleted article"),
 
                 // Facturation
                 ("Facturation", "ViewInvoices",    "View invoice list and details"),
                 ("Facturation", "CreateInvoice",   "Create a new invoice"),
                 ("Facturation", "ValidateInvoice", "Validate an invoice"),
                 ("Facturation", "DeleteInvoice",   "Delete an invoice"),
+                ("Facturation", "RestoreInvoice",   "Restore deleted invoice"),
 
                 // Paiements
                 ("Paiements", "ViewPayments",   "View payment list and details"),
                 ("Paiements", "RecordPayment",  "Record a new payment"),
                 ("Paiements", "DeletePayment",  "Delete a payment"),
+                ("Paiements", "RestorePayment",  "Restore deleted payment"),
 
                 // Stocks
                 ("Stocks", "ViewStock",    "View stock levels"),
@@ -162,6 +166,11 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 (RoleEnum.SystemAdmin, "ViewReports",     true),
                 (RoleEnum.SystemAdmin, "ExportReports",   true),
 
+                (RoleEnum.SystemAdmin, "RestoreClient",   true),
+                (RoleEnum.SystemAdmin, "RestoreArticle",  true),
+                (RoleEnum.SystemAdmin, "RestoreInvoice",  true),
+                (RoleEnum.SystemAdmin, "RestorePayment",  true),
+
                 // ── SalesManager ───────────────────────────
                 (RoleEnum.SalesManager, "ManageUsers",     false),
                 (RoleEnum.SalesManager, "AssignRoles",     false),
@@ -186,6 +195,12 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 (RoleEnum.SalesManager, "AddEntry",        false),
                 (RoleEnum.SalesManager, "ViewReports",     true),
                 (RoleEnum.SalesManager, "ExportReports",   false),
+
+                (RoleEnum.SystemAdmin, "RestoreClient",   false),
+                (RoleEnum.SystemAdmin, "RestoreArticle",  false),
+                (RoleEnum.SystemAdmin, "RestoreInvoice",  false),
+                (RoleEnum.SystemAdmin, "RestorePayment",  false),
+
 
                 // ── StockManager ───────────────────────────
                 (RoleEnum.StockManager, "ManageUsers",     false),
@@ -212,6 +227,12 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 (RoleEnum.StockManager, "ViewReports",     true),
                 (RoleEnum.StockManager, "ExportReports",   false),
 
+                (RoleEnum.SystemAdmin, "RestoreClient",   false),
+                (RoleEnum.SystemAdmin, "RestoreArticle",  false),
+                (RoleEnum.SystemAdmin, "RestoreInvoice",  false),
+                (RoleEnum.SystemAdmin, "RestorePayment",  false),
+
+
                 // ── Accountant ─────────────────────────────
                 (RoleEnum.Accountant, "ManageUsers",     false),
                 (RoleEnum.Accountant, "AssignRoles",     false),
@@ -236,6 +257,12 @@ namespace ERP.AuthService.Infrastructure.Persistence
                 (RoleEnum.Accountant, "AddEntry",        false),
                 (RoleEnum.Accountant, "ViewReports",     true),
                 (RoleEnum.Accountant, "ExportReports",   true),
+
+                (RoleEnum.SystemAdmin, "RestoreClient",   false),
+                (RoleEnum.SystemAdmin, "RestoreArticle",  false),
+                (RoleEnum.SystemAdmin, "RestoreInvoice",  false),
+                (RoleEnum.SystemAdmin, "RestorePayment",  false),
+
             };
 
             foreach (var (roleEnum, controleName, isGranted) in matrix)
