@@ -46,6 +46,9 @@ export class ProfileComponent implements OnInit {
 
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
 
+  infoCollapsed    = false;
+  accountCollapsed = false;
+
   userProfile: AuthUserGetResponseDto|null = null;
   isLoading = true;
   isEditing = false;

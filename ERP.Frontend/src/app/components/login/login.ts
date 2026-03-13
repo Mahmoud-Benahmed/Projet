@@ -87,7 +87,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.stopLoading();
-        if (error.status === 0) return;
+        if ([0, 403, 429].includes(error.status)) return;
         let err = error.error as HttpError
         this.dialog.open(ModalComponent, {
               width: '400px',

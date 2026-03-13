@@ -12,7 +12,7 @@ $text-hi:     var(--text-hi);
 $text-mid:    var(--text-mid);
 $text-lo:     var(--text-lo);
 
-// Color accents stay hardcoded — they don't change between themes
+// Color accents
 $blue:         #4e7cff;
 $blue-bg:      rgba(78, 124, 255, 0.12);
 $blue-border:  rgba(78, 124, 255, 0.3);
@@ -40,6 +40,14 @@ $yellow-bg:    rgba(255, 193, 7, 0.12);
 $yellow-border:rgba(255, 193, 7, 0.3);
 
 // ========================
+// Breakpoints
+// ========================
+$bp-sm:  480px;
+$bp-md:  768px;
+$bp-lg:  900px;
+$bp-xl:  1200px;
+
+// ========================
 // Base
 // ========================
 .page {
@@ -49,6 +57,13 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   color: $text-hi;
   padding: 2rem 2.5rem;
   box-sizing: border-box;
+
+  @media (max-width: $bp-lg) { padding: 1.5rem 1.5rem; }
+  @media (max-width: $bp-md) { padding: 1.25rem 1rem; }
+  @media (max-width: $bp-sm) {
+    padding: 1rem 0.75rem;
+    min-height: unset; // ← remove double viewport lock on mobile
+  }
 
   animation: fadeRight .5s ease both;
   @keyframes fadeRight {
@@ -65,6 +80,15 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 2rem;
+  gap: 1rem;
+
+  // Stack header content vertically on small screens
+  @media (max-width: $bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+    gap: 0.75rem;
+  }
 }
 
 .breadcrumb {
@@ -80,6 +104,9 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   color: $text-hi;
   margin: 0;
   letter-spacing: -0.03em;
+
+  @media (max-width: $bp-md) { font-size: 1.5rem; }
+  @media (max-width: $bp-sm) { font-size: 1.3rem; }
 }
 
 .page-size-select {
@@ -106,6 +133,11 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   margin-bottom: 1.25rem;
   animation: fadeIn 0.2s ease;
 
+  @media (max-width: $bp-sm) {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.75rem;
+  }
+
   &--error   { background: $red-bg;   border: 1px solid $red-border;   color: #f08080; }
   &--success { background: $green-bg; border: 1px solid $green-border; color: $green; }
 }
@@ -125,10 +157,13 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 // ========================
 .stats-grid {
   display: grid;
+  // Desktop: 3 columns | Tablet: 2 | Mobile: 1 (or 2 for sm)
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 1.75rem;
-  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+
+  @media (max-width: $bp-lg)  { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: $bp-sm)  { grid-template-columns: 1fr; gap: 0.75rem; }
 }
 
 .stat-card {
@@ -137,6 +172,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   padding: 1.25rem 1.5rem;
   border: 1px solid $border;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
+
+  @media (max-width: $bp-sm) { padding: 1rem 1.1rem; }
 
   &:hover { background: $bg-card-hi; transform: translateY(-2px); cursor: pointer; }
 
@@ -154,7 +191,6 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   &--current {
     cursor: default;
     pointer-events: none;
-
     &.stat-card--green { background: $green-bg; border-color: $green; .stat-card__value { color: $green; } }
     &.stat-card--red   { background: $red-bg;   border-color: $red;   .stat-card__value { color: $red; } }
   }
@@ -182,6 +218,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     margin: 0;
     line-height: 1;
     letter-spacing: -0.04em;
+
+    @media (max-width: $bp-sm) { font-size: 1.65rem; }
   }
 
   &__icon {
@@ -207,12 +245,24 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   gap: 1rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
+
+  // On mobile: stack vertically, full-width children
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
 }
 
 .search-wrap {
   position: relative;
   flex: 1;
   max-width: 380px;
+
+  // Allow full width on mobile
+  @media (max-width: $bp-sm) {
+    max-width: 100%;
+  }
 }
 
 .search-icon {
@@ -252,6 +302,13 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, transform 0.1s;
+
+  @media (max-width: $bp-sm) {
+    width: 100%;
+    padding: 0.7rem 1.4rem;
+    text-align: center;
+  }
+
   &:hover    { background: #6b94ff }
   &:active   { transform: scale(0.98); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -266,6 +323,12 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   border-radius: 12px;
   overflow: hidden;
   position: relative;
+}
+
+// Wrap the table itself to allow horizontal scroll on mobile
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .loading-overlay {
@@ -288,6 +351,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 .table {
   width: 100%;
   border-collapse: collapse;
+  // Prevent table from collapsing below its minimum content width
+  min-width: 560px;
 
   thead tr { background: $bg-card-hi; border-bottom: 1px solid $border; }
 
@@ -299,6 +364,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     color: $text-mid;
     text-align: left;
     white-space: nowrap;
+
+    @media (max-width: $bp-md) { padding: 0.75rem 0.9rem; }
   }
 
   td {
@@ -307,6 +374,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     color: $text-hi;
     border-bottom: 1px solid $border;
     vertical-align: middle;
+
+    @media (max-width: $bp-md) { padding: 0.75rem 0.9rem; }
   }
 
   &__row {
@@ -329,6 +398,11 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 .td--actions { white-space: nowrap; }
 .td--empty   { text-align: center; color: $text-lo; padding: 3rem !important; font-size: 0.9rem; }
 
+
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; // smooth momentum scroll on iOS
+}
 // ========================
 // Badges
 // ========================
@@ -355,7 +429,6 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   border: 1px solid $blue-border;
 }
 
-
 // =======================
 // Chips
 // =======================
@@ -375,7 +448,6 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     font-size: 12px;
     font-weight: 600;
 
-    // FIX: target the actual rendered text span directly
     .mdc-evolution-chip__text-label {
       color: var(--chip-role-color) !important;
     }
@@ -385,6 +457,7 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     .mat-mdc-chip-ripple { display: none; }
   }
 }
+
 // ========================
 // Action Buttons
 // ========================
@@ -401,17 +474,19 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   transition: all 0.15s;
   color: $text-mid;
 
-  &--view:hover       { background: $blue-bg;  border-color: $blue-border;  color: $blue; }
-  &--edit:hover       { background: $amber-bg; border-color: $amber-border; color: $amber; }
-  &--delete:hover     { background: $red-bg;   border-color: $red-border;   color: $red; }
-  &--deactivate:hover { background: $orange-bg;   border-color: $orange-border;   color: $orange;}
-  &--reactivate:hover { background: $green-bg; border-color: $green-border; color: $green; }
+  // Slightly larger tap target on mobile
+  @media (max-width: $bp-md) { width: 34px; height: 34px; }
+
+  &--view:hover       { background: $blue-bg;   border-color: $blue-border;   color: $blue; }
+  &--edit:hover       { background: $amber-bg;  border-color: $amber-border;  color: $amber; }
+  &--delete:hover     { background: $red-bg;    border-color: $red-border;    color: $red; }
+  &--deactivate:hover { background: $orange-bg; border-color: $orange-border; color: $orange; }
+  &--reactivate:hover { background: $green-bg;  border-color: $green-border;  color: $green; }
 }
 
 // ========================
 // Dialogs (Modal)
 // ========================
-// Add to _shared.scss
 .mat-mdc-dialog-container {
   --mdc-dialog-container-color: var(--bg-card) !important;
   --mdc-dialog-subhead-color:   var(--text-hi) !important;
@@ -421,6 +496,14 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     background: var(--bg-card) !important;
     border: 1px solid var(--border);
     border-radius: 14px !important;
+
+    // Dialogs should fill screen on mobile
+    @media (max-width: $bp-sm) {
+      border-radius: 12px 12px 0 0 !important;
+      margin: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+    }
   }
 }
 
@@ -434,6 +517,9 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   gap: 1rem;
   padding: 1rem;
   border-top: 1px solid $border;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) { gap: 0.6rem; padding: 0.75rem; }
 }
 
 .page-btn {
@@ -446,6 +532,9 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   padding: 0.4rem 1rem;
   cursor: pointer;
   transition: all 0.15s;
+
+  @media (max-width: $bp-sm) { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
+
   &:hover:not(:disabled) { border-color: $blue; color: $blue; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
@@ -469,6 +558,10 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid $border;
     background: $bg-card-hi;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    @media (max-width: $bp-sm) { padding: 1rem 1rem; }
   }
 
   &__title-wrap { display: flex; align-items: center; gap: 0.75rem; }
@@ -485,7 +578,13 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 
   &__title    { font-size: 1.05rem; font-weight: 600; margin: 0; color: $text-hi; }
   &__subtitle { font-size: 0.78rem; color: $text-lo; margin: 2px 0 0; }
-  &__body     { padding: 1.75rem 1.5rem; }
+
+  &__body {
+    padding: 1.75rem 1.5rem;
+
+    @media (max-width: $bp-md) { padding: 1.25rem 1rem; }
+    @media (max-width: $bp-sm) { padding: 1rem 0.85rem; }
+  }
 
   &__actions {
     display: flex;
@@ -493,6 +592,18 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid $border;
+    flex-wrap: wrap;
+
+    @media (max-width: $bp-sm) {
+      flex-direction: column;
+      gap: 0.5rem;
+
+      // Full-width buttons on mobile
+      .btn-add,
+      .btn-secondary,
+      .btn-danger,
+      .btn-success { width: 100%; justify-content: center; }
+    }
   }
 }
 
@@ -516,6 +627,12 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
+
+  // Single column on small screens
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .detail-item  { display: flex; flex-direction: column; gap: 0.35rem; }
@@ -533,7 +650,18 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   flex-direction: column;
   gap: 1.25rem;
 
-  &__row   { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+
+    // Stack form rows on mobile
+    @media (max-width: $bp-md) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
   &__field { display: flex; flex-direction: column; gap: 0.4rem; }
 
   &__label {
@@ -560,6 +688,8 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     transition: border-color 0.15s;
     width: 100%;
     box-sizing: border-box;
+    // Slightly larger on mobile for touch comfort
+    @media (max-width: $bp-sm) { padding: 0.75rem 0.9rem; font-size: 1rem; }
     &::placeholder { color: $text-lo; }
     &:focus  { border-color: $blue; }
     &--error { border-color: $red !important; }
@@ -597,13 +727,21 @@ $yellow-border:rgba(255, 193, 7, 0.3);
     padding-right: 2.5rem;
   }
 
-  &__error   { font-size: 0.75rem; color: #f08080; }
+  &__error { font-size: 0.75rem; color: #f08080; }
 
   &__actions {
     display: flex;
     gap: 0.75rem;
     justify-content: flex-end;
     padding-top: 0.5rem;
+    flex-wrap: wrap;
+
+    @media (max-width: $bp-sm) {
+      flex-direction: column-reverse;
+      .btn-add,
+      .btn-secondary,
+      .btn-danger { width: 100%; justify-content: center; }
+    }
   }
 }
 
@@ -675,7 +813,7 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   transition: all 0.15s;
-  &:hover { background: rgba($gray-bg, 0.2); color: $text-hi;}
+  &:hover { background: rgba($gray-bg, 0.2); color: $text-hi; }
 }
 
 .btn-danger {
@@ -727,17 +865,14 @@ $yellow-border:rgba(255, 193, 7, 0.3);
   display: flex; flex-direction: column; gap: 2px;
   &__name {
     font-size: 0.88rem; font-weight: 600; color: $text-hi;
-    &:hover{
-      cursor:pointer; color: $blue;
-    }
+    &:hover { cursor: pointer; color: $blue; }
   }
-  &__id   { font-size: 0.72rem; color: $text-lo; font-family: monospace; }
+  &__id { font-size: 0.72rem; color: $text-lo; font-family: monospace; }
 }
 
 .mono      { font-family: monospace; font-size: 0.82rem; color: $text-mid; }
 .date-cell { font-size: 0.82rem; color: $text-mid; }
 .muted     { color: $text-lo; font-size: 0.85rem; }
-
 
 // ========================
 // Shell / Layout
@@ -750,7 +885,7 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 }
 
 // ========================
-// Shell Avatar (topbar + sidebar share same pattern)
+// Shell Avatar
 // ========================
 .shell-avatar {
   width: 30px; height: 30px;
@@ -764,7 +899,7 @@ $yellow-border:rgba(255, 193, 7, 0.3);
 }
 
 // ========================
-// Shell Icon Button (sidebar toggle, menu-btn, logout share same base)
+// Shell Icon Button
 // ========================
 .shell-icon-btn {
   background: none;

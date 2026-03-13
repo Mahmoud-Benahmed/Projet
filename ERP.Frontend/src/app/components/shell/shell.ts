@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +15,10 @@ import { ThemeService } from '../../services/theme.service';
   styleUrl: './shell.scss',
   encapsulation: ViewEncapsulation.None,
 })
-export class ShellComponent implements OnInit {
+export class ShellComponent implements OnInit, OnDestroy {
+
+  mobileNavOpen = false;
+  mobileNavClosing = false;
 
   collapsed = false;
   openGroups: Record<string, boolean> = {
@@ -82,7 +85,21 @@ export class ShellComponent implements OnInit {
       this.openGroups['articles'] = true;
     }
     this.cdr.markForCheck();
+
+    window.addEventListener('resize', this.resizeListener);
   }
+
+  private resizeListener = () => {
+    if (window.innerWidth > 768) this.closeMobileNav();
+  };
+
+  toggleNav(): void {
+  if (window.innerWidth <= 768) {
+    this.mobileNavOpen ? this.closeMobileNav() : this.openMobileNav();
+  } else {
+    this.toggleSidebar();
+  }
+}
 
   toggleSidebar(): void {
     this.collapsed = !this.collapsed;
@@ -92,12 +109,32 @@ export class ShellComponent implements OnInit {
     this.openGroups[key] = !this.openGroups[key];
   }
 
+  openMobileNav(): void {
+    this.mobileNavOpen    = true;
+    this.mobileNavClosing = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeMobileNav(): void {
+    document.body.style.overflow = ''; // ← immediately, before animation
+    this.mobileNavClosing = true;
+    setTimeout(() => {
+      this.mobileNavOpen    = false;
+      this.mobileNavClosing = false;
+    }, 220);
+  }
+
   onLogout(): void {
     this.authService.logout();
   }
 
   private buildInitials(name: string): string {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'U';
+  }
+
+  ngOnDestroy(): void {
+    document.body.style.overflow = ''; // ← safety cleanup
+    window.removeEventListener('resize', this.resizeListener);
   }
 
 }
