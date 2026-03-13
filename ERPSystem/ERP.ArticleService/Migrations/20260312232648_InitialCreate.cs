@@ -67,9 +67,35 @@ namespace ERP.ArticleService.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ArticleCodes_Prefix",
+                table: "ArticleCodes",
+                column: "Prefix",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Articles_BarCode",
+                table: "Articles",
+                column: "BarCode",
+                unique: true,
+                filter: "[IsDeleted] = 0 AND [BarCode] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Articles_CategoryId",
                 table: "Articles",
                 column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Articles_CodeRef",
+                table: "Articles",
+                column: "CodeRef",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_Name",
+                table: "Categories",
+                column: "Name",
+                unique: true);
         }
 
         /// <inheritdoc />

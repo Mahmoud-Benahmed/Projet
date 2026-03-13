@@ -1,14 +1,20 @@
-﻿using ERP.ArticleService.Application.Exceptions;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Exceptions;
+using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Text.Json;
 
 namespace ERP.ArticleService.Middleware
 {
     public class GlobalExceptionMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<GlobalExceptionMiddleware> _logger;
 
-        public GlobalExceptionMiddleware(RequestDelegate next)
+        public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -19,40 +25,145 @@ namespace ERP.ArticleService.Middleware
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An unhandled exception occurred.");
                 await HandleExceptionAsync(context, ex);
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var (statusCode, code, message) = exception switch
+            var response = exception switch
             {
                 // ── Article
-                ArticleNotFoundException => (404, "ART_001", exception.Message),
-                ArticleAlreadyExistsException => (400, "ART_002", exception.Message),
-                ArticleAlreadyActiveException => (400, "ART_003", exception.Message),
-                ArticleAlreadyInactiveException => (400, "ART_004", exception.Message),
+                ArticleNotFoundException ex => new ErrorResponse
+                {
+                    Code = "ART_001",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.NotFound
+                },
+
+                ArticleAlreadyExistsException ex => new ErrorResponse
+                {
+                    Code = "ART_002",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                ArticleAlreadyActiveException ex => new ErrorResponse
+                {
+                    Code = "ART_003",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                ArticleAlreadyInactiveException ex => new ErrorResponse
+                {
+                    Code = "ART_004",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
 
                 // ── Category
-                CategoryNotFoundException => (404, "CAT_001", exception.Message),
-                CategoryAlreadyExistsException => (400, "CAT_002", exception.Message),
+                CategoryNotFoundException ex => new ErrorResponse
+                {
+                    Code = "CAT_001",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.NotFound
+                },
+
+                CategoryAlreadyExistsException ex => new ErrorResponse
+                {
+                    Code = "CAT_002",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                // ── Database
+                DbUpdateException ex when ex.InnerException?.Message.Contains("unique index") == true ||
+                                          ex.InnerException?.Message.Contains("duplicate key") == true => new ErrorResponse
+                                          {
+                                              Code = "DUPLICATE_ENTRY",
+                                              Message = ExtractDuplicateField(ex.InnerException!.Message),
+                                              StatusCode = (int)HttpStatusCode.Conflict
+                                          },
+
+                DbUpdateException ex => new ErrorResponse
+                {
+                    Code = "DATABASE_ERROR",
+                    Message = "A database error occurred.",
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                },
 
                 // ── Generic
-                KeyNotFoundException => (404, "NOT_FOUND", exception.Message),
-                ArgumentOutOfRangeException => (400, "OUT_OF_RANGE", exception.Message),
-                ArgumentNullException => (400, "NULL_ARGUMENT", exception.Message),
-                ArgumentException => (400, "BAD_ARGUMENT", exception.Message),
-                InvalidOperationException => (400, "INVALID_OP", exception.Message),
-                UnauthorizedAccessException => (401, "UNAUTHORIZED", exception.Message),
-                FluentValidation.ValidationException vex => (400, "VALIDATION_ERROR",
-                    string.Join(" | ", vex.Errors.Select(e => e.ErrorMessage))),
+                KeyNotFoundException ex => new ErrorResponse
+                {
+                    Code = "NOT_FOUND",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.NotFound
+                },
 
-                _ => (500, "SERVER_ERROR", exception.Message)
+                ArgumentOutOfRangeException ex => new ErrorResponse
+                {
+                    Code = "OUT_OF_RANGE",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                ArgumentNullException ex => new ErrorResponse
+                {
+                    Code = "NULL_ARGUMENT",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                ArgumentException ex => new ErrorResponse
+                {
+                    Code = "BAD_ARGUMENT",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                InvalidOperationException ex => new ErrorResponse
+                {
+                    Code = "INVALID_OP",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.BadRequest
+                },
+
+                UnauthorizedAccessException ex => new ErrorResponse
+                {
+                    Code = "UNAUTHORIZED",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.Unauthorized
+                },
+
+                _ => new ErrorResponse
+                {
+                    Code = "SERVER_ERROR",
+                    Message = "An unexpected error occurred.",
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                }
             };
 
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = statusCode;
-            return context.Response.WriteAsJsonAsync(new { statusCode, code, message });
+            context.Response.StatusCode = response.StatusCode;
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(response,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+        }
+
+        private static string ExtractDuplicateField(string message)
+        {
+            if (message.Contains("IX_Articles_CodeRef"))
+                return "An article with this code already exists.";
+
+            if (message.Contains("IX_Articles_BarCode"))
+                return "An article with this barcode already exists.";
+
+            if (message.Contains("IX_Categories_Name"))
+                return "A category with this name already exists.";
+
+            return "A record with this value already exists.";
         }
     }
 }

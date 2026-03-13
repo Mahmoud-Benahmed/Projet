@@ -25,7 +25,6 @@ namespace ERP.ArticleService.Migrations
             modelBuilder.Entity("ERP.ArticleService.Domain.Article", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BarCode")
@@ -68,7 +67,15 @@ namespace ERP.ArticleService.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BarCode")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0 AND [BarCode] IS NOT NULL");
+
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("CodeRef")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Articles", (string)null);
                 });
@@ -76,7 +83,6 @@ namespace ERP.ArticleService.Migrations
             modelBuilder.Entity("ERP.ArticleService.Domain.ArticleCode", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("LastNumber")
@@ -96,13 +102,15 @@ namespace ERP.ArticleService.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Prefix")
+                        .IsUnique();
+
                     b.ToTable("ArticleCodes", (string)null);
                 });
 
             modelBuilder.Entity("ERP.ArticleService.Domain.Category", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -121,6 +129,9 @@ namespace ERP.ArticleService.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Categories", (string)null);
                 });

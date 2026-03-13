@@ -12,7 +12,7 @@ services:
             - obj/
     container_name: erp-article
     ports:
-      - "5003:8080"
+      - "5002:8080"
     env_file:
       - .env
     depends_on:

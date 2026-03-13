@@ -23,14 +23,18 @@
 
         public Article(string code, string libelle, decimal prix, Category category, string barCode, decimal? tva)
         {
-            if (string.IsNullOrWhiteSpace(libelle))
-                throw new ArgumentException("Libelle is required");
-
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentException("Code is required");
 
+            if (string.IsNullOrWhiteSpace(libelle))
+                throw new ArgumentException("Libelle is required");
+
             if (prix <= 0)
                 throw new ArgumentException("Prix must be positive");
+
+            var resolvedTVA = tva ?? category.TVA;
+            if (resolvedTVA <= 0)
+                throw new ArgumentException("TVA must be greater than zero.");
 
             Id = Guid.NewGuid();
             CodeRef = code;
@@ -39,8 +43,7 @@
             Category = category ?? throw new ArgumentException("Category is required");
             CategoryId = category.Id;
             BarCode= barCode;
-            TVA = tva ?? category.TVA;
-            IsDeleted = false;
+            TVA = resolvedTVA;
             CreatedAt = DateTime.UtcNow;
         }
 
@@ -48,6 +51,10 @@
         {
             if (string.IsNullOrWhiteSpace(libelle))
                 throw new ArgumentException("Libelle is required");
+
+            if (string.IsNullOrWhiteSpace(barCode))
+                throw new ArgumentException("Code is required");
+
             if (prix <= 0)
                 throw new ArgumentException("Prix must be positive");
 
