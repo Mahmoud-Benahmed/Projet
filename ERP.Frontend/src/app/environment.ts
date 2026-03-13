@@ -1,13 +1,14 @@
 export const environment = {
   production: false,
-  docker: false,
+  docker: true,
   apiUrl:'' as string,
   routes:{
     auth:   '/auth',
     roles:  '/auth/roles',
     privileges: '/auth/privileges',
     controles: '/auth/controles',
-    articles: '/articles'
+    articles: '/articles',
+    clients: '/clients'
   }
 };
 
