@@ -62,23 +62,27 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CreateClient", p => p.RequireClaim("privilege", "CreateClient"));
     options.AddPolicy("UpdateClient", p => p.RequireClaim("privilege", "UpdateClient"));
     options.AddPolicy("DeleteClient", p => p.RequireClaim("privilege", "DeleteClient"));
+    options.AddPolicy("RestoreClient", p => p.RequireClaim("privilege", "RestoreClient"));
 
     // ── Articles
     options.AddPolicy("ViewArticles", p => p.RequireClaim("privilege", "ViewArticles"));
     options.AddPolicy("CreateArticle", p => p.RequireClaim("privilege", "CreateArticle"));
     options.AddPolicy("UpdateArticle", p => p.RequireClaim("privilege", "UpdateArticle"));
     options.AddPolicy("DeleteArticle", p => p.RequireClaim("privilege", "DeleteArticle"));
+    options.AddPolicy("RestoreArticle", p => p.RequireClaim("privilege", "RestoreArticle"));
 
     // ── Facturation
     options.AddPolicy("ViewInvoices", p => p.RequireClaim("privilege", "ViewInvoices"));
     options.AddPolicy("CreateInvoice", p => p.RequireClaim("privilege", "CreateInvoice"));
     options.AddPolicy("ValidateInvoice", p => p.RequireClaim("privilege", "ValidateInvoice"));
     options.AddPolicy("DeleteInvoice", p => p.RequireClaim("privilege", "DeleteInvoice"));
+    options.AddPolicy("RestoreInvoice", p => p.RequireClaim("privilege", "RestoreInvoice"));
 
     // ── Paiements
     options.AddPolicy("ViewPayments", p => p.RequireClaim("privilege", "ViewPayments"));
     options.AddPolicy("RecordPayment", p => p.RequireClaim("privilege", "RecordPayment"));
     options.AddPolicy("DeletePayment", p => p.RequireClaim("privilege", "DeletePayment"));
+    options.AddPolicy("RestorePayment", p => p.RequireClaim("privilege", "RestorePayment"));
 
     // ── Stocks
     options.AddPolicy("ViewStock", p => p.RequireClaim("privilege", "ViewStock"));
@@ -88,39 +92,6 @@ builder.Services.AddAuthorization(options =>
     // ── Reporting
     options.AddPolicy("ViewReports", p => p.RequireClaim("privilege", "ViewReports"));
     options.AddPolicy("ExportReports", p => p.RequireClaim("privilege", "ExportReports"));
-
-
-    options.AddPolicy("CanManageArticles", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ViewArticles") ||
-        ctx.User.HasClaim("privilege", "CreateArticle") ||
-        ctx.User.HasClaim("privilege", "UpdateArticle") ||
-        ctx.User.HasClaim("privilege", "DeleteArticle")));
-
-    options.AddPolicy("CanManageClients", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ViewClients") ||
-        ctx.User.HasClaim("privilege", "CreateClient") ||
-        ctx.User.HasClaim("privilege", "UpdateClient") ||
-        ctx.User.HasClaim("privilege", "DeleteClient")));
-
-    options.AddPolicy("CanViewClients", p => p.RequireClaim("privilege", "ViewClients"));
-    options.AddPolicy("CanCreateClient", p => p.RequireClaim("privilege", "CreateClient"));
-    options.AddPolicy("CanUpdateClient", p => p.RequireClaim("privilege", "UpdateClient"));
-    options.AddPolicy("CanDeleteClient", p => p.RequireClaim("privilege", "DeleteClient"));
-
-    options.AddPolicy("CanManageFacturation", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ViewInvoices") ||
-        ctx.User.HasClaim("privilege", "CreateInvoice") ||
-        ctx.User.HasClaim("privilege", "ValidateInvoice") ||
-        ctx.User.HasClaim("privilege", "DeleteInvoice")));
-
-    options.AddPolicy("CanManageStock", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ViewStock") ||
-        ctx.User.HasClaim("privilege", "UpdateStock") ||
-        ctx.User.HasClaim("privilege", "AddEntry")));
-
-    options.AddPolicy("CanViewReports", p => p.RequireAssertion(ctx =>
-        ctx.User.HasClaim("privilege", "ViewReports") ||
-        ctx.User.HasClaim("privilege", "ExportReports")));
 });
 
 //////////////////////////////////////////////////
