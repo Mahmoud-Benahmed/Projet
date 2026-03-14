@@ -78,9 +78,9 @@ export class ArticleComponent implements OnInit {
     this.error = null;
     this.articleService.getAllArticles(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
-        this.articles = res.items; this.totalCount= res.totalCount;
+        this.articles = res.items; this.totalCount= res.totalCount; this.cdr.markForCheck();
       },
-      error: () => { this.error = 'Failed to load articles.'; this.loading = false; },
+      error: () => { this.flash('error', 'Failed to load articles.'); this.loading = false; },
     });
   }
 
@@ -95,7 +95,10 @@ export class ArticleComponent implements OnInit {
     this.error= null;
     this.articleService.getStats().subscribe({
       next: (res)=> {this.stats= res; this.cdr.markForCheck(); },
-      error: ()=> {this.error= 'Failed to load stats.'; this.loading= false; this.cdr.markForCheck()}
+      error: ()=> {
+        this.loading= false;
+        this.flash('error', 'Failed to load stats.');
+      }
     })
   }
 
@@ -149,40 +152,23 @@ export class ArticleComponent implements OnInit {
     if (this.viewMode === 'create') {
       this.articleService.createArticle(val as CreateArticleRequest).subscribe({
         next: () => {
-          this.flash('');
-          this.dialog.open(ModalComponent, {
-            width: '400px',
-            data: {
-              title: 'User Registered',
-              message: `Article created successfully.`,
-              confirmText: 'Ok',
-              showCancel: false,
-              icon: 'check_circle',
-              iconColor: 'success'
-            }
-          });
+          this.reload();
           this.cancel();
-          this.reload(); },
+          this.flash('success', `Article "${val.libelle}" created successfully.`);
+        },
         error: (error) => {
           let err = error.error as HttpError;
-
-          this.dialog.open(ModalComponent, {
-              width: '400px',
-              data: {
-                title: "Error",
-                message: err.message,
-                confirmText: 'Ok',
-                showCancel: false,
-                icon: 'check_circle',
-                iconColor: 'danger'
-              }
-          });
+          this.flash('error', err.message);
         }
       });
     } else if (this.viewMode === 'edit' && this.selectedArticle) {
       this.articleService.updateArticle(this.selectedArticle.id, val as UpdateArticleRequest).subscribe({
-        next: () => { this.flash('Article updated successfully.'); this.cancel(); this.reload(); },
-        error: () => (this.error = 'Failed to update article.'),
+        next: () => {
+          this.cancel();
+          this.reload();
+          this.flash('success', `Article "${val.libelle}" updated successfully.`);
+        },
+        error: () => (this.flash('error', `Failed to update article "${this.selectedArticle?.libelle}"`)),
       });
     }
   }
@@ -206,14 +192,31 @@ export class ArticleComponent implements OnInit {
         if (!result) return;
           this.articleService.delete(article.id).subscribe({
             next: () => {
-              this.flash('Article deleted.');
+              if(this.viewMode==='view'){
+                this.cancel();
+              }
+              this.flash('success', `Article "${article.libelle}" has been deleted successfully.`)
               this.reload();
             },
-            error: () => (this.error = 'Failed to delete article.'),
+            error: () => (this.flash('error', `Failed to delete article "${this.selectedArticle?.libelle}"`)),
           });
         }
       );
   }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+  dismissError(): void { this.error = null; }
 
   reload(): void{
     this.load();
@@ -233,12 +236,6 @@ export class ArticleComponent implements OnInit {
     return this.categories.find(c => c.id === id)?.name ?? '—';
   }
 
-  flash(msg: string): void {
-    this.successMessage = msg;
-    setTimeout(() => (this.successMessage = null), 3000);
-  }
-
-  dismissError(): void { this.error = null; }
   trackById(_: number, a: Article): string { return a.id; }
 
   get currencyCode(): string {

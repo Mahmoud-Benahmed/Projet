@@ -8,6 +8,18 @@
     </div>
   </div>
 
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
   <!-- STAT CARDS -->
   <div class="stats-grid">
 
@@ -100,10 +112,10 @@
               <span class="td--barCode">{{ article.barCode }}</span>
             </td>
             <td class="td--actions">
-              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View">
+              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View" *ngIf="authService.canViewArticles">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
-              <button class="icon-btn icon-btn--reactivate" (click)="recover(article)" title="Recover">
+              <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.canRestoreArticles">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
@@ -160,8 +172,7 @@
         </div>
       </div>
       <div class="panel__actions">
-        <button class="btn-secondary" (click)="openEdit(selectedArticle)">Edit Article</button>
-        <button class="btn-success" (click)="recover(selectedArticle)">Recover</button>
+        <button class="btn-success" (click)="restore(selectedArticle)" *ngIf="authService.canRestoreArticles">Restore</button>
       </div>
     </div>
   </div>

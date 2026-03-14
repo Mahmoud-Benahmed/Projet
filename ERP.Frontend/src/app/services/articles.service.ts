@@ -135,7 +135,7 @@ export class ArticleService {
     return this.http.delete<void>(`${this.baseUrl}/delete/${id}`);
   }
 
-  recover(id: string): Observable<void> {
+  restore(id: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/restore/${id}`, {});
   }
 

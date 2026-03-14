@@ -20,6 +20,7 @@ import { ModalComponent } from '../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { Article, ArticleService, ArticleStatsDto, Category, PagedResult } from '../../../services/articles.service';
 import { PaginationComponent } from "../../pagination/pagination";
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-deactivated',
@@ -64,11 +65,13 @@ export class DeletedArticlesComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
 
   isLoading = false;
+  error: string | null = null;
+  successMessage: string | null = null;
   searchQuery = '';
 
 
   selectedArticle: Article | null = null;
-  viewMode: 'list' | 'view' | 'edit'= 'list';
+  viewMode: 'list' | 'view' = 'list';
 
   // FIX 8: declare currency properties referenced in the template
   currencyCode = 'EUR';
@@ -77,10 +80,9 @@ export class DeletedArticlesComponent implements OnInit {
   articleForm: FormGroup;
 
   constructor(
-    private snackBar: MatSnackBar,
+    public authService: AuthService,
     private articleService: ArticleService,
     private fb: FormBuilder,
-    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   )   {
     this.articleForm = this.fb.group({
@@ -99,7 +101,6 @@ export class DeletedArticlesComponent implements OnInit {
     this.isLoading = true;
     this.articleService.getDeletedArticles(this.pageNumber, this.pageSize).subscribe({
       next: (result: PagedResult<Article>) => {
-        // FIX 10: also populate this.articles so filteredArticles getter works correctly
         this.articles = result.items;
         this.dataSource.data = result.items;
         this.totalCount = result.totalCount;
@@ -108,7 +109,7 @@ export class DeletedArticlesComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load deleted articles.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load deleted articles.');
       },
     });
   }
@@ -117,7 +118,7 @@ export class DeletedArticlesComponent implements OnInit {
     this.articleService.getStats().subscribe({
       next: (result) => {this.stats = result;},
       error: () => {
-        this.snackBar.open('Failed to load stats.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load stats.');
       },
     });
   }
@@ -126,8 +127,9 @@ export class DeletedArticlesComponent implements OnInit {
     this.articleService.getAllCategories().subscribe({
       next: (cats) => {
         this.categories = cats;
-        this.cdr.markForCheck();
-      },
+        this.cdr.markForCheck();},
+      error: () => {
+        this.flash('error', 'Failed to load categories.');}
     });
   }
 
@@ -174,28 +176,17 @@ export class DeletedArticlesComponent implements OnInit {
     return this.categories.find((c) => c.id === id)?.name ?? '—';
   }
 
-  recover(article: Article): void {
-    this.articleService.recover(article.id).subscribe({
+  restore(article: Article): void {
+    this.articleService.restore(article.id).subscribe({
       next: () => {
-        const dialogRef = this.dialog.open(ModalComponent, {
-          width: '400px',
-          data: {
-            title: 'Article recovered successfully',
-            message: `Article "${article.libelle}" has been recovered. You can find it in the Articles page.`,
-            confirmText: 'Ok',
-            showCancel: false,
-            icon: 'settings_backup_restore',
-            iconColor: 'success',
-          },
-        });
-
-        dialogRef
-          .afterClosed()
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(() => this.reload());
+        this.flash('success', `Article "${article.libelle}" has been restored. You can find it in the Articles page.`);
+        this.reload();
+        if(this.viewMode==='view'){
+          this.cancel();
+        }
       },
       error: () =>
-        this.snackBar.open('Failed to recover article.', 'Dismiss', { duration: 3000 }),
+        this.flash('error', 'Failed to restore article.')
     });
   }
 
@@ -209,12 +200,17 @@ export class DeletedArticlesComponent implements OnInit {
     this.viewMode = 'view';
     this.cdr.markForCheck();
   }
-  openEdit(article: Article): void {
-    this.viewMode = 'edit';
-    this.selectedArticle = article;
-    this.articleForm.patchValue({ libelle: article.libelle, prix: article.prix, categoryId: article.categoryId, barCode: article.barCode});
-    this.cdr.markForCheck()
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg; setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg; setTimeout(() => (this.error = null), 3000);
+    }
+    this.cdr.markForCheck();
   }
+  dismissError(): void { this.error = null; }
 
   // Replace cancel
   cancel(): void {
