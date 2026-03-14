@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--blue">
+      <div class="stat-card stat-card--blue" *ngIf="authService.canRestoreClients">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Total</p>
