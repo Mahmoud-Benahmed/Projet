@@ -48,7 +48,6 @@ The goal is to design a **scalable, resilient, and decoupled ERP platform** alig
 | Service             | Database   | Responsibility                      |
 | ------------------- | ---------- | ----------------------------------- |
 | Auth Service        | MongoDB    | Authentication, JWT, Refresh Tokens |
-| Users Service       | SQL Server | User profiles & business data       |
 | Clients Service     | SQL Server | Customer management                 |
 | Articles Service    | SQL Server | Product management                  |
 | Facturation Service | SQL Server | Invoice management                  |
@@ -238,7 +237,6 @@ Response:
 | MongoDB Repositories | ✅ Implemented      |
 | JWT Authentication   | ✅ Implemented      |
 | Kafka Setup          | ⚙️ Docker prepared |
-| Users Service        | 🚧 In Progress     |
 | Other Services       | 🛠 Planned         |
 | Angular Frontend     | 🛠 Planned         |
 
