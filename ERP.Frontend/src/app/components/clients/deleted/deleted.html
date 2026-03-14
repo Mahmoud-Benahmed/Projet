@@ -1,0 +1,195 @@
+<div class="page">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">CLIENT MANAGEMENT</p>
+      <h1 class="page-title">Deleted Clients</h1>
+    </div>
+  </div>
+
+
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
+
+  <!-- ── STAT CARDS ── -->
+  <div class="stats-grid">
+
+    <div class="stat-card stat-card--green"
+         [routerLink]="(stats?.ActiveCount ?? 0) > 0 ? '/clients' : null"
+         routerLinkActive="stat-card--current"
+         [routerLinkActiveOptions]="{ exact: true }"
+         [class.stat-card--disabled]="!(stats?.ActiveCount)">
+      <div class="stat-card__body">
+        <div>
+          <p class="stat-card__label">Active</p>
+          <p class="stat-card__value">{{ stats?.ActiveCount ?? 0 }}</p>
+        </div>
+        <div class="stat-card__icon stat-card__icon--green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 11 12 14 22 4"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--red"
+         [routerLink]="(stats?.DeletedCount ?? 0) > 0 ? '/clients/deleted' : null"
+         routerLinkActive="stat-card--current"
+         [routerLinkActiveOptions]="{ exact: true }"
+         [class.stat-card--disabled]="!(stats?.DeletedCount)">
+      <div class="stat-card__body">
+        <div>
+          <p class="stat-card__label">Deleted</p>
+          <p class="stat-card__value">{{ stats?.DeletedCount ?? 0 }}</p>
+        </div>
+        <div class="stat-card__icon stat-card__icon--red">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── LIST VIEW ── -->
+  <ng-container *ngIf="viewMode === 'list'">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="Search clients…"
+               [(ngModel)]="searchQuery" />
+      </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="table-card">
+
+      <div class="loading-overlay" *ngIf="isLoading">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div class="table-scroll-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>TYPE</th>
+              <th>EMAIL</th>
+              <th>ADDRESS</th>
+              <th>PHONE</th>
+              <th>DELETED AT</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let client of filteredClients; trackBy: trackById" class="table__row">
+              <td class="td--name">{{ client.name }}</td>
+              <td>
+                <span class="badge"
+                  [class.badge--active]="client.type === 'Company'"
+                  [class.badge--inactive]="client.type === 'Individual'">
+                  {{ client.type }}
+                </span>
+              </td>
+              <td class="td--code">{{ client.email }}</td>
+              <td class="td--category">{{ client.address }}</td>
+              <td class="td--code">{{ client.phone ?? '—' }}</td>
+              <td class="date-cell">{{ client.updatedAt | date:'dd MMM yyyy, HH:mm' }}</td>
+              <td class="td--actions">
+                <button class="icon-btn icon-btn--view" (click)="openView(client)" title="View" *ngIf="authService.canViewClients">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="icon-btn icon-btn--reactivate" (click)="restore(client)" title="Restore" *ngIf="authService.canRestoreClients">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredClients.length === 0 && !isLoading">
+              <td colspan="7" class="td--empty">No deleted clients found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <app-pagination
+        [pageNumber]="pageNumber"
+        [totalPages]="totalPages"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (pageChange)="pageNumber = $event; reload()"
+        (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+      </app-pagination>
+
+    </div>
+  </ng-container>
+
+  <!-- ── VIEW PANEL ── -->
+  <div class="panel" *ngIf="viewMode === 'view' && selectedClient">
+    <div class="panel__header">
+      <h2 class="panel__title">Client Details</h2>
+      <button class="btn-back" (click)="cancel()">← Back</button>
+    </div>
+    <div class="panel__body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">NAME</span>
+          <span class="detail-value">{{ selectedClient.name }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">TYPE</span>
+          <span class="detail-value">{{ selectedClient.type }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">EMAIL</span>
+          <span class="detail-value detail-value--mono">{{ selectedClient.email }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">ADDRESS</span>
+          <span class="detail-value">{{ selectedClient.address }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">PHONE</span>
+          <span class="detail-value">{{ selectedClient.phone ?? '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">TAX NUMBER</span>
+          <span class="detail-value detail-value--mono">{{ selectedClient.taxNumber ?? '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">CREATED AT</span>
+          <span class="detail-value">{{ selectedClient.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">DELETED AT</span>
+          <span class="detail-value">{{ selectedClient.updatedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+        </div>
+      </div>
+      <div class="panel__actions">
+        <button class="btn-success" (click)="restore(selectedClient)" *ngIf="authService.canRestoreClients">
+          Restore
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
