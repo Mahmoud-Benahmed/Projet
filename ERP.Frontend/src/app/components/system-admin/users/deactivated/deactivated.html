@@ -8,6 +8,18 @@
     </div>
   </div>
 
+    <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
   <!-- ── STAT CARDS ── -->
   <div class="stats-grid">
 
@@ -16,7 +28,8 @@
       routerLinkActive="stat-card--current"
       #usersLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="!(stats?.activeUsers)">
+      [class.stat-card--disabled]="!(stats?.activeUsers)"
+      *ngIf="authService.canViewUsers">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Active Users</p>
@@ -35,7 +48,8 @@
       routerLinkActive="stat-card--current"
       #deactivatedLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="!(stats?.deactivatedUsers)">
+      [class.stat-card--disabled]="!(stats?.deactivatedUsers)"
+      *ngIf="authService.canDeactivateUsers || authService.canActivateUsers">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Deactivated</p>
@@ -127,14 +141,16 @@
           <td class="td--actions">
            <button class="icon-btn icon-btn--view"
                   title="View"
-                  [routerLink]="['/users', user.id]">
+                  [routerLink]="['/users', user.id]"
+                  *ngIf="authService.canViewUsers">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                   </svg>
             </button>
             <button class="icon-btn icon-btn--reactivate"
               title="Reactivate"
-              (click)="activateUser(user)">
+              (click)="activateUser(user)"
+              *ngIf="authService.canActivateUsers">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>

@@ -74,12 +74,13 @@ export class UsersHomeComponent implements OnInit {
   // State
   isLoading = false;
   searchTerm = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   pageTitle= 'Active Users';
   stats: UserStatsDto | null= null;
 
   constructor(
-    private snackBar: MatSnackBar,
     private router: Router,
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
@@ -102,7 +103,7 @@ export class UsersHomeComponent implements OnInit {
         },
         error: () => {
           this.isLoading = false;
-          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+          this.flash('success','Failed to load users.');
         },
       });
   }
@@ -111,7 +112,7 @@ export class UsersHomeComponent implements OnInit {
       this.authService.getStats().subscribe({
         next: (result) => this.stats = result,
         error: () =>{
-          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+          this.flash('error','Failed to load users.');
       }
     });
   }
@@ -129,10 +130,10 @@ export class UsersHomeComponent implements OnInit {
   deactivateUser(user: AuthUserGetResponseDto): void {
     this.authService.deactivate(user.id).subscribe({
       next: () => {
-        this.snackBar.open(`${user.fullName ?? user.login} deactivated.`, 'OK', { duration: 3000 });
+        this.flash('success', `${user.fullName ?? user.login} deactivated.`);
         this.reload();
       },
-      error: () => this.snackBar.open('Failed to deactivate user.', 'Dismiss', { duration: 3000 })
+      error: () => this.flash('error','Failed to deactivate user.')
     });
   }
 
@@ -156,68 +157,26 @@ export class UsersHomeComponent implements OnInit {
 
         this.authService.softDelete(user.id).subscribe({
           next: () => {
-            this.snackBar.open(
-              `${user.fullName ?? user.login} has been deleted.`,
-              'OK',
-              { duration: 3000 }
-            );
+            this.flash('success',`${user.fullName ?? user.login} has been deleted.`);
             this.reload();
             this.cdr.markForCheck();
           },
           error: () => {
-            this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 });
+            this.flash('error','Failed to delete user.');
           }
         });
       });
   }
 
-  recoverUser(user: AuthUserGetResponseDto): void {
-    this.authService.recover(user.id).subscribe({
+  restoreUser(user: AuthUserGetResponseDto): void {
+    this.authService.restore(user.id).subscribe({
       next: () => {
-        this.snackBar.open(`${user.fullName ?? user.login} recovered.`, 'OK', { duration: 3000 });
+        this.flash('success',`${user.fullName ?? user.login} restored.`);
         this.reload();
         this.cdr.markForCheck();
       },
-      error: () => this.snackBar.open('Failed to recover user.', 'Dismiss', { duration: 3000 })
+      error: () => this.flash('error','Failed to restore user.')
     });
-  }
-
-  deleteUser(user: AuthUserGetResponseDto): void {
-    const dialogRef = this.dialog.open(ModalComponent, {
-      width: '400px',
-      data: {
-        title: 'This action is irreversible',
-        message: `${user.fullName} will be deleted permanently.
-                    Once you confirm you cannot recover this user.
-                    If you are not ure Cancel or temporarly move the user to Deleted users.
-                    Are you sure you want to procceed ?`,
-        confirmText: 'Delete',
-        showCancel: true,
-        icon: 'delete_forever',
-        iconColor: 'danger'
-      }
-    });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
-        if (!result) return;
-
-        this.authService.delete(user.id).subscribe({
-          next: () => {
-            this.snackBar.open(
-              `${user.fullName ?? user.login} has been deleted.`,
-              'OK',
-              { duration: 3000 }
-            );
-            this.reload();
-            this.cdr.markForCheck();
-          },
-          error: () => {
-            this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 });
-          }
-        });
-      });
   }
 
   private reload() {
@@ -235,6 +194,20 @@ export class UsersHomeComponent implements OnInit {
         .toUpperCase();
     }
     return user.email[0].toUpperCase();
+  }
+
+  dismissError(): void { this.error = null; }
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 
   goToProfile(authUserId: string): void {

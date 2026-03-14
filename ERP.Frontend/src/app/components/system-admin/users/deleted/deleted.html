@@ -8,6 +8,18 @@
     </div>
   </div>
 
+    <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
   <!-- ── STAT CARDS ── -->
   <div class="stats-grid">
 
@@ -16,7 +28,8 @@
       routerLinkActive="stat-card--current"
       #usersLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="!(stats?.activeUsers)">
+      [class.stat-card--disabled]="!(stats?.activeUsers)"
+      *ngIf="authService.canViewUsers">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Active Users</p>
@@ -35,7 +48,8 @@
       routerLinkActive="stat-card--current"
       #deactivatedLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="!(stats?.deactivatedUsers)">
+      [class.stat-card--disabled]="!(stats?.deactivatedUsers)"
+      *ngIf="authService.canDeactivateUsers || authService.canActivateUsers">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Deactivated</p>
@@ -49,7 +63,8 @@
       </div>
     </div>
 
-    <div class="stat-card stat-card--gray">
+    <div class="stat-card stat-card--gray"
+          *ngIf="authService.canRestoreUsers">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Deleted Users</p>
@@ -142,14 +157,16 @@
           <td class="td--actions">
            <button class="icon-btn icon-btn--view"
                   title="View"
-                  [routerLink]="['/users', user.id]">
+                  [routerLink]="['/users', user.id]"
+                  *ngIf="authService.canViewUsers">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                   </svg>
             </button>
             <button class="icon-btn icon-btn--reactivate"
-              title="Recover"
-              (click)="recover(user)">
+              title="Restore"
+              (click)="restore(user)"
+              *ngIf="authService.canRestoreUsers">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.1">
                 <path fill="currentColor" d="M12 14q-.825 0-1.412-.587T10 12t.588-1.412T12 10t1.413.588T14 12t-.587 1.413T12 14m0 7q-3.475 0-6.025-2.287T3.05 13H5.1q.35 2.6 2.313 4.3T12 19q2.925 0 4.963-2.037T19 12t-2.037-4.962T12 5q-1.725 0-3.225.8T6.25 8H9v2H3V4h2v2.35q1.275-1.6 3.113-2.475T12 3q1.875 0 3.513.713t2.85 1.924t1.925 2.85T21 12t-.712 3.513t-1.925 2.85t-2.85 1.925T12 21"/>
               </svg>

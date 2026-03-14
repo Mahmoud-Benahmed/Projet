@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -69,11 +69,12 @@ export class DeletedUsersComponent implements OnInit {
 
   isLoading = false;
   searchTerm = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   constructor(
-    private snackBar: MatSnackBar,
-    private authService: AuthService,
-    private dialog: MatDialog
+    private cdr: ChangeDetectorRef,
+    public authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -95,7 +96,7 @@ export class DeletedUsersComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load deactivated users.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load deactivated users.');
       },
     });
   }
@@ -105,7 +106,7 @@ export class DeletedUsersComponent implements OnInit {
         next: (result) => this.stats = result,
         error: () =>{
           this.isLoading = false;
-          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+          this.flash('error', 'Failed to load users.');
       }
     });
   }
@@ -119,28 +120,14 @@ export class DeletedUsersComponent implements OnInit {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-  recover(user: AuthUserGetResponseDto): void {
+  restore(user: AuthUserGetResponseDto): void {
 
-    this.authService.recover(user.id).subscribe({
+    this.authService.restore(user.id).subscribe({
       next: () => {
-        const dialogRef = this.dialog.open(ModalComponent, {
-          width: '400px',
-          data: {
-            title: 'User recovered successfully',
-            message: `${user.fullName ?? user.login} is recovered but still deactivated. You can activate it later.`,
-            confirmText: 'Ok',
-            showCancel: false,
-            icon: 'settings_backup_restore',
-            iconColor: 'success'
-          }
-        });
-
-        dialogRef.afterClosed()
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(restul => this.reload());
+        this.flash('success', `${user.fullName ?? user.login} is restored but still deactivated. You can activate it later.`);
       },
       error: () =>
-        this.snackBar.open('Failed to reactivate user.', 'Dismiss', { duration: 3000 }),
+        this.flash('error', 'Failed to restore user.')
     });
   }
 
@@ -154,6 +141,21 @@ export class DeletedUsersComponent implements OnInit {
         .toUpperCase();
     }
     return user.email[0].toUpperCase();
+  }
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 
   private reload() {

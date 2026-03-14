@@ -69,10 +69,11 @@ export class DeactivatedComponent implements OnInit {
 
   isLoading = false;
   searchTerm = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   constructor(
-    private snackBar: MatSnackBar,
-    private authService: AuthService,
+    public authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -94,7 +95,7 @@ export class DeactivatedComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load deactivated users.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load deactivated users.');
       },
     });
   }
@@ -104,7 +105,7 @@ export class DeactivatedComponent implements OnInit {
         next: (result) => this.stats = result,
         error: () =>{
           this.isLoading = false;
-          this.snackBar.open('Failed to load users.', 'Dismiss', { duration: 3000 });
+          this.flash('error', 'Failed to load users.');
       }
     });
   }
@@ -121,14 +122,11 @@ export class DeactivatedComponent implements OnInit {
   activateUser(user: AuthUserGetResponseDto): void {
     this.authService.activate(user.id).subscribe({
       next: () => {
-        this.snackBar.open(
-          `${user.fullName ?? user.email} reactivated.`, 'OK',
-          { duration: 3000 }
-        );
+        this.flash('success',`User "${user.fullName}" has been reactivated.`);
         this.loadUsers();
       },
       error: () =>
-        this.snackBar.open('Failed to reactivate user.', 'Dismiss', { duration: 3000 }),
+        this.flash('error', `Failed to reactivate user "${user.fullName}".`),
     });
   }
 
@@ -153,5 +151,20 @@ export class DeactivatedComponent implements OnInit {
     this.loadStats();
     this.loadUsers();
     this.cdr.markForCheck();
+  }
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 }

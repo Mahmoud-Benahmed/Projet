@@ -47,6 +47,8 @@ export class RegisterComponent implements OnDestroy {
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
+  error: string | null = null;
+  successMessage: string | null = null;
 
   roles: RoleResponseDto[] = [];
 
@@ -58,8 +60,7 @@ export class RegisterComponent implements OnDestroy {
   constructor(private router: Router,
               private authService: AuthService,
               private cdr: ChangeDetectorRef,
-              private dialog: MatDialog,
-              private snackbar: MatSnackBar) {}
+              private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.authService.getRoles().subscribe(
@@ -159,7 +160,7 @@ export class RegisterComponent implements OnDestroy {
         error: (err) => {
           this.stopLoading();
           let error= err.error as HttpError;
-          this.snackbar.open(error.message, 'Dismiss', { duration: 3000 });
+          this.flash('error',error.message);
         }
       });
   }
@@ -169,36 +170,13 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register(this.credentials).subscribe({
         next: (registeredUser) => {
           this.stopLoading();
-          const dialogRef= this.dialog.open(ModalComponent, {
-            width: '400px',
-            data: {
-              title: 'User Registered',
-              message: `Account for ${registeredUser.fullName} has been created successfully.`,
-              confirmText: 'Ok',
-              showCancel: false,
-              icon: 'check_circle',
-              iconColor: 'success'
-            }
-          });
-          dialogRef.afterClosed().subscribe(() => this.resetForm());
+          this.flash('success', `Account for ${registeredUser.fullName} has been created successfully.`);
           setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
           this.stopLoading();
           let err = error.error as HttpError
-
-
-          this.dialog.open(ModalComponent, {
-              width: '400px',
-              data: {
-                title: "Error",
-                message: err.message,
-                confirmText: 'Ok',
-                showCancel: false,
-                icon: 'check_circle',
-                iconColor: 'danger'
-              }
-          });
+          this.flash('error', err.message);
         }
     });
   }
@@ -289,6 +267,21 @@ export class RegisterComponent implements OnDestroy {
     this.showPassword = false;
     this.registerForm.resetForm();
   }
+
+  dismissError(): void { this.error = null; }
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+
   stopLoading():void{
     this.isLoading = false;
     this.cdr.markForCheck();

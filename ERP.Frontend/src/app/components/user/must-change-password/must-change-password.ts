@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,9 @@ import { NotSameAsDirective } from '../../../util/NotSameAsDirective';
 import { generatePassword, checkPassword } from '../../../util/PasswordUtil';
 import { SameAsDirective } from '../../../util/SameAsDirective';
 import { ChangeProfilePasswordRequestDto } from '../../../interfaces/AuthDto';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalComponent } from '../../modal/modal';
+import { HttpError } from '../../../interfaces/ErrorDto';
 
 @Component({
   selector: 'app-must-change-password',
@@ -37,8 +40,8 @@ import { ChangeProfilePasswordRequestDto } from '../../../interfaces/AuthDto';
 export class MustChangePasswordComponent implements OnInit{
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
   mustChangePassword: boolean = false;
-
-
+  error: string | null = null;
+  successMessage: string | null = null;
 
   isLoading = false;
   showCurrentPassword = false;
@@ -56,7 +59,8 @@ export class MustChangePasswordComponent implements OnInit{
   constructor(
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(){
@@ -70,13 +74,23 @@ export class MustChangePasswordComponent implements OnInit{
      next: () => {
         this.isLoading = false;
         if (this.mustChangePassword) this.authService.clearMustChangePassword();
-        this.snackBar.open('Password changed successfully!', 'OK', { duration: 3000 });
-        this.router.navigate(['/home']);
+            this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Password change',
+                message: `Password has been changed successfully and you will use it on next login.`,
+                confirmText: 'Understood',
+                showCancel: false,
+                icon: 'info',
+                iconColor: 'success'
+              }
+            });
+            this.router.navigate(['/home']);
       },
-      error: (err) => {
+      error: (error) => {
         this.isLoading = false;
-        const message = err.error?.message || 'Failed to change password. Please try again.';
-        this.snackBar.open(message, 'Dismiss', { duration: 4000 });
+        const err = error as HttpError;
+        this.flash('error',err.message);
       },
     });
   }
@@ -134,5 +148,20 @@ export class MustChangePasswordComponent implements OnInit{
       'weak': 'Weak', 'fair': 'Fair', 'strong': 'Strong', 'very strong': 'Very Strong',
     };
     return map[this.passwordStrength] ?? '';
+  }
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 }
