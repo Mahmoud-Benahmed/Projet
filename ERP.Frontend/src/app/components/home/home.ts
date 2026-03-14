@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,12 +19,13 @@ import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 export class HomeComponent implements OnInit {
   isLoading = false;
   userProfile: AuthUserGetResponseDto | null = null;
-  userRole: string | null = null;
   lastLogin: string = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   constructor(
-    private authService: AuthService,
-    private snackbar: MatSnackBar
+    public authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -37,21 +38,36 @@ export class HomeComponent implements OnInit {
 
     if (this.authService.UserProfile) {
       this.userProfile = this.authService.UserProfile;
-      this.userRole = this.authService.Role;
     } else {
       this.authService.getMe().subscribe({
         next: (authUser) => {
           this.userProfile = authUser;
           this.authService.setUserProfile(this.userProfile);
-          this.userRole = this.authService.Role;
         },
         error: (error) => {
           if (error.status === 0) return;
-          this.snackbar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+          this.flash('error', 'Failed to load profile.');
         }
       });
     }
   }
+
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+
 
   private getLastLogin(): string {
     const now = new Date();

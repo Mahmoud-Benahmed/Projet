@@ -5,15 +5,28 @@
     <div>
       <h1 class="home__welcome">Welcome back, {{ userProfile?.fullName ?? '' }} 👋</h1>
       <div class="home__meta">
-        <span class="home__role-badge">{{ userRole }}</span>
+        <span class="home__role-badge">{{ authService.Role }}</span>
         <span class="home__last-login">Last login: {{ lastLogin }}</span>
       </div>
     </div>
   </div>
 
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
   <!-- Quick Access -->
   <div class="home__quick-grid">
 
+    <!-- ── Always visible ── -->
     <a class="home__quick-card" routerLink="/profile">
       <div class="home__quick-icon home__quick-icon--blue">
         <mat-icon>person</mat-icon>
@@ -22,7 +35,9 @@
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
-    <a class="home__quick-card" routerLink="/users" *ngIf="userRole === 'SystemAdmin'">
+    <!-- ── User Management ── -->
+    <a class="home__quick-card" routerLink="/users"
+       *ngIf="authService.canManageUsers">
       <div class="home__quick-icon home__quick-icon--green">
         <mat-icon>group</mat-icon>
       </div>
@@ -30,11 +45,87 @@
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
-    <a class="home__quick-card" routerLink="/users/register" *ngIf="userRole === 'SystemAdmin'">
+    <a class="home__quick-card" routerLink="/users/register"
+       *ngIf="authService.canRegisterUsers">
       <div class="home__quick-icon home__quick-icon--blue">
         <mat-icon>person_add</mat-icon>
       </div>
       <span class="home__quick-label">Register User</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/users/deactivated"
+       *ngIf="authService.hasPrivilege('DeactivateUser')">
+      <div class="home__quick-icon home__quick-icon--amber">
+        <mat-icon>person_off</mat-icon>
+      </div>
+      <span class="home__quick-label">Deactivated Users</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/users/deleted"
+       *ngIf="authService.canRestoreUsers">
+      <div class="home__quick-icon home__quick-icon--red">
+        <mat-icon>group_remove</mat-icon>
+      </div>
+      <span class="home__quick-label">Deleted Users</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/permissions"
+       *ngIf="authService.canSeePermissions">
+      <div class="home__quick-icon home__quick-icon--purple">
+        <mat-icon>shield</mat-icon>
+      </div>
+      <span class="home__quick-label">Permissions</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <!-- ── Articles ── -->
+    <a class="home__quick-card" routerLink="/articles"
+       *ngIf="authService.canViewArticles">
+      <div class="home__quick-icon home__quick-icon--green">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <span class="home__quick-label">Articles</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/articles/deleted"
+       *ngIf="authService.canRestoreArticles">
+      <div class="home__quick-icon home__quick-icon--red">
+        <mat-icon>recycling</mat-icon>
+      </div>
+      <span class="home__quick-label">Deleted Articles</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <!-- ── Clients ── -->
+    <a class="home__quick-card" routerLink="/clients"
+       *ngIf="authService.canViewClients">
+      <div class="home__quick-icon home__quick-icon--blue">
+        <mat-icon>people</mat-icon>
+      </div>
+      <span class="home__quick-label">Clients</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/clients/deleted"
+       *ngIf="authService.canRestoreClients">
+      <div class="home__quick-icon home__quick-icon--red">
+        <mat-icon>person_remove</mat-icon>
+      </div>
+      <span class="home__quick-label">Deleted Clients</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <!-- ── Audit Log ── -->
+    <a class="home__quick-card" routerLink="/audit-log"
+       *ngIf="authService.canSeeAuditLog">
+      <div class="home__quick-icon home__quick-icon--amber">
+        <mat-icon>history</mat-icon>
+      </div>
+      <span class="home__quick-label">Audit Log</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
