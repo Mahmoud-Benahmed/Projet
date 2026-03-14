@@ -187,12 +187,15 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.Headers.RetryAfter = retrySeconds.ToString();
         Console.WriteLine($"retryAfter: {retrySeconds}");
 
+        string FormatWaitTime(int seconds) => seconds >= 60 ? $"{seconds / 60} minute{(seconds / 60 > 1 ? "s" : "")}"
+                                                            : $"{seconds} second{(seconds > 1 ? "s" : "")}";
+
         var message = policyName switch
         {
-            "LoginPolicy" => $"Too many login attempts. Please wait {retrySeconds} seconds before retrying.",
-            "WritePolicy" => $"Too many write operations. Please wait {retrySeconds} seconds before retrying.",
-            "UserPolicy" => $"Request limit reached. Please wait {retrySeconds} seconds before retrying.",
-            _ => $"Too many requests. Please wait {retrySeconds} seconds before retrying."
+            "LoginPolicy" => $"Too many login attempts. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            "WritePolicy" => $"Too many write operations. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            "UserPolicy" => $"Request limit reached. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            _ => $"Too many requests. Please wait {FormatWaitTime(retrySeconds)} before retrying."
         };
 
         await context.HttpContext.Response.WriteAsync(
