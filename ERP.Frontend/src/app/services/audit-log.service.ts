@@ -17,7 +17,7 @@ export type AuditAction =
   | 'UserActivated'
   | 'UserDeactivated'
   | 'UserDeleted'
-  | 'UserRecovered'
+  | 'UserRestored'
   | 'UserDeletedPermanently';
 
 export interface AuditLogResponseDto {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,6 +9,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from  '../../../environment';
 import { forkJoin } from 'rxjs';
 import { MatDialogActions, MatDialogContent } from "@angular/material/dialog";
+import { AuthService } from '../../../services/auth.service';
 
 interface RoleDto {
   id: string;
@@ -58,10 +59,15 @@ export class PermissionMatrixComponent implements OnInit {
   categories: string[] = [];
   matrix: Map<string, MatrixCell> = new Map();
   isLoading = true;
+  error: string | null = null;
+  successMessage: string | null = null;
 
   private baseUrl = `${environment.apiUrl}`;
 
-  constructor(private http: HttpClient, private snackBar: MatSnackBar) {}
+  constructor(private http: HttpClient,
+              private cdr: ChangeDetectorRef,
+              public authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadMatrix();
@@ -81,9 +87,7 @@ export class PermissionMatrixComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load permission matrix.', 'Dismiss', {
-          duration: 3000,
-        });
+        this.flash('error', 'Failed to load permission matrix.');
       },
     });
   }
@@ -110,9 +114,7 @@ export class PermissionMatrixComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load privileges.', 'Dismiss', {
-          duration: 3000,
-        });
+        this.flash('error', 'Failed to load privileges.');
       },
     });
   }
@@ -133,14 +135,13 @@ export class PermissionMatrixComponent implements OnInit {
 
     this.http.put(url, {}).subscribe({
       next: () => {
+        this.flash('success', 'Privilege has been updated succcessfully.');
         cell.isGranted = !wasGranted;
         cell.loading = false;
       },
       error: () => {
         cell.loading = false;
-        this.snackBar.open('Failed to update privilege.', 'Dismiss', {
-          duration: 3000,
-        });
+        this.flash('error', 'Operation failed, please retry later.');
       },
     });
   }
@@ -155,5 +156,20 @@ export class PermissionMatrixComponent implements OnInit {
 
   private cellKey(roleId: string, controleId: string): string {
     return `${roleId}::${controleId}`;
+  }
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 }

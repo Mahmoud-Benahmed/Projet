@@ -15,7 +15,7 @@
         </svg>
         Refresh Logs
       </button>
-      <button class="btn-danger btn-icon" (click)="confirmClear()">
+      <button class="btn-danger btn-icon" (click)="confirmClear()" *ngIf="dataSource.data.length > 0">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"/>
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -51,14 +51,22 @@
     </div>
   </div>
 
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+
   <!-- ── TABLE CARD ── -->
   <div class="table-card">
 
-    <div class="loading-overlay" *ngIf="isLoading">
-      <div class="spinner"></div>
-    </div>
-
-    <table class="table" *ngIf="!isLoading">
+    <table class="table">
       <thead>
         <tr>
           <th style="width:32px"></th>

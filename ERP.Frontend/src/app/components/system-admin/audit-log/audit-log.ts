@@ -56,6 +56,8 @@ export class AuditLogComponent implements OnInit {
   selectedAction: AuditAction | null = null;
   selectedStatus: boolean | null = null;
   userIdFilter = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   readonly ACTION_MAP: Record<AuditAction, ActionMeta> = {
     Login:                    { icon: 'login',              category: 'auth' },
@@ -69,7 +71,7 @@ export class AuditLogComponent implements OnInit {
     UserActivated:            { icon: 'check_circle',       category: 'user' },
     UserDeactivated:          { icon: 'block',              category: 'danger' },
     UserDeleted:              { icon: 'auto_delete',        category: 'danger' },
-    UserRecovered:            { icon: 'restore_from_trash', category: 'user' },
+    UserRestored:            { icon: 'restore_from_trash', category: 'user' },
     UserDeletedPermanently:   { icon: 'delete_forever',     category: 'danger' },
   };
 
@@ -104,7 +106,7 @@ export class AuditLogComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load audit logs.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load audit logs.');
       }
     });
   }
@@ -142,11 +144,11 @@ export class AuditLogComponent implements OnInit {
         if (result) {
               this.auditLogService.clear().subscribe({
                 next: () => {
-                    this.snackBar.open('Audit logs cleared.', 'OK', { duration: 3000 });
+                    this.flash('success', 'Audit logs cleared.');
                     this.load();
                     this.cdr.markForCheck();
                 },
-                error: () => this.snackBar.open('Failed to clear logs.', 'Dismiss', { duration: 3000 })
+                error: () =>(this.flash('error', 'Failed to clear logs.'))
               });
         }else{
           return;
@@ -185,5 +187,19 @@ export class AuditLogComponent implements OnInit {
 
     this.router.navigate(['/users', authUserId]);
   }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+  dismissError(): void { this.error = null; }
 
 }
