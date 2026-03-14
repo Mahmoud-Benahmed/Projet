@@ -103,7 +103,7 @@ namespace ERP.AuthService.Domain
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Recover()
+        public void Restore()
         {
             if (!IsDeleted) return;
             IsDeleted = false;// if user deactivated by the system, it can be activated by Activate() which not set here to prevent accidental activation for a deactivated user

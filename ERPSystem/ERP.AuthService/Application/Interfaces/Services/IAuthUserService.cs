@@ -18,10 +18,8 @@ namespace ERP.AuthService.Application.Interfaces.Services
 
 
         Task SoftDeleteAsync(Guid userId, Guid performedById);
-        Task RecoverAsync(Guid userId, Guid performedById);
+        Task RestoreAsync(Guid userId, Guid performedById);
         Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId);
-
-        Task DeleteAsync(Guid userId, Guid performedById);
 
         Task<bool> ExistsByLogin(string login);
         Task<bool> ExistsByEmail(string email);

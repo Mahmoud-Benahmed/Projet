@@ -487,7 +487,7 @@ namespace ERP.AuthService.Application.Services
                     metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
         }
 
-        public async Task RecoverAsync(Guid id, Guid performedById)
+        public async Task RestoreAsync(Guid id, Guid performedById)
         {
             var user = await _userRepository.GetByIdAsync(id)
                         ?? throw new UserNotFoundException(id);
@@ -495,16 +495,16 @@ namespace ERP.AuthService.Application.Services
             var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
 
             if (!user.IsDeleted) return; // no need to update
-            user.Recover();
+            user.Restore();
             await _userRepository.UpdateAsync(user);
 
             await _auditLogger.LogAsync(
-                    AuditAction.UserRecovered,
+                    AuditAction.UserRestored,
                     success: true,
                     performedBy: performedById,
                     targetUserId: user.Id,
                     ipAddress: GetIp(),
-                    metadata: new() { ["recovered"] = user.Login, ["recoveredBy"] = performedById.ToString() });
+                    metadata: new() { ["restored"] = user.Login, ["restoredBy"] = performedById.ToString() });
         }
 
         public async Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId)
@@ -521,26 +521,6 @@ namespace ERP.AuthService.Application.Services
                 pageSize);
         }
 
-
-
-        // ======================
-        // HARD DELETE
-        // ======================
-        public async Task DeleteAsync(Guid id, Guid performedById)
-        {
-            var user = await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
-
-            var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
-
-            await _userRepository.DeleteAsync(id);
-            await _auditLogger.LogAsync(
-                    AuditAction.UserDeletedPermanently,
-                    success: true,
-                    performedBy: performedById,
-                    targetUserId: user.Id,
-                    ipAddress: GetIp(),
-                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString() });
-        }
 
 
 

@@ -161,9 +161,9 @@ namespace ERP.AuthService.Controllers
             return NoContent();
         }
 
-        [HttpPatch("recover/{id:guid}")]
+        [HttpPatch("restore/{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Recover(Guid id)
+        public async Task<IActionResult> Restore(Guid id)
         {
             // Extract authUserId from the JWT claim
             var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -172,7 +172,7 @@ namespace ERP.AuthService.Controllers
                 return Forbid();
             }
 
-            await _authService.RecoverAsync(id, requesterId);
+            await _authService.RestoreAsync(id, requesterId);
             return NoContent();
         }
 
@@ -188,25 +188,6 @@ namespace ERP.AuthService.Controllers
             var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
             return Ok(result);
         }
-
-        [HttpDelete("delete/hard/{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Delete(Guid id)
-        {
-            // Extract authUserId from the JWT claim
-            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
-            {
-                return Forbid();
-            }
-            
-            if (requesterId.Equals(id))
-                return Forbid();
-
-            await _authService.DeleteAsync(id, requesterId);
-            return NoContent();
-        }
-
 
 
         [HttpGet("by-role")]

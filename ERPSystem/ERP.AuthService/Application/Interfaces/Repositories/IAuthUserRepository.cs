@@ -22,8 +22,7 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<long> CountByStatusAsync(bool status);
         Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default);
 
-        Task<long> DeleteAsync(Guid userId);
-        Task<long> DeleteAllAsync();
+        Task DeleteAllAsync();
         
     }
 }

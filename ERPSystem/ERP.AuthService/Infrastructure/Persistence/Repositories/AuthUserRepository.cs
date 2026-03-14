@@ -63,23 +63,15 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             var result = await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
             return result.ModifiedCount > 0 ? user : null;
         }
+
+        public async Task DeleteAllAsync() => await _collection.DeleteManyAsync(_ => true);
+
         public async Task<long> CountAsync()
             => await _collection.CountDocumentsAsync(x=> x.IsActive);
 
 
         public async Task<long> CountByStatusAsync(bool status) =>
             await _collection.CountDocumentsAsync(x=> x.IsActive == status);
-
-        public async Task<long> DeleteAsync(Guid userId)
-        {
-            var result= await _collection.DeleteOneAsync(u => u.Id == userId);
-            return result.DeletedCount;
-        }
-        public async Task<long> DeleteAllAsync()
-        {
-            var result =await _collection.DeleteManyAsync(FilterDefinition<AuthUser>.Empty);
-            return result.DeletedCount;
-        }
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {
