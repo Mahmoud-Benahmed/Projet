@@ -23,7 +23,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   collapsed = false;
   openGroups: Record<string, boolean> = {
     auth: false,
-    articles: false  // FIX 3: add missing key
+    articles: false,
+    clients:  false
   };
 
   currentPage = 'Home';
@@ -37,8 +38,13 @@ export class ShellComponent implements OnInit, OnDestroy {
     '/users/deactivated': 'Deactivated',
     '/users/register': 'Register',
     '/permissions': 'Permissions',
+
     '/articles': 'Articles',
     '/articles/deleted': 'Deleted Articles',
+
+    '/clients': 'Clients',
+    '/clients/deleted': 'Deleted Clients',
+
     '/audit-log': 'Audit Log',
     '/profile': 'My Profile',
   };
@@ -53,14 +59,16 @@ export class ShellComponent implements OnInit, OnDestroy {
       filter(e => e instanceof NavigationEnd)
     ).subscribe((e: any) => {
       this.currentPage = this.pageMap[e.urlAfterRedirects] ?? 'Dashboard';
-      // Auto-open auth group if on an auth route
       if (e.urlAfterRedirects.startsWith('/users') || e.urlAfterRedirects.startsWith('/permissions')) {
         this.openGroups['auth'] = true;
       }
 
-      // FIX 5: auto-open articles group on article routes
       if (e.urlAfterRedirects.startsWith('/articles')) {
         this.openGroups['articles'] = true;
+      }
+
+      if (e.urlAfterRedirects.startsWith('/clients')) {
+        this.openGroups['clients'] = true;
       }
     });
 
@@ -76,13 +84,18 @@ export class ShellComponent implements OnInit, OnDestroy {
     });
 
     this.currentPage = this.pageMap[this.router.url] ?? 'Dashboard';
+
     if (this.router.url.startsWith('/users') ||
         this.router.url.startsWith('/permissions')) {
       this.openGroups['auth'] = true;
     }
-    // FIX 5 continued: also set on initial load
+    
     if (this.router.url.startsWith('/articles')) {
       this.openGroups['articles'] = true;
+    }
+
+    if (this.router.url.startsWith('/clients')) {
+      this.openGroups['clients'] = true;
     }
     this.cdr.markForCheck();
 

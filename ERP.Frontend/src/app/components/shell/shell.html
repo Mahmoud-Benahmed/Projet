@@ -24,7 +24,7 @@
           <mat-icon>home</mat-icon><span>Home</span>
         </a>
 
-        <div class="sidebar__group" *ngIf="authService.canSeeUsers">
+        <div class="sidebar__group" *ngIf="authService.canManageUsers">
           <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
                   [class.sidebar__item--group-open]="openGroups['auth']">
             <mat-icon>manage_accounts</mat-icon>
@@ -37,11 +37,11 @@
               <mat-icon>group</mat-icon> Users
             </a>
             <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
-              *ngIf="authService.canSeeUsers" (click)="closeMobileNav()">
+              *ngIf="authService.canActivateUsers || authService.canDeactivateUsers" (click)="closeMobileNav()">
               <mat-icon>person_off</mat-icon> Deactivated
             </a>
             <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
-              *ngIf="authService.isSystemAdmin" (click)="closeMobileNav()">
+              *ngIf="authService.canRestoreUsers" (click)="closeMobileNav()">
               <mat-icon>group_remove</mat-icon> Deleted
             </a>
             <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
@@ -64,12 +64,31 @@
           </button>
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
             <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active"
-              [routerLinkActiveOptions]="{exact:true}" *ngIf="authService.canViewArticles" (click)="closeMobileNav()">
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
               <mat-icon>inventory_2</mat-icon><span>Articles</span>
             </a>
             <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
-              *ngIf="authService.isSystemAdmin" (click)="closeMobileNav()">
+              *ngIf="authService.canRestoreArticles" (click)="closeMobileNav()">
               <mat-icon>recycling</mat-icon><span>Deleted</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar__group" *ngIf="authService.canManageClients">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('clients')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['clients']">
+            <mat-icon>people</mat-icon>
+            <span>Clients</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
+            <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}">
+              <mat-icon>person</mat-icon><span>Clients</span>
+            </a>
+            <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRestoreClients">
+              <mat-icon>person_remove</mat-icon><span>Deleted</span>
             </a>
           </div>
         </div>
@@ -119,7 +138,7 @@
       </a>
 
       <!-- Auth & Users (collapsible group) -->
-      <div class="sidebar__group" *ngIf="authService.canSeeUsers">
+      <div class="sidebar__group" *ngIf="authService.canManageUsers">
         <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
                 [class.sidebar__item--group-open]="openGroups['auth']">
           <mat-icon>manage_accounts</mat-icon>
@@ -131,11 +150,11 @@
             <mat-icon>group</mat-icon> Users
           </a>
           <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
-              *ngIf="authService.canSeeUsers">
+              *ngIf="authService.canActivateUsers || authService.canDeactivateUsers">
             <mat-icon>person_off</mat-icon> Deactivated
           </a>
           <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
-              *ngIf="authService.isSystemAdmin">
+              *ngIf="authService.canRestoreUsers">
             <mat-icon>group_remove</mat-icon> Deleted
           </a>
           <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
@@ -165,12 +184,32 @@
             <span>Articles</span>
           </a>
           <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
-              *ngIf="authService.isSystemAdmin">
+              *ngIf="authService.canRestoreArticles">
             <mat-icon>recycling</mat-icon>
             <span>Deleted</span>
           </a>
         </div>
       </div>
+
+      <div class="sidebar__group" *ngIf="authService.canManageClients">
+        <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('clients')" type="button"
+                [class.sidebar__item--group-open]="openGroups['clients']">
+          <mat-icon>people</mat-icon>
+          <span>Clients</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
+        </button>
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
+          <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
+            [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>person</mat-icon><span>Clients</span>
+          </a>
+          <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
+            *ngIf="authService.canRestoreClients">
+            <mat-icon>person_remove</mat-icon><span>Deleted</span>
+          </a>
+        </div>
+      </div>
+
 
       <!-- Audit Log -->
       <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
