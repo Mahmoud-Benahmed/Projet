@@ -69,9 +69,9 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ArticleDbContext>();
     await context.Database.MigrateAsync();
 
-    await context.Articles.ExecuteDeleteAsync();
-    await context.ArticleCodes.ExecuteDeleteAsync();
-    await context.Categories.ExecuteDeleteAsync();
+    await context.ArticleCodes.IgnoreQueryFilters().ExecuteDeleteAsync();
+    await context.Articles.IgnoreQueryFilters().ExecuteDeleteAsync();
+    await context.Categories.IgnoreQueryFilters().ExecuteDeleteAsync();
 
     var articleCodeSeeder = new ArticleCodeSeeder(
         context,

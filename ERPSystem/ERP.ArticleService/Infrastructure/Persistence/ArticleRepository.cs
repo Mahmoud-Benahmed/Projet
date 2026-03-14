@@ -34,6 +34,13 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
+        public async Task<Article?> GetByIdDeletedAsync(Guid id)
+        {
+            return await BaseQuery()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
         // =========================
         // READ - BY CODE
         // =========================

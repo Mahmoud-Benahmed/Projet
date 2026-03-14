@@ -85,7 +85,7 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task RestoreAsync(Guid id)
         {
-            var article = await GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
             if (!article.IsDeleted)
                 return;
 
