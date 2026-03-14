@@ -3,38 +3,32 @@ import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const auth = inject(AuthService);
+  const auth   = inject(AuthService);
   const router = inject(Router);
-  const path = route.routeConfig?.path ?? '';
+  const path   = route.routeConfig?.path ?? '';
 
-  // Not logged in
+  // ── Not logged in
   if (!auth.isLoggedIn()) {
     return router.createUrlTree(['/login']);
   }
 
-  const mustChangePassword = auth.getMustChangePassword();
-  const userRole = auth.Role; // use a getter instead of property
-
-  // Force password change
-  if (mustChangePassword && path !== 'must-change-password') {
+  // ── Force password change
+  if (auth.getMustChangePassword() && path !== 'must-change-password') {
     return router.createUrlTree(['/must-change-password']);
   }
 
-  // Role-based access
-  const requiredRoles = route.data['roles'] as string[] | undefined;
+  // ── Privilege-based access
+  const requiredPrivileges = route.data['privileges'] as string[] | undefined;
 
-  if (requiredRoles?.length) {
-    if (!userRole || !requiredRoles.includes(userRole)) {
+  if (requiredPrivileges?.length) {
+    const hasAccess = requiredPrivileges.some(p => auth.hasPrivilege(p));
 
-      switch(userRole){
-        case 'SystemAdmin':
-          return router.createUrlTree(['/users']);
-        case 'StockManager':
-          return router.createUrlTree(['/articles']);
-        default:
-          return router.createUrlTree(['/home']);
-      }
-
+    if (!hasAccess) {
+      // Redirect to the most relevant page based on what the user CAN access
+      if (auth.hasPrivilege('ViewUsers'))    return router.createUrlTree(['/users']);
+      if (auth.hasPrivilege('ViewArticles')) return router.createUrlTree(['/articles']);
+      if (auth.hasPrivilege('ViewClients'))  return router.createUrlTree(['/clients']);
+      return router.createUrlTree(['/home']);
     }
   }
 

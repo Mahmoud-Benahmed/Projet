@@ -106,6 +106,23 @@ export class AuthService {
     return this.getPayload()?.login ?? null;
   }
 
+  // ========================
+  // ROLES
+  // ========================
+  get isSystemAdmin(): boolean {
+    return this.Role === 'SystemAdmin';}
+
+  get isStockManager(): boolean {
+    return this.Role === 'StockManager';}
+
+  get isSalesManager(): boolean {
+    return this.Role === 'SalesManager';}
+  get isAccountant(): boolean {
+    return this.Role === 'Accountant';}
+
+  // ========================
+  // PRIVILEGES
+  // ========================
   get Privileges(): string[] {
     const payload = this.getPayload();
     if (!payload?.privilege) return [];
@@ -114,47 +131,79 @@ export class AuthService {
       : [payload.privilege];
   }
 
-    get canSeeUsers(): boolean {
-    return this.hasPrivilege('ManageUsers')
-        || this.hasPrivilege('AssignRoles');
+  hasPrivilege(privilege: string): boolean {
+    return this.Privileges.includes(privilege);
   }
 
+  // =========================
+  // USERS + AUDIT LOGS
+  // =========================
+  get canManageUsers(): boolean {
+  return this.hasPrivilege('ViewUsers')
+      || this.hasPrivilege('ActivateUser')
+      || this.hasPrivilege('DeactivateUser')
+      || this.hasPrivilege('CreateUser')
+      || this.hasPrivilege('UpdateUser')
+      || this.hasPrivilege('DeleteUser');
+  }
+  get canViewUsers():boolean{
+    return this.hasPrivilege('ViewUsers');}
+  get canActivateUsers(): boolean{
+    return this.hasPrivilege('ActivateUser');}
+  get canDeactivateUsers(): boolean{
+    return this.hasPrivilege('DeactivateUser');}
   get canRegisterUsers(): boolean {
-    return this.hasPrivilege('ManageUsers');
-  }
-
+    return this.hasPrivilege('CreateUser');}
+  get canDeleteUsers(): boolean {
+    return this.hasPrivilege('DeleteUser');}
+  get canRestoreUsers(): boolean {
+    return this.hasPrivilege('RestoreUser');}
   get canSeePermissions(): boolean {
-    return this.hasPrivilege('AssignRoles');
+    return this.hasPrivilege('AssignRoles');}
+  get canSeeAuditLog(): boolean {
+    return this.hasPrivilege('ManageAuditLogs');
   }
 
 
-  get canViewArticles(): boolean {
-    return this.hasPrivilege('ViewArticles');
-  }
-
+  // =============================
+  // ARTICLES
+  // =============================
   get canManageArticles(): boolean {
     return this.hasPrivilege('ViewArticles')
         || this.hasPrivilege('CreateArticle')
         || this.hasPrivilege('UpdateArticle')
         || this.hasPrivilege('DeleteArticle');
   }
+  get canViewArticles(): boolean {
+    return this.hasPrivilege('ViewArticles');}
+  get canCreateArticles(): boolean {
+    return this.hasPrivilege('CreateArticle');}
+  get canUpdateArticles(): boolean {
+    return this.hasPrivilege('UpdateArticle');}
+  get canDeleteArticles(): boolean {
+    return this.hasPrivilege('DeleteArticle');}
+  get canRestoreArticles(): boolean {
+    return this.hasPrivilege('RestoreArticle');}
 
-  get canSeeAuditLog(): boolean {
-    return this.hasPrivilege('ManageAuditLogs');
-  }
+  // =============================
+  // CLIENTS
+  // =============================
+  get canManageClients(): boolean {
+    return this.hasPrivilege('ViewClients')
+        || this.hasPrivilege('CreateClient')
+        || this.hasPrivilege('UpdateClient')
+        || this.hasPrivilege('DeleteClient');}
 
-  get isSystemAdmin(): boolean {
-    return this.Role === 'SystemAdmin';
-  }
-
-  get isStockManager(): boolean {
-    return this.Role === 'StockManager';
-  }
-
-  hasPrivilege(privilege: string): boolean {
-    return this.Privileges.includes(privilege);
-  }
-
+  get canViewClients(): boolean {
+    return this.hasPrivilege('ViewClients');}
+  get canCreateClients(): boolean {
+    return this.hasPrivilege('CreateClient');}
+  get canUpdateClients(): boolean {
+    return this.hasPrivilege('UpdateClient');}
+  get canDeleteClients(): boolean {
+    return this.hasPrivilege('DeleteClient');}
+  get canRestoreClients(): boolean {
+    return this.hasPrivilege('RestoreClient');}
 
   storeMustChangePassword(value: boolean): void {
     localStorage.setItem('mustChangePassword', String(value));
@@ -318,16 +367,10 @@ export class AuthService {
     return this.http.delete<void>(`${this.baseUrl}/delete/soft/${id}`);
   }
 
-  /** PATCH /auth/recover/{id} — Recover: reset IsDeleted to false */
-  recover(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/recover/${id}`, {});
+  /** PATCH /auth/restore/{id} — Recover: reset IsDeleted to false */
+  restore(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/restore/${id}`, {});
   }
-
-  /** DELETE /auth/delete/hard/{id} — Activate a user account */
-  delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/delete/hard/${id}`);
-  }
-
 
 
   // ── Auth: Password Management ────────────────────────────────────────────
