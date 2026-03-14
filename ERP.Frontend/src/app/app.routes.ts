@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login';
 import { HomeComponent } from './components/home/home';
 import { RegisterComponent } from './components/system-admin/users/register/register';
-import { authGuard } from './services/auth.guard';
+import { authGuard } from './guard/auth.guard';
 import { UsersHomeComponent } from './components/system-admin/users/home/home';
 import { ShellComponent } from './components/shell/shell';
 import { ProfileComponent } from './components/user/profile/profile';
@@ -12,7 +12,7 @@ import { MustChangePasswordComponent } from './components/user/must-change-passw
 import { PermissionMatrixComponent } from './components/system-admin/permission-matrix/permission-matrix';
 import { ArticleComponent } from './components/articles/home/home';
 import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
-import {DeletedUsersComponent } from './components/system-admin/users/deleted/deleted';
+import { DeletedUsersComponent } from './components/system-admin/users/deleted/deleted';
 import { DeletedArticlesComponent } from './components/articles/deleted/deleted';
 import { ClientComponent } from './components/clients/home/home';
 import { DeletedClientsComponent } from './components/clients/deleted/deleted';
