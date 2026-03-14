@@ -81,7 +81,7 @@ namespace ERP.ClientService.Infrastructure.Repositories
         // =========================
         public async Task<ClientStatsDto> GetStatsAsync()
         {
-            var total = await _context.Clients.CountAsync();
+            var total = await _context.Clients.IgnoreQueryFilters().CountAsync();
             var active = await _context.Clients.CountAsync();
             var deleted = await _context.Clients.IgnoreQueryFilters().CountAsync(c => c.IsDeleted);
 
