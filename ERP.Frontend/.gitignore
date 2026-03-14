@@ -38,8 +38,9 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
-/src/app/environment.ts
+/ERP.Frontend/src/app/environment.ts
 
 # System files
 .DS_Store
 Thumbs.db
+.vs/

@@ -5,12 +5,13 @@
         Guid Id,
         string Email,
         string Login,
+        string FullName,
         Guid RoleId,
         string RoleName,
         bool MustChangePassword,
         bool IsActive,
         DateTime CreatedAt,
-        DateTime UpdatedAt,
+        DateTime? UpdatedAt,
         DateTime? LastLoginAt
     );
 }

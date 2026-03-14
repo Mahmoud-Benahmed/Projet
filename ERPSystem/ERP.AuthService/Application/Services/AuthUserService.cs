@@ -1,12 +1,16 @@
-﻿using ERP.AuthService.Application.DTOs.AuthUser;
+﻿using Confluent.Kafka;
+using ERP.AuthService.Application.DTOs;
+using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
+using ERP.AuthService.Domain.Logger;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using System.Globalization;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +20,8 @@ namespace ERP.AuthService.Application.Services
 {
     public class AuthUserService : IAuthUserService
     {
+        private readonly IAuditLogger _auditLogger;
+        private readonly IHttpContextAccessor _httpContext;
         private readonly IAuthUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
@@ -23,17 +29,20 @@ namespace ERP.AuthService.Application.Services
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
-        private readonly IEventPublisher _eventPublisher;
+        //private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
+            IAuditLogger auditLogger,
+            IHttpContextAccessor httpContextAccessor,
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository,
-            IEventPublisher eventPublisher)
+            IPrivilegeRepository privilegeRepository
+            )
+            //,IEventPublisher eventPublisher
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -42,7 +51,61 @@ namespace ERP.AuthService.Application.Services
             _passwordHasher = passwordHasher;
             _controleRepository = controleRepository;
             _privilegeRepository = privilegeRepository;
-            _eventPublisher = eventPublisher;
+            _auditLogger = auditLogger;
+            _httpContext = httpContextAccessor;
+
+            //_eventPublisher = eventPublisher;
+        }
+
+        // ============================================
+        // READ
+        // ============================================
+
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId)
+        {
+            ValidatePaging(pageNumber, pageSize);
+
+            var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
+
+            var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
+
+            return new PagedResultDto<AuthUserGetResponseDto>(
+                mapped,
+                totalCount,
+                pageNumber,
+                pageSize);
+        }
+
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId)
+        {
+
+            ValidatePaging(pageNumber, pageSize);
+
+            var (items, totalCount) = await _userRepository.GetPagedByStatusAsync(isActive, pageNumber, pageSize, excludeId);
+
+            var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
+
+            return new PagedResultDto<AuthUserGetResponseDto>(
+                mapped,
+                totalCount,
+                pageNumber,
+                pageSize);
+        }
+
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetPagedByRoleAsync(Guid roleId, int pageNumber, int pageSize, Guid? excludeId)
+        {
+
+            ValidatePaging(pageNumber, pageSize);
+
+            var (items, totalCount) = await _userRepository.GetPagedByRoleAsync(roleId, pageNumber, pageSize, excludeId);
+
+            var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
+
+            return new PagedResultDto<AuthUserGetResponseDto>(
+                mapped,
+                totalCount,
+                pageNumber,
+                pageSize);
         }
 
         public async Task<AuthUserGetResponseDto> GetByIdAsync(Guid id)
@@ -55,7 +118,7 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<AuthUserGetResponseDto> GetByLoginAsync(string login)
         {
-            var user= await _userRepository.GetByLoginAsync(login)
+            var user = await _userRepository.GetByLoginAsync(login)
                         ?? throw new UserNotFoundException(login);
 
             return await MapToDtoAsync(user);
@@ -72,6 +135,29 @@ namespace ERP.AuthService.Application.Services
         }
 
 
+
+
+        // ===============================
+        // PROFILE UPDATE, CREATE, LOGIN
+        // ===============================
+        public async Task<AuthUserGetResponseDto> UpdateProfile(Guid id, UpdateProfileDto request)
+        {
+            var user= await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
+            user.UpdateProfile(request.FullName, request.Email);
+
+            var updated= await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                AuditAction.ProfileUpdated,
+                success: true,
+                performedBy: id,
+                targetUserId: id,
+                metadata: new() { ["email"] = user.Email, ["fullName"] = user.FullName },
+                ipAddress: GetIp());
+            return await MapToDtoAsync(updated);
+        }
+
+
         public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request)
         {
             if (await _userRepository.ExistsByLoginAsync(request.Login))
@@ -82,48 +168,87 @@ namespace ERP.AuthService.Application.Services
 
             var role = await _roleRepository.GetByIdAsync(request.RoleId) ?? throw new InvalidOperationException("Role not found.");
 
-            var user = new AuthUser(request.Login, request.Email);
+            string capitalizedFullName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(request.FullName.ToLower());
+
+            var user = new AuthUser(request.Login, request.Email, capitalizedFullName, role.Id);
             var hashedPassword = _passwordHasher.HashPassword(user, request.Password);
             user.SetPasswordHash(hashedPassword);
-            user.SetRole(role.Id);
 
             await _userRepository.AddAsync(user);
 
-            // publish event to Kafka
-            await _eventPublisher.PublishAsync(
-                Topics.UserRegistered, 
-                new UserRegisteredEvent(
-                                        AuthUserId: user.Id.ToString(),
-                                        Email: user.Email
-            ));
-
+            await _auditLogger.LogAsync(
+                AuditAction.UserRegistered,
+                success: true,
+                targetUserId: user.Id,
+                metadata: new() { ["login"] = request.Login, ["email"] = request.Email },
+                ipAddress: GetIp());
+            
             return await MapToDtoAsync(user);
         }
-
+                
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _userRepository.GetByLoginAsync(request.Login)
-                ?? throw new InvalidCredentialsException();
+            try
+            {
+                var user = await _userRepository.GetByLoginAsync(request.Login)
+                    ?? throw new InvalidCredentialsException();
 
-            if (!user.CanLogin())
-                throw new UserInactiveException();
+                if (!user.CanLogin())
+                    throw new UserInactiveException();
 
 
-            var result = _passwordHasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                request.Password
-            );
+                var result = _passwordHasher.VerifyHashedPassword(
+                    user,
+                    user.PasswordHash,
+                    request.Password
+                );
 
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
+                if (result == PasswordVerificationResult.Failed)
+                    throw new InvalidCredentialsException();
 
-            user.RecordLogin();
-            await _userRepository.UpdateAsync(user);
+                bool isFirstLogin = !user.IsActive && !user.HasLoggedInBefore();
 
-            return await GenerateAuthResponseAsync(user);
+                user.RecordLogin();
+                await _userRepository.UpdateAsync(user);
+
+                var token = await GenerateAuthResponseAsync(user);
+                await _auditLogger.LogAsync(
+                        AuditAction.Login,
+                        success: true,
+                        performedBy: user.Id,
+                        metadata: new() { ["login"] = request.Login },
+                        ipAddress: GetIp(),
+                        userAgent: GetUserAgent());
+                return token;
+            }
+            catch (InvalidCredentialsException ex)
+            {
+                await _auditLogger.LogAsync(
+                        AuditAction.Login,
+                        success: false,
+                        failureReason: "Invalid credentials",
+                        metadata: new() { ["login"] = request.Login },
+                        ipAddress: GetIp(),
+                        userAgent: GetUserAgent());
+                throw;
+            }
+            catch (UserInactiveException)
+            {
+                await _auditLogger.LogAsync(
+                    AuditAction.Login,
+                    success: false,
+                    failureReason: "Account inactive",
+                    metadata: new() { ["login"] = request.Login },
+                    ipAddress: GetIp(),
+                    userAgent: GetUserAgent());
+                throw;
+            }
         }
 
+
+        // ======================
+        // TOKEN MANAGEMENT
+        // ======================
         public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
@@ -150,7 +275,15 @@ namespace ERP.AuthService.Application.Services
             // Rotate token
             await RevokeRefreshTokenAsyncPrivate(token);// revoke the token to refresh before getting a fresh one
 
-            return await GenerateAuthResponseAsync(user);
+            var result=await GenerateAuthResponseAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.TokenRefreshed,
+                    success: true,
+                    performedBy: user.Id,
+                    ipAddress: GetIp());
+
+            return result;
         }
 
         public async Task RevokeRefreshTokenAsync(string refreshToken)
@@ -159,45 +292,13 @@ namespace ERP.AuthService.Application.Services
                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
             await RevokeRefreshTokenAsyncPrivate(token);
+            await _auditLogger.LogAsync(
+                AuditAction.TokenRevoked,
+                success: true,
+                performedBy: token.UserId,
+                ipAddress: GetIp());
         }
 
-        public async Task ChangeAuthPasswordAsync(Guid id, string currPassword, string newPassword)
-        {
-            var user = await _userRepository.GetByIdAsync(id)
-                        ?? throw new UserNotFoundException(id);
-
-
-            if (CryptographicOperations.FixedTimeEquals(
-                                Encoding.UTF8.GetBytes(currPassword),
-                                Encoding.UTF8.GetBytes(newPassword))
-                )
-            {
-                throw new ArgumentException("The new password cannot be the same as the current password.");
-            }
-
-
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currPassword);
-
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
-
-            var newHashedPassword = _passwordHasher.HashPassword(user, newPassword);
-            user.ChangePassword(newHashedPassword);
-
-            await _userRepository.UpdateAsync(user);
-        }
-
-        public async Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId)
-        {
-            var user = await _userRepository.GetByIdAsync(userId)
-                       ?? throw new UserNotFoundException(userId);
-
-            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
-
-            user.ChangePassword(hashedNewPassword);
-
-            await _userRepository.UpdateAsync(user);
-        }
 
         private async Task RevokeRefreshTokenAsyncPrivate(RefreshToken token)
         {
@@ -263,6 +364,179 @@ namespace ERP.AuthService.Application.Services
             );
         }
 
+
+        // ======================
+        // CHANGE PASSWORD
+        // ======================
+        public async Task ChangeAuthPasswordAsync(Guid id, string currPassword, string newPassword)
+        {
+            var user = await _userRepository.GetByIdAsync(id)
+                        ?? throw new UserNotFoundException(id);
+
+            if (!user.IsActive)
+                throw new UserInactiveException();
+
+            if (currPassword.Equals(newPassword))
+                throw new ArgumentException("The new password cannot be the same as the current password.");
+
+
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currPassword);
+
+            if (result == PasswordVerificationResult.Failed)
+                throw new InvalidCredentialsException();
+
+            var newHashedPassword = _passwordHasher.HashPassword(user, newPassword);
+            user.ChangePassword(newHashedPassword);
+            if (user.MustChangePassword) user.MustChangePassword = false;
+
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                  AuditAction.PasswordChanged,
+                  success: true,
+                  performedBy: id,
+                  targetUserId: id,
+                  ipAddress: GetIp(),
+                  metadata: new() { ["login"]= user.Login ,["oldPassword"] = currPassword });
+        }
+
+        public async Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId)
+                       ?? throw new UserNotFoundException(userId);
+
+            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
+
+            user.ChangePassword(hashedNewPassword);
+            user.MustChangePassword = true;
+
+            await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserActivated,
+                    success: true,
+                    targetUserId: userId,
+                    ipAddress: GetIp());
+        }
+
+
+        // ======================
+        // ACTIVATE/DEACTIVATE 
+        // ======================
+        public async Task ActivateAsync(Guid authUserId, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(authUserId)
+                       ?? throw new UserNotFoundException(authUserId);
+
+
+            var performedBy= await _userRepository.GetByIdAsync(performedById)
+                       ?? throw new UserNotFoundException(performedById);
+
+            if (user.IsActive)
+                throw new UserActiveException();
+            user.Activate();
+            await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserActivated,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp());
+        }
+
+        public async Task DeactivateAsync(Guid authUserId, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(authUserId)
+                       ?? throw new UserNotFoundException(authUserId);
+            if (!user.IsActive)
+                throw new UserInactiveException();
+
+            var performedBy = await _userRepository.GetByIdAsync(performedById)
+                       ?? throw new UserNotFoundException(performedById);
+
+            user.Deactivate();
+            await _userRepository.UpdateAsync(user);
+            await _auditLogger.LogAsync(
+                    AuditAction.UserDeactivated,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp());
+        }
+
+        // ======================
+        // SOFT DELETE
+        // ======================
+        public async Task SoftDeleteAsync(Guid deletedId, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(deletedId)
+                        ?? throw new UserNotFoundException(deletedId);
+
+            var performedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
+
+            if (user.IsDeleted) return; // no need to update
+
+            user.Delete();
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.UserDeleted,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
+        }
+
+        public async Task RestoreAsync(Guid id, Guid performedById)
+        {
+            var user = await _userRepository.GetByIdAsync(id)
+                        ?? throw new UserNotFoundException(id);
+
+            var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
+
+            if (!user.IsDeleted) return; // no need to update
+            user.Restore();
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                    AuditAction.UserRestored,
+                    success: true,
+                    performedBy: performedById,
+                    targetUserId: user.Id,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["restored"] = user.Login, ["restoredBy"] = performedById.ToString() });
+        }
+
+        public async Task<PagedResultDto<AuthUserGetResponseDto>> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId)
+        {
+            ValidatePaging(pageNumber, pageSize);
+            var (items, totalCount) = await _userRepository.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
+
+            var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
+
+            return new PagedResultDto<AuthUserGetResponseDto>(
+                mapped,
+                totalCount,
+                pageNumber,
+                pageSize);
+        }
+
+
+
+
+        // ======================
+        // STATS
+        // ======================
+        public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
+        {
+            return await _userRepository.GetStatsAsync(excludeId);
+        }
+
+
+        // ======================
+        // DTO MAPPING HELPER
+        // ======================
+
         private async Task<AuthUserGetResponseDto> MapToDtoAsync(AuthUser user)
         {
             var role = await _roleRepository.GetByIdAsync(user.RoleId)
@@ -271,6 +545,7 @@ namespace ERP.AuthService.Application.Services
             return new AuthUserGetResponseDto(
                 Id: user.Id,
                 Email: user.Email,
+                FullName: user.FullName,
                 Login: user.Login,
                 RoleId: user.RoleId,
                 RoleName: role.Libelle.ToString(),
@@ -280,6 +555,35 @@ namespace ERP.AuthService.Application.Services
                 UpdatedAt: user.UpdatedAt,
                 LastLoginAt: user.LastLoginAt
             );
+        }
+
+
+        private string? GetIp()
+        {
+            var ip = _httpContext?.HttpContext?.Connection.RemoteIpAddress;
+
+            if (ip == null)
+                return null;
+
+            // Convert IPv6-mapped IPv4 to normal IPv4
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                ip = ip.MapToIPv4();
+
+            return ip.ToString();
+        }
+
+        private string? GetUserAgent()
+            => _httpContext?.HttpContext?.Request.Headers["User-Agent"].ToString();
+
+
+        private static void ValidatePaging(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
+                    "Page number must be greater than zero.");
+            if (pageSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageSize),
+                    "Page size must be greater than zero.");
         }
     }
 }

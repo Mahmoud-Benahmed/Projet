@@ -1,176 +1,164 @@
-$surface:      #0f1117;
-$surface-2:    #181c27;
-$surface-3:    #1e2336;
-$border:       rgba(255, 255, 255, 0.07);
-$text-primary: #e8eaf0;
-$text-muted:   #6b7280;
-$accent:       #4f8ef7;
-$accent-glow:  rgba(79, 142, 247, 0.15);
-$danger:       #f87171;
-$warn:         #fbbf24;
-$success:      #34d399;
-$radius:       12px;
-$radius-sm:    8px;
+@use 'shared' as *;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: $bg-page;
+  color: $text-hi;
+}
 
 .login-container {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: $surface;
-  padding: 1rem;
-  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: $bg-page;
+  padding: 24px;
 }
 
+// ── Brand
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+
+  &__icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: $blue;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #fff;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px $blue-border;
+  }
+
+  &__name {
+    font-size: 20px; font-weight: 700;
+    color: $text-hi;
+    letter-spacing: -0.3px; margin-bottom: 4px;
+  }
+
+  &__sub { font-size: 13px; color: $text-mid; }
+}
+
+// ── Card
 .login-card {
-  width: 100%;
-  max-width: 440px;
-  background: $surface-2 !important;
-  border: 1px solid $border !important;
-  border-radius: $radius !important;
-  box-shadow: none !important;
-  padding: 1.5rem;
+  width: 100%; max-width: 360px;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 32px;
+  animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 
-  mat-card-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    margin-bottom: 1.5rem;
-    padding: 0;
-
-    .header-icon-wrap {
-      width: 56px;
-      height: 56px;
-      border-radius: $radius;
-      background: rgba($accent, 0.1);
-      border: 1px solid rgba($accent, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-
-      mat-icon {
-        font-size: 26px;
-        width: 26px;
-        height: 26px;
-        color: $accent;
-      }
-    }
-
-    mat-card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: $text-primary !important;
-      margin-bottom: 0.35rem;
-    }
-
-    mat-card-subtitle {
-      font-size: 0.875rem;
-      color: $text-muted !important;
-      max-width: 320px;
-      line-height: 1.5;
-    }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  mat-card-content {
-    padding: 0;
+  &__title {
+    font-size: 18px; font-weight: 600;
+    color: $text-hi;
+    margin-bottom: 24px; letter-spacing: -0.3px;
   }
 }
 
-// ── FORM FIELDS ───────────────────────────────────
-.w-100 {
-  width: 100%;
-  margin-bottom: 0.25rem;
+// ── Fields
+.field {
+  margin-bottom: 16px;
 
-  ::ng-deep {
-    .mdc-notched-outline__leading,
-    .mdc-notched-outline__notch,
-    .mdc-notched-outline__trailing {
-      border-color: $border !important;
+  &__label {
+    display: block;
+    font-size: 13px; font-weight: 500;
+    color: $text-mid;
+    margin-bottom: 8px;
+  }
+
+  &__wrapper {
+    position: relative; display: flex; align-items: center;
+
+    .field__icon {
+      position: absolute; left: 12px;
+      color: $text-lo; font-size: 18px;
+      pointer-events: none; display: flex; align-items: center;
+    }
+  }
+
+  input {
+    width: 100%; height: 44px;
+    background: $bg-card-hi;
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 0 44px 0 40px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; color: $text-hi;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &::placeholder { color: $text-lo; }
+
+    &:focus {
+      border-color: $blue;
+      box-shadow: 0 0 0 3px $blue-bg;
     }
 
-    &:hover .mdc-notched-outline__leading,
-    &:hover .mdc-notched-outline__notch,
-    &:hover .mdc-notched-outline__trailing {
-      border-color: rgba($accent, 0.4) !important;
+    &.ng-invalid.ng-touched {
+      border-color: $red;
+      box-shadow: 0 0 0 3px $red-bg;
     }
+  }
 
-    &.mat-focused .mdc-notched-outline__leading,
-    &.mat-focused .mdc-notched-outline__notch,
-    &.mat-focused .mdc-notched-outline__trailing {
-      border-color: $accent !important;
-    }
+  &__toggle {
+    position: absolute; right: 10px;
+    background: none; border: none; cursor: pointer;
+    color: $text-lo; display: flex; align-items: center;
+    padding: 4px; border-radius: 4px; transition: color 0.2s;
+    &:hover { color: $text-mid; }
+  }
 
-    input {
-      color: $text-primary !important;
-      caret-color: $accent;
-    }
+  &__error {
+    font-size: 12px; color: $red;
+    margin-top: 5px;
+    animation: errIn 0.2s ease both;
 
-    .mat-mdc-floating-label {
-      color: $text-muted !important;
-    }
-
-    .mat-mdc-form-field-icon-prefix mat-icon {
-      color: $text-muted;
-    }
-
-    .mat-mdc-icon-button mat-icon {
-      color: $text-muted;
-
-      &:hover {
-        color: $text-primary;
-      }
-    }
-
-    .mat-mdc-form-field-error {
-      color: $danger;
-      font-size: 0.75rem;
+    @keyframes errIn {
+      from { opacity: 0; transform: translateY(-3px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
   }
 }
 
-// ── SUBMIT BUTTON ─────────────────────────────────
-.mt-2 {
-  margin-top: 1.25rem;
+// ── Submit
+.btn-submit {
+  width: 100%; height: 44px; margin-top: 8px;
+  background: $blue; color: #fff;
+  border: none; border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #6b94ff;
+    box-shadow: 0 4px 16px $blue-bg;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
-button[mat-raised-button][color="primary"] {
-  background: $accent !important;
-  color: #fff !important;
-  border-radius: $radius-sm !important;
-  font-weight: 600;
-  font-size: 0.9rem;
-  height: 42px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.btn-loading { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &:not(:disabled):hover {
-    background: lighten(#4f8ef7, 6%) !important;
-    box-shadow: 0 0 0 3px $accent-glow !important;
-  }
-}
-
-// ── LOADING STATE ─────────────────────────────────
-.btn-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 0.875rem;
-  color: #fff;
-
-  mat-progress-spinner {
-    ::ng-deep circle {
-      stroke: rgba(255, 255, 255, 0.8);
-    }
-  }
+// ── Footer
+.login-footer {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 12px;
+  color: $text-lo;
 }

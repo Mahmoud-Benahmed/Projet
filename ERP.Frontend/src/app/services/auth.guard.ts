@@ -3,42 +3,32 @@ import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const auth = inject(AuthService);
+  const auth   = inject(AuthService);
   const router = inject(Router);
-  const path = route.routeConfig?.path ?? '';
+  const path   = route.routeConfig?.path ?? '';
 
-  if (!auth.isLoggedIn) {
-    router.navigate(['/login']);
-    return false;
+  // ── Not logged in
+  if (!auth.isLoggedIn()) {
+    return router.createUrlTree(['/login']);
   }
 
-  // Step 1 — must change password first
-  if (auth.mustChangePassword) {
-    if (path !== 'must-change-password') {
-      router.navigate(['/must-change-password']);
-      return false;
-    }
-    return true;
+  // ── Force password change
+  if (auth.getMustChangePassword() && path !== 'must-change-password') {
+    return router.createUrlTree(['/must-change-password']);
   }
 
-  // Step 2 — block going back to must-change-password once done
-  if (path === 'must-change-password') {
-    router.navigate(['/complete-profile']);
-    return false;
-  }
+  // ── Privilege-based access
+  const requiredPrivileges = route.data['privileges'] as string[] | undefined;
 
-  // Step 3 — complete-profile is always accessible after password change
-  if (path === 'complete-profile') {
-    return true;
-  }
+  if (requiredPrivileges?.length) {
+    const hasAccess = requiredPrivileges.some(p => auth.hasPrivilege(p));
 
-  // Step 4 — role-based access
-  const requiredRoles = route.data['roles'] as string[];
-  if (requiredRoles?.length > 0) {
-    const userRole = auth.Role;
-    if (!userRole || !requiredRoles.includes(userRole)) {
-      router.navigate([userRole === 'SystemAdmin' ? '/users' : '/home']);
-      return false;
+    if (!hasAccess) {
+      // Redirect to the most relevant page based on what the user CAN access
+      if (auth.hasPrivilege('ViewUsers'))    return router.createUrlTree(['/users']);
+      if (auth.hasPrivilege('ViewArticles')) return router.createUrlTree(['/articles']);
+      if (auth.hasPrivilege('ViewClients'))  return router.createUrlTree(['/clients']);
+      return router.createUrlTree(['/home']);
     }
   }
 

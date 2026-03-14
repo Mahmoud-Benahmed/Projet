@@ -12,11 +12,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { ModalComponent } from '../../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { RegisterRequest, RoleDto } from '../../../../interfaces/AuthDto';
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
-import { RoleResponseDto, RoleService } from '../../../../services/role.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
+import { RegisterRequestDto, RoleResponseDto } from '../../../../interfaces/AuthDto';
+import { M } from '@angular/cdk/keycodes';
+import { HttpError } from '../../../../interfaces/ErrorDto';
 
 @HostBinding('class')
 @Component({
@@ -40,11 +41,14 @@ export class RegisterComponent implements OnDestroy {
 
   readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
+  readonly fullnamePattern= /^\p{L}+(\s\p{L}+)*$/u;
 
-  credentials: RegisterRequest = { login:'', email: '', password: '', roleId: '' };
+  credentials: RegisterRequestDto = { login:'', email: '', fullName: '' , password: '', roleId: null};
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
+  error: string | null = null;
+  successMessage: string | null = null;
 
   roles: RoleResponseDto[] = [];
 
@@ -55,13 +59,11 @@ export class RegisterComponent implements OnDestroy {
 
   constructor(private router: Router,
               private authService: AuthService,
-              private roleService: RoleService,
               private cdr: ChangeDetectorRef,
-              private dialog: MatDialog,
-              private snackbar: MatSnackBar) {}
+              private dialog: MatDialog) {}
 
   ngOnInit(): void {
-    this.roleService.getAll().subscribe(
+    this.authService.getRoles().subscribe(
       roles => this.roles = roles
     );
   }
@@ -152,14 +154,13 @@ export class RegisterComponent implements OnDestroy {
           }
 
           this.stopLoading();
-          console.log(this.credentials);
-
           // call the auth.service method to register the user in the backend
           this.register();
         },
-        error: () => {
+        error: (err) => {
           this.stopLoading();
-          this.snackbar.open('Failed to check availability.', 'Dismiss', { duration: 3000 });
+          let error= err.error as HttpError;
+          this.flash('error',error.message);
         }
       });
   }
@@ -169,13 +170,13 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register(this.credentials).subscribe({
         next: (registeredUser) => {
           this.stopLoading();
-          this.snackbar.open(`User ${this.credentials.login} has been registered successfully`, 'Dismiss', { duration: 3000 });
+          this.flash('success', `Account for ${registeredUser.fullName} has been created successfully.`);
           setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
           this.stopLoading();
-          if (error.status === 0) return;
-          this.snackbar.open('Failed to register user', 'Dismiss', { duration: 3000 });
+          let err = error.error as HttpError
+          this.flash('error', err.message);
         }
     });
   }
@@ -219,20 +220,20 @@ export class RegisterComponent implements OnDestroy {
 
   getStrengthClass(): string {
     const map: Record<string, string> = {
-      'weak': 'strength--weak',
-      'fair': 'strength--fair',
-      'strong': 'strength--strong',
-      'very strong': 'strength--very-strong',
+      'weak':       'strength-weak',
+      'fair':       'strength-fair',
+      'strong':     'strength-good',
+      'very strong':'strength-strong',
     };
     return map[this.passwordStrength] ?? '';
   }
 
   getStrengthLabel(): string {
     const map: Record<string, string> = {
-      'weak': 'Faible',
-      'fair': 'Moyen',
-      'strong': 'Fort',
-      'very strong': 'Très fort',
+      'weak':       'Weak',
+      'fair':       'Fair',
+      'strong':     'Good',
+      'very strong':'Strong',
     };
     return map[this.passwordStrength] ?? '';
   }
@@ -259,13 +260,28 @@ export class RegisterComponent implements OnDestroy {
   }
 
   resetForm(): void {
-    this.credentials = { login: '', email: '', password: '', roleId: '' };
+    this.credentials ={ login:'', email: '', fullName: '' , password: '', roleId: null};
     this.passwordErrors = [];
     this.passwordScore = 0;
     this.passwordStrength = '';
     this.showPassword = false;
     this.registerForm.resetForm();
   }
+
+  dismissError(): void { this.error = null; }
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+
   stopLoading():void{
     this.isLoading = false;
     this.cdr.markForCheck();

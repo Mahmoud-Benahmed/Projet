@@ -1,0 +1,36 @@
+@use 'shared' as *; // adjust path to _shared.scss
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid $border;
+}
+
+.page-btn {
+  background: $bg-card-hi;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $text-mid;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover:not(:disabled) { border-color: $blue; color: $blue; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.page-info { font-size: 0.82rem; color: $text-lo; }
+
+.page-size-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238b92a8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 1.75rem;
+  option { background: $bg-card; color: $text-hi; }
+}

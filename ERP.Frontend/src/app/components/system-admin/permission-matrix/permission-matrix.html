@@ -1,51 +1,58 @@
-<div class="matrix-page">
+<div class="page">
 
-  <!-- Header -->
-  <div class="matrix-header">
-    <div class="header-left">
-      <div class="header-icon">
-        <mat-icon>security</mat-icon>
-      </div>
-      <div>
-        <h1 class="header-title">Permission Matrix</h1>
-        <p class="header-subtitle">Manage role-based access control across all services</p>
-      </div>
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">SYSTEM ADMIN</p>
+      <h1 class="page-title">Permission Matrix</h1>
     </div>
-    <button mat-stroked-button class="refresh-btn" (click)="loadMatrix()" [disabled]="isLoading">
-      <mat-icon>refresh</mat-icon>
+    <button class="btn-secondary btn-refresh" (click)="loadMatrix()" [disabled]="isLoading">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
       Refresh
     </button>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-state" *ngIf="isLoading">
-    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
-    <span>Loading permission matrix...</span>
+  <!-- ===================== ALERTS ===================== -->
+  <div class="alert alert--error" *ngIf="error">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
+  </div>
+  <div class="alert alert--success" *ngIf="successMessage">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    {{ successMessage }}
+    <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
 
-  <!-- Matrix -->
-  <div class="matrix-container" *ngIf="!isLoading">
+  <!-- ── MATRIX ── -->
+  <div *ngIf="!isLoading">
 
     <!-- Role Legend -->
-    <div class="role-legend">
-      <div class="legend-label">Roles</div>
-      <div class="legend-roles">
-        <div class="legend-role" *ngFor="let role of roles">
-          <div class="role-badge">{{ formatRole(role.libelle) }}</div>
+    <div class="table-card legend-card">
+      <div class="legend">
+        <span class="legend__label">Roles</span>
+        <div class="legend__roles">
+          <div class="role-badge" *ngFor="let role of roles">
+            {{ formatRole(role.libelle) }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Category Sections -->
-    <div class="category-section" *ngFor="let category of categories">
+    <div class="table-card category-card" *ngFor="let category of categories">
 
       <!-- Category Header -->
       <div class="category-header">
-        <div class="category-name">
+        <div class="category-header__name">
           <span class="category-dot"></span>
           {{ category }}
         </div>
-        <div class="category-roles">
+        <div class="category-header__roles">
           <div class="category-role-label" *ngFor="let role of roles">
             {{ formatRole(role.libelle) }}
           </div>
@@ -53,8 +60,10 @@
       </div>
 
       <!-- Controle Rows -->
-      <div class="controle-row" *ngFor="let controle of getControlesByCategory(category); let last = last"
-           [class.last]="last">
+      <div class="controle-row"
+        *ngFor="let controle of getControlesByCategory(category); let last = last"
+        [class.controle-row--last]="last">
+
         <div class="controle-info">
           <span class="controle-name">{{ controle.libelle }}</span>
           <span class="controle-desc">{{ controle.description }}</span>
@@ -66,24 +75,28 @@
 
               <!-- Loading -->
               <div class="cell cell--loading"
-                   *ngSwitchCase="getCell(role.id, controle.id)?.loading === true">
-                <mat-progress-spinner mode="indeterminate" diameter="16"></mat-progress-spinner>
+                *ngSwitchCase="getCell(role.id, controle.id)?.loading === true">
+                <div class="spinner spinner--sm"></div>
               </div>
 
               <!-- Granted -->
               <button class="cell cell--granted"
-                      *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
-                      (click)="togglePrivilege(role.id, controle.id)"
-                      [matTooltip]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
-                <mat-icon>check</mat-icon>
+                *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
+                (click)="togglePrivilege(role.id, controle.id)"
+                [title]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
               </button>
 
               <!-- Denied -->
               <button class="cell cell--denied"
-                      *ngSwitchDefault
-                      (click)="togglePrivilege(role.id, controle.id)"
-                      [matTooltip]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
-                <mat-icon>close</mat-icon>
+                *ngSwitchDefault
+                (click)="togglePrivilege(role.id, controle.id)"
+                [title]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
               </button>
 
             </ng-container>
@@ -95,19 +108,19 @@
 
     <!-- Stats Footer -->
     <div class="matrix-footer">
-      <div class="stat">
-        <span class="stat-value">{{ roles.length }}</span>
-        <span class="stat-label">Roles</span>
+      <div class="matrix-stat">
+        <span class="matrix-stat__value">{{ roles.length }}</span>
+        <span class="matrix-stat__label">Roles</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">{{ controles.length }}</span>
-        <span class="stat-label">Controls</span>
+      <div class="matrix-stat__divider"></div>
+      <div class="matrix-stat">
+        <span class="matrix-stat__value">{{ controles.length }}</span>
+        <span class="matrix-stat__label">Controls</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">{{ categories.length }}</span>
-        <span class="stat-label">Services</span>
+      <div class="matrix-stat__divider"></div>
+      <div class="matrix-stat">
+        <span class="matrix-stat__value">{{ categories.length }}</span>
+        <span class="matrix-stat__label">Services</span>
       </div>
     </div>
 

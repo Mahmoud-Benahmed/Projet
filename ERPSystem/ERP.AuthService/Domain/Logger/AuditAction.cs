@@ -1,0 +1,29 @@
+﻿namespace ERP.AuthService.Domain.Logger
+{
+
+    public enum AuditAction
+    {
+        // Auth
+        Login,
+        Logout,
+        TokenRefreshed,
+        TokenRevoked,
+
+        // Registration
+        UserRegistered,
+
+        // Password
+        PasswordChanged,
+        PasswordChangedByAdmin,
+
+        // Profile
+        ProfileUpdated,
+
+        // Account status
+        UserActivated,
+        UserDeactivated,
+        UserDeleted,
+        UserRestored,
+        UserDeletedPermanently,
+    }
+}

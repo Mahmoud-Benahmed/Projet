@@ -1,0 +1,89 @@
+@use 'shared' as *;
+
+.filters-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+
+.status-toggle { display: flex; border: 1px solid $border; border-radius: 8px; overflow: hidden; }
+
+.toggle-btn {
+  padding: 0.5rem 1rem; background: $bg-card; border: none; border-right: 1px solid $border;
+  color: $text-lo; font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+  &:last-child { border-right: none; }
+  &:hover { color: $text-hi; background: $bg-card-hi; }
+  &--active { background: $bg-card-hi; color: $text-hi; font-weight: 600; }
+  &--success.toggle-btn--active { color: $green; }
+  &--fail.toggle-btn--active    { color: $red; }
+}
+
+.table__row--fail { background: rgba($red, 0.04); &:hover { background: rgba($red, 0.08) !important; } }
+
+.status-pip {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: $border;
+  &--ok   { background: $green; box-shadow: 0 0 6px rgba($green, 0.5); }
+  &--fail { background: $red;   box-shadow: 0 0 6px rgba($red, 0.4); }
+}
+
+.action-cell { display: flex; align-items: center; gap: 8px; }
+
+.action-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  // Categories from ACTION_MAP
+  &--auth { background: $blue-bg; color: $blue; border: 1px solid $blue-border; }
+
+  &--user { background: $green-bg; color: $green; border: 1px solid $green-border; }
+
+  &--admin { background: $amber-bg; color: $amber; border: 1px solid $amber-border;}
+
+  &--danger { background: $red-bg; color: $red; border: 1px solid $red-border;}
+
+  &--password { background: $yellow-bg; color: $yellow; border: 1px solid $yellow-border;}
+
+  &--default { background: $gray-bg; color: $gray; border: 1px solid $gray-border;}
+}
+
+.action-label { font-size: 0.85rem; font-weight: 500; color: $text-hi; }
+
+.uid-chip {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px;
+  font-family: monospace; font-size: 0.78rem;
+  background: $blue-bg; color: $blue; border: 1px solid $blue-border;
+  cursor: pointer; transition: background 0.15s;
+  &:hover { background: rgba($blue, 0.2); }
+  &--target { background: $amber-bg; color: $amber; border-color: $amber-border; &:hover { background: $amber-bg; } }
+}
+
+.muted { color: $text-lo; font-size: 0.85rem; }
+
+.ts-cell { display: flex; flex-direction: column; gap: 1px; }
+.ts-date { font-size: 0.82rem; color: $text-hi; font-weight: 500; }
+.ts-time { font-size: 0.72rem; color: $text-lo; font-family: monospace; }
+
+.dialog-header { display: flex; align-items: center; gap: 12px; padding: 1.25rem 1.5rem 0; }
+.dialog-ts     { font-size: 0.78rem; color: $text-lo; margin: 2px 0 0; }
+
+.detail-alert {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: $red-bg; border: 1px solid $red-border; border-radius: 8px;
+  color: $red; font-size: 0.85rem; margin-bottom: 1rem;
+}
+
+.detail-section { margin-bottom: 1rem;
+  &__title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; color: $text-lo; text-transform: uppercase; margin: 0 0 8px; }
+}
+
+.detail-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: baseline; }
+.detail-key  { font-size: 1rem; color: $text-lo; font-weight: 500; white-space: nowrap; }
+.detail-val  { font-size: 1rem; color: $text-lo; word-break: break-all;
+  &.small { font-size: 0.75rem; color: $text-lo; } }

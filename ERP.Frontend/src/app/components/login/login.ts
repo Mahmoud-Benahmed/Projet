@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,9 +10,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { AuthResponse } from '../../interfaces/AuthDto';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { UsersService } from '../../services/users.service';
+import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
+import { ModalComponent } from '../modal/modal';
+import { HttpError } from '../../interfaces/ErrorDto';
 
 @Component({
   selector: 'app-login',
@@ -28,9 +29,12 @@ import { UsersService } from '../../services/users.service';
     MatDialogModule
   ],
   templateUrl: './login.html',
-  styleUrl: './login.scss'
+  styleUrl: './login.scss',
+  encapsulation: ViewEncapsulation.None
 })
 export class LoginComponent implements OnInit, OnDestroy {
+
+  userProfile: AuthUserGetResponseDto | null = null;
 
   credentials = { login: '', password: '' };
   showPassword = false;
@@ -40,13 +44,17 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private userService: UsersService,
-    private snackBar: MatSnackBar
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn!) {
+    if (this.authService.isLoggedIn()!) {
       this.router.navigate(['/home']);
+    }
+    this.credentials={
+      login: "admin_erp1234",
+      password: "Admin@1234"
     }
   }
 
@@ -58,45 +66,51 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
-        this.authService.storeTokens(response); // storeTokens already saves mustChangePassword if you update it
+        this.authService.storeTokens(response);
 
-        if (response.mustChangePassword) {
-          this.isLoading= false;
-          this.router.navigate(['/must-change-password']);
-          return;
-        }
+        this.authService.getMe().subscribe({
+          next: (authUser) => {
+            this.userProfile = authUser;
+            this.authService.setUserProfile(this.userProfile);
 
-        const authUserId= this.authService.UserId!;
-        this.userService.getByAuthUserId(authUserId).subscribe({
-          next: (profile)=> {
-            this.isLoading = false;
-            if (!profile.isProfileCompleted) {
-              this.router.navigate(['/complete-profile']);
+            if (response.mustChangePassword) {
+              this.stopLoading();
+              this.router.navigate(['/must-change-password']);
               return;
             }
-            const role = this.authService.Role!;
             this.router.navigate(['/home']);
           },
           error: () => {
-            this.isLoading = false;
-            // profile not found, redirect to complete profile
-            this.router.navigate(['/complete-profile']);
-        }
-      });
-
-        const role = this.authService.Role!;
-        this.router.navigate([role === 'SystemAdmin' ? '/users' : '/home']);
+            this.authService.logout();
+          }
+        });
       },
       error: (error) => {
-        this.isLoading = false;
-        if (error.status === 0) return;
-        this.snackBar.open('Failed to login, please check your credentials.', 'Dismiss', { duration: 3000 });
+        this.stopLoading();
+        if ([0, 403, 429].includes(error.status)) return;
+        let err = error.error as HttpError
+        this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: "Error",
+                message: err.message,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'danger'
+              }
+          });
       }
     });
   }
 
   goToSignup(): void {
     this.router.navigate(['/register']);
+  }
+
+  stopLoading() {
+    this.isLoading = false;
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {

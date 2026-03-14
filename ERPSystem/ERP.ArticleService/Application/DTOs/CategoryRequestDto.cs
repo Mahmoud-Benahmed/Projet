@@ -1,0 +1,13 @@
+﻿using System.ComponentModel.DataAnnotations;
+namespace ERP.ArticleService.Application.DTOs
+{
+
+    public record CategoryRequestDto(
+        [Required(ErrorMessage = "Category name is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters")]
+        string Name,
+
+        [Range(0, 100, ErrorMessage = "TVA must be between 0 and 100")]
+        decimal TVA
+    );
+}

@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
@@ -14,10 +14,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { UsersService } from '../../../../services/users.service';
-import { UserProfileResponseDto, PagedResultDto } from '../../../../interfaces/UserProfileDto';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Stats } from "../stats/stats";
+import { AuthService } from '../../../../services/auth.service';
+import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
+import { PaginationComponent } from "../../../pagination/pagination";
 
 @Component({
   selector: 'app-deactivated',
@@ -38,38 +39,42 @@ import { Stats } from "../stats/stats";
     MatTooltipModule,
     MatDividerModule,
     MatSnackBarModule,
-    Stats
+    RouterLinkActive,
+    RouterLink,
+    PaginationComponent
 ],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
 })
 export class DeactivatedComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(Stats) statsComponent!: Stats;
 
+  stats: UserStatsDto | null= null;
 
   displayedColumns: string[] = [
     'fullName',
     'email',
-    'phone',
-    'isProfileCompleted',
+    'role',
     'createdAt',
+    'lastLoginAt',
     'actions',
   ];
 
-  dataSource = new MatTableDataSource<UserProfileResponseDto>([]);
+  dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
   totalCount = 0;
   pageNumber = 1;
   pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
 
   isLoading = false;
   searchTerm = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
   constructor(
-    private usersService: UsersService,
-    private snackBar: MatSnackBar,
-    private router: Router
+    public authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -78,61 +83,54 @@ export class DeactivatedComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
-    this.usersService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
-      next: (result: PagedResultDto<UserProfileResponseDto>) => {
+    this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
+      next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items;
+
         this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
         this.isLoading = false;
-        this.statsComponent.loadStats();
+        this.loadStats();
+
       },
       error: () => {
         this.isLoading = false;
-        this.snackBar.open('Failed to load deactivated users.', 'Dismiss', { duration: 3000 });
+        this.flash('error', 'Failed to load deactivated users.');
       },
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageNumber = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.loadUsers();
+  loadStats(){
+      this.authService.getStats().subscribe({
+        next: (result) => this.stats = result,
+        error: () =>{
+          this.isLoading = false;
+          this.flash('error', 'Failed to load users.');
+      }
+    });
   }
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
+  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
+
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-  activateUser(user: UserProfileResponseDto): void {
-    this.usersService.activate(user.id).subscribe({
+  activateUser(user: AuthUserGetResponseDto): void {
+    this.authService.activate(user.id).subscribe({
       next: () => {
-        this.snackBar.open(
-          `${user.fullName ?? user.email} reactivated.`, 'OK',
-          { duration: 3000 }
-        );
+        this.flash('success',`User "${user.fullName}" has been reactivated.`);
         this.loadUsers();
       },
       error: () =>
-        this.snackBar.open('Failed to reactivate user.', 'Dismiss', { duration: 3000 }),
+        this.flash('error', `Failed to reactivate user "${user.fullName}".`),
     });
   }
 
-  deleteUser(user: UserProfileResponseDto): void {
-    this.usersService.delete(user.id).subscribe({
-      next: () => {
-        this.snackBar.open('User deleted.', 'OK', { duration: 3000 });
-        this.loadUsers();
-      },
-      error: () =>
-        this.snackBar.open('Failed to delete user.', 'Dismiss', { duration: 3000 }),
-    });
-  }
-
-  goToProfile(authUserId: string): void {
-    this.router.navigate(['/users', authUserId]);
-  }
-
-  getInitials(user: UserProfileResponseDto): string {
+  getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {
       return user.fullName
         .split(' ')
@@ -142,5 +140,31 @@ export class DeactivatedComponent implements OnInit {
         .toUpperCase();
     }
     return user.email[0].toUpperCase();
+  }
+
+  onPageSizeChange(): void {
+    this.pageNumber = 1; // reset to first page on size change
+    this.reload();
+  }
+
+  reload():void{
+    this.loadStats();
+    this.loadUsers();
+    this.cdr.markForCheck();
+  }
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
   }
 }

@@ -1,69 +1,90 @@
 <div class="login-container">
-  <mat-card class="login-card">
 
-    <mat-card-header>
-      <mat-card-title>Connexion</mat-card-title>
-      <mat-card-subtitle>Accédez à votre compte</mat-card-subtitle>
-    </mat-card-header>
+  <!-- Brand -->
+  <div class="login-brand">
+    <div class="login-brand__icon">E</div>
+    <div class="login-brand__name">ERPSuite</div>
+    <div class="login-brand__sub">Enterprise Resource Planning</div>
+  </div>
 
-    <mat-card-content>
-      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+  <!-- Card -->
+  <div class="login-card">
+    <h1 class="login-card__title">Connexion</h1>
 
-        <!-- Email -->
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Login</mat-label>
-          <input matInput
-                type="text"
-                name="login"
-                [(ngModel)]="credentials.login"
-                required
-                #loginInput="ngModel"/>
-          <mat-icon matPrefix>badge</mat-icon>
-          <mat-error *ngIf="loginInput.errors?.['required']">Login required</mat-error>
-          <mat-error *ngIf="loginInput.errors?.['login']">Invalid Login</mat-error>
-        </mat-form-field>
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
 
-        <!-- Password -->
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Mot de passe</mat-label>
-          <input matInput
-                [type]="showPassword ? 'text' : 'password'"
-                name="password"
-                [(ngModel)]="credentials.password"
-                required
-                minlength="8"
-                #passwordInput="ngModel"/>
-          <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+      <!-- Login -->
+      <div class="field">
+        <label class="field__label" for="login">Login</label>
+        <div class="field__wrapper">
+          <span class="field__icon">
+            <mat-icon>person_outline</mat-icon>
+          </span>
+          <input
+            id="login"
+            type="text"
+            name="login"
+            placeholder="Enter your login"
+            [(ngModel)]="credentials.login"
+            required
+            #loginInput="ngModel" />
+        </div>
+        <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
+          Login requis
+        </span>
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <label class="field__label" for="password">Password</label>
+        <div class="field__wrapper">
+          <span class="field__icon">
+            <mat-icon>lock_outline</mat-icon>
+          </span>
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            name="password"
+            placeholder="Enter your password"
+            [(ngModel)]="credentials.password"
+            required
+            minlength="8"
+            #passwordInput="ngModel" />
+          <button class="field__toggle" type="button" (click)="togglePasswordVisibility()">
             <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
-          <mat-error *ngIf="passwordInput.errors?.['required']">Mot de passe requis</mat-error>
-          <mat-error *ngIf="passwordInput.errors?.['minlength']">Minimum 8 caractères</mat-error>
-        </mat-form-field>
+        </div>
+        <span class="field__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
+          Mot de passe requis
+        </span>
+        <span class="field__error" *ngIf="passwordInput.errors?.['minlength'] && passwordInput.touched">
+          Minimum 8 caractères
+        </span>
+      </div>
 
-        <!-- Submit -->
-        <button mat-raised-button
-        color="primary"
+      <!-- Submit -->
+      <button
+        class="btn-submit"
         type="submit"
-        class="w-100 mt-2"
         [disabled]="!loginForm.valid || isLoading">
 
-        @if(isLoading) {
+        @if (isLoading) {
           <div class="btn-loading">
-            <mat-progress-spinner
-              diameter="20"
-              mode="indeterminate"
-              color="accent">
-            </mat-progress-spinner>
+            <mat-progress-spinner diameter="18" mode="indeterminate" color="accent" />
             Connexion...
           </div>
         } @else {
-          Se connecter
+          Sign In
         }
 
       </button>
 
-      </form>
-    </mat-card-content>
-  </mat-card>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="login-footer">
+    © 2026 ERPSuite — Microservices ERP Platform
+  </div>
+
 </div>

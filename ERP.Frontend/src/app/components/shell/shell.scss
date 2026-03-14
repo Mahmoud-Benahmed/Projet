@@ -1,0 +1,377 @@
+@use 'shared' as *;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+$sidebar-w:      240px;
+$sidebar-w-sm:   80px;
+$topbar-h:       54px;
+$sidebar-bg:     var(--sidebar-bg);
+$sidebar-border: var(--sidebar-border);    // light: #e2e6f0  dark: #252a38
+$surface2:       var(--bg-card-hi);
+$ease:           cubic-bezier(0.4, 0, 0.2, 1);
+
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+  background: $bg-page;
+  color: $text-hi;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+// ══════════════════════════════════
+// LAYOUT
+// ══════════════════════════════════
+.shell-layout {
+  display: flex;
+  min-height: 100vh;
+
+    &--collapsed {
+    aside.sidebar                         { width: $sidebar-w-sm; }
+    aside.sidebar .sidebar__logo-text,
+    aside.sidebar .sidebar__item span,
+    aside.sidebar .sidebar__group span,
+    aside.sidebar .sidebar__chevron,
+    aside.sidebar .sidebar__subitem span,
+    aside.sidebar .sidebar__sub,
+    aside.sidebar .sidebar__user-info,
+    aside.sidebar .sidebar__toggle        { display: none !important; }
+    aside.sidebar .sidebar__logo          { justify-content: center; padding: 16px 0; }
+    aside.sidebar .sidebar__item,
+    aside.sidebar .sidebar__item--group   { justify-content: center; padding: 11px 0; }
+    aside.sidebar .sidebar__footer        { justify-content: center; padding: 14px 0; }
+    aside.sidebar .sidebar__user          { justify-content: center; }
+    .shell-main                           { margin-left: $sidebar-w-sm; }
+  }
+}
+
+// ══════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════
+.sidebar {
+  width: $sidebar-w;
+  min-height: 100vh;
+  background: $sidebar-bg;
+  border-right: 1px solid $sidebar-border;
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 200;
+  transition: width 0.25s $ease;
+  overflow: hidden;
+}
+
+.sidebar__logo {
+  display: flex; align-items: center; gap: 9px;
+  padding: 15px 14px;
+  min-height: $topbar-h;
+  border-bottom: 1px solid $sidebar-border;
+  cursor: pointer;
+  transition: color .2s, background .2s;
+  &:hover { color: $text-hi; background: $bg-card-hi; }
+
+
+  &-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: $blue;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 14px; color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px $blue-bg;
+  }
+
+  &-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 15px;
+    color: $text-hi; flex: 1; white-space: nowrap;
+  }
+}
+
+.sidebar__toggle {
+  background: none; border: none; cursor: pointer;
+  color: $text-lo; display: flex; align-items: center;
+  padding: 3px; border-radius: 5px; flex-shrink: 0;
+  transition: color .2s, background .2s;
+  &:hover { color: $text-hi; background: $bg-card-hi; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.sidebar__nav {
+  flex: 1; padding: 10px 8px;
+  overflow-y: auto; overflow-x: hidden;
+  &::-webkit-scrollbar { width: 2px; }
+  &::-webkit-scrollbar-thumb { background: $surface2; border-radius: 4px; }
+}
+
+.sidebar__item {
+  display: flex; align-items: center;
+  gap: 1rem;
+  padding: 9px 10px; border-radius: 8px;
+  color: $text-mid; text-decoration: none;
+  font-size: 16px; font-weight: 500; white-space: nowrap;
+  width: 100%; border: none; background: none;
+  cursor: pointer; text-align: left;
+  transition: color .18s, background .18s;
+  margin-bottom: 1px;
+
+  mat-icon { font-size: 19px; width: 19px; height: 19px; flex-shrink: 0; }
+  span { flex: 1; }
+
+  &:hover       { color: $text-hi; background: rgba(255,255,255,0.04); }
+  &--active     { color: $blue !important; background: $blue-bg !important; }
+  &--group      { position: relative; }
+  &--group-open { color: $text-hi; }
+}
+
+.sidebar__chevron {
+  font-size: 17px !important; width: 17px !important; height: 17px !important;
+  color: $text-lo;
+  transition: transform .22s $ease;
+  &.open { transform: rotate(180deg); }
+}
+
+.sidebar__group { margin-bottom: 1px; }
+
+.sidebar__sub {
+  max-height: 0; overflow: hidden;
+  transition: max-height .28s $ease;
+  &--open { max-height: 260px; }
+}
+
+.sidebar__subitem {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px 7px 32px; border-radius: 8px;
+  color: $text-lo; text-decoration: none;
+  font-size: 13px; font-weight: 400; white-space: nowrap;
+  transition: color .18s, background .18s;
+  margin-bottom: 1px;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; }
+
+  &:hover   { color: $text-mid; background: rgba(255,255,255,0.03); }
+  &--active { color: $blue !important; background: $blue-bg !important; }
+}
+
+.sidebar__footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px; border-top: 1px solid $sidebar-border;
+  gap: 0.25rem; min-height: 60px;
+}
+
+.sidebar__user {
+  display: flex; align-items: center; gap: 9px; overflow: hidden; flex: 1;
+}
+
+.sidebar__avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: $blue-bg; border: 1.5px solid $blue-border;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: $blue;
+  flex-shrink: 0;
+}
+
+.sidebar__user-info { display: flex; flex-direction: column; overflow: hidden; }
+
+.sidebar__user-name {
+  font-size: 12.5px; font-weight: 500; color: $text-hi;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.sidebar__user-role { font-size: 11px; color: $blue; white-space: nowrap; }
+
+.sidebar__logout {
+  background: none; border: none; cursor: pointer;
+  color: $text-lo; display: flex; align-items: center;
+  padding: 6px; border-radius: 6px; flex-shrink: 0;
+  transition: color .2s, background .2s;
+  &:hover { color: $red; background: $red-bg; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ══════════════════════════════════
+// MAIN AREA
+// ══════════════════════════════════
+.shell-main {
+  margin-left: $sidebar-w;
+  flex: 1; display: flex; flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.25s $ease;
+}
+
+.shell-topbar {
+  height: $topbar-h;
+  background: $sidebar-bg;
+  border-bottom: 1px solid $border;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 22px;
+  position: sticky; top: 0; z-index: 100;
+
+  &__left  { display: flex; align-items: center; gap: 12px; }
+  &__right { display: flex; align-items: center; gap: 14px; }
+
+  &__menu-btn {
+    background: none; border: none; cursor: pointer;
+    color: $text-lo; display: flex; align-items: center;
+    padding: 4px; border-radius: 6px;
+    transition: color .2s, background .2s;
+    &:hover { color: $text-hi; background: $bg-card-hi; }
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  }
+
+  &__theme-btn {
+    background: none;
+    border: 1px solid $border;
+    border-radius: 8px;
+    color: $text-mid;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; padding: 0;
+    transition: color .2s, background .2s, border-color .2s;
+    &:hover {
+      color: $text-hi;
+      background: $bg-card-hi;
+      border-color: $blue-border;
+    }
+  }
+
+  &__breadcrumb {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 13px; color: $text-lo;
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+
+  &__breadcrumb-root { color: $text-lo; }
+  &__breadcrumb-page { color: $text-hi; font-weight: 500; }
+
+  &__notif {
+    position: relative; color: $text-lo;
+    display: flex; align-items: center; cursor: pointer;
+    mat-icon { font-size: 20px; }
+  }
+
+  &__badge {
+    position: absolute; top: -3px; right: -5px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: $red; color: #fff;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  &__profile      { display: flex; align-items: center; gap: 9px; }
+
+  &__avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: $blue-bg; border: 1.5px solid $blue-border;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: $blue;
+  }
+
+  &__profile-info { display: flex; flex-direction: column; }
+  &__profile-name { font-size: 13px; font-weight: 500; color: $text-hi; line-height: 1.2; }
+  &__profile-role { font-size: 11px; color: $blue; }
+}
+
+.shell-content {
+  flex: 1;
+  padding: 26px 28px;
+  background: $bg-page;
+}
+
+// ══════════════════════════════════
+// MOBILE  (≤ 768px)
+// ══════════════════════════════════
+$bp-mobile: 768px;
+
+@media (max-width: $bp-mobile) {
+
+  .sidebar { display: none; }
+
+  // ── Fix scroll chain
+  .shell-layout {
+    flex-direction: column;
+    height: auto;        // ← don't lock to viewport
+  }
+
+  .shell-main {
+    margin-left: 0 !important;
+    width: 100%;
+    min-height: unset;   // ← this is the main culprit
+    overflow: visible;
+  }
+
+  .shell-content {
+    padding: 16px 14px;
+    overflow: visible;
+    height: auto;
+  }
+
+  .shell-topbar {
+    padding: 0 14px;
+    &__profile-info { display: none; }
+  }
+
+  // ← This is the only place menu-btn display is overridden
+  .shell-topbar__menu-btn {
+    display: flex;
+  }
+
+
+  .mobile-nav {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+
+    &__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      animation: fadeIn .2s ease forwards;
+    }
+
+    &__drawer {
+      position: relative;
+      width: 260px;
+      max-width: 80vw;
+      background: $sidebar-bg;
+      border-right: 1px solid $sidebar-border;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInLeft .22s $ease forwards;
+    }
+
+    // ── Closing state: reverse both animations
+    &--closing {
+      .mobile-nav__backdrop {
+        animation: fadeOut .2s ease forwards;
+      }
+      .mobile-nav__drawer {
+        animation: slideOutLeft .22s $ease forwards;
+      }
+    }
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes slideOutLeft {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+}

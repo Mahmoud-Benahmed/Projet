@@ -10,8 +10,8 @@ using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
@@ -70,7 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
 
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found")) ;
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found"));
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -90,21 +90,46 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var message = string.Join(" | ", context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage));
+
+        return new BadRequestObjectResult(new
+        {
+            statusCode = 400,
+            code = "VALIDATION ERROR",
+            message
+        });
+    };
+});
+
 // ── Dependency Injection
 builder.Services.AddScoped<IAuthUserRepository, AuthUserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IControleRepository, ControleRepository>();
 builder.Services.AddScoped<IPrivilegeRepository, PrivilegeRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthUserService, AuthUserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
-builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+
+builder.Services.AddScoped<IAuditLogger, AuditLogger>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+builder.Services.AddHttpContextAccessor();
+
+//builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();
+
 // ── Initialize MongoDB indexes
 var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
 await MongoDbInitializer.InitializeAsync(mongoContext);
@@ -112,26 +137,35 @@ await MongoDbInitializer.InitializeAsync(mongoContext);
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
     var services = scope.ServiceProvider;
     await AuthServiceSeeder.SeedAsync(
+        services.GetRequiredService<IAuditLogRepository>(),
         services.GetRequiredService<IAuthUserRepository>(),
         services.GetRequiredService<IRoleRepository>(),
         services.GetRequiredService<IControleRepository>(),
         services.GetRequiredService<IPrivilegeRepository>(),
-        services.GetRequiredService<IAuthUserService>(),
-        services.GetRequiredService<IConfiguration>(),
-        services.GetRequiredService<IEventPublisher>()  // ← add this
+        services.GetRequiredService<IPasswordHasher<AuthUser>>(), // ← generic type
+        services.GetRequiredService<IConfiguration>()
     );
-    
 }
 
+// =========================
+// PIPELINE
+// =========================
 app.UseSwagger();
 app.UseSwaggerUI();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<ValidateUserMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
+
 app.Run();

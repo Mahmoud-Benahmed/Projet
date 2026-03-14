@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -49,74 +50,55 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser()
               .RequireRole("SystemAdmin"));
 
-    // privilege-based policies
-    options.AddPolicy("CanViewClients", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewClients"));
+    // ── Auth
+    options.AddPolicy("ViewUsers",      p => p.RequireClaim("privilege",    "ViewUsers"));
+    options.AddPolicy("CreateUser",     p => p.RequireClaim("privilege",    "CreateUser"));
+    options.AddPolicy("ActivateUser",   p => p.RequireClaim("privilege",    "ActivateUser"));
+    options.AddPolicy("DeactivateUser", p => p.RequireClaim("privilege",    "DeactivateUser"));
+    options.AddPolicy("UpdateUser",     p => p.RequireClaim("privilege",    "UpdateUser"));
+    options.AddPolicy("DeleteUser",     p => p.RequireClaim("privilege",    "DeleteUser"));
+    options.AddPolicy("RestoreUser",    p => p.RequireClaim("privilege",    "RestoreUser"));
 
-    options.AddPolicy("CanCreateClient", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "CreateClient"));
+    options.AddPolicy("AssignRoles",    p => p.RequireClaim("privilege",    "AssignRoles"));
 
-    options.AddPolicy("CanUpdateClient", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "UpdateClient"));
+    // Audit-Log
+    options.AddPolicy("ManageAuditLogs",p => p.RequireClaim("privilege",    "ManageAuditLogs"));
 
-    options.AddPolicy("CanDeleteClient", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "DeleteClient"));
+    // ── Clients
+    options.AddPolicy("ViewClients",    p => p.RequireClaim("privilege",    "ViewClients"));
+    options.AddPolicy("CreateClient",   p => p.RequireClaim("privilege",    "CreateClient"));
+    options.AddPolicy("UpdateClient",   p => p.RequireClaim("privilege",    "UpdateClient"));
+    options.AddPolicy("DeleteClient",   p => p.RequireClaim("privilege",    "DeleteClient"));
+    options.AddPolicy("RestoreClient",  p => p.RequireClaim("privilege",    "RestoreClient"));
 
-    options.AddPolicy("CanViewInvoices", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewInvoices"));
+    // ── Articles
+    options.AddPolicy("ViewArticles",   p => p.RequireClaim("privilege",    "ViewArticles"));
+    options.AddPolicy("CreateArticle",  p => p.RequireClaim("privilege",    "CreateArticle"));
+    options.AddPolicy("UpdateArticle",  p => p.RequireClaim("privilege",    "UpdateArticle"));
+    options.AddPolicy("DeleteArticle",  p => p.RequireClaim("privilege",    "DeleteArticle"));
+    options.AddPolicy("RestoreArticle", p => p.RequireClaim("privilege",    "RestoreArticle"));
 
-    options.AddPolicy("CanCreateInvoice", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "CreateInvoice"));
+    // ── Facturation
+    options.AddPolicy("ViewInvoices",   p => p.RequireClaim("privilege",    "ViewInvoices"));
+    options.AddPolicy("CreateInvoice",  p => p.RequireClaim("privilege",    "CreateInvoice"));
+    options.AddPolicy("ValidateInvoice",p => p.RequireClaim("privilege",    "ValidateInvoice"));
+    options.AddPolicy("DeleteInvoice",  p => p.RequireClaim("privilege",    "DeleteInvoice"));
+    options.AddPolicy("RestoreInvoice", p => p.RequireClaim("privilege",    "RestoreInvoice"));
 
-    options.AddPolicy("CanValidateInvoice", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ValidateInvoice"));
+    // ──    Paiements
+    options.AddPolicy("ViewPayments",   p => p.RequireClaim("privilege",    "ViewPayments"));
+    options.AddPolicy("RecordPayment",  p => p.RequireClaim("privilege",    "RecordPayment"));
+    options.AddPolicy("DeletePayment",  p => p.RequireClaim("privilege",    "DeletePayment"));
+    options.AddPolicy("RestorePayment", p => p.RequireClaim("privilege",    "RestorePayment"));
 
-    options.AddPolicy("CanViewPayments", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewPayments"));
+    // ── Stocks
+    options.AddPolicy("ViewStock",      p => p.RequireClaim("privilege",    "ViewStock"));
+    options.AddPolicy("UpdateStock",    p => p.RequireClaim("privilege",    "UpdateStock"));
+    options.AddPolicy("AddEntry",       p => p.RequireClaim("privilege",    "AddEntry"));
 
-    options.AddPolicy("CanRecordPayment", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "RecordPayment"));
-
-    options.AddPolicy("CanViewArticles", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewArticles"));
-
-    options.AddPolicy("CanCreateArticle", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "CreateArticle"));
-
-    options.AddPolicy("CanUpdateArticle", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "UpdateArticle"));
-
-    options.AddPolicy("CanViewStock", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewStock"));
-
-    options.AddPolicy("CanUpdateStock", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "UpdateStock"));
-
-    options.AddPolicy("CanAddEntry", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "AddEntry"));
-
-    options.AddPolicy("CanViewReports", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ViewReports"));
-
-    options.AddPolicy("CanExportReports", policy =>
-        policy.RequireAuthenticatedUser()
-              .RequireClaim("privilege", "ExportReports"));
+    // ── Reporting
+    options.AddPolicy("ViewReports",    p => p.RequireClaim("privilege",    "ViewReports"));
+    options.AddPolicy("ExportReports",  p => p.RequireClaim("privilege",    "ExportReports"));
 });
 
 //////////////////////////////////////////////////
@@ -138,18 +120,22 @@ builder.Services.AddRateLimiter(options =>
 
     // ── LOGIN — strict (anti brute-force) ─────────────────
     options.AddPolicy("LoginPolicy", context =>
-        RateLimitPartition.GetFixedWindowLimiter(
+    {
+        context.Items["RateLimitPolicyName"] = "LoginPolicy";
+        return RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,                // 5 attempts
                 Window = TimeSpan.FromMinutes(5),
                 QueueLimit = 0
-            }));
+            });
+    });
 
     // ── AUTHENTICATED USER ACTIONS ────────────────────────
     options.AddPolicy("UserPolicy", context =>
     {
+        context.Items["RateLimitPolicyName"] = "UserPolicy";
         var userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
@@ -168,6 +154,7 @@ builder.Services.AddRateLimiter(options =>
     // ── WRITE OPERATIONS ──────────────────────────────────
     options.AddPolicy("WritePolicy", context =>
     {
+        context.Items["RateLimitPolicyName"] = "WritePolicy";
         var userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
@@ -188,8 +175,31 @@ builder.Services.AddRateLimiter(options =>
     {
         context.HttpContext.Response.StatusCode = 429;
         context.HttpContext.Response.ContentType = "application/json";
+
+        var policyName = context.HttpContext.Items["RateLimitPolicyName"]?.ToString();
+        var retrySeconds = policyName switch
+        {
+            "LoginPolicy" => 5 * 60,   // 5 minute window
+            "WritePolicy" => 60,        // 1 minute window
+            "UserPolicy" => 60,        // 1 minute window
+            _ => 60         // global fallback
+        };
+        context.HttpContext.Response.Headers.RetryAfter = retrySeconds.ToString();
+        Console.WriteLine($"retryAfter: {retrySeconds}");
+
+        string FormatWaitTime(int seconds) => seconds >= 60 ? $"{seconds / 60} minute{(seconds / 60 > 1 ? "s" : "")}"
+                                                            : $"{seconds} second{(seconds > 1 ? "s" : "")}";
+
+        var message = policyName switch
+        {
+            "LoginPolicy" => $"Too many login attempts. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            "WritePolicy" => $"Too many write operations. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            "UserPolicy" => $"Request limit reached. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
+            _ => $"Too many requests. Please wait {FormatWaitTime(retrySeconds)} before retrying."
+        };
+
         await context.HttpContext.Response.WriteAsync(
-            """{"message": "Too many requests. Please wait before retrying."}""",
+            $$"""{"statusCode": 429, "code": "RATE_LIMIT", "content": "{{message}}", "retryAfterSeconds": {{retrySeconds}}}""",
             token);
     };
 });

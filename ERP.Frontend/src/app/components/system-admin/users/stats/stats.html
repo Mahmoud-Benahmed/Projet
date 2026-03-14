@@ -5,7 +5,15 @@
       </div>
     }
 
-    <mat-card class="stat-card stat-card--active">
+    <mat-card class="stat-card stat-card--active"
+              [routerLink]="stats.activeUsers > 0 ? '/users' : null"
+              routerLinkActive="stat-card--current"
+              #usersLink="routerLinkActive"
+              [routerLinkActiveOptions]="{ exact: true }"
+              (click)="!usersLink.isActive && stats.activeUsers > 0"
+              [class.stat-card--disabled]="usersLink.isActive || stats.activeUsers < 1"
+      >
+
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>group</mat-icon>
@@ -17,7 +25,16 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="stat-card stat-card--inactive">
+
+
+    <mat-card class="stat-card stat-card--inactive"
+              [routerLink]="stats.deactivatedUsers > 0 ? '/users/deactivated' : null"
+              routerLinkActive="stat-card--current"
+              #disabledLink="routerLinkActive"
+              [routerLinkActiveOptions]="{exact: true}"
+              (click)="stats.deactivatedUsers > 0 || !disabledLink.isActive"
+              [class.stat-card--disabled]="disabledLink.isActive || stats.deactivatedUsers < 1"
+    >
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>person_off</mat-icon>
@@ -29,19 +46,8 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="stat-card stat-card--completed">
-      <mat-card-content>
-        <div class="stat-card__icon-wrap">
-          <mat-icon>verified_user</mat-icon>
-        </div>
-        <div class="stat-card__body">
-          <span class="stat-card__value">{{ stats.completedProfiles }}</span>
-          <span class="stat-card__label">Profiles Complete</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
 
-    <mat-card class="stat-card stat-card--total">
+    <mat-card class="stat-card stat-card--total" *ngIf="authService.canRestoreUsers">
       <mat-card-content>
         <div class="stat-card__icon-wrap">
           <mat-icon>dataset</mat-icon>

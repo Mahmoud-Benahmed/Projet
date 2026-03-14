@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 
 @Component({
   selector: 'app-home',
@@ -12,36 +14,69 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, RouterModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
+  encapsulation: ViewEncapsulation.None,
 })
 export class HomeComponent implements OnInit {
-  email: string | null = null;
-  role: string | null = null;
+  isLoading = false;
+  userProfile: AuthUserGetResponseDto | null = null;
+  lastLogin: string = '';
+  error: string | null = null;
+  successMessage: string | null = null;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn) {
+    if (!this.authService.isLoggedIn()) {
       this.authService.logout();
       return;
     }
-    this.email = this.authService.Email;
-    this.role  = this.authService.Role;
+
+    this.lastLogin = this.getLastLogin();
+
+    if (this.authService.UserProfile) {
+      this.userProfile = this.authService.UserProfile;
+    } else {
+      this.authService.getMe().subscribe({
+        next: (authUser) => {
+          this.userProfile = authUser;
+          this.authService.setUserProfile(this.userProfile);
+        },
+        error: (error) => {
+          if (error.status === 0) return;
+          this.flash('error', 'Failed to load profile.');
+        }
+      });
+    }
+  }
+
+
+  dismissError(): void { this.error = null; }
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if(type === 'success'){
+      this.successMessage = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.successMessage = null), 3000);
+    }
+    else{
+      this.error = msg;
+      this.cdr.markForCheck();
+      setTimeout(() => (this.error = null), 3000);
+    }
+  }
+
+
+  private getLastLogin(): string {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `Today at ${hours}:${minutes}`;
   }
 
   logout(): void {
     this.authService.logout();
-  }
-
-  get firstName(): string {
-    return this.email?.split('@')[0] ?? 'there';
-  }
-
-  get initials(): string {
-    return (this.email?.split('@')[0] ?? '?')
-      .split('.')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
   }
 }

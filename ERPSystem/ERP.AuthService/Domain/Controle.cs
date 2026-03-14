@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using ERP.AuthService.Application.DTOs.Role;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ERP.AuthService.Domain
@@ -21,6 +22,24 @@ namespace ERP.AuthService.Domain
             Category = category;
             Libelle = libelle;
             Description = description;
+        }
+
+
+
+        public void Update(ControleRequestDto controle)
+        {
+            if (equals(controle))
+                return;
+            Category = string.IsNullOrWhiteSpace(controle.Category) ? Category : controle.Category;
+            Libelle = string.IsNullOrWhiteSpace(controle.Libelle) ? Libelle : controle.Libelle;
+            Description= string.IsNullOrWhiteSpace(controle.Description) ? Description: controle.Description;
+        }
+
+        private bool equals(ControleRequestDto controle)
+        {
+            return  controle.Description.Equals(Description, StringComparison.OrdinalIgnoreCase) 
+                &&  controle.Libelle.Equals(Libelle, StringComparison.OrdinalIgnoreCase) 
+                &&  controle.Category.Equals(Category, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

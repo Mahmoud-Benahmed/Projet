@@ -1,7 +1,294 @@
-<app-header
-  (logoutClicked)="onLogout()">
-</app-header>
+<div class="shell-layout" [class.shell-layout--collapsed]="collapsed">
+  <!-- ══════════ MOBILE NAV DRAWER ══════════ -->
+  <div class="mobile-nav" *ngIf="mobileNavOpen"
+      [class.mobile-nav--closing]="mobileNavClosing">
+    <div class="mobile-nav__backdrop" (click)="closeMobileNav()"></div>
+    <nav class="mobile-nav__drawer">
 
-<main class="shell-content">
-  <router-outlet></router-outlet>
-</main>
+      <!-- Logo / close -->
+      <div class="sidebar__logo" style="justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div class="sidebar__logo-icon">E</div>
+          <span class="sidebar__logo-text">ERPSuite</span>
+        </div>
+        <button class="sidebar__toggle" (click)="closeMobileNav()" type="button">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Reuse exact same nav items as the sidebar -->
+      <div style="padding: 10px 8px; flex:1;">
+
+        <a class="sidebar__item" routerLink="/home" routerLinkActive="sidebar__item--active"
+          [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+          <mat-icon>home</mat-icon><span>Home</span>
+        </a>
+
+        <div class="sidebar__group" *ngIf="authService.canManageUsers">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['auth']">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>Auth & Users</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['auth']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['auth']">
+            <a class="sidebar__subitem" routerLink="/users" routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+              <mat-icon>group</mat-icon> Users
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canActivateUsers || authService.canDeactivateUsers" (click)="closeMobileNav()">
+              <mat-icon>person_off</mat-icon> Deactivated
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRestoreUsers" (click)="closeMobileNav()">
+              <mat-icon>group_remove</mat-icon> Deleted
+            </a>
+            <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRegisterUsers" (click)="closeMobileNav()">
+              <mat-icon>person_add</mat-icon> Register
+            </a>
+            <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canSeePermissions" (click)="closeMobileNav()">
+              <mat-icon>shield</mat-icon> Permissions
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar__group" *ngIf="authService.canManageArticles">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('articles')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['articles']">
+            <mat-icon>warehouse</mat-icon>
+            <span>Articles</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['articles']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
+            <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active"
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+              <mat-icon>inventory_2</mat-icon><span>Articles</span>
+            </a>
+            <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
+              *ngIf="authService.canRestoreArticles" (click)="closeMobileNav()">
+              <mat-icon>recycling</mat-icon><span>Deleted</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="sidebar__group" *ngIf="authService.canManageClients">
+          <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('clients')" type="button"
+                  [class.sidebar__item--group-open]="openGroups['clients']">
+            <mat-icon>people</mat-icon>
+            <span>Clients</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
+            <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}">
+              <mat-icon>person</mat-icon><span>Clients</span>
+            </a>
+            <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRestoreClients">
+              <mat-icon>person_remove</mat-icon><span>Deleted</span>
+            </a>
+          </div>
+        </div>
+
+        <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
+          *ngIf="authService.canSeeAuditLog" (click)="closeMobileNav()">
+          <mat-icon>history</mat-icon><span>Audit Log</span>
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <div class="sidebar__footer">
+        <div class="sidebar__user" [routerLink]="['/profile']" (click)="closeMobileNav()" style="cursor:pointer;">
+          <div class="sidebar__avatar">{{ initials }}</div>
+          <div class="sidebar__user-info">
+            <span class="sidebar__user-name">{{ userName }}</span>
+            <span class="sidebar__user-role">{{ userRole }}</span>
+          </div>
+        </div>
+        <button class="sidebar__logout" (click)="onLogout()" matTooltip="Logout" type="button">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+
+    </nav>
+  </div>
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar__logo" (click)="toggleSidebar()" type="button">
+      <div class="sidebar__logo-icon">E</div>
+      <span class="sidebar__logo-text">ERPSuite</span>
+      <button class="sidebar__toggle">
+        <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar__nav">
+
+      <!-- Home -->
+      <a class="sidebar__item" routerLink="/home" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}">
+        <mat-icon>home</mat-icon>
+        <span>Home</span>
+      </a>
+
+      <!-- Auth & Users (collapsible group) -->
+      <div class="sidebar__group" *ngIf="authService.canManageUsers">
+        <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
+                [class.sidebar__item--group-open]="openGroups['auth']">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Auth & Users</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['auth']">expand_more</mat-icon>
+        </button>
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['auth']">
+          <a class="sidebar__subitem" routerLink="/users" routerLinkActive="sidebar__subitem--active" [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>group</mat-icon> Users
+          </a>
+          <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canActivateUsers || authService.canDeactivateUsers">
+            <mat-icon>person_off</mat-icon> Deactivated
+          </a>
+          <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRestoreUsers">
+            <mat-icon>group_remove</mat-icon> Deleted
+          </a>
+          <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canRegisterUsers">
+            <mat-icon>person_add</mat-icon> Register
+          </a>
+          <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
+              *ngIf="authService.canSeePermissions">
+            <mat-icon>shield</mat-icon> Permissions
+          </a>
+        </div>
+      </div>
+
+      <!-- Articles -->
+      <div class="sidebar__group" *ngIf="authService.canManageArticles">
+        <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('articles')" type="button"
+                [class.sidebar__item--group-open]="openGroups['articles']">
+          <mat-icon>warehouse</mat-icon>
+          <span>Articles</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['articles']">expand_more</mat-icon>
+        </button>
+
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
+          <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}"
+              *ngIf="authService.canViewArticles">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Articles</span>
+          </a>
+          <a class="sidebar__subitem" routerLink="/articles/deleted" routerLinkActive="sidebar__item--active"
+              *ngIf="authService.canRestoreArticles">
+            <mat-icon>recycling</mat-icon>
+            <span>Deleted</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="sidebar__group" *ngIf="authService.canManageClients">
+        <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('clients')" type="button"
+                [class.sidebar__item--group-open]="openGroups['clients']">
+          <mat-icon>people</mat-icon>
+          <span>Clients</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
+        </button>
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
+          <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
+            [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>person</mat-icon><span>Clients</span>
+          </a>
+          <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
+            *ngIf="authService.canRestoreClients">
+            <mat-icon>person_remove</mat-icon><span>Deleted</span>
+          </a>
+        </div>
+      </div>
+
+
+      <!-- Audit Log -->
+      <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
+          *ngIf="authService.canSeeAuditLog">
+        <mat-icon>history</mat-icon>
+        <span>Audit Log</span>
+      </a>
+
+    </nav>
+
+    <!-- Footer / User -->
+    <div class="sidebar__footer">
+      <div class="sidebar__user"
+          [routerLink]="['/profile']"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          style="cursor: pointer;">
+        <div class="sidebar__avatar">{{ initials }}</div>
+        <div class="sidebar__user-info">
+          <span class="sidebar__user-name">{{ userName }}</span>
+          <span class="sidebar__user-role">{{ userRole }}</span>
+        </div>
+      </div>
+      <button class="sidebar__logout" (click)="onLogout()" matTooltip="Logout" type="button">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ══════════ MAIN ══════════ -->
+  <div class="shell-main">
+
+    <!-- Topbar -->
+    <header class="shell-topbar">
+      <div class="shell-topbar__left">
+        <button class="shell-topbar__menu-btn" (click)="toggleNav()" type="button">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <div class="shell-topbar__breadcrumb">
+          <span class="shell-topbar__breadcrumb-root">ERPSuite</span>
+          <mat-icon>chevron_right</mat-icon>
+          <span class="shell-topbar__breadcrumb-page">{{ currentPage }}</span>
+        </div>
+      </div>
+      <div class="shell-topbar__right">
+        <button class="shell-topbar__theme-btn" (click)="theme.toggle()" type="button"
+          [title]="theme.isDark() ? 'Switch to Light' : 'Switch to Dark'">
+          <svg *ngIf="theme.isDark()" width="17" height="17" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
+          </svg>
+          <svg *ngIf="!theme.isDark()" width="17" height="17" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <div class="shell-topbar__notif">
+          <mat-icon>notifications</mat-icon>
+          <span class="shell-topbar__badge">3</span>
+        </div>
+        <div class="shell-topbar__profile" [routerLink]="['/profile']" style="cursor:pointer;">
+          <div class="shell-topbar__avatar">{{ initials }}</div>
+          <div class="shell-topbar__profile-info">
+            <span class="shell-topbar__profile-name">{{ userName }}</span>
+            <span class="shell-topbar__profile-role">{{ userRole }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="shell-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+</div>
