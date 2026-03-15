@@ -1,5 +1,6 @@
 ﻿using ERP.ClientService.Domain;
 using System.ComponentModel.DataAnnotations;
+using ERP.ClientService.Application.Validation;
 
 namespace ERP.ClientService.Application.DTOs
 {
@@ -16,6 +17,7 @@ namespace ERP.ClientService.Application.DTOs
         DateTime? UpdatedAt
     );
 
+    [CompanyRequiresTaxNumber]
     public record CreateClientRequestDto(
         [Required(ErrorMessage = "Type is required.")]
         [EnumDataType(typeof(ClientType), ErrorMessage = "Type is not valid.")]
@@ -42,6 +44,7 @@ namespace ERP.ClientService.Application.DTOs
         string? TaxNumber
     );
 
+    [CompanyRequiresTaxNumber]
     public record UpdateClientRequestDto(
         [Required(ErrorMessage = "Type is required.")]
         [EnumDataType(typeof(ClientType), ErrorMessage = "Type is not valid.")]

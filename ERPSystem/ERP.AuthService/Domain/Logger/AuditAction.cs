@@ -23,7 +23,6 @@
         UserActivated,
         UserDeactivated,
         UserDeleted,
-        UserRestored,
-        UserDeletedPermanently,
+        UserRestored
     }
 }
