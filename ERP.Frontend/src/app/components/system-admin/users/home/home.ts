@@ -228,20 +228,4 @@ export class UsersHomeComponent implements OnInit {
   get currentUserId(): string | null {
     return this.authService.UserId;
   }
-
-  get isOwnProfile(): boolean {
-    return false; // in the table context, we use currentUserId comparison directly
-  }
-
-  get hasPrivilege(): boolean {
-    return this.authService.Privileges.includes('ManageUsers');
-  }
-
-  get canDeactivate(): boolean {
-    return this.hasPrivilege;
-  }
-
-  get canDelete(): boolean {
-    return this.hasPrivilege;
-  }
 }
