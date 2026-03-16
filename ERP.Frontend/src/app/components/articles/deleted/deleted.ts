@@ -21,6 +21,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Article, ArticleService, ArticleStatsDto, Category, PagedResult } from '../../../services/articles.service';
 import { PaginationComponent } from "../../pagination/pagination";
 import { AuthService } from '../../../services/auth.service';
+import { HttpError } from '../../../interfaces/ErrorDto';
 
 @Component({
   selector: 'app-deactivated',
@@ -185,8 +186,10 @@ export class DeletedArticlesComponent implements OnInit {
           this.cancel();
         }
       },
-      error: () =>
-        this.flash('error', 'Failed to restore article.')
+      error: (error) =>{
+        const err= error.error as HttpError;
+        this.flash('error', error.message);
+      }
     });
   }
 
