@@ -83,11 +83,12 @@
           </button>
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
             <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
-              [routerLinkActiveOptions]="{exact:true}">
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
               <mat-icon>person</mat-icon><span>Clients</span>
             </a>
-            <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
-              *ngIf="authService.canRestoreClients">
+            <a class="sidebar__subitem" routerLink="/clients/deleted"
+              routerLinkActive="sidebar__subitem--active" *ngIf="authService.canRestoreClients"
+              (click)="closeMobileNav()">
               <mat-icon>person_remove</mat-icon><span>Deleted</span>
             </a>
           </div>
@@ -120,12 +121,12 @@
   <aside class="sidebar">
 
     <!-- Logo -->
-    <div class="sidebar__logo" (click)="toggleSidebar()" type="button">
+    <div class="sidebar__logo">
       <div class="sidebar__logo-icon">E</div>
       <span class="sidebar__logo-text">ERPSuite</span>
-      <button class="sidebar__toggle">
-        <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
-      </button>
+        <button class="sidebar__toggle" (click)="toggleSidebar()" type="button">
+          <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
     </div>
 
     <!-- Nav -->
@@ -178,8 +179,7 @@
         </button>
 
         <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
-          <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}"
-              *ngIf="authService.canViewArticles">
+          <a class="sidebar__subitem" routerLink="/articles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}">
             <mat-icon>inventory_2</mat-icon>
             <span>Articles</span>
           </a>
