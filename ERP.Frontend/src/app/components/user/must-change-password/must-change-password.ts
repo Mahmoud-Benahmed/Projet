@@ -40,7 +40,7 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 export class MustChangePasswordComponent implements OnInit{
   @ViewChild('passwordFormRef') passwordFormRef!: NgForm;
   mustChangePassword: boolean = false;
-  error: string | null = null;
+  errors: string[] = [];
   successMessage: string | null = null;
 
   isLoading = false;
@@ -64,7 +64,6 @@ export class MustChangePasswordComponent implements OnInit{
   ) {}
 
   ngOnInit(){
-    this.passwordForm = { newPassword: 'Admin@12345', currentPassword: 'Admin@1234' };
     this.mustChangePassword = this.authService.getMustChangePassword();
   }
 
@@ -87,11 +86,16 @@ export class MustChangePasswordComponent implements OnInit{
             });
             this.router.navigate(['/home']);
       },
-      error: (err) => {
-        this.isLoading = false;
-        const error = err.error as HttpError;
-        this.flash('error', error.message);
-      },
+      error: (error) => {
+        const err= error.error as HttpError;
+        if (err.code === 'VALIDATION_ERROR' && err.errors) {
+          // Flatten all field error arrays into a single list
+          const messages = Object.values(err.errors).flat();
+          this.flashErrors(messages);
+        } else {
+          this.flash('error', err.message);
+        }
+      }
     });
   }
 
@@ -152,7 +156,7 @@ export class MustChangePasswordComponent implements OnInit{
     return map[this.passwordStrength] ?? '';
   }
 
-  dismissError(): void { this.error = null; }
+  dismissError(): void { this.errors = []; }
 
   flash(type: 'success' | 'error', msg: string): void {
     if(type === 'success'){
@@ -161,9 +165,15 @@ export class MustChangePasswordComponent implements OnInit{
       setTimeout(() => (this.successMessage = null), 3000);
     }
     else{
-      this.error = msg;
+      this.errors = [msg];
       this.cdr.markForCheck();
-      setTimeout(() => (this.error = null), 3000);
+      setTimeout(() => (this.dismissError(), 3000));
     }
+  }
+
+  flashErrors(messages: string[]): void {
+    this.errors = messages;
+    setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
+    this.cdr.markForCheck();
   }
 }
