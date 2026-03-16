@@ -7,6 +7,7 @@ import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
+import { HttpError } from '../../interfaces/ErrorDto';
 
 @Component({
   selector: 'app-home',
@@ -45,8 +46,8 @@ export class HomeComponent implements OnInit {
           this.authService.setUserProfile(this.userProfile);
         },
         error: (error) => {
-          if (error.status === 0) return;
-          this.flash('error', 'Failed to load profile.');
+          const err= error.error as HttpError;
+          this.flash('error', err.message);
         }
       });
     }
