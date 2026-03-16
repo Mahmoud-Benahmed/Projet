@@ -5,10 +5,12 @@ import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
 import { ModalComponent } from "../components/modal/modal";
+import { routes } from "../app.routes";
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const dialog = inject(MatDialog);
+  const router= inject(Router);
 
   const token = auth.getAccessToken();
   const authReq = token ? req.clone({
@@ -73,6 +75,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
             }
           }).afterClosed().subscribe(() => {
             if (isInactive) auth.logout();
+            router.navigate(["/home"]);
           });
           return throwError(()=> error);
       }
