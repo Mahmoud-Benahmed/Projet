@@ -65,7 +65,7 @@ export class MustChangePasswordComponent implements OnInit{
 
   ngOnInit(){
     this.passwordForm = { newPassword: 'Admin@12345', currentPassword: 'Admin@1234' };
-    this.mustChangePassword = this.authService.getMustChangePassword()
+    this.mustChangePassword = this.authService.getMustChangePassword();
   }
 
   onSubmit(): void {
@@ -87,10 +87,10 @@ export class MustChangePasswordComponent implements OnInit{
             });
             this.router.navigate(['/home']);
       },
-      error: (error) => {
+      error: (err) => {
         this.isLoading = false;
-        const err = error as HttpError;
-        this.flash('error',err.message);
+        const error = err.error as HttpError;
+        this.flash('error', error.message);
       },
     });
   }
@@ -101,7 +101,7 @@ export class MustChangePasswordComponent implements OnInit{
 
 
   onPasswordChange(): void {
-    const result = checkPassword(this.passwordForm.newPassword);
+    const result = checkPassword(this.passwordForm.newPassword, this.passwordForm.currentPassword);
     this.passwordErrors = result.errors;
     this.passwordScore = result.score;
     this.passwordStrength = result.strength;
@@ -114,6 +114,8 @@ export class MustChangePasswordComponent implements OnInit{
   }
 
   onCurrentPasswordChange(): void {
+    this.onPasswordChange();
+
     const newPwdControl = this.passwordFormRef?.controls?.['newPassword'];
     if (newPwdControl) {
       newPwdControl.updateValueAndValidity();
