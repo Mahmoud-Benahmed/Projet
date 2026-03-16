@@ -45,7 +45,7 @@ export class RegisterComponent implements OnDestroy {
   showPassword = false;
   private errorTimeout: any = null;
   isLoading:boolean = false;
-  error: string | null = null;
+  errors: string[] = [];
   successMessage: string | null = null;
 
   roles: RoleResponseDto[] = [];
@@ -128,7 +128,7 @@ export class RegisterComponent implements OnDestroy {
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
-                iconColor: 'danger'
+                iconColor: 'warn'
               }
             });
             return;
@@ -145,7 +145,7 @@ export class RegisterComponent implements OnDestroy {
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'check_circle',
-                iconColor: 'danger'
+                iconColor: 'warn'
               }
             });
             return;
@@ -155,10 +155,15 @@ export class RegisterComponent implements OnDestroy {
           // call the auth.service method to register the user in the backend
           this.register();
         },
-        error: (err) => {
-          this.stopLoading();
-          let error= err.error as HttpError;
-          this.flash('error',error.message);
+        error: (error) => {
+          const err= error.error as HttpError;
+          if (err.code === 'VALIDATION_ERROR' && err.errors) {
+            // Flatten all field error arrays into a single list
+            const messages = Object.values(err.errors).flat();
+            this.flashErrors(messages);
+          } else {
+            this.flash('error', err.message);
+          }
         }
       });
   }
@@ -172,9 +177,14 @@ export class RegisterComponent implements OnDestroy {
           setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
-          this.stopLoading();
-          let err = error.error as HttpError
-          this.passwordErrors.push(err.message);
+          const err= error.error as HttpError;
+          if (err.code === 'VALIDATION_ERROR' && err.errors) {
+            // Flatten all field error arrays into a single list
+            const messages = Object.values(err.errors).flat();
+            this.flashErrors(messages);
+          } else {
+            this.flash('error', err.message);
+          }
         }
     });
   }
@@ -266,19 +276,24 @@ export class RegisterComponent implements OnDestroy {
     this.registerForm.resetForm();
   }
 
-  dismissError(): void { this.error = null; }
+  dismissError(): void { this.errors = []; }
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.successMessage = null), 3000);
+      setTimeout(() => { this.successMessage = null; this.cdr.markForCheck(); }, 3000);
+    } else {
+      this.errors = [msg];
+      setTimeout(() => { this.dismissError(); this.cdr.markForCheck(); }, 4000);
     }
-    else{
-      this.error = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.error = null), 3000);
-    }
+    this.cdr.markForCheck();
   }
+
+  flashErrors(messages: string[]): void {
+    this.errors = messages;
+    setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
+    this.cdr.markForCheck();
+  }
+
 
   get isPasswordInvalid(): boolean {
     return this.passwordErrors.length > 0;
