@@ -34,7 +34,7 @@ export class ClientComponent implements OnInit {
   viewMode: ViewMode = 'list';
   selectedClient: Client | null = null;
   loading = false;
-  error: string | null = null;
+  errors: string[] = [];
   successMessage: string | null = null;
   searchQuery = '';
 
@@ -68,7 +68,7 @@ export class ClientComponent implements OnInit {
   // -------------------------------------------------------
   load(): void {
     this.loading = true;
-    this.error = null;
+    this.errors = [];
     this.clientService.getAll(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
         this.clients = res.items;
@@ -76,14 +76,14 @@ export class ClientComponent implements OnInit {
         this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => { this.error = 'Failed to load clients.'; this.loading = false; this.cdr.markForCheck(); },
+      error: () => { this.flash('error','Failed to load clients.'); this.loading = false; this.cdr.markForCheck(); },
     });
   }
 
   loadStats(): void {
     this.clientService.getStats().subscribe({
       next: (res) => { this.stats = res; this.cdr.markForCheck(); },
-      error: () => { this.error = 'Failed to load stats.'; this.cdr.markForCheck(); },
+      error: () => { this.flash('error', 'Failed to load stats.'); this.cdr.markForCheck(); },
     });
   }
 
@@ -164,8 +164,14 @@ export class ClientComponent implements OnInit {
           this.reload();
         },
         error: (error) => {
-          const err = error.error as HttpError;
-          this.flash('error', `Failed to create client.`);
+          const err= error.error as HttpError;
+          if (err.code === 'VALIDATION_ERROR' && err.errors) {
+            // Flatten all field error arrays into a single list
+            const messages = Object.values(err.errors).flat();
+            this.flashErrors(messages);
+          } else {
+            this.flash('error', err.message);
+          }
         }
       });
     } else if (this.viewMode === 'edit' && this.selectedClient) {
@@ -175,8 +181,15 @@ export class ClientComponent implements OnInit {
           this.cancel();
           this.reload();
         },
-        error: () => {
-          this.flash('error', `Failed to update client "${val.name}".`);
+        error: (error) => {
+          const err= error.error as HttpError;
+          if (err.code === 'VALIDATION_ERROR' && err.errors) {
+            // Flatten all field error arrays into a single list
+            const messages = Object.values(err.errors).flat();
+            this.flashErrors(messages);
+          } else {
+            this.flash('error', err.message);
+          }
         }
       });
     }
@@ -208,24 +221,29 @@ export class ClientComponent implements OnInit {
   }
 
 
-
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.successMessage = null), 3000);
+      setTimeout(() => { this.successMessage = null; this.cdr.markForCheck(); }, 3000);
+    } else {
+      this.errors = [msg];
+      setTimeout(() => { this.dismissError(); this.cdr.markForCheck(); }, 4000);
     }
-    else{
-      this.error = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.error = null), 3000);
-    }
+    this.cdr.markForCheck();
+  }
+
+  flashErrors(messages: string[]): void {
+    this.errors = messages;
+    setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
+    this.cdr.markForCheck();
   }
 
 
   // -------------------------------------------------------
   // Helpers
   // -------------------------------------------------------
-  dismissError(): void { this.error = null; }
+  dismissError(): void { this.errors = []; }
+  dismissSuccess(): void { this.successMessage = null; }
+
   trackById(_: number, c: Client): string { return c.id; }
 }
