@@ -750,32 +750,64 @@ $bp-xl:  1200px;
 // ========================
 .password-group { margin-top: -0.5rem; }
 
+// ── PASSWORD FORM ─────────────────────────────────
+.password-form {
+  padding: 16px 20px 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  animation: slideDown 0.2s ease;
+  &__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+}
+
+// ── PASSWORD METER ────────────────────────────────
 .password-meter {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 0.5rem; margin: 4px 0 8px;
 
-  &__bars { display: flex; gap: 4px; flex: 1; }
-
-  .bar {
-    flex: 1; height: 4px; border-radius: 2px;
-    background: $border;
-    transition: background 0.3s;
-    &--filled {
-      &.strength-weak   { background: $red; }
-      &.strength-fair   { background: $amber; }
-      &.strength-good   { background: #8bc34a; }
-      &.strength-strong { background: $green; }
+  &__bars {
+    display: flex; gap: 4px; flex: 1;
+    .bar {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: $bg-card-hi; transition: background 0.3s;
+      &--filled {
+        &.strength--weak        { background: $red; }
+        &.strength--fair        { background: $amber; }
+        &.strength--strong      { background: $green; }
+        &.strength--very-strong { background: $blue; }
+      }
     }
   }
 
   &__label {
-    font-size: 12px; font-weight: 500; white-space: nowrap;
-    &.strength-weak   { color: $red; }
-    &.strength-fair   { color: $amber; }
-    &.strength-good   { color: #8bc34a; }
-    &.strength-strong { color: $green; }
+    font-size: 0.75rem; font-weight: 600; min-width: 64px; text-align: right;
+    &.strength--weak        { color: $red; }
+    &.strength--fair        { color: $amber; }
+    &.strength--strong      { color: $green; }
+    &.strength--very-strong { color: $blue; }
   }
+}
+
+// ── PASSWORD ERRORS ───────────────────────────────
+.password-errors {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 12px; margin: 4px 0;
+  background: $red-bg; border: 1px solid $red-border; border-radius: 8px;
+  .password-error {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; color: $red;
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+}
+
+// ── GENERATE BUTTON ───────────────────────────────
+// FIX: replaced broad `button[mat-stroked-button]` selector with scoped class
+.btn-generate {
+  color: $text-lo; border: 1px solid $border;
+  border-radius: 8px; font-size: 13px; font-weight: 500;
+  background: transparent; cursor: pointer;
+  align-self: flex-start; padding: 6px 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: $blue; }
+  &:hover { border-color: $blue-border; color: $text-hi; background: $blue; }
 }
 
 .password-errors { display: flex; flex-direction: column; gap: 4px; margin-top: -0.5rem; }
