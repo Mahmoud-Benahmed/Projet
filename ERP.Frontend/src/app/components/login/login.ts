@@ -51,10 +51,6 @@ export class LoginComponent implements OnInit{
     if (this.authService.isLoggedIn()!) {
       this.router.navigate(['/home']);
     }
-    this.credentials={
-      login: "admin_erp1234",
-      password: "Admin@1234"
-    }
   }
 
   togglePasswordVisibility(): void {
@@ -93,7 +89,7 @@ export class LoginComponent implements OnInit{
                 message: err.message,
                 confirmText: 'Ok',
                 showCancel: false,
-                icon: 'check_circle',
+                icon: 'dangerous',
                 iconColor: 'danger'
               }
           });
