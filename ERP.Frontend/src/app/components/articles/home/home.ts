@@ -36,7 +36,7 @@ export class ArticleComponent implements OnInit {
   viewMode: ViewMode = 'list';
   selectedArticle: Article | null = null;
   loading = false;
-  error: string | null = null;
+  errors: string[]= [];
   successMessage: string | null = null;
   searchQuery = '';
 
@@ -75,7 +75,7 @@ export class ArticleComponent implements OnInit {
   // -------------------------------------------------------
   load(): void {
     this.loading = true;
-    this.error = null;
+    this.errors = [];
     this.articleService.getAllArticles(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
         this.articles = res.items; this.totalCount= res.totalCount; this.cdr.markForCheck();
@@ -92,7 +92,7 @@ export class ArticleComponent implements OnInit {
 
   loadStats():void{
     this.loading= true;
-    this.error= null;
+    this.errors= [];
     this.articleService.getStats().subscribe({
       next: (res)=> {this.stats= res; this.cdr.markForCheck(); },
       error: ()=> {
@@ -168,7 +168,10 @@ export class ArticleComponent implements OnInit {
           this.reload();
           this.flash('success', `Article "${val.libelle}" updated successfully.`);
         },
-        error: () => (this.flash('error', `Failed to update article "${this.selectedArticle?.libelle}"`)),
+        error: (error) =>{
+          const err= error.error as HttpError;
+          this.flash('error', error.message);
+        }
       });
     }
   }
@@ -205,18 +208,22 @@ export class ArticleComponent implements OnInit {
   }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.successMessage = null), 3000);
+      setTimeout(() => { this.successMessage = null; this.cdr.markForCheck(); }, 3000);
+    } else {
+      this.errors = [msg];
+      setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
     }
-    else{
-      this.error = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.error = null), 3000);
-    }
+    this.cdr.markForCheck();
   }
-  dismissError(): void { this.error = null; }
+
+  flashErrors(messages: string[]): void {
+    this.errors = messages;
+    setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
+    this.cdr.markForCheck();
+  }
+  dismissError(): void { this.errors = []; }
 
   reload(): void{
     this.load();
