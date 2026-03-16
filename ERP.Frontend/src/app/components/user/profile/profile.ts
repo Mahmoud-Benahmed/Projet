@@ -286,17 +286,18 @@ export class ProfileComponent implements OnInit {
               }
         });
       },
-      error: () => {
-          this.stopLoading('isSaving');
+      error: (error) => {
+        const err= error.error as HttpError;
+        this.stopLoading('isSaving');
           this.dialog.open(ModalComponent, {
               width: '400px',
               data: {
                 title: 'Loading Error',
-                message: `Failed to load profile.`,
+                message: err.message,
                 confirmText: 'Ok',
                 showCancel: false,
-                icon: 'info',
-                iconColor: 'warn'
+                icon: 'dangerous',
+                iconColor: 'danger'
               }
           });
       }
