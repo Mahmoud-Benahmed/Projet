@@ -28,6 +28,7 @@ export class AuthService {
     this.loadProfileFromStorage()  // rehydrate immediately on construction
   );
   readonly userProfile$ = this._userProfile$.asObservable();
+  private _loggingOut = false;
 
   constructor(private http: HttpClient,   private router: Router) {}
 
@@ -459,6 +460,9 @@ export class AuthService {
   }
 
   logout(): void {
+    if(this._loggingOut) return;
+    this._loggingOut= true;
+
     const refreshToken = this.getRefreshToken();
 
     if (refreshToken) {
@@ -468,17 +472,20 @@ export class AuthService {
           complete: () => {
             this.clearSession();
             this.clearUserProfile();
+            this._loggingOut = false;
             this.router.navigate(['/login']);
           },
           error: () => {
             this.clearSession();
             this.clearUserProfile();
+            this._loggingOut = false;
             this.router.navigate(['/login']);
           }
         });
-    } else {
+    }else {
       this.clearSession();
       this.clearUserProfile();
+      this._loggingOut = false;
       this.router.navigate(['/login']);
     }
   }
