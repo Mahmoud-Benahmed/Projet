@@ -148,6 +148,8 @@ export class AuthService {
   }
   get canViewUsers():boolean{
     return this.hasPrivilege('ViewUsers');}
+  get canUpdateUsers():boolean{
+    return this.hasPrivilege('UpdateUser');}
   get canActivateUsers(): boolean{
     return this.hasPrivilege('ActivateUser');}
   get canDeactivateUsers(): boolean{
@@ -459,16 +461,25 @@ export class AuthService {
   logout(): void {
     const refreshToken = this.getRefreshToken();
 
-    // Always clear immediately — don't wait for revoke
-    this.clearSession();
-    this.clearUserProfile();
-
     if (refreshToken) {
-        this.revoke({ refreshToken })
-            .pipe(take(1))
-            .subscribe({ error: () => {} });
+      this.revoke({ refreshToken })
+        .pipe(take(1))
+        .subscribe({
+          complete: () => {
+            this.clearSession();
+            this.clearUserProfile();
+            this.router.navigate(['/login']);
+          },
+          error: () => {
+            this.clearSession();
+            this.clearUserProfile();
+            this.router.navigate(['/login']);
+          }
+        });
+    } else {
+      this.clearSession();
+      this.clearUserProfile();
+      this.router.navigate(['/login']);
     }
-
-    this.router.navigate(['/login']);
   }
 }
