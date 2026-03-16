@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,10 +14,11 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { NgForm } from '@angular/forms';
-import { NotSameAsDirective } from '../../../util/NotSameAsDirective';
-import { SameAsDirective } from "../../../util/SameAsDirective";
 import { checkPassword, generatePassword } from '../../../util/PasswordUtil';
 import { AdminChangeProfileRequest, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, UpdateProfileDto } from '../../../interfaces/AuthDto';
+import { HttpError } from '../../../interfaces/ErrorDto';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalComponent } from '../../modal/modal';
 
 @Component({
   selector: 'app-profile',
@@ -36,8 +37,7 @@ import { AdminChangeProfileRequest, AuthUserGetResponseDto, ChangeProfilePasswor
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-    NotSameAsDirective,
-    SameAsDirective
+    RouterLink
 ],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
@@ -66,7 +66,6 @@ export class ProfileComponent implements OnInit {
   passwordScore: number = 0;
   passwordStrength: string = '';
 
-  readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
   readonly fullNamePattern = /^\p{L}+(\s\p{L}+)*$/u;
 
@@ -86,7 +85,7 @@ export class ProfileComponent implements OnInit {
   };
 
   constructor(private authService: AuthService,
-              private snackBar: MatSnackBar,
+              private dialog: MatDialog,
               private route: ActivatedRoute,
               private cdr: ChangeDetectorRef,
             ) {}
@@ -105,7 +104,7 @@ export class ProfileComponent implements OnInit {
       }
 
 
-      if (this.authService.Role === 'SystemAdmin' && this.authService.UserId !== this.authUserId) {
+      if (this.authService.canViewUsers && this.authService.UserId !== this.authUserId) {
         this.authService.getById(this.authUserId).subscribe({
           next: (authUser) => {
             this.userProfile = authUser;
@@ -113,7 +112,17 @@ export class ProfileComponent implements OnInit {
           },
           error: () => {
             this.stopLoading('isLoading');
-            this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+            this.dialog.open(ModalComponent, {
+                  width: '400px',
+                  data: {
+                    title: 'Loading Error',
+                    message: `Failed to load profile.`,
+                    confirmText: 'Ok',
+                    showCancel: false,
+                    icon: 'info',
+                    iconColor: 'warn'
+                  }
+            });
           }
         });
       } else {
@@ -132,7 +141,17 @@ export class ProfileComponent implements OnInit {
                   },
                   error: () => {
                     this.stopLoading('isLoading');
-                    this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+                    this.dialog.open(ModalComponent, {
+                        width: '400px',
+                        data: {
+                          title: 'Loading Error',
+                          message: `Failed to load profile.`,
+                          confirmText: 'Ok',
+                          showCancel: false,
+                          icon: 'info',
+                          iconColor: 'warn'
+                        }
+                    });
                   }
                 });
             }
@@ -162,17 +181,28 @@ export class ProfileComponent implements OnInit {
       const onSuccess = () => {
         stop();
         this.togglePasswordForm();
-        this.snackBar.open('Password updated successfully.', 'OK', { duration: 3000 });
+        this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Operation done successfully',
+                message: `Password changed successfully.`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'success'
+              }
+        });
       };
 
       const onError = (err: any) => {
         stop();
-        this.snackBar.open(err.error?.message || 'Failed to update password.', 'Dismiss', { duration: 4000 });
+        const error = err.error as HttpError;
+        this.passwordErrors.push(error.message);
       };
 
       if (this.isOwnProfile) {
         this.authService.changeProfilePassword(this.passwordForm).subscribe({ next: onSuccess, error: onError });
-      } else if (['SystemAdmin', 'HRManager'].includes(this.authService.Role!)) {
+      } else if (this.hasPrivilege) {
         this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({ next: onSuccess, error: onError });
       }
   }
@@ -182,7 +212,11 @@ export class ProfileComponent implements OnInit {
       ? this.adminChangePasswordForm.newPassword
       : this.passwordForm.newPassword;
 
-    const result = checkPassword(pwd);
+    const currentPasswd= this.hasPrivilege
+      ? null
+      : this.passwordForm.currentPassword;
+
+    const result = checkPassword(pwd, currentPasswd);
     this.passwordErrors = result.errors;
     this.passwordScore = result.score;
     this.passwordStrength = result.strength;
@@ -195,6 +229,10 @@ export class ProfileComponent implements OnInit {
 
 
   onCurrentPasswordChange(): void {
+    // Revalidate new password against the updated current password
+    // checkPassword handles the same-as-current check already
+    this.onPasswordChange();
+
     const newPwdControl = this.passwordFormRef?.controls?.['newPassword'];
     if (newPwdControl) {
       newPwdControl.updateValueAndValidity();
@@ -220,7 +258,6 @@ export class ProfileComponent implements OnInit {
     if (!profile) return;
     this.noDataChange = this.editForm.email === profile.email
                     && this.editForm.fullName === profile.fullName;
-
   }
 
   saveProfile(): void {
@@ -237,11 +274,31 @@ export class ProfileComponent implements OnInit {
           this.authService.setUserProfile(this.userProfile);  // ← add this
           this.isEditing = false;
           this.stopLoading('isSaving');
-          this.snackBar.open('Profile updated successfully.', 'OK', { duration: 3000 });
+          this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Operation done successfully',
+                message: `Profile updated successfully.`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'check_circle',
+                iconColor: 'success'
+              }
+        });
       },
       error: () => {
           this.stopLoading('isSaving');
-          this.snackBar.open('Failed to load profile.', 'Dismiss', { duration: 3000 });
+          this.dialog.open(ModalComponent, {
+              width: '400px',
+              data: {
+                title: 'Loading Error',
+                message: `Failed to load profile.`,
+                confirmText: 'Ok',
+                showCancel: false,
+                icon: 'info',
+                iconColor: 'warn'
+              }
+          });
       }
     });
   }
@@ -285,16 +342,21 @@ export class ProfileComponent implements OnInit {
   }
 
   get hasPrivilege():boolean{
-    return this.authService.Privileges.includes('ManageUsers') && !this.isOwnProfile;
+    return this.authService.canUpdateUsers && !this.isOwnProfile;
+  }
+
+  get isOwnProfile(): boolean {
+    return this.selectedUserId === this.authService.UserId;
   }
 
   get canEditProfile(): boolean{
     return this.isOwnProfile || this.hasPrivilege;
   }
 
-  get isOwnProfile(): boolean {
-    return this.userProfile?.id === this.authService.UserId;
+  get selectedUserId(): string | undefined{
+    return this.userProfile?.id;
   }
+
 
   get initials(): string {
     const name: string = this.userProfile?.fullName ?? this.userProfile?.email ?? '?';
