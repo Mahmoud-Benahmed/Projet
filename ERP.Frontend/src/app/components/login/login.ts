@@ -32,14 +32,13 @@ import { HttpError } from '../../interfaces/ErrorDto';
   styleUrl: './login.scss',
   encapsulation: ViewEncapsulation.None
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit{
 
   userProfile: AuthUserGetResponseDto | null = null;
 
   credentials = { login: '', password: '' };
   showPassword = false;
   isLoading = false;
-  private errorTimeout: any = null;
 
   constructor(
     private router: Router,
@@ -66,8 +65,6 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
-        this.authService.storeTokens(response);
-
         this.authService.getMe().subscribe({
           next: (authUser) => {
             this.userProfile = authUser;
@@ -111,9 +108,5 @@ export class LoginComponent implements OnInit, OnDestroy {
   stopLoading() {
     this.isLoading = false;
     this.cdr.markForCheck();
-  }
-
-  ngOnDestroy(): void {
-    if (this.errorTimeout) clearTimeout(this.errorTimeout);
   }
 }
