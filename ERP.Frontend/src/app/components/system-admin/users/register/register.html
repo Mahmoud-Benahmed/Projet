@@ -7,7 +7,7 @@
       <h1 class="page-title">Register User</h1>
     </div>
   </div>
-  
+
   <!-- ===================== ALERTS ===================== -->
   <div class="alert alert--error" *ngIf="error">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -158,23 +158,12 @@
               [(ngModel)]="credentials.password"
               (ngModelChange)="onPasswordChange()"
               required
-              [pattern]="passwordPattern"
-              minlength="8"
               #passwordInput="ngModel"
               [class.form__input--error]="passwordInput.invalid && passwordInput.touched"/>
             <button class="form__toggle" type="button" (click)="togglePasswordVisibility()">
               <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
           </div>
-          <span class="form__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
-            Password is required
-          </span>
-          <span class="form__error" *ngIf="passwordInput.errors?.['pattern'] && passwordInput.touched">
-            Password cannot contain &lt; &gt; &amp; " ' /
-          </span>
-          <span class="form__error" *ngIf="passwordInput.errors?.['minlength'] && passwordInput.touched">
-            Minimum 8 characters
-          </span>
         </div>
 
         <!-- Password meter + generate -->
@@ -193,9 +182,16 @@
           </div>
         </div>
 
-        <div class="password-errors" *ngIf="passwordErrors.length > 0 && credentials.password">
-          <span *ngFor="let error of passwordErrors" class="password-error">
-            <mat-icon>error_outline</mat-icon>{{ error }}
+        <div class="password-errors" *ngIf="passwordErrors.length > 0 && credentials.password || passwordInput.errors?.['required']">
+          <span class="form__error"
+                *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
+            Password is required
+          </span>
+
+          <!-- checkPassword errors — shown once the user starts typing -->
+          <span class="form__error"
+                *ngFor="let error of passwordErrors">
+            {{ error }}
           </span>
         </div>
 
@@ -206,7 +202,7 @@
             Generate Password
           </button>
           <button type="submit" class="btn-add"
-            [disabled]="!registerForm.valid || isLoading">
+            [disabled]="!registerForm.valid || isLoading || isPasswordInvalid">
             @if (isLoading) {
               <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
               Creating…

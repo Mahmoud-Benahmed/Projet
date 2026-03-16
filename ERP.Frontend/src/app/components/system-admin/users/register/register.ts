@@ -38,8 +38,6 @@ import { HttpError } from '../../../../interfaces/ErrorDto';
 })
 export class RegisterComponent implements OnDestroy {
   @ViewChild('registerForm') registerForm! :NgForm;
-
-  readonly passwordPattern = /^[^<>&"'\/]{8,}$/.source;
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;// not mine it's from
   readonly fullnamePattern= /^\p{L}+(\s\p{L}+)*$/u;
 
@@ -176,7 +174,7 @@ export class RegisterComponent implements OnDestroy {
         error: (error) => {
           this.stopLoading();
           let err = error.error as HttpError
-          this.flash('error', err.message);
+          this.passwordErrors.push(err.message);
         }
     });
   }
@@ -201,7 +199,7 @@ export class RegisterComponent implements OnDestroy {
         return;
       }
 
-      const result = checkPassword(this.credentials.password);
+      const result = checkPassword(this.credentials.password, null);
       this.passwordErrors = result.errors;
       this.passwordScore = result.score;
       this.passwordStrength = result.strength;
@@ -282,6 +280,9 @@ export class RegisterComponent implements OnDestroy {
     }
   }
 
+  get isPasswordInvalid(): boolean {
+    return this.passwordErrors.length > 0;
+  }
   stopLoading():void{
     this.isLoading = false;
     this.cdr.markForCheck();
