@@ -87,14 +87,15 @@ export class MustChangePasswordComponent implements OnInit{
             this.router.navigate(['/home']);
       },
       error: (error) => {
-        const err= error.error as HttpError;
+        this.isLoading = false;
+        const err = error.error as HttpError;
         if (err.code === 'VALIDATION_ERROR' && err.errors) {
-          // Flatten all field error arrays into a single list
           const messages = Object.values(err.errors).flat();
           this.flashErrors(messages);
         } else {
           this.flash('error', err.message);
         }
+        this.cdr.markForCheck();
       }
     });
   }
@@ -162,12 +163,12 @@ export class MustChangePasswordComponent implements OnInit{
     if(type === 'success'){
       this.successMessage = msg;
       this.cdr.markForCheck();
-      setTimeout(() => (this.successMessage = null), 3000);
+      setTimeout(() => { this.dismissError(); this.cdr.markForCheck(); }, 3000);
     }
     else{
       this.errors = [msg];
       this.cdr.markForCheck();
-      setTimeout(() => (this.dismissError(), 3000));
+      setTimeout(() => { this.dismissError(); this.cdr.markForCheck(); }, 3000);
     }
   }
 

@@ -9,10 +9,9 @@
   </div>
 
   <!-- ===================== ALERTS ===================== -->
-  <div class="alert alert--error" *ngIf="errors">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    {{ errors }}
-    <button class="alert__close" (click)="dismissError()">✕</button>
+  <div class="alert alert--error" *ngIf="errors.length > 0">
+  <div class="alert__messages">
+    <span *ngFor="let msg of errors">{{ msg }}</span>
   </div>
   <div class="alert alert--success" *ngIf="successMessage">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
