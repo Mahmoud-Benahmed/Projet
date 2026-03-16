@@ -6,6 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../services/auth.service';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-shell',
@@ -20,6 +21,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   mobileNavOpen = false;
   mobileNavClosing = false;
 
+  breadcrumbs: { label: string; link?: string }[] = [];
+  private subs = new Subscription();
+
   collapsed = false;
   openGroups: Record<string, boolean> = {
     auth: false,
@@ -27,79 +31,74 @@ export class ShellComponent implements OnInit, OnDestroy {
     clients:  false
   };
 
-  currentPage = 'Home';
   userName = '';
   userRole = '';
   initials = '';
 
-  private pageMap: Record<string, string> = {
-    '/home': 'Home',
-    '/users': 'Users',
-    '/users/deactivated': 'Deactivated',
-    '/users/register': 'Register',
-    '/permissions': 'Permissions',
-
-    '/articles': 'Articles',
-    '/articles/deleted': 'Deleted Articles',
-
-    '/clients': 'Clients',
-    '/clients/deleted': 'Deleted Clients',
-
-    '/audit-log': 'Audit Log',
-    '/profile': 'My Profile',
-  };
 
   constructor(private router: Router, public authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
   }
 
+
   ngOnInit(): void {
     this.theme.init();
-    // Set breadcrumb on route change
-    this.router.events.pipe(
-      filter(e => e instanceof NavigationEnd)
-    ).subscribe((e: any) => {
-      this.currentPage = this.pageMap[e.urlAfterRedirects] ?? 'Dashboard';
-      if (e.urlAfterRedirects.startsWith('/users') || e.urlAfterRedirects.startsWith('/permissions')) {
-        this.openGroups['auth'] = true;
-      }
 
-      if (e.urlAfterRedirects.startsWith('/articles')) {
-        this.openGroups['articles'] = true;
-      }
+    this.subs.add(
+      this.router.events.pipe(
+        filter(e => e instanceof NavigationEnd)
+      ).subscribe((e: any) => {
+        const url: string = e.urlAfterRedirects;
+        this.breadcrumbs = this.getBreadcrumbs(url);
+        if (url.startsWith('/users') || url.startsWith('/permissions')) this.openGroups['auth'] = true;
+        if (url.startsWith('/articles')) this.openGroups['articles'] = true;
+        if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
+      })
+    );
 
-      if (e.urlAfterRedirects.startsWith('/clients')) {
-        this.openGroups['clients'] = true;
-      }
-    });
+    this.subs.add(
+      this.authService.userProfile$.subscribe(profile => {
+        if (profile) {
+          this.userName = profile.fullName ?? profile.email ?? '';
+          this.userRole = profile.roleName ?? '';
+          this.initials = this.buildInitials(this.userName || profile.email || 'U');
+          this.cdr.markForCheck();
+        }
+      })
+    );
 
-    // Load user info from cache
-    // Subscribe so it updates when profile loads/changes
-    this.authService.userProfile$.subscribe(profile => {
-      if (profile) {
-        this.userName = profile.fullName ?? profile.email ?? '';
-        this.userRole = profile.roleName ?? '';
-        this.initials = this.buildInitials(this.userName || profile.email || 'U');
-        this.cdr.markForCheck();
-      }
-    });
+    const url = this.router.url;
+    this.breadcrumbs = this.getBreadcrumbs(url);
+    if (url.startsWith('/users') || url.startsWith('/permissions')) this.openGroups['auth'] = true;
+    if (url.startsWith('/articles')) this.openGroups['articles'] = true;
+    if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
 
-    this.currentPage = this.pageMap[this.router.url] ?? 'Dashboard';
-
-    if (this.router.url.startsWith('/users') ||
-        this.router.url.startsWith('/permissions')) {
-      this.openGroups['auth'] = true;
-    }
-    
-    if (this.router.url.startsWith('/articles')) {
-      this.openGroups['articles'] = true;
-    }
-
-    if (this.router.url.startsWith('/clients')) {
-      this.openGroups['clients'] = true;
-    }
     this.cdr.markForCheck();
-
     window.addEventListener('resize', this.resizeListener);
+  }
+
+  private getBreadcrumbs(url: string): { label: string; link?: string }[] {
+    if (url.startsWith('/change-password/')) {
+      return [{ label: 'Users', link: '/users' }, { label: 'Reset Password' }];
+    }
+    if (url.startsWith('/users/register'))    return [{ label: 'Users', link: '/users' }, { label: 'Register' }];
+    if (url.startsWith('/users/deactivated')) return [{ label: 'Users', link: '/users' }, { label: 'Deactivated' }];
+    if (url.startsWith('/users/deleted'))     return [{ label: 'Users', link: '/users' }, { label: 'Deleted' }];
+    if (url.startsWith('/users/'))            return [{ label: 'Users', link: '/users' }, { label: 'Profile' }];
+    if (url.startsWith('/users'))             return [{ label: 'Users' }];
+
+    if (url.startsWith('/articles/deleted'))  return [{ label: 'Articles', link: '/articles' }, { label: 'Deleted' }];
+    if (url.startsWith('/articles'))          return [{ label: 'Articles' }];
+
+    if (url.startsWith('/clients/deleted'))   return [{ label: 'Clients', link: '/clients' }, { label: 'Deleted' }];
+    if (url.startsWith('/clients'))           return [{ label: 'Clients' }];
+
+    if (url.startsWith('/permissions'))       return [{ label: 'Permissions' }];
+    if (url.startsWith('/audit-log'))         return [{ label: 'Audit Log' }];
+    if (url.startsWith('/profile'))           return [{ label: 'My Profile' }];
+    if (url.startsWith('/change-password'))   return [{ label: 'Change Password' }];
+    if (url.startsWith('/home'))              return [{ label: 'Home' }];
+
+    return [{ label: 'Dashboard' }];
   }
 
   private resizeListener = () => {
@@ -146,8 +145,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    document.body.style.overflow = ''; // ← safety cleanup
+    this.subs.unsubscribe();
+    document.body.style.overflow = '';
     window.removeEventListener('resize', this.resizeListener);
   }
-
 }

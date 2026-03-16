@@ -244,6 +244,13 @@ body, html {
 
   &__breadcrumb-root { color: $text-lo; }
   &__breadcrumb-page { color: $text-hi; font-weight: 500; }
+  &__breadcrumb-link {
+  color: $text-mid;
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: color 0.15s;
+  &:hover { color: $text-hi; }
+}
 
   &__notif {
     position: relative; color: $text-lo;
