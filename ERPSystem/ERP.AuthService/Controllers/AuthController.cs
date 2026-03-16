@@ -245,7 +245,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateProfileDto updatedProfile)
         {
             var currentUserId = User.FindFirstValue("sub");
-            var canManageUsers = User.HasClaim("privilege", "ManageUsers");
+            var canManageUsers = User.HasClaim("privilege", "UpdateUser");
             var isOwner = currentUserId == id.ToString();
 
             if (!isOwner && !canManageUsers)
