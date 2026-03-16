@@ -1,4 +1,5 @@
-﻿using ERP.AuthService.Application.Exceptions.AuthUser;
+﻿using ERP.AuthService.Application.Exceptions;
+using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Exceptions.Role;
 using Microsoft.AspNetCore.Mvc;
 using System.Security;
@@ -46,6 +47,7 @@ namespace ERP.AuthService.Middleware
                 InvalidOperationException =>        (400, "AUTH_014", exception.Message),
                 LoginAlreadyExsistException =>      (400, "AUTH_015", "Login already exists"),
                 FluentValidation.ValidationException vex => (400, "AUTH_016", string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
+                PwnedPasswordException  =>              (400, "AUTH_017", exception.Message),
                 _ =>                                (500, "INTERNAL_ERROR", exception.Message)
             };
 

@@ -265,17 +265,16 @@ namespace ERP.AuthService.Controllers
 
 
         [HttpPut("change-password/profile")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangeProfilePasswordRequestDto request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             var requesterId = User.FindFirst("sub")?.Value;
 
             if (requesterId is null || !Guid.TryParse(requesterId, out var id))
                 return Unauthorized(new { message = "Invalid token." });
 
-            await _authService.ChangeAuthPasswordAsync(
+            await _authService.ChangePasswordAsync(
                     id,
-                    request.CurrentPassword,
-                    request.NewPassword);
+                    request);
 
                 return NoContent();
         }
@@ -292,7 +291,7 @@ namespace ERP.AuthService.Controllers
             if (!roles.Contains("SystemAdmin"))
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Only admins can change passwords." });
 
-            await _authService.ChangePasswordByAdminAsync(userId, request.NewPassword, adminId);
+            await _authService.ChangePasswordByAdminAsync(userId, request, adminId);
             return NoContent();
         }
 
