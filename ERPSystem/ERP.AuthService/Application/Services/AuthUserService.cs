@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Events;
+using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
@@ -29,6 +30,7 @@ namespace ERP.AuthService.Application.Services
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
+        private readonly PwnedPasswordService _pwnedPasswordService;
         //private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
@@ -40,7 +42,8 @@ namespace ERP.AuthService.Application.Services
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository
+            IPrivilegeRepository privilegeRepository,
+            PwnedPasswordService pwnedPasswordService
             )
             //,IEventPublisher eventPublisher
         {
@@ -53,6 +56,7 @@ namespace ERP.AuthService.Application.Services
             _privilegeRepository = privilegeRepository;
             _auditLogger = auditLogger;
             _httpContext = httpContextAccessor;
+            _pwnedPasswordService = pwnedPasswordService;
 
             //_eventPublisher = eventPublisher;
         }
@@ -145,6 +149,7 @@ namespace ERP.AuthService.Application.Services
             var user= await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
             user.UpdateProfile(request.FullName, request.Email);
 
+
             var updated= await _userRepository.UpdateAsync(user);
 
             await _auditLogger.LogAsync(
@@ -165,6 +170,11 @@ namespace ERP.AuthService.Application.Services
 
             if (await _userRepository.ExistsByEmailAsync(request.Email))
                 throw new EmailAlreadyExistsException();
+
+            if (await _pwnedPasswordService.IsPwnedAsync(request.Password))
+                throw new PwnedPasswordException(
+                    "This password has appeared in known data breaches. Please choose a different one."
+                );
 
             var role = await _roleRepository.GetByIdAsync(request.RoleId) ?? throw new InvalidOperationException("Role not found.");
 
@@ -205,8 +215,6 @@ namespace ERP.AuthService.Application.Services
 
                 if (result == PasswordVerificationResult.Failed)
                     throw new InvalidCredentialsException();
-
-                bool isFirstLogin = !user.IsActive && !user.HasLoggedInBefore();
 
                 user.RecordLogin();
                 await _userRepository.UpdateAsync(user);
@@ -368,7 +376,7 @@ namespace ERP.AuthService.Application.Services
         // ======================
         // CHANGE PASSWORD
         // ======================
-        public async Task ChangeAuthPasswordAsync(Guid id, string currPassword, string newPassword)
+        public async Task ChangePasswordAsync(Guid id, ChangePasswordRequestDto request)
         {
             var user = await _userRepository.GetByIdAsync(id)
                         ?? throw new UserNotFoundException(id);
@@ -376,16 +384,19 @@ namespace ERP.AuthService.Application.Services
             if (!user.IsActive)
                 throw new UserInactiveException();
 
-            if (currPassword.Equals(newPassword))
+            if (await _pwnedPasswordService.IsPwnedAsync(request.NewPassword))
+                throw new PwnedPasswordException(
+                    "This password has appeared in known data breaches. Please choose a different one."
+                );
+
+            if (request.CurrentPassword.Equals(request.NewPassword))
                 throw new ArgumentException("The new password cannot be the same as the current password.");
-
-
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currPassword);
-
+            
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
 
-            var newHashedPassword = _passwordHasher.HashPassword(user, newPassword);
+            var newHashedPassword = _passwordHasher.HashPassword(user, request.NewPassword);
             user.ChangePassword(newHashedPassword);
             if (user.MustChangePassword) user.MustChangePassword = false;
 
@@ -395,27 +406,33 @@ namespace ERP.AuthService.Application.Services
                   AuditAction.PasswordChanged,
                   success: true,
                   performedBy: id,
-                  targetUserId: id,
                   ipAddress: GetIp(),
-                  metadata: new() { ["login"]= user.Login ,["oldPassword"] = currPassword });
+                  metadata: new() { ["login"]= user.Login });
         }
 
-        public async Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId)
+        public async Task ChangePasswordByAdminAsync(Guid userId, AdminChangeProfileRequest request, Guid adminId)
         {
             var user = await _userRepository.GetByIdAsync(userId)
                        ?? throw new UserNotFoundException(userId);
 
-            var hashedNewPassword = _passwordHasher.HashPassword(user, newPassword);
+            if (await _pwnedPasswordService.IsPwnedAsync(request.NewPassword))
+                throw new PwnedPasswordException(
+                    "This password has appeared in known data breaches. Please choose a different one."
+                );
+
+            var hashedNewPassword = _passwordHasher.HashPassword(user, request.NewPassword);
 
             user.ChangePassword(hashedNewPassword);
             user.MustChangePassword = true;
 
             await _userRepository.UpdateAsync(user);
             await _auditLogger.LogAsync(
-                    AuditAction.UserActivated,
-                    success: true,
-                    targetUserId: userId,
-                    ipAddress: GetIp());
+                    AuditAction.PasswordChangedByAdmin,
+                        success: true,
+                        performedBy: adminId,
+                        targetUserId: userId,
+                        ipAddress: GetIp(),
+                        metadata: new() { ["login"] = user.Login });
         }
 
 

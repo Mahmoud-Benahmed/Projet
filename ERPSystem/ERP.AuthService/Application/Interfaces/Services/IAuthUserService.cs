@@ -10,8 +10,8 @@ namespace ERP.AuthService.Application.Interfaces.Services
         Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
         Task<AuthResponseDto> RefreshTokenAsync(string refreshToken);
         Task RevokeRefreshTokenAsync(string refreshToken);
-        Task ChangeAuthPasswordAsync(Guid id, string currentPassword, string newPassword);
-        Task ChangePasswordByAdminAsync(Guid userId, string newPassword, Guid adminId);
+        Task ChangePasswordAsync(Guid id, ChangePasswordRequestDto request);
+        Task ChangePasswordByAdminAsync(Guid userId, AdminChangeProfileRequest request, Guid adminId);
         
         Task ActivateAsync(Guid authUserId, Guid performedById);
         Task DeactivateAsync(Guid authUserId, Guid performedById);
