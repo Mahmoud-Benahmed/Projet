@@ -354,13 +354,13 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
             var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
             {
-                ("John DOE",        "admin_erp1234",    "admin@erp.com",    "Admin@1234",   adminRole.Id),
-                ("Sales Alex",      "sales_erp1234",    "sales@erp.com",    "Sales@1234",   salesRole.Id),
-                ("Stock David",     "stock_erp1234",    "stock@erp.com",    "Stock@1234",   stockRole.Id),
-                ("Accountant Jane", "account_erp1234",  "account@erp.com",  "Account@1234", accountRole.Id),
+                ("admin_erp1234",   "admin@erp.com",    "John DOE",         "Admin@1234",   adminRole.Id),
+                ("sales_erp1234",   "sales@erp.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
+                ("stock_erp1234",   "stock@erp.com",    "Stock David",      "Stock@1234",   stockRole.Id),
+                ("account_erp1234", "account@erp.com",  "Accountant Jane",  "Account@1234", accountRole.Id),
             };
 
-            foreach (var (fullName, login, email, password, roleId) in seedUsers)
+            foreach (var (login, email, fullName, password, roleId) in seedUsers)
             {
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
