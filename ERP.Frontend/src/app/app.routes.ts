@@ -16,6 +16,7 @@ import { DeletedUsersComponent } from './components/system-admin/users/deleted/d
 import { DeletedArticlesComponent } from './components/articles/deleted/deleted';
 import { ClientComponent } from './components/clients/home/home';
 import { DeletedClientsComponent } from './components/clients/deleted/deleted';
+import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 
 export const routes: Routes = [
   { path: 'login',                component: LoginComponent },
@@ -23,23 +24,24 @@ export const routes: Routes = [
   {
     path: '',                     component: ShellComponent, canActivate: [authGuard],
     children: [
-      { path: 'home',             component: HomeComponent,               canActivate: [authGuard] },
-      { path: 'profile',          component: ProfileComponent,            canActivate: [authGuard] },
-      { path: 'change-password',  component: MustChangePasswordComponent, canActivate: [authGuard] },
-      { path: 'audit-log',        component: AuditLogComponent,           canActivate: [authGuard], data: { privileges: ['ManageAuditLogs'] } },
-      { path: 'permissions',      component: PermissionMatrixComponent,   canActivate: [authGuard], data: { privileges: ['AssignRoles'] } },
+      { path: 'home',             component: HomeComponent},
+      { path: 'profile',          component: ProfileComponent},
+      { path: 'change-password',  component: MustChangePasswordComponent},
+      { path: 'change-password/:authUserId',  component: ChangePasswordComponent, data: { privileges: ['ViewUsers', 'UpdateUser'] } },
+      { path: 'audit-log',        component: AuditLogComponent,           data: { privileges: ['ManageAuditLogs'] } },
+      { path: 'permissions',      component: PermissionMatrixComponent,   data: { privileges: ['AssignRoles'] } },
 
-      { path: 'users',            component: UsersHomeComponent,          canActivate: [authGuard], data: { privileges: ['ViewUsers', 'CreateUser', 'UpdateUser', 'DeleteUser', 'DeactivateUser'] } },
-      { path: 'users/register',   component: RegisterComponent,           canActivate: [authGuard], data: { privileges: ['CreateUser'] } },
-      { path: 'users/deactivated',component: DeactivatedComponent,        canActivate: [authGuard], data: { privileges: ['ActivateUser', 'DeactivateUser'] } },
-      { path: 'users/deleted',    component: DeletedUsersComponent,       canActivate: [authGuard], data: { privileges: ['RestoreUser'] } },
-      { path: 'users/:authUserId',component: ProfileComponent,            canActivate: [authGuard], data: { privileges: ['ViewUsers', 'UpdateUser'] } },
+      { path: 'users',            component: UsersHomeComponent,          data: { privileges: ['ViewUsers', 'CreateUser', 'UpdateUser', 'DeleteUser', 'DeactivateUser'] } },
+      { path: 'users/register',   component: RegisterComponent,           data: { privileges: ['CreateUser'] } },
+      { path: 'users/deactivated',component: DeactivatedComponent,        data: { privileges: ['ActivateUser', 'DeactivateUser'] } },
+      { path: 'users/deleted',    component: DeletedUsersComponent,       data: { privileges: ['RestoreUser'] } },
+      { path: 'users/:authUserId',component: ProfileComponent,            data: { privileges: ['ViewUsers', 'UpdateUser'] } },
 
-      { path: 'articles',         component: ArticleComponent,            canActivate: [authGuard], data: { privileges: ['ViewArticles', 'CreateArticle', 'UpdateArticle', 'DeleteArticle'] } },
-      { path: 'articles/deleted', component: DeletedArticlesComponent,    canActivate: [authGuard], data: { privileges: ['RestoreArticle'] } },
+      { path: 'articles',         component: ArticleComponent,            data: { privileges: ['ViewArticles', 'CreateArticle', 'UpdateArticle', 'DeleteArticle'] } },
+      { path: 'articles/deleted', component: DeletedArticlesComponent,    data: { privileges: ['RestoreArticle'] } },
 
-      { path: 'clients',          component: ClientComponent,             canActivate: [authGuard], data: { privileges: ['ViewClients', 'CreateClient', 'UpdateClient', 'DeleteClient'] } },
-      { path: 'clients/deleted',  component: DeletedClientsComponent,     canActivate: [authGuard], data: { privileges: ['RestoreClient'] } },
+      { path: 'clients',          component: ClientComponent,             data: { privileges: ['ViewClients', 'CreateClient', 'UpdateClient', 'DeleteClient'] } },
+      { path: 'clients/deleted',  component: DeletedClientsComponent,     data: { privileges: ['RestoreClient'] } },
 
       { path: '',                 redirectTo: 'home',                     pathMatch: 'full' },
     ]
