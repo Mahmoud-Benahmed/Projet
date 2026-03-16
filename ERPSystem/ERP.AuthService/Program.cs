@@ -39,8 +39,11 @@ builder.Services.AddSwaggerGen();
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
 // ── Mongo Configuration
-builder.Services.Configure<MongoSettings>(
-    builder.Configuration.GetSection("MongoSettings"));
+builder.Services
+    .AddOptions<MongoSettings>()
+    .Bind(builder.Configuration.GetSection("MongoSettings"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 
 builder.Services.AddSingleton<MongoDbContext>(sp =>
