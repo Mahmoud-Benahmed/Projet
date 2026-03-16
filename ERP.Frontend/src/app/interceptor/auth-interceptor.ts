@@ -8,7 +8,6 @@ import { ModalComponent } from "../components/modal/modal";
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const router = inject(Router);
   const dialog = inject(MatDialog);
 
   const token = auth.getAccessToken();
@@ -77,13 +76,13 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
           });
           return throwError(()=> error);
       }
-      
+
       if (error.status === 401)
       {
           const code = error.error?.code;
 
           // ── User no longer exists
-          if (code === 'USER_NOT_FOUND' || code === 'USER_INACTIVE') {
+          if (code === 'AUTH_009' || code === 'AUTH_003') {
             dialog.open(ModalComponent, {
               width: '400px',
               data: {
@@ -95,6 +94,18 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
                 iconColor: 'danger'
               }
             }).afterClosed().subscribe(() => auth.logout());
+            return throwError(() => error);
+          }
+
+          // ── Wrong current password — user IS authenticated, just typed wrong
+          // Pass through silently — let the component show the error message
+          if (code === 'AUTH_002') {
+            return throwError(() => error);
+          }
+
+          // ── Security violation
+          if (code === 'AUTH_008') {
+            auth.logout();
             return throwError(() => error);
           }
 
