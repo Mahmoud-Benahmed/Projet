@@ -34,7 +34,7 @@ export class ChangePasswordComponent implements OnInit {
   // ── UI state ──────────────────────────────────────────────────────────────
   isLoading = false;
   showNewPassword = false;
-  error: string | null = null;
+  errors: string[] = [];
 
   // ── Password validation ───────────────────────────────────────────────────
   passwordErrors: string[] = [];
@@ -92,12 +92,16 @@ export class ChangePasswordComponent implements OnInit {
               this.router.navigate(['/users', this.targetUserId]);
             });
         },
-        error: (err) => {
-          this.isLoading = false;
-          const error = err.error as HttpError;
-          this.flash(error?.message ?? 'Failed to reset password.');
-          this.cdr.markForCheck();
-        },
+        error: (error) => {
+          const err= error.error as HttpError;
+          if (err.code === 'VALIDATION_ERROR' && err.errors) {
+            // Flatten all field error arrays into a single list
+            const messages = Object.values(err.errors).flat();
+            this.flashErrors(messages);
+          } else {
+            this.flash(err.message);
+          }
+        }
       });
   }
 
@@ -147,11 +151,16 @@ export class ChangePasswordComponent implements OnInit {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  dismissError(): void { this.error = null; }
+  dismissError(): void { this.errors = []; }
 
-  private flash(msg: string): void {
-    this.error = msg;
+  flash(msg: string): void {
+    this.errors = [msg];
+    setTimeout(() => { this.dismissError(); this.cdr.markForCheck(); }, 4000);
+  }
+
+  flashErrors(messages: string[]): void {
+    this.errors = messages;
+    setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
     this.cdr.markForCheck();
-    setTimeout(() => { this.error = null; this.cdr.markForCheck(); }, 4000);
   }
 }
