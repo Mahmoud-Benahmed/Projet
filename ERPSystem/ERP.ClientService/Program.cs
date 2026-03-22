@@ -1,8 +1,8 @@
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Application.Services;
 using ERP.ClientService.Infrastructure.Persistence;
-using ERP.ClientService.Infrastructure.Repositories;
-using ERP.ClientService.Infrastructure.Seeders;
+using ERP.ClientService.Infrastructure.Persistence.Repositories;
+using ERP.ClientService.Infrastructure.Persistence.Seeders;
 using ERP.ClientService.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,78 +11,57 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-
 // =========================
 // DATABASE
 // =========================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' is not configured.");
+    ?? throw new InvalidOperationException(
+        "ConnectionString 'DefaultConnection' is not configured.");
 
 builder.Services.AddDbContext<ClientDbContext>(options =>
     options.UseSqlServer(connectionString));
-
-// API responses normalization
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var message = string.Join(" | ", context.ModelState.Values
-            .SelectMany(v => v.Errors)
-            .Select(e => e.ErrorMessage));
-
-        return new BadRequestObjectResult(new
-        {
-            statusCode = 400,
-            code = "VALIDATION ERROR",
-            message
-        });
-    };
-});
 
 // =========================
 // DEPENDENCY INJECTION
 // =========================
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IClientService, ClientService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // =========================
 // CONTROLLERS & API
 // =========================
-builder.Services.AddControllers();
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.Converters.Add(
-        new System.Text.Json.Serialization.JsonStringEnumConverter());
-});
-builder.Services.AddControllers(options =>
-    options.SuppressAsyncSuffixInActionNames = false)
+builder.Services
+    .AddControllers(options =>
+        options.SuppressAsyncSuffixInActionNames = false)
     .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
-    .ConfigureApiBehaviorOptions(options =>
     {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.ReferenceHandler =
+            System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; // ← add this
+    }).ConfigureApiBehaviorOptions(options =>
+    {
+        // Unified validation error response — Data Annotations return this shape
         options.InvalidModelStateResponseFactory = context =>
         {
-            var errors = context.ModelState
-                .Where(e => e.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    k => k.Key,
-                    v => v.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                );
+            var message = string.Join(" | ", context.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
 
-            var response = new
+            return new BadRequestObjectResult(new
             {
-                code = "VALIDATION_ERROR",
-                message = "One or more validation errors occurred.",
                 statusCode = 400,
-                errors
-            };
-
-            return new BadRequestObjectResult(response);
+                code = "VALIDATION ERROR",
+                message
+            });
         };
     });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDatabaseSeeders();
 
 // =========================
 // BUILD
@@ -95,8 +74,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ClientDbContext>();
-    db.Database.Migrate();
-    await ClientSeeder.SeedAsync(db);
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+
+    await db.Database.MigrateAsync();
+    await seeder.SeedAsync();
 }
 
 // =========================
@@ -111,11 +92,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-
-app.UseAuthentication();
-app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseAuthorization();
 app.MapControllers();
-
 
 app.Run();

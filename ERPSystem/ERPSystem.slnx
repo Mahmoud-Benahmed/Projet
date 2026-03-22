@@ -4,12 +4,6 @@
     <File Path="docker-compose.yaml" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Tests/">
-    <Project Path="Tests/ERP.ArticleService.Tests/ERP.ArticleService.Tests.csproj" />
-    <Project Path="Tests/ERP.AuthService.Tests/ERP.AuthService.Tests.csproj" />
-    <Project Path="Tests/ERP.ClientService.Tests/ERP.ClientService.Tests.csproj" />
-    <Project Path="Tests/ERP.Gateway.Tests/ERP.Gateway.Tests.csproj" />
-  </Folder>
   <Project Path="ERP.ArticleService/ERP.ArticleService.csproj" Id="5e152382-11ef-4dd3-967a-14d58beb0116" />
   <Project Path="ERP.AuthService/ERP.AuthService.csproj" />
   <Project Path="ERP.ClientService/ERP.ClientService.csproj" Id="0e65cc30-4e56-4af5-ad48-a505d6753465" />
