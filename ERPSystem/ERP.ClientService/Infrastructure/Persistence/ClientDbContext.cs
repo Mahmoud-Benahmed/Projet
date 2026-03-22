@@ -1,73 +1,99 @@
 ﻿using ERP.ClientService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ERP.ClientService.Infrastructure.Persistence
+namespace ERP.ClientService.Infrastructure.Persistence;
+
+public sealed class ClientDbContext(DbContextOptions<ClientDbContext> options)
+    : DbContext(options)
 {
-    public class ClientDbContext : DbContext
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ClientCategory> ClientCategories => Set<ClientCategory>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ClientDbContext).Assembly);
+}
+
+internal sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
+{
+    public void Configure(EntityTypeBuilder<Client> b)
     {
-        public ClientDbContext(DbContextOptions<ClientDbContext> options)
-            : base(options)
-        {
-        }
+        b.ToTable("Clients");
+        b.HasKey(c => c.Id);
 
-        public DbSet<Client> Clients { get; set; }
+        b.Property(c => c.Name).IsRequired().HasMaxLength(200);
+        b.Property(c => c.Email).IsRequired().HasMaxLength(200);
+        b.Property(c => c.Address).IsRequired().HasMaxLength(500);
+        b.Property(c => c.Phone).HasMaxLength(20);
+        b.Property(c => c.TaxNumber).HasMaxLength(50);
+        b.Property(c => c.CreditLimit).HasPrecision(18, 4);
+        b.Property(c => c.IsBlocked).IsRequired();
+        b.Property(c => c.IsDeleted).IsRequired();
+        b.Property(c => c.CreatedAt).IsRequired();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
+        // Filtered unique index — email must be unique only among non-deleted clients.
+        // A deleted client's email can be reused by a new registration.
+        b.HasIndex(c => c.Email)
+         .IsUnique()
+         .HasFilter("[IsDeleted] = 0");
 
-            modelBuilder.Entity<Client>(entity =>
-            {
-                entity.ToTable("Clients");
+        b.HasIndex(c => c.IsBlocked);
 
-                entity.HasKey(c => c.Id);
-                entity.Property(c => c.Id)
-                      .ValueGeneratedNever();
+        // Global soft-delete filter — all queries exclude deleted clients automatically.
+        // Use .IgnoreQueryFilters() in repository methods that need deleted records.
+        b.HasQueryFilter(c => !c.IsDeleted);
+    }
+}
 
-                entity.Property(c => c.Type)
-                      .IsRequired()
-                      .HasConversion<string>()
-                      .HasMaxLength(50);
+internal sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
+{
+    public void Configure(EntityTypeBuilder<Category> b)
+    {
+        b.ToTable("Categories");
+        b.HasKey(c => c.Id);
 
-                entity.Property(c => c.Name)
-                      .IsRequired()
-                      .HasMaxLength(200);
+        b.Property(c => c.Name).IsRequired().HasMaxLength(200);
+        b.Property(c => c.Code).IsRequired().HasMaxLength(50);
+        b.Property(c => c.DelaiRetour).IsRequired();
+        b.Property(c => c.DiscountRate).HasPrecision(5, 4);
+        b.Property(c => c.CreditLimitMultiplier).HasPrecision(8, 4);
+        b.Property(c => c.IsActive).IsRequired();
+        b.Property(c => c.IsDeleted).IsRequired();
 
-                entity.Property(c => c.Email)
-                      .IsRequired()
-                      .HasMaxLength(250);
+        // Filtered unique index — code must be unique only among non-deleted categories.
+        b.HasIndex(c => c.Code)
+         .IsUnique()
+         .HasFilter("[IsDeleted] = 0");
 
-                entity.Property(c => c.Address)
-                      .IsRequired()
-                      .HasMaxLength(500);
+        b.HasIndex(c => c.IsActive);
 
-                entity.Property(c => c.Phone)
-                      .HasMaxLength(50)
-                      .IsRequired(false);
+        // Global soft-delete filter
+        b.HasQueryFilter(c => !c.IsDeleted);
+    }
+}
 
-                entity.Property(c => c.TaxNumber)
-                      .HasMaxLength(100)
-                      .IsRequired(false);
+internal sealed class ClientCategoryConfiguration : IEntityTypeConfiguration<ClientCategory>
+{
+    public void Configure(EntityTypeBuilder<ClientCategory> b)
+    {
+        b.ToTable("ClientCategories");
 
-                entity.Property(c => c.IsDeleted)
-                      .HasDefaultValue(false);
+        b.HasKey(cc => new { cc.ClientId, cc.CategoryId });
 
-                entity.Property(c => c.CreatedAt)
-                      .HasDefaultValueSql("GETUTCDATE()");
+        b.Property(cc => cc.AssignedById).IsRequired();
+        b.Property(cc => cc.AssignedAt).IsRequired();
 
-                entity.Property(c => c.UpdatedAt)
-                      .IsRequired(false);
+        b.HasOne(cc => cc.Client)
+         .WithMany(c => c.ClientCategories)
+         .HasForeignKey(cc => cc.ClientId)
+         .IsRequired(false)
+         .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(c => c.Email)
-                      .IsUnique()
-                      .HasFilter("[IsDeleted] = 0");
-
-                entity.HasIndex(c => c.Name)
-                       .IsUnique()
-                       .HasFilter("[IsDeleted] = 0");
-
-                entity.HasQueryFilter(c => !c.IsDeleted);
-            });
-        }
+        b.HasOne(cc => cc.Category)
+         .WithMany(c => c.ClientCategories)
+         .HasForeignKey(cc => cc.CategoryId)
+         .IsRequired(false)
+         .OnDelete(DeleteBehavior.Restrict);
     }
 }
