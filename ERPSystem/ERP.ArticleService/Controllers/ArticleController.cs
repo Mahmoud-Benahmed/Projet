@@ -21,15 +21,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetAll)]
         public async Task<ActionResult> GetAllPagedAsync([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var result = await _articleService.GetAllAsync(pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _articleService.GetAllAsync(pageNumber, pageSize);
+            return Ok(new { result.Items, result.TotalCount });
         }
 
 
@@ -39,15 +32,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetDeletedRoute)]
         public async Task<ActionResult> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
+            return Ok(new { result.Items, result.TotalCount });
         }
 
         // =========================
@@ -56,15 +42,9 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetById)]
         public async Task<ActionResult<Article>> GetById([FromRoute] Guid id)
         {
-            try
-            {
+
                 var article = await _articleService.GetByIdAsync(id);
                 return Ok(article);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
         }
 
         // =========================
@@ -73,15 +53,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetByCode)]
         public async Task<ActionResult<Article>> GetByCode([FromRoute] string code)
         {
-            try
-            {
-                var article = await _articleService.GetByCodeAsync(code);
-                return Ok(article);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            var article = await _articleService.GetByCodeAsync(code);
+            return Ok(article);
         }
 
         // =========================
@@ -90,15 +63,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetPagedByCategory)]
         public async Task<ActionResult> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
                 var result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
                 return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
         }
 
         [HttpGet(ApiRoutes.Articles.Stats)]
@@ -119,20 +85,9 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            try
-            {
                 var result = await _articleService.GetPagedByLibelleAsync(
                     libelleFilter, pageNumber, pageSize);
                 return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
         }
 
         // =========================
@@ -141,22 +96,11 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPost(ApiRoutes.Articles.Create)]
         public async Task<ActionResult<Article>> Create([FromBody] CreateArticleRequestDto request)
         {
-            try
-            {
                 var article = await _articleService.CreateAsync(request);
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = article.Id },
                     article);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
         }
 
         // =========================
@@ -165,19 +109,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPut(ApiRoutes.Articles.Update)]
         public async Task<ActionResult<Article>> Update([FromRoute] Guid id, [FromBody] UpdateArticleRequestDto request)
         {
-            try
-            {
                 var article = await _articleService.UpdateAsync(id, request);
                 return Ok(article);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
         }
 
         // =========================
@@ -186,15 +119,9 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPatch(ApiRoutes.Articles.Restore)]
         public async Task<ActionResult> Restore([FromRoute] Guid id)
         {
-            try
-            {
+
                 await _articleService.RestoreAsync(id);
                 return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
         }
 
         // =========================
@@ -203,15 +130,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpDelete(ApiRoutes.Articles.Delete)]
         public async Task<ActionResult> Delete([FromRoute] Guid id)
         {
-            try
-            {
                 await _articleService.DeleteAsync(id);
                 return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
         }
     }
 }
