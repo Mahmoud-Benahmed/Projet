@@ -1,79 +1,105 @@
-﻿using ERP.ClientService.Domain;
-using System.ComponentModel.DataAnnotations;
-using ERP.ClientService.Application.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace ERP.ClientService.Application.DTOs
-{
-    public record ClientDto(
-        Guid Id,
-        string Type,
-        string Name,
-        string Email,
-        string Address,
-        string? Phone,
-        string? TaxNumber,
-        bool IsDeleted,
-        DateTime CreatedAt,
-        DateTime? UpdatedAt
-    );
+namespace ERP.ClientService.Application.DTOs;
 
-    [CompanyRequiresTaxNumber]
-    public record CreateClientRequestDto(
-        [Required(ErrorMessage = "Type is required.")]
-        [EnumDataType(typeof(ClientType), ErrorMessage = "Type is not valid.")]
-        ClientType? Type,
+public sealed record ClientStatsDto(
+    int TotalClients,
+    int ActiveClients,
+    int BlockedClients,
+    int DeletedClients,
+    List<CategoryClientCountDto> ClientsPerCategory);
 
-        [Required(ErrorMessage = "Name is required.")]
-        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
-        string Name,
+public record CreateClientRequestDto(
+    [Required(ErrorMessage = "Name is required.")]
+    [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+    string Name,
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Email is not valid.")]
-        [MaxLength(250, ErrorMessage = "Email cannot exceed 250 characters.")]
-        string Email,
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Email is not valid.")]
+    [MaxLength(200, ErrorMessage = "Email cannot exceed 200 characters.")]
+    string Email,
 
-        [Required(ErrorMessage = "Address is required.")]
-        [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
-        string Address,
+    [Required(ErrorMessage = "Address is required.")]
+    [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
+    string Address,
 
-        [Phone(ErrorMessage = "Phone number is not valid.")]
-        [MaxLength(50, ErrorMessage = "Phone cannot exceed 50 characters.")]
-        string? Phone,
+    [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
+    string? Phone = null,
 
-        [MaxLength(100, ErrorMessage = "Tax number cannot exceed 100 characters.")]
-        string? TaxNumber
-    );
+    [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
+    string? TaxNumber = null,
 
-    [CompanyRequiresTaxNumber]
-    public record UpdateClientRequestDto(
-        [Required(ErrorMessage = "Type is required.")]
-        [EnumDataType(typeof(ClientType), ErrorMessage = "Type is not valid.")]
-        ClientType? Type,
+    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
+    decimal? CreditLimit = null,
 
-        [Required(ErrorMessage = "Name is required.")]
-        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
-        string Name,
+    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+    int? DelaiRetour = null
+);
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Email is not valid.")]
-        [MaxLength(250, ErrorMessage = "Email cannot exceed 250 characters.")]
-        string Email,
+public record UpdateClientRequestDto(
+    [Required(ErrorMessage = "Name is required.")]
+    [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+    string Name,
 
-        [Required(ErrorMessage = "Address is required.")]
-        [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
-        string Address,
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Email is not valid.")]
+    [MaxLength(200, ErrorMessage = "Email cannot exceed 200 characters.")]
+    string Email,
 
-        [Phone(ErrorMessage = "Phone number is not valid.")]
-        [MaxLength(50, ErrorMessage = "Phone cannot exceed 50 characters.")]
-        string? Phone,
+    [Required(ErrorMessage = "Address is required.")]
+    [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
+    string Address,
 
-        [MaxLength(100, ErrorMessage = "Tax number cannot exceed 100 characters.")]
-        string? TaxNumber
-    );
+    [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
+    string? Phone = null,
 
-    public record ClientStatsDto(
-        int TotalCount,
-        int ActiveCount,
-        int DeletedCount
-    );
-}
+    [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
+    string? TaxNumber = null,
+
+    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
+    decimal? CreditLimit = null,
+
+    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+    int? DelaiRetour = null
+);
+
+public record SetCreditLimitRequestDto(
+    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
+    decimal Limit
+);
+
+public record SetDelaiRetourRequestDto(
+    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+    int Days
+);
+
+public record AddCategoryRequestDto(
+    [Required(ErrorMessage = "CategoryId is required.")]
+    Guid CategoryId,
+
+    [Required(ErrorMessage = "AssignedById is required.")]
+    Guid AssignedById
+);
+
+public sealed record ClientResponseDto(
+    Guid Id,
+    string Name,
+    string Email,
+    string Address,
+    string? Phone,
+    string? TaxNumber,
+    decimal? CreditLimit,
+    int? DelaiRetour,
+    bool IsBlocked,
+    bool IsDeleted,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    List<ClientCategoryResponseDto> Categories
+);
+
+public sealed record ClientCategoryResponseDto(
+    Guid CategoryId,
+    string CategoryName,
+    string CategoryCode,
+    DateTime AssignedAt
+);

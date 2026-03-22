@@ -1,17 +1,16 @@
 ﻿namespace ERP.ClientService.Application.DTOs
 {
-    public class PagedResultDto<T>
-    {
-        public IReadOnlyList<T> Items { get; set; }
-        public int TotalCount { get; set; }
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
+    // ── Pagination — mirrors PagedResultDto<T> from Article service ───────────────
 
-        public PagedResultDto(
-            IReadOnlyList<T> items,
-            int totalCount,
-            int pageNumber,
-            int pageSize)
+    public sealed class PagedResultDto<T>
+    {
+        public List<T> Items { get; }
+        public int TotalCount { get; }
+        public int PageNumber { get; }
+        public int PageSize { get; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+
+        public PagedResultDto(List<T> items, int totalCount, int pageNumber, int pageSize)
         {
             Items = items;
             TotalCount = totalCount;

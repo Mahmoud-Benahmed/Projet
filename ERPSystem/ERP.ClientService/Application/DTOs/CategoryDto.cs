@@ -1,0 +1,77 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ERP.ClientService.Application.DTOs
+{
+
+    public sealed record CategoryStatsDto(
+        int TotalCategories,
+        int ActiveCategories,
+        int InactiveCategories,
+        int DeletedCategories);
+
+    public sealed record CategoryClientCountDto(
+        Guid CategoryId,
+        string CategoryName,
+        int ClientCount);
+
+    public record CreateCategoryRequestDto(
+        [Required(ErrorMessage = "Name is required.")]
+        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+        string Name,
+
+        [Required(ErrorMessage = "Code is required.")]
+        [MaxLength(50, ErrorMessage = "Code cannot exceed 50 characters.")]
+        [RegularExpression(@"^[A-Za-z0-9_\-]+$",
+        ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
+        string Code,
+
+        [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+        int DelaiRetour,
+
+        bool UseBulkPricing = false,
+
+        [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
+        decimal? DiscountRate = null,
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        decimal? CreditLimitMultiplier = null
+    );
+
+    public record UpdateCategoryRequestDto(
+        [Required(ErrorMessage = "Name is required.")]
+        [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+        string Name,
+
+        [Required(ErrorMessage = "Code is required.")]
+        [MaxLength(50, ErrorMessage = "Code cannot exceed 50 characters.")]
+        [RegularExpression(@"^[A-Za-z0-9_\-]+$",
+        ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
+        string Code,
+
+        [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+        int DelaiRetour,
+
+        bool UseBulkPricing = false,
+
+        [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
+        decimal? DiscountRate = null,
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        decimal? CreditLimitMultiplier = null
+    );
+
+    public sealed record CategoryResponseDto(
+        Guid Id,
+        string Name,
+        string Code,
+        int DelaiRetour,
+        decimal? DiscountRate,
+        decimal? CreditLimitMultiplier,
+        bool UseBulkPricing,
+        bool IsActive,
+        bool IsDeleted,
+        DateTime CreatedAt,
+        DateTime? UpdatedAt,
+        int ClientCount   // ← just the count, no full client objects
+    );
+}
