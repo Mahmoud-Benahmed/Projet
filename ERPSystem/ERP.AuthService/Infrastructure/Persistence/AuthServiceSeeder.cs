@@ -29,9 +29,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<string, Controle>> SeedControlesAsync(
             IControleRepository controleRepository)
         {
-            if (await controleRepository.CountAsync() > 0)
-                await controleRepository.DeleteAllAsync();
-
             var controles = new List<(string Category, string Libelle, string Description)>
             {
                 // Auth
@@ -109,9 +106,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<RoleEnum, Role>> SeedRolesAsync(
             IRoleRepository roleRepository)
         {
-            if (await roleRepository.CountAsync() > 0)
-                await roleRepository.DeleteAllAsync();
-
 
             var result = new Dictionary<RoleEnum, Role>();
 
@@ -141,8 +135,6 @@ namespace ERP.AuthService.Infrastructure.Persistence
             Dictionary<RoleEnum, Role> roles,
             Dictionary<string, Controle> controles)
         {
-            if (await privilegeRepository.CountAsync() > 0)
-                await privilegeRepository.DeleteAllAsync();
 
             // Format: (RoleEnum, ControleName, IsGranted)
             var matrix = new List<(RoleEnum Role, string Controle, bool IsGranted)>
@@ -342,14 +334,13 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IConfiguration configuration,
             IPasswordHasher<AuthUser> passwordHasher)
         {
-            if (await userRepository.CountAsync() > 0)
-                await userRepository.DeleteAllAsync();
 
-            List<Role> roles = await roleRepository.GetAllAsync();
-            Role adminRole = roles.Find(r => r.Libelle == RoleEnum.SystemAdmin);
-            Role salesRole = roles.Find(r => r.Libelle == RoleEnum.SalesManager);
-            Role stockRole = roles.Find(r => r.Libelle == RoleEnum.StockManager);
-            Role accountRole = roles.Find(r => r.Libelle == RoleEnum.Accountant);
+            List<Role> roles = await roleRepository.GetAllUnpagedAsync();
+
+            var adminRole = roles.Find(r => r.Libelle == RoleEnum.SystemAdmin)  ?? throw new InvalidOperationException($"Role '{RoleEnum.SystemAdmin}' not found. Ensure roles are seeded before users.");
+            var salesRole = roles.Find(r => r.Libelle == RoleEnum.SalesManager) ?? throw new InvalidOperationException($"Role '{RoleEnum.SalesManager}' not found.");
+            var stockRole = roles.Find(r => r.Libelle == RoleEnum.StockManager) ?? throw new InvalidOperationException($"Role '{RoleEnum.StockManager}' not found.");
+            var accountRole = roles.Find(r => r.Libelle == RoleEnum.Accountant) ?? throw new InvalidOperationException($"Role '{RoleEnum.Accountant}' not found.");
 
 
             var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
