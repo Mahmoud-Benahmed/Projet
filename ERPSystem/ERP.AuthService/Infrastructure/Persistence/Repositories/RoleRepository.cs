@@ -1,6 +1,7 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
 using MongoDB.Driver;
+using ZstdSharp.Unsafe;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {
@@ -19,8 +20,26 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<Role?> GetByLibelleAsync(RoleEnum libelle)
             => await _collection.Find(x => x.Libelle.Equals(libelle)).FirstOrDefaultAsync();
 
-        public async Task<List<Role>> GetAllAsync()
-            => await _collection.Find(_ => true).ToListAsync();
+        public async Task<(List<Role> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize)
+        {
+            pageNumber = Math.Max(pageNumber, 1);
+            pageSize = Math.Max(pageSize, 1);
+            var filter = Builders<Role>.Filter.Empty;
+            var totalCount = (int)await _collection.CountDocumentsAsync(filter);
+            var items = await _collection.Find(filter)
+                .Sort(Builders<Role>.Sort.Ascending(r => r.Libelle))
+                .Skip((pageNumber - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+            return (items, totalCount);
+        }
+
+        public async Task<List<Role>> GetAllUnpagedAsync()
+            => await _collection
+                .Find(Builders<Role>.Filter.Empty)
+                .Sort(Builders<Role>.Sort.Ascending(r => r.Libelle))
+                .ToListAsync();
+
 
         public async Task AddAsync(Role role)
             => await _collection.InsertOneAsync(role);

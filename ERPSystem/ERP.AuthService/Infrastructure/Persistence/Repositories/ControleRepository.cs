@@ -1,6 +1,5 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
@@ -13,6 +12,11 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         {
             _collection = context.Controles;
         }
+        public async Task<List<Controle>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            var filter = Builders<Controle>.Filter.In(x => x.Id, ids);
+            return await _collection.Find(filter).ToListAsync();
+        }
 
         public async Task<Controle?> GetByIdAsync(Guid id)
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
@@ -20,16 +24,16 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<Controle?> GetByLibelleAsync(string libelle)
             => await _collection.Find(x => x.Libelle == libelle).FirstOrDefaultAsync();
 
-        public async Task<List<Controle>> GetAllAsync()
-            => await _collection.Find(_ => true).ToListAsync();
-
-        public async Task<List<Controle>> GetByCategoryAsync(string category)
+        public async Task<(List<Controle> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize)
         {
-            var filter = Builders<Controle>.Filter.Regex(
-                x => x.Category,
-                new BsonRegularExpression(category, "i")); // "i" = case insensitive
+            return await GetPagedAsync(pageNumber, pageSize);
+        }
 
-            return await _collection.Find(filter).ToListAsync();
+        public async Task<(List<Controle> Items, int TotalCount)> GetByCategoryAsync(string category, int pageNum, int pageSize)
+        {
+            var filter = Builders<Controle>.Filter.Eq(x => x.Category, category);
+
+            return await GetPagedAsync(pageNum, pageSize, filter, collation: new Collation("en", strength: CollationStrength.Secondary));
         }
 
         public async Task AddAsync(Controle controle)
@@ -46,7 +50,43 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             await _collection.DeleteManyAsync(FilterDefinition<Controle>.Empty);
         }
 
-        public async Task<long> CountAsync()
-            => await _collection.CountDocumentsAsync(_ => true);
+
+        private async Task<(List<Controle> Items, int TotalCount)> GetPagedAsync(
+            int pageNumber,
+            int pageSize,
+            FilterDefinition<Controle>? filter = null,
+            SortDefinition<Controle>? sort = null,
+            Collation? collation = null
+        )
+        {
+            pageNumber = Math.Max(pageNumber, 1);
+            pageSize = Math.Max(pageSize, 1);
+
+            var filters = new List<FilterDefinition<Controle>>();
+
+            // custom filter
+            if (filter != null)
+                filters.Add(filter);
+
+            var finalFilter = filters.Count > 0
+                                    ? Builders<Controle>.Filter.And(filters)
+                                    : Builders<Controle>.Filter.Empty;
+
+            sort ??= Builders<Controle>.Sort.Ascending(c=> c.Libelle);
+
+            var findOptions = new FindOptions { Collation = collation };
+
+            var totalCount = (int)await _collection.CountDocumentsAsync(
+                finalFilter, new CountOptions { Collation = collation });
+
+            var items = await _collection
+                .Find(finalFilter, new FindOptions { Collation = collation })
+                .Sort(sort)
+                .Skip((pageNumber - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
     }
 }

@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
 using Microsoft.IdentityModel.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using static System.Net.WebRequestMethods;
 
@@ -20,18 +21,16 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => await _collection.InsertOneAsync(user);
 
         public async Task<AuthUser?> GetByLoginAsync(string login)
-            => await _collection.Find(x => x.Login == login && x.IsActive).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Login == login && x.IsActive && !x.IsDeleted).FirstOrDefaultAsync();
 
         public async Task<AuthUser?> GetByEmailAsync(string email)
-            => await _collection.Find(x => x.Email == email && x.IsActive).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Email == email && x.IsActive && !x.IsDeleted).FirstOrDefaultAsync();
 
         public async Task<AuthUser?> GetByIdAsync(Guid id)
-            => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
 
-        public async Task<(List<AuthUser>, int)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null)
-        {
-            return await GetPagedAsync(pageNumber, pageSize, excludeId);
-        }
+        public async Task<(List<AuthUser> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null)
+            => await GetPagedAsync(pageNumber, pageSize, excludeId);
 
         public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null)
         {
@@ -53,10 +52,10 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
-            => await _collection.Find(x => x.Email == email && x.IsActive).AnyAsync();
+            => await _collection.Find(x => x.Email == email && x.IsActive && !x.IsDeleted).AnyAsync();
 
         public async Task<bool> ExistsByLoginAsync(string login)
-            => await _collection.Find(x => x.Login == login && x.IsActive).AnyAsync();
+            => await _collection.Find(x => x.Login == login && x.IsActive && !x.IsDeleted).AnyAsync();
 
         public async Task<AuthUser?> UpdateAsync(AuthUser user)
         {
@@ -64,10 +63,16 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return result.ModifiedCount > 0 ? user : null;
         }
 
+        #if DEBUG
         public async Task DeleteAllAsync() => await _collection.DeleteManyAsync(_ => true);
+        #else
+        [Obsolete("DeleteAllAsync is only permitted in test/dev environments.")]
+        public Task DeleteAllAsync() 
+            => throw new InvalidOperationException("DeleteAllAsync is not allowed in production.");
+        #endif
 
         public async Task<long> CountAsync()
-            => await _collection.CountDocumentsAsync(x=> x.IsActive);
+            => await _collection.CountDocumentsAsync(x => x.IsActive && !x.IsDeleted);
 
 
         public async Task<long> CountByStatusAsync(bool status) =>
@@ -75,38 +80,72 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {
-            var baseFilter = excludeId.HasValue
-                                ? Builders<AuthUser>.Filter.Where(x => x.Id != excludeId.Value)
-                                : Builders<AuthUser>.Filter.Empty;
+            var pipeline = new List<BsonDocument>();
 
-            var notDeletedFilter = Builders<AuthUser>.Filter.And(baseFilter,
-                Builders<AuthUser>.Filter.Where(x => !x.IsDeleted));
+            // Stage 1: exclude specific ID if provided
+            if (excludeId.HasValue)
+            {
+                pipeline.Add(new BsonDocument("$match",
+                    new BsonDocument("_id",
+                        new BsonDocument("$ne",
+                            new BsonBinaryData(excludeId.Value, GuidRepresentation.Standard)))));
+            }
+            // Stage 2: group and count all buckets in one pass
+            pipeline.Add(new BsonDocument("$group", new BsonDocument
+            {
+                { "_id", BsonNull.Value },
+                { "total", new BsonDocument("$sum",
+                    new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$IsDeleted", false }),
+                        1, 0
+                    }))},
+                { "active", new BsonDocument("$sum",
+                    new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$and", new BsonArray
+                        {
+                            new BsonDocument("$eq", new BsonArray { "$IsDeleted", false }),
+                            new BsonDocument("$eq", new BsonArray { "$IsActive", true })
+                        }),
+                        1, 0
+                    }))},
+                { "deactivated", new BsonDocument("$sum",
+                    new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$and", new BsonArray
+                        {
+                            new BsonDocument("$eq", new BsonArray { "$IsDeleted", false }),
+                            new BsonDocument("$eq", new BsonArray { "$IsActive", false })
+                        }),
+                        1, 0
+                    }))},
+                { "deleted", new BsonDocument("$sum",
+                    new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$IsDeleted", true }),
+                        1, 0
+                    }))}
+            }));
 
-            var deletedFilter = Builders<AuthUser>.Filter.And(baseFilter,
-                Builders<AuthUser>.Filter.Where(x => x.IsDeleted));
+            var result = await _collection
+                .Aggregate<BsonDocument>(pipeline)
+                .FirstOrDefaultAsync();
 
-            var activeFilter = Builders<AuthUser>.Filter.And(notDeletedFilter,
-                Builders<AuthUser>.Filter.Where(x => x.IsActive));
-
-            var inactiveFilter = Builders<AuthUser>.Filter.And(notDeletedFilter,
-                Builders<AuthUser>.Filter.Where(x => !x.IsActive));
-
-            var totalUsers = (int)await _collection.CountDocumentsAsync(notDeletedFilter);
-            var activeUsers = (int)await _collection.CountDocumentsAsync(activeFilter);
-            var deactivatedUsers = (int)await _collection.CountDocumentsAsync(inactiveFilter);
-            var deletedUsers = (int)await _collection.CountDocumentsAsync(deletedFilter);
+            if (result == null)
+                return new UserStatsDto(); // all zeros
 
             return new UserStatsDto
             {
-                TotalUsers = totalUsers,
-                ActiveUsers = activeUsers,
-                DeactivatedUsers = deactivatedUsers,
-                DeletedUsers = deletedUsers
+                TotalUsers = result["total"].ToInt32(),
+                ActiveUsers = result["active"].ToInt32(),
+                DeactivatedUsers = result["deactivated"].ToInt32(),
+                DeletedUsers = result["deleted"].ToInt32()
             };
         }
 
 
-        private async Task<(List<AuthUser>, int)> GetPagedAsync(
+        private async Task<(List<AuthUser> Items, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
             Guid? excludeId = null,
