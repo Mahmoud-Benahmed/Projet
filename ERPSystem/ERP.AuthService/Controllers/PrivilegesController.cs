@@ -21,18 +21,18 @@ namespace ERP.AuthService.Api.Controllers
         public async Task<IActionResult> GetByRoleId(Guid roleId)
             => Ok(await _privilegeService.GetByRoleIdAsync(roleId));
 
-        [HttpPut("{roleId:guid}/{controleId:guid}/allow")]
+        [HttpPatch("{roleId:guid}/{controleId:guid}/allow")]
         public async Task<IActionResult> Allow(Guid roleId, Guid controleId)
         {
             await _privilegeService.AllowAsync(roleId, controleId);
-            return NoContent();
+            return Ok();
         }
 
-        [HttpPut("{roleId:guid}/{controleId:guid}/deny")]
+        [HttpPatch("{roleId:guid}/{controleId:guid}/deny")]
         public async Task<IActionResult> Deny(Guid roleId, Guid controleId)
         {
             await _privilegeService.DenyAsync(roleId, controleId);
-            return NoContent();
+            return Ok();
         }
     }
 }

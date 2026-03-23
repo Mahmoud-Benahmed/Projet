@@ -28,13 +28,10 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetMe()
         {
             // Extract authUserId from the JWT claim
-            var id = User.FindFirstValue("sub")
-                          ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            if (!Guid.TryParse(id, out var authUserIdGuid))
-                return Unauthorized();
-
-            var user = await _authService.GetByIdAsync(authUserIdGuid);
+            var user = await _authService.GetByIdAsync(requesterId);
 
             if (user == null)
                 return NotFound();
@@ -46,16 +43,17 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             var role = User.FindFirstValue("role");
 
-            if (!Guid.TryParse(sub, out var requesterId))
-                throw new UnauthorizedAccessException("Invalid token.");
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
             var user = await _authService.GetByIdAsync(id);
+            if (user is null) return NotFound();
+
             bool isSelf = requesterId == id;
             if (isSelf && !user.IsActive)
-                Forbid();
+                return Forbid();
 
             bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
 
@@ -77,41 +75,35 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
 
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetAllAsync(pageNumber, pageSize, excludeId);
+            var result = await _authService.GetAllAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
         [HttpGet("deactivated")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDeactivated(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDeactivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, excludeId);
+            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
         [HttpGet("activated")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetActivated(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetActivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, excludeId);
+            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -119,11 +111,9 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Activate(Guid id)
         {
-            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
-            {
+            if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
-            }
+
             await _authService.ActivateAsync(id, requesterId);
             return NoContent();
         }
@@ -133,28 +123,19 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Deactivate(Guid id)
         {
-            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
-            {
+            if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
-            }
+
             await _authService.DeactivateAsync(id, requesterId);
             return NoContent();
         }
 
 
-        [HttpDelete("delete/soft/{id:guid}")]
+        [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteSoft(Guid id)
         {
-            // Extract authUserId from the JWT claim
-            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
-            {
-                return Forbid();
-            }
-
-            if (requesterId.Equals(id))
+            if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
 
             await _authService.SoftDeleteAsync(id, requesterId);
@@ -165,12 +146,8 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Restore(Guid id)
         {
-            // Extract authUserId from the JWT claim
-            var requesterIdString = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(requesterIdString) || !Guid.TryParse(requesterIdString, out var requesterId))
-            {
+            if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
-            }
 
             await _authService.RestoreAsync(id, requesterId);
             return NoContent();
@@ -178,14 +155,12 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("deleted")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDeleted(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDeleted([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, excludeId);
+            var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -197,10 +172,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, excludeId);
+            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -215,19 +190,20 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("exists-email/{email}")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        public async Task<bool> ExistsByEmail(string email)
+        public async Task<IActionResult> ExistsByEmail(string email)
         {
-            return await _authService.ExistsByEmail(email);
+            var result = await _authService.ExistsByEmail(email);
+            return Ok(result);
         }
 
         [HttpGet("stats")]
         [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStats()
         {
-            var currentUserId = User.FindFirstValue("sub");
-            Guid.TryParse(currentUserId, out var excludeId);
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var result = await _authService.GetStatsAsync(excludeId);
+            var result = await _authService.GetStatsAsync(requesterId);
             return Ok(result);
         }
 
@@ -244,9 +220,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateProfileDto updatedProfile)
         {
-            var currentUserId = User.FindFirstValue("sub");
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
             var canManageUsers = User.HasClaim("privilege", "UpdateUser");
-            var isOwner = currentUserId == id.ToString();
+            var isOwner = requesterId == id;
 
             if (!isOwner && !canManageUsers)
                 return Forbid();
@@ -267,13 +244,11 @@ namespace ERP.AuthService.Controllers
         [HttpPut("change-password/profile")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
-            var requesterId = User.FindFirst("sub")?.Value;
-
-            if (requesterId is null || !Guid.TryParse(requesterId, out var id))
-                return Unauthorized(new { message = "Invalid token." });
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
             await _authService.ChangePasswordAsync(
-                    id,
+                    requesterId,
                     request);
 
                 return NoContent();
@@ -283,15 +258,10 @@ namespace ERP.AuthService.Controllers
         [HttpPut("change-password/{userId:guid}")]
         public async Task<IActionResult> AdminChangePassword(Guid userId, [FromBody] AdminChangeProfileRequest request)
         {
-            var adminIdClaim = User.FindFirst("sub")?.Value;
-            if (adminIdClaim is null || !Guid.TryParse(adminIdClaim, out var adminId))
-                return Unauthorized(new { message = "Invalid token." });
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
 
-            var roles = User.FindAll("role").Select(c => c.Value);
-            if (!roles.Contains("SystemAdmin"))
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Only admins can change passwords." });
-
-            await _authService.ChangePasswordByAdminAsync(userId, request, adminId);
+            await _authService.ChangePasswordByAdminAsync(userId, request, requesterId);
             return NoContent();
         }
 
@@ -310,6 +280,12 @@ namespace ERP.AuthService.Controllers
         {
             await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
             return NoContent();
+        }
+        private bool TryGetRequesterId(out Guid requesterId)
+        {
+            requesterId = Guid.Empty;
+            var raw = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         }
 
     }

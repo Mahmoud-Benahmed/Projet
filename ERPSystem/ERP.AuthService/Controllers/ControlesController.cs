@@ -1,7 +1,9 @@
-﻿using ERP.AuthService.Application.Interfaces.Services;
+﻿using ERP.AuthService.Application.DTOs.Role;
+using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ERP.AuthService.Api.Controllers
 {
@@ -18,15 +20,61 @@ namespace ERP.AuthService.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-            => Ok(await _controleService.GetAllAsync());
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _controleService.GetAllAsync(pageNumber, pageSize);
+            return Ok(result);
+        }
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
-            => Ok(await _controleService.GetByIdAsync(id));
+        {
+            var controle = await _controleService.GetByIdAsync(id);
+            return controle is null ? NotFound() : Ok(controle);
+        }
 
-        [HttpGet("category/{category}")]
-        public async Task<IActionResult> GetByCategory(string category)
-            => Ok(await _controleService.GetByCategoryAsync(category));
+        [HttpGet("by-category")]
+        public async Task<IActionResult> GetByCategory([FromQuery]string category, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _controleService.GetByCategoryAsync(category, pageNumber, pageSize);
+            return result is null ? NotFound() : Ok(result);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] ControleRequestDto dto)
+        {
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
+
+            var created = await _controleService.CreateControleAsync(dto, requesterId);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] ControleRequestDto dto)
+        {
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
+
+            var result = await _controleService.UpdateControleAsync(id, dto, requesterId);
+            return result is null ? NotFound() : Ok(result);
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            if (!TryGetRequesterId(out var requesterId))
+                return Forbid();
+
+            await _controleService.DeleteByIdAsync(id, requesterId);
+            return NoContent();
+        }
+
+        private bool TryGetRequesterId(out Guid requesterId)
+        {
+            requesterId = Guid.Empty;
+            var raw = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+        }
     }
 }
