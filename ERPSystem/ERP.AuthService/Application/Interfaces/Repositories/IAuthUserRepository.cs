@@ -10,10 +10,10 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<AuthUser?> GetByLoginAsync(string login);
         Task<AuthUser?> GetByEmailAsync(string email);
         Task<AuthUser?> GetByIdAsync(Guid id);
-        Task<(List<AuthUser>, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId);
-        Task<(List<AuthUser>, int TotalCount)> GetPagedByStatusAsync(bool isActive, int pageNumber, int pageSize, Guid? excludeId);
-        Task<(List<AuthUser>, int TotalCount)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId);
-        Task<(List<AuthUser>, int TotalCount)> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId);
+        Task<(List<AuthUser> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null);
+        Task<(List<AuthUser> Items, int TotalCount)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null);
+        Task<(List<AuthUser> Items, int TotalCount)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId = null);
+        Task<(List<AuthUser> Items, int TotalCount)> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId = null);
 
         Task<AuthUser?> UpdateAsync(AuthUser user);
         Task<bool> ExistsByLoginAsync(string login);
