@@ -1,26 +1,52 @@
-﻿using ERP.AuthService.Application.DTOs.Role;
+﻿using ERP.AuthService.Application.DTOs.AuthUser;
+using ERP.AuthService.Application.DTOs.Role;
+using ERP.AuthService.Application.Exceptions.Role;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Domain.Logger;
 
 namespace ERP.AuthService.Application.Services
 {
     public class ControleService: IControleService
     {
+        private readonly IAuditLogger _auditLogger;
         private readonly IControleRepository _controleRepository;
 
-        public ControleService(IControleRepository controleRepository)
+        public ControleService( IAuditLogger auditLogger,
+                                IControleRepository controleRepository)
         {
+            _auditLogger= auditLogger;
             _controleRepository = controleRepository;
         }
 
         /// <summary>
         /// Get all controles.
         /// </summary>
-        public async Task<List<ControleResponseDto>> GetAllAsync()
+        public async Task<PagedResultDto<ControleResponseDto>> GetAllAsync(int pageNumber, int pageSize)
         {
-            var controles = await _controleRepository.GetAllAsync();
-            return controles.Select(MapToDto).ToList();
+            ValidatePaging(pageNumber, pageSize);
+            var (items, totalCount) = await _controleRepository.GetAllAsync(pageNumber, pageSize);
+            var mapped = items.Select(MapToDto).ToList();
+            return new PagedResultDto<ControleResponseDto> (
+                mapped,
+                totalCount,
+                pageNumber, 
+                pageSize);
+        }
+
+        /// <summary>
+        /// Get all controles belonging to a given category (case-insensitive).
+        /// </summary>
+        public async Task<PagedResultDto<ControleResponseDto>> GetByCategoryAsync(string category, int pageNum, int pageSize)
+        {
+            ValidatePaging(pageNum, pageSize);
+            var (items, totalCount) = await _controleRepository.GetByCategoryAsync(category, pageNum, pageSize);
+            return new PagedResultDto<ControleResponseDto>(
+                items.Select(MapToDto).ToList(),
+                totalCount,
+                pageNum,
+                pageSize);
         }
 
         /// <summary>
@@ -31,34 +57,14 @@ namespace ERP.AuthService.Application.Services
             var controle = await _controleRepository.GetByIdAsync(id);
 
             if (controle is null)
-                throw new Exception($"Controle with id {id} not found");
-
+                throw new ControleNotFoundException(id);
             return MapToDto(controle);
-        }
-
-        /// <summary>
-        /// Get a controle by its Libelle.
-        /// </summary>
-        public async Task<ControleResponseDto?> GetByLibelleAsync(string libelle)
-        {
-            var controle = await _controleRepository.GetByLibelleAsync(libelle);
-            return controle is null ? null : MapToDto(controle);
-        }
-
-
-        /// <summary>
-        /// Get all controles belonging to a given category (case-insensitive).
-        /// </summary>
-        public async Task<List<ControleResponseDto>> GetByCategoryAsync(string category)
-        {
-            var controles = await _controleRepository.GetByCategoryAsync(category);
-            return controles.Select(MapToDto).ToList();
         }
 
         /// <summary>
         /// Create a new controle.
         /// </summary>
-        public async Task CreateControle(ControleRequestDto request)
+        public async Task<ControleResponseDto> CreateControleAsync(ControleRequestDto request, Guid requesterId)
         {
             var existing = await _controleRepository.GetByLibelleAsync(request.Libelle);
             if (existing is not null)
@@ -66,48 +72,67 @@ namespace ERP.AuthService.Application.Services
 
             var controle = new Controle(request.Category, request.Libelle, request.Description);
             await _controleRepository.AddAsync(controle);
+            await _auditLogger.LogAsync(
+                        AuditAction.ControleCreated,
+                        success: true,
+                        performedBy: requesterId,
+                        metadata: new() { ["created"] = request.Libelle.ToString(), ["createdBy"] = requesterId.ToString() });
+
+            return MapToDto(controle);
+            
         }
 
         /// <summary>
         /// Update an existing controle.
         /// </summary>
-        public async Task UpdateControle(Guid id, ControleRequestDto controle)
+        public async Task<ControleResponseDto> UpdateControleAsync(Guid id, ControleRequestDto request, Guid requesterId)
         {
             var existing = await _controleRepository.GetByIdAsync(id);
             if (existing is null)
                 throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
-            existing.Update(controle);
+            existing.Update(request);
 
             await _controleRepository.UpdateAsync(existing);
+            await _auditLogger.LogAsync(
+                        AuditAction.ControleUpdated,
+                        success: true,
+                        performedBy: requesterId,
+                        metadata: new()
+                        {
+                            ["controleId"] = id.ToString(),
+                            ["newLibelle"] = request.Libelle,
+                            ["newCategory"] = request.Category,
+                            ["performedBy"] = requesterId.ToString()
+                        });
+
+            return MapToDto(existing);
         }
 
         /// <summary>
         /// Delete a controle by its ID.
         /// </summary>
-        public async Task DeleteControle(Guid id)
+        public async Task DeleteByIdAsync(Guid id, Guid requesterId)
         {
             var existing = await _controleRepository.GetByIdAsync(id);
             if (existing is null)
                 throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
             await _controleRepository.DeleteAsync(id);
+
+            await _auditLogger.LogAsync(
+                        AuditAction.ControleDeleted,
+                        success: true,
+                        performedBy: requesterId,
+                        metadata: new() { ["deleted"] = existing.ToString(), ["performedBy"] = requesterId.ToString() });
         }
 
         /// <summary>
         /// Delete all controles.
         /// </summary>
-        public async Task DeleteAll()
+        public async Task DeleteAllAsync()
         {
             await _controleRepository.DeleteAllAsync();
-        }
-
-        /// <summary>
-        /// Get the total count of controles.
-        /// </summary>
-        public async Task<long> CountAsync()
-        {
-            return await _controleRepository.CountAsync();
         }
 
         // ── Mapping ───────────────────────────────────────────────────────────
@@ -119,5 +144,15 @@ namespace ERP.AuthService.Application.Services
                 controle.Libelle,
                 controle.Description
             );
+
+        private static void ValidatePaging(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
+                    "Page number must be greater than zero.");
+            if (pageSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(pageSize),
+                    "Page size must be greater than zero.");
+        }
     }
 }

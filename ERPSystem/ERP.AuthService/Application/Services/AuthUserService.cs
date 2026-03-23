@@ -330,23 +330,15 @@ namespace ERP.AuthService.Application.Services
             var role = await _roleRepository.GetByIdAsync(user.RoleId)
                        ?? throw new InvalidOperationException("Role not found.");
 
-            // fetch granted privileges for this role
             var privileges = await _privilegeRepository.GetByRoleIdAsync(user.RoleId);
-            var grantedPrivileges = privileges
+
+            var grantedControleIds = privileges
                 .Where(p => p.IsGranted)
-                .Select(p => p.ControleId.ToString())
+                .Select(p => p.ControleId)
                 .ToList();
 
-            // resolve controle names for the privileges
-            var controles = await _controleRepository.GetAllAsync();
-            var controleMap = controles.ToDictionary(c => c.Id, c => c.Libelle);
-
-            var privilegeNames = privileges
-                .Where(p => p.IsGranted)
-                .Select(p => controleMap.TryGetValue(p.ControleId, out var name) ? name : null)
-                .Where(name => name != null)
-                .Select(name => name!)
-                .ToList();
+            var controles = await _controleRepository.GetByIdsAsync(grantedControleIds);
+            var privilegeNames = controles.Select(c => c.Libelle).ToList();
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
@@ -371,7 +363,6 @@ namespace ERP.AuthService.Application.Services
                 expiresAt
             );
         }
-
 
         // ======================
         // CHANGE PASSWORD
@@ -441,6 +432,8 @@ namespace ERP.AuthService.Application.Services
         // ======================
         public async Task ActivateAsync(Guid authUserId, Guid performedById)
         {
+            if (authUserId == performedById)
+                throw new UnauthorizedOperationException("You cannot apply this operation on your account.");
             var user = await _userRepository.GetByIdAsync(authUserId)
                        ?? throw new UserNotFoundException(authUserId);
 
@@ -462,6 +455,9 @@ namespace ERP.AuthService.Application.Services
 
         public async Task DeactivateAsync(Guid authUserId, Guid performedById)
         {
+            if (authUserId == performedById)
+                throw new UnauthorizedOperationException("You cannot apply this operation on your account.");
+
             var user = await _userRepository.GetByIdAsync(authUserId)
                        ?? throw new UserNotFoundException(authUserId);
             if (!user.IsActive)
@@ -485,6 +481,10 @@ namespace ERP.AuthService.Application.Services
         // ======================
         public async Task SoftDeleteAsync(Guid deletedId, Guid performedById)
         {
+
+            if (deletedId == performedById)
+                throw new UnauthorizedOperationException("You cannot apply this operation on your account.");
+
             var user = await _userRepository.GetByIdAsync(deletedId)
                         ?? throw new UserNotFoundException(deletedId);
 
@@ -504,10 +504,14 @@ namespace ERP.AuthService.Application.Services
                     metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
         }
 
-        public async Task RestoreAsync(Guid id, Guid performedById)
+        public async Task RestoreAsync(Guid deletedId, Guid performedById)
         {
-            var user = await _userRepository.GetByIdAsync(id)
-                        ?? throw new UserNotFoundException(id);
+
+            if (deletedId == performedById)
+                throw new UnauthorizedOperationException("You cannot apply this operation on your account.");
+
+            var user = await _userRepository.GetByIdAsync(deletedId)
+                        ?? throw new UserNotFoundException(deletedId);
 
             var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
 
