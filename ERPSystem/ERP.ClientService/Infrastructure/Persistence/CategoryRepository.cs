@@ -106,6 +106,7 @@ public class CategoryRepository : ICategoryRepository
                                                 .CountAsync(c => c.IsDeleted);
         var total = await _context.Categories.IgnoreQueryFilters().CountAsync() -deleted;
 
+
         return new CategoryStatsDto(total, active, inactive, deleted);
     }
 }

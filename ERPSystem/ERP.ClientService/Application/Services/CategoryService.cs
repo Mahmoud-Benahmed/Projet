@@ -29,7 +29,7 @@ public class CategoryService : ICategoryService
 
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangesAsync();
-        return category.ToResponseDto();
+        return MapToDto(category);
     }
 
     // =========================
@@ -40,7 +40,7 @@ public class CategoryService : ICategoryService
         var category = await _categoryRepository.GetByIdAsync(id);
         if (category is null || category.IsDeleted)
             throw new CategoryNotFoundException(id);
-        return category.ToResponseDto();
+        return MapToDto(category);
     }
 
     // =========================
@@ -65,7 +65,7 @@ public class CategoryService : ICategoryService
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
 
         await _categoryRepository.SaveChangesAsync();
-        return category.ToResponseDto();
+        return MapToDto(category);
     }
 
     // =========================
@@ -107,7 +107,7 @@ public class CategoryService : ICategoryService
 
         category.Activate();
         await _categoryRepository.SaveChangesAsync();
-        return category.ToResponseDto();
+        return MapToDto(category);
     }
 
     public async Task<CategoryResponseDto> DeactivateAsync(Guid id)
@@ -118,7 +118,7 @@ public class CategoryService : ICategoryService
 
         category.Deactivate();
         await _categoryRepository.SaveChangesAsync();
-        return category.ToResponseDto();
+        return MapToDto(category);
     }
 
     // =========================
@@ -129,8 +129,7 @@ public class CategoryService : ICategoryService
     {
         ValidatePaging(pageNumber, pageSize);
         var (items, totalCount) = await _categoryRepository.GetAllAsync(pageNumber, pageSize);
-        return new PagedResultDto<CategoryResponseDto>(
-            items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
+        return new PagedResultDto<CategoryResponseDto>(items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
     }
 
     public async Task<PagedResultDto<CategoryResponseDto>> GetPagedDeletedAsync(
@@ -140,11 +139,10 @@ public class CategoryService : ICategoryService
         var (items, totalCount) = await _categoryRepository
             .GetPagedDeletedAsync(pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(
-            items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
+            items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
     }
 
-    public async Task<PagedResultDto<CategoryResponseDto>> GetPagedByNameAsync(
-        string nameFilter, int pageNumber, int pageSize)
+    public async Task<PagedResultDto<CategoryResponseDto>> GetPagedByNameAsync(string nameFilter, int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
         if (string.IsNullOrWhiteSpace(nameFilter))
@@ -153,7 +151,7 @@ public class CategoryService : ICategoryService
         var (items, totalCount) = await _categoryRepository
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(
-            items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
+            items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
     }
 
     // =========================
@@ -173,5 +171,23 @@ public class CategoryService : ICategoryService
         if (pageSize < 1)
             throw new ArgumentOutOfRangeException(nameof(pageSize),
                 "Page size must be greater than zero.");
+    }
+
+    public CategoryResponseDto MapToDto(Category category)
+    {
+        return new CategoryResponseDto(
+            Id: category.Id,
+            Name: category.Name,
+            Code: category.Code,
+            DelaiRetour: category.DelaiRetour,
+            DiscountRate: category.DiscountRate,
+            CreditLimitMultiplier: category.CreditLimitMultiplier,
+            UseBulkPricing: category.UseBulkPricing,
+            IsActive: category.IsActive,
+            IsDeleted: category.IsDeleted,
+            CreatedAt: category.CreatedAt,
+            UpdatedAt: category.UpdatedAt,
+            ClientCount: category.ClientCategories.Count
+        );
     }
 }

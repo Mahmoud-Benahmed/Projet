@@ -10,9 +10,7 @@ public class ClientService : IClientService
     private readonly IClientRepository _clientRepository;
     private readonly ICategoryRepository _categoryRepository;
 
-    public ClientService(
-        IClientRepository clientRepository,
-        ICategoryRepository categoryRepository)
+    public ClientService(IClientRepository clientRepository,ICategoryRepository categoryRepository)
     {
         _clientRepository = clientRepository;
         _categoryRepository = categoryRepository;
