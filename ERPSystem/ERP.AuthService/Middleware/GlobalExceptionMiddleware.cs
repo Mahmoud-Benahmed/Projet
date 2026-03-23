@@ -38,7 +38,7 @@ namespace ERP.AuthService.Middleware
                 UserActiveException =>              ((int)HttpStatusCode.Forbidden,     "AUTH_004", exception.Message),
                 TokenAlreadyRevokedException =>     ((int)HttpStatusCode.BadRequest,    "AUTH_005", "Refresh token already revoked"),
                 UnauthorizedAccessException =>      ((int)HttpStatusCode.Unauthorized,  "AUTH_006", exception.Message),
-                UnauthorizedOperationException =>   ((int)HttpStatusCode.Forbidden,     "AUTH_007", "Operation not authorized"),
+                UnauthorizedOperationException =>   ((int)HttpStatusCode.Forbidden,     "AUTH_007", exception.Message ?? "Operation not authorized"),
                 SecurityException =>                ((int)HttpStatusCode.Unauthorized,  "AUTH_008", "Security violation detected"),
                 UserNotFoundException =>            ((int)HttpStatusCode.NotFound,      "AUTH_009", exception.Message),
                 RoleNotFoundException =>            ((int)HttpStatusCode.NotFound,      "AUTH_010", exception.Message),
