@@ -20,5 +20,10 @@ namespace ERP.AuthService.Domain
             Libelle = libelle;
         }
 
+        public void UpdateRole(RoleEnum libelle)
+        {
+            Libelle = libelle;
+        }
+
     }
 }

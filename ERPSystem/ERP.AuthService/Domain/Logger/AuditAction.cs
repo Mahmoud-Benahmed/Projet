@@ -23,6 +23,16 @@
         UserActivated,
         UserDeactivated,
         UserDeleted,
-        UserRestored
+        UserRestored,
+
+        // Role
+        RoleCreated, 
+        RoleUpdated, 
+        RoleDeleted,
+
+        // Controle
+        ControleCreated, 
+        ControleUpdated, 
+        ControleDeleted
     }
 }
