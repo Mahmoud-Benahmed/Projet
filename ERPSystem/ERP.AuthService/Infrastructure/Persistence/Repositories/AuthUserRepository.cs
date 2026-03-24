@@ -29,6 +29,9 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<AuthUser?> GetByIdAsync(Guid id)
             => await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
 
+        public async Task<AuthUser?> GetByDeletedIdAsync(Guid id)
+            => await _collection.Find(x => x.Id == id && x.IsDeleted).FirstOrDefaultAsync();
+
         public async Task<(List<AuthUser> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null)
             => await GetPagedAsync(pageNumber, pageSize, excludeId);
 

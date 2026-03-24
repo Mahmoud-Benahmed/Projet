@@ -55,7 +55,7 @@ namespace ERP.AuthService.Controllers
             if (isSelf && !user.IsActive)
                 return Forbid();
 
-            bool hasAccess = User.HasClaim("privilege","ViewUsers");
+            bool hasAccess = User.HasClaim("privilege","VIEWUSERS");
 
             if (!isSelf && !hasAccess)
                 throw new UnauthorizedAccessException("You are not authorized to access this resource.");
@@ -222,7 +222,7 @@ namespace ERP.AuthService.Controllers
         {
             if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
-            var canManageUsers = User.HasClaim("privilege", "UpdateUser");
+            var canManageUsers = User.HasClaim("privilege", "UPDATEUSER");
             var isOwner = requesterId == id;
 
             if (!isOwner && !canManageUsers)

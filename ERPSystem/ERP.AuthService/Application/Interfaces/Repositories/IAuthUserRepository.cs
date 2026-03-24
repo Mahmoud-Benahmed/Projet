@@ -10,6 +10,8 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<AuthUser?> GetByLoginAsync(string login);
         Task<AuthUser?> GetByEmailAsync(string email);
         Task<AuthUser?> GetByIdAsync(Guid id);
+        Task<AuthUser?> GetByDeletedIdAsync(Guid id);
+
         Task<(List<AuthUser> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, Guid? excludeId = null);
         Task<(List<AuthUser> Items, int TotalCount)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null);
         Task<(List<AuthUser> Items, int TotalCount)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId = null);

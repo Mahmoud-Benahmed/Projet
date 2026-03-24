@@ -510,7 +510,7 @@ namespace ERP.AuthService.Application.Services
             if (deletedId == performedById)
                 throw new UnauthorizedOperationException("You cannot apply this operation on your account.");
 
-            var user = await _userRepository.GetByIdAsync(deletedId)
+            var user = await _userRepository.GetByDeletedIdAsync(deletedId)
                         ?? throw new UserNotFoundException(deletedId);
 
             var perfomedBy = await _userRepository.GetByIdAsync(performedById) ?? throw new UserNotFoundException(performedById);
@@ -561,7 +561,7 @@ namespace ERP.AuthService.Application.Services
         private async Task<AuthUserGetResponseDto> MapToDtoAsync(AuthUser user)
         {
             var role = await _roleRepository.GetByIdAsync(user.RoleId)
-                       ?? throw new InvalidOperationException("Role not found.");
+                       ?? throw new UnauthorizedAccessException("Role not found.");
 
             return new AuthUserGetResponseDto(
                 Id: user.Id,
