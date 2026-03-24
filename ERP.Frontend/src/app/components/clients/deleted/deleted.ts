@@ -10,8 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ModalComponent } from '../../modal/modal';
 import { ClientService, Client, ClientStatsDto } from '../../../services/client.service';
 import { PaginationComponent } from '../../pagination/pagination';
-import { AuthService } from '../../../services/auth.service';
-
+import { AuthService } from '../../../services/auth/auth.service';
 @Component({
   selector: 'app-deleted-clients',
   standalone: true,

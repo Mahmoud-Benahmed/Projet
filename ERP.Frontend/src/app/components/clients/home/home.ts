@@ -1,3 +1,4 @@
+import { AuthService } from './../../../services/auth/auth.service';
 import { ClientService, Client, CreateClientRequest, UpdateClientRequest, ClientStatsDto, ClientType } from '../../../services/client.service';
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,7 +10,6 @@ import { MatIcon } from "@angular/material/icon";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from "@angular/router";
 import { PaginationComponent } from "../../pagination/pagination";
-import { AuthService } from '../../../services/auth.service';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
