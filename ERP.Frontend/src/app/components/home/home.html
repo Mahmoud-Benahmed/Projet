@@ -55,7 +55,7 @@
     </a>
 
     <a class="home__quick-card" routerLink="/users/deactivated"
-       *ngIf="authService.hasPrivilege('DeactivateUser')">
+       *ngIf="authService.canDeactivateUsers">
       <div class="home__quick-icon home__quick-icon--amber">
         <mat-icon>person_off</mat-icon>
       </div>

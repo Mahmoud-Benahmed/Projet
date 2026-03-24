@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { AuthService, PRIVILEGES } from '../services/auth/auth.service';
 
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const auth   = inject(AuthService);
@@ -25,9 +25,9 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 
     if (!hasAccess) {
       // Redirect to the most relevant page based on what the user CAN access
-      if (auth.hasPrivilege('ViewUsers'))    return router.createUrlTree(['/users']);
-      if (auth.hasPrivilege('ViewArticles')) return router.createUrlTree(['/articles']);
-      if (auth.hasPrivilege('ViewClients'))  return router.createUrlTree(['/clients']);
+      if (auth.hasPrivilege(PRIVILEGES.VIEW_USERS))    return router.createUrlTree(['/users']);
+      if (auth.hasPrivilege(PRIVILEGES.VIEW_ARTICLES)) return router.createUrlTree(['/articles']);
+      if (auth.hasPrivilege(PRIVILEGES.VIEW_CLIENTS))  return router.createUrlTree(['/clients']);
       return router.createUrlTree(['/home']);
     }
   }

@@ -1,9 +1,9 @@
+import { AuthService } from './../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService } from '../../services/auth.service';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
@@ -83,6 +83,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/users/register'))    return [{ label: 'Users', link: '/users' }, { label: 'Register' }];
     if (url.startsWith('/users/deactivated')) return [{ label: 'Users', link: '/users' }, { label: 'Deactivated' }];
     if (url.startsWith('/users/deleted'))     return [{ label: 'Users', link: '/users' }, { label: 'Deleted' }];
+    if (url.startsWith('/users/categories'))  return [{ label: 'Users', link: '/users' }, { label: 'Controles' }];
+    if (url.startsWith('/users/roles'))  return [{ label: 'Users', link: '/roles' }, { label: 'Roles' }];
     if (url.startsWith('/users/'))            return [{ label: 'Users', link: '/users' }, { label: 'Profile' }];
     if (url.startsWith('/users'))             return [{ label: 'Users' }];
 

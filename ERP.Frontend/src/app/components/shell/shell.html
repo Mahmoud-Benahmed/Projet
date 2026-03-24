@@ -162,9 +162,17 @@
               *ngIf="authService.canRegisterUsers">
             <mat-icon>person_add</mat-icon> Register
           </a>
+          <a class="sidebar__subitem" routerLink="/users/controles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>verified_user</mat-icon>
+            <span>Controles</span>
+          </a>
+          <a class="sidebar__subitem" routerLink="/users/roles" routerLinkActive="sidebar__item--active" [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>groups</mat-icon>
+            <span>Roles</span>
+          </a>
           <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
               *ngIf="authService.canSeePermissions">
-            <mat-icon>shield</mat-icon> Permissions
+            <mat-icon>shield_toggle</mat-icon> Permissions
           </a>
         </div>
       </div>

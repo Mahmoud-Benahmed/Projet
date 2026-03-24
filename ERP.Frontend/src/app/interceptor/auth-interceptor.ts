@@ -1,6 +1,6 @@
 import { inject } from "@angular/core";
 import { catchError, switchMap, throwError } from "rxjs";
-import { AuthService } from "../services/auth.service";
+import { AuthService } from "../services/auth/auth.service";
 import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
