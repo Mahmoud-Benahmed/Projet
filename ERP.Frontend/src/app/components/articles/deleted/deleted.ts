@@ -12,15 +12,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ModalComponent } from '../../modal/modal';
-import { MatDialog } from '@angular/material/dialog';
 import { Article, ArticleService, ArticleStatsDto, Category, PagedResult } from '../../../services/articles.service';
 import { PaginationComponent } from "../../pagination/pagination";
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth/auth.service';
 import { HttpError } from '../../../interfaces/ErrorDto';
 
 @Component({

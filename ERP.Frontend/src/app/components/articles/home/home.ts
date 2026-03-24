@@ -11,7 +11,7 @@ import { MatIcon } from "@angular/material/icon";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from "@angular/router";
 import { PaginationComponent } from "../../pagination/pagination";
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth/auth.service';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 

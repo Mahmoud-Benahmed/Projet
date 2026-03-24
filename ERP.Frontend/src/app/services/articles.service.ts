@@ -53,9 +53,7 @@ export interface UpdateArticleRequest {
 })
 export class ArticleService {
 
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.articles}`;
-
-  private readonly articlesUrl = `${environment.apiUrl}${environment.routes.articles}`;
+  private readonly articlesUrl = environment.apiUrl + environment.routes.articles;
   private readonly categoriesUrl = `${this.articlesUrl}/categories`;
 
   constructor(private http: HttpClient) {}
@@ -132,11 +130,11 @@ export class ArticleService {
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/delete/${id}`);
+    return this.http.delete<void>(`${this.articlesUrl}/delete/${id}`);
   }
 
   restore(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/restore/${id}`, {});
+    return this.http.patch<void>(`${this.articlesUrl}/restore/${id}`, {});
   }
 
 
