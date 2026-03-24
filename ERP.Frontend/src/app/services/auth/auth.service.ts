@@ -2,8 +2,8 @@ import { jwtDecode } from 'jwt-decode';
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
-import { environment } from "../environment";
-import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../interfaces/AuthDto";
+import { environment } from "../../environment";
+import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../../interfaces/AuthDto";
 import { BehaviorSubject, Observable, take, tap } from 'rxjs';
 
 interface JwtPayload {
@@ -13,6 +13,60 @@ interface JwtPayload {
   privilege: string | string[];
   exp: number;
 }
+export const PRIVILEGES = {
+  // ── Users
+  VIEW_USERS: 'VIEWUSERS',
+  CREATE_USER: 'CREATEUSER',
+  UPDATE_USER: 'UPDATEUSER',
+  DELETE_USER: 'DELETEUSER',
+  RESTORE_USER: 'RESTOREUSER',
+  ACTIVATE_USER: 'ACTIVATEUSER',
+  DEACTIVATE_USER: 'DEACTIVATEUSER',
+  MANAGE_USERS: 'MANAGEUSERS',
+
+  // ── Roles & Controls
+  ASSIGN_ROLES: 'ASSIGNROLES',
+
+  // ── Audit
+  MANAGE_AUDIT_LOGS: 'MANAGEAUDITLOGS',
+
+  // ── Clients
+  VIEW_CLIENTS: 'VIEWCLIENTS',
+  CREATE_CLIENT: 'CREATECLIENT',
+  UPDATE_CLIENT: 'UPDATECLIENT',
+  DELETE_CLIENT: 'DELETECLIENT',
+  RESTORE_CLIENT: 'RESTORECLIENT',
+  MANAGE_CLIENTS: 'MANAGECLIENTS',
+
+  // ── Articles
+  VIEW_ARTICLES: 'VIEWARTICLES',
+  CREATE_ARTICLE: 'CREATEARTICLE',
+  UPDATE_ARTICLE: 'UPDATEARTICLE',
+  DELETE_ARTICLE: 'DELETEARTICLE',
+  RESTORE_ARTICLE: 'RESTOREARTICLE',
+  MANAGE_ARTICLES: 'MANAGEARTICLES',
+
+  // ── Invoices
+  VIEW_INVOICES: 'VIEWINVOICES',
+  CREATE_INVOICE: 'CREATEINVOICE',
+  VALIDATE_INVOICE: 'VALIDATEINVOICE',
+  DELETE_INVOICE: 'DELETEINVOICE',
+  RESTORE_INVOICE: 'RESTOREINVOICE',
+  MANAGE_INVOICES: 'MANAGEINVOICES',
+
+  // ── Payments
+  VIEW_PAYMENTS: 'VIEWPAYMENTS',
+  RECORD_PAYMENT: 'RECORDPAYMENT',
+  DELETE_PAYMENT: 'DELETEPAYMENT',
+  RESTORE_PAYMENT: 'RESTOREPAYMENT',
+  MANAGE_PAYMENTS: 'MANAGEPAYMENTS',
+
+  // ── Stock
+  VIEW_STOCK: 'VIEWSTOCK',
+  UPDATE_STOCK: 'UPDATESTOCK',
+  ADD_ENTRY: 'ADDENTRY',
+  MANAGE_STOCK: 'MANAGESTOCK',
+};
 
 @Injectable({
   providedIn: 'root'
@@ -111,15 +165,15 @@ export class AuthService {
   // ROLES
   // ========================
   get isSystemAdmin(): boolean {
-    return this.Role === 'SystemAdmin';}
+    return this.Role === 'SYSTEMADMIN';}
 
   get isStockManager(): boolean {
-    return this.Role === 'StockManager';}
+    return this.Role === 'STOCKMANAGER';}
 
   get isSalesManager(): boolean {
-    return this.Role === 'SalesManager';}
+    return this.Role === 'SALESMANAGER';}
   get isAccountant(): boolean {
-    return this.Role === 'Accountant';}
+    return this.Role === 'ACCOUNTANT';}
 
   // ========================
   // PRIVILEGES
@@ -140,73 +194,53 @@ export class AuthService {
   // USERS + AUDIT LOGS
   // =========================
   get canManageUsers(): boolean {
-  return this.hasPrivilege('ViewUsers')
-      || this.hasPrivilege('ActivateUser')
-      || this.hasPrivilege('DeactivateUser')
-      || this.hasPrivilege('CreateUser')
-      || this.hasPrivilege('UpdateUser')
-      || this.hasPrivilege('DeleteUser');
+    return this.hasPrivilege(PRIVILEGES.VIEW_USERS)
+        || this.hasPrivilege(PRIVILEGES.ACTIVATE_USER)
+        || this.hasPrivilege(PRIVILEGES.DEACTIVATE_USER)
+        || this.hasPrivilege(PRIVILEGES.CREATE_USER)
+        || this.hasPrivilege(PRIVILEGES.UPDATE_USER)
+        || this.hasPrivilege(PRIVILEGES.DELETE_USER);
   }
-  get canViewUsers():boolean{
-    return this.hasPrivilege('ViewUsers');}
-  get canUpdateUsers():boolean{
-    return this.hasPrivilege('UpdateUser');}
-  get canActivateUsers(): boolean{
-    return this.hasPrivilege('ActivateUser');}
-  get canDeactivateUsers(): boolean{
-    return this.hasPrivilege('DeactivateUser');}
-  get canRegisterUsers(): boolean {
-    return this.hasPrivilege('CreateUser');}
-  get canDeleteUsers(): boolean {
-    return this.hasPrivilege('DeleteUser');}
-  get canRestoreUsers(): boolean {
-    return this.hasPrivilege('RestoreUser');}
-  get canSeePermissions(): boolean {
-    return this.hasPrivilege('AssignRoles');}
-  get canSeeAuditLog(): boolean {
-    return this.hasPrivilege('ManageAuditLogs');
-  }
-
+  get canViewUsers(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_USERS); }
+  get canUpdateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_USER); }
+  get canActivateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.ACTIVATE_USER); }
+  get canDeactivateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.DEACTIVATE_USER); }
+  get canRegisterUsers(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_USER); }
+  get canDeleteUsers(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_USER); }
+  get canRestoreUsers(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_USER); }
+  get canSeePermissions(): boolean { return this.hasPrivilege(PRIVILEGES.ASSIGN_ROLES); }
+  get canAssignRoles(): boolean {return this.hasPrivilege(PRIVILEGES.ASSIGN_ROLES);}
+  get canSeeAuditLog(): boolean { return this.hasPrivilege(PRIVILEGES.MANAGE_AUDIT_LOGS); }
 
   // =============================
   // ARTICLES
   // =============================
   get canManageArticles(): boolean {
-    return this.hasPrivilege('ViewArticles')
-        || this.hasPrivilege('CreateArticle')
-        || this.hasPrivilege('UpdateArticle')
-        || this.hasPrivilege('DeleteArticle');
+    return this.hasPrivilege(PRIVILEGES.VIEW_ARTICLES)
+        || this.hasPrivilege(PRIVILEGES.CREATE_ARTICLE)
+        || this.hasPrivilege(PRIVILEGES.UPDATE_ARTICLE)
+        || this.hasPrivilege(PRIVILEGES.DELETE_ARTICLE);
   }
-  get canViewArticles(): boolean {
-    return this.hasPrivilege('ViewArticles');}
-  get canCreateArticles(): boolean {
-    return this.hasPrivilege('CreateArticle');}
-  get canUpdateArticles(): boolean {
-    return this.hasPrivilege('UpdateArticle');}
-  get canDeleteArticles(): boolean {
-    return this.hasPrivilege('DeleteArticle');}
-  get canRestoreArticles(): boolean {
-    return this.hasPrivilege('RestoreArticle');}
+  get canViewArticles(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_ARTICLES); }
+  get canCreateArticles(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_ARTICLE); }
+  get canUpdateArticles(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_ARTICLE); }
+  get canDeleteArticles(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_ARTICLE); }
+  get canRestoreArticles(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_ARTICLE); }
 
   // =============================
   // CLIENTS
   // =============================
   get canManageClients(): boolean {
-    return this.hasPrivilege('ViewClients')
-        || this.hasPrivilege('CreateClient')
-        || this.hasPrivilege('UpdateClient')
-        || this.hasPrivilege('DeleteClient');}
-
-  get canViewClients(): boolean {
-    return this.hasPrivilege('ViewClients');}
-  get canCreateClients(): boolean {
-    return this.hasPrivilege('CreateClient');}
-  get canUpdateClients(): boolean {
-    return this.hasPrivilege('UpdateClient');}
-  get canDeleteClients(): boolean {
-    return this.hasPrivilege('DeleteClient');}
-  get canRestoreClients(): boolean {
-    return this.hasPrivilege('RestoreClient');}
+    return this.hasPrivilege(PRIVILEGES.VIEW_CLIENTS)
+        || this.hasPrivilege(PRIVILEGES.CREATE_CLIENT)
+        || this.hasPrivilege(PRIVILEGES.UPDATE_CLIENT)
+        || this.hasPrivilege(PRIVILEGES.DELETE_CLIENT);
+  }
+  get canViewClients(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_CLIENTS); }
+  get canCreateClients(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_CLIENT); }
+  get canUpdateClients(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_CLIENT); }
+  get canDeleteClients(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_CLIENT); }
+  get canRestoreClients(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_CLIENT); }
 
   storeMustChangePassword(value: boolean): void {
     localStorage.setItem('mustChangePassword', String(value));
@@ -386,61 +420,6 @@ export class AuthService {
   /** PUT /auth/change-password/{userId} — Admin: force-change a user's password */
   adminChangePassword(userId: string, payload: AdminChangeProfileRequest): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/change-password/${userId}`, payload);
-  }
-
-
-  // ── Roles ────────────────────────────────────────────────────────────────
-
-  /** GET /auth/roles — Get all roles */
-  getRoles(): Observable<RoleResponseDto[]> {
-    return this.http.get<RoleResponseDto[]>(`${this.baseUrl}/roles`);
-  }
-
-  /** GET /auth/roles/{id} — Get a role by ID */
-  getRoleById(id: string): Observable<RoleResponseDto> {
-    return this.http.get<RoleResponseDto>(`${this.baseUrl}/roles/${id}`);
-  }
-
-  // ── Controles ────────────────────────────────────────────────────────────
-
-  /** GET /auth/controles — Get all controles */
-  getControles(): Observable<ControleResponseDto[]> {
-    return this.http.get<ControleResponseDto[]>(`${this.baseUrl}/controles`);
-  }
-
-  /** GET /auth/controles/{id} — Get a controle by ID */
-  getControleById(id: string): Observable<ControleResponseDto> {
-    return this.http.get<ControleResponseDto>(`${this.baseUrl}/controles/${id}`);
-  }
-
-  /** GET /auth/controles/category/{category} — Get controles by category */
-  getControlesByCategory(category: string): Observable<ControleResponseDto[]> {
-    return this.http.get<ControleResponseDto[]>(
-      `${this.baseUrl}/controles/category/${category}`
-    );
-  }
-
-  // ── Privileges ───────────────────────────────────────────────────────────
-
-  /** GET /auth/privileges/{roleId} — Get all privileges for a role */
-  getPrivilegesByRole(roleId: string): Observable<PrivilegeResponseDto[]> {
-    return this.http.get<PrivilegeResponseDto[]>(`${this.baseUrl}/privileges/${roleId}`);
-  }
-
-  /** PUT /auth/privileges/{roleId}/{controleId}/allow — Grant a privilege */
-  allowPrivilege(roleId: string, controleId: string): Observable<void> {
-    return this.http.put<void>(
-      `${this.baseUrl}/privileges/${roleId}/${controleId}/allow`,
-      {}
-    );
-  }
-
-  /** PUT /auth/privileges/{roleId}/{controleId}/deny — Revoke a privilege */
-  denyPrivilege(roleId: string, controleId: string): Observable<void> {
-    return this.http.put<void>(
-      `${this.baseUrl}/privileges/${roleId}/${controleId}/deny`,
-      {}
-    );
   }
 
   // =========================
