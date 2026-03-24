@@ -78,8 +78,7 @@ export class DeletedUsersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadUsers();
-    this.loadStats();
+    this.reload();
   }
 
   loadUsers(): void {
@@ -124,10 +123,10 @@ export class DeletedUsersComponent implements OnInit {
   }
 
   restore(user: AuthUserGetResponseDto): void {
-
     this.authService.restore(user.id).subscribe({
       next: () => {
         this.flash('success', `${user.fullName ?? user.login} is restored but still deactivated. You can activate it later.`);
+        this.reload();
       },
       error: () =>
         this.flash('error', 'Failed to restore user.')

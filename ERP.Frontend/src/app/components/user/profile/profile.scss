@@ -82,9 +82,11 @@
   &__status {
     position: absolute; width: 12px; height: 12px;
     bottom: 2px; right: 2px; border-radius: 50%;
-    border: 3px solid $bg-card; transition: background 0.3s;
-    &--active   { background: $green; box-shadow: 0 0 8px rgba(62,207,142,0.6); }
-    &--inactive { background: $text-lo; }
+    border-width: 2px ;
+    border-style: solid;
+    transition: background 0.3s;
+    &--active   { border-color: $green; background: $green; box-shadow: 0 0 8px $green; }
+    &--inactive { border-color: $red; background: $red; box-shadow: 0 0 8px $red;}
   }
 }
 
@@ -241,7 +243,9 @@
   border-radius: 50%; background: $text-lo;
   margin-right: 8px; vertical-align: middle;
   transition: background 0.3s, box-shadow 0.3s;
-  &--active { background: $green; box-shadow: 0 0 6px rgba(62,207,142,0.5); }
+  &--active { background: $green; box-shadow: 0 0 6px $green; }
+  &--inactive { background: $red; box-shadow: 0 0 6px $red; }
+
 }
 
 // ── EDIT FORM ─────────────────────────────────────

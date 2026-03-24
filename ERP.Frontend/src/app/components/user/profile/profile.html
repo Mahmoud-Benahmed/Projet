@@ -222,7 +222,7 @@
                 <div class="info-row">
                   <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
                   <span class="info-row__value">
-                    <span class="status-dot" [class.status-dot--active]="userProfile.isActive"></span>
+                    <span class="status-dot" [class.status-dot--active]="userProfile.isActive" [class.status-dot--inactive]="!userProfile.isActive"></span>
                     {{ userProfile.isActive ? 'Active' : 'Inactive' }}
                   </span>
                 </div>

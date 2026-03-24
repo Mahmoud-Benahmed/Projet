@@ -77,7 +77,7 @@ export class DeactivatedComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadUsers();
+    this.reload()
   }
 
   loadUsers(): void {
@@ -122,7 +122,7 @@ export class DeactivatedComponent implements OnInit {
     this.authService.activate(user.id).subscribe({
       next: () => {
         this.flash('success',`User "${user.fullName}" has been reactivated.`);
-        this.loadUsers();
+        this.reload();
       },
       error: () =>
         this.flash('error', `Failed to reactivate user "${user.fullName}".`),

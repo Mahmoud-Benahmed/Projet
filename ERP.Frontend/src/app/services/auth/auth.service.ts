@@ -72,7 +72,6 @@ export const PRIVILEGES = {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
   private readonly ACCESS_TOKEN_KEY = 'accessToken';
   private readonly REFRESH_TOKEN_KEY = 'refreshToken';
   private readonly PROFILE_KEY = 'userProfile';
@@ -83,6 +82,9 @@ export class AuthService {
   );
   readonly userProfile$ = this._userProfile$.asObservable();
   private _loggingOut = false;
+
+
+  private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
 
   constructor(private http: HttpClient,   private router: Router) {}
 
@@ -401,7 +403,7 @@ export class AuthService {
 
   /** DELETE /auth/delete/soft/{id} — Soft delete: set IsDeleted to true */
   softDelete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/delete/soft/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
   /** PATCH /auth/restore/{id} — Recover: reset IsDeleted to false */
