@@ -8,8 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { AuthService } from '../../../services/auth.service';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { AuthService } from '../../../services/auth/auth.service';
 import { NotSameAsDirective } from '../../../util/NotSameAsDirective';
 import { generatePassword, checkPassword } from '../../../util/PasswordUtil';
 import { SameAsDirective } from '../../../util/SameAsDirective';
@@ -32,7 +32,6 @@ import { HttpError } from '../../../interfaces/ErrorDto';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     NotSameAsDirective,
-    SameAsDirective
   ],
   templateUrl: './must-change-password.html',
   styleUrl: './must-change-password.scss',

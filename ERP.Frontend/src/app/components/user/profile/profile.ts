@@ -12,7 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth/auth.service';
 import { NgForm } from '@angular/forms';
 import { checkPassword, generatePassword } from '../../../util/PasswordUtil';
 import { AdminChangeProfileRequest, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, UpdateProfileDto } from '../../../interfaces/AuthDto';
