@@ -9,7 +9,6 @@ namespace ERP.AuthService.Api.Controllers
 {
     [ApiController]
     [Route(ApiRoutes.Controles.Base)]
-    [Authorize]
     public class ControlesController : ControllerBase
     {
         private readonly IControleService _controleService;
@@ -20,9 +19,16 @@ namespace ERP.AuthService.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll()
         {
-            var result = await _controleService.GetAllAsync(pageNumber, pageSize);
+            var result = await _controleService.GetAllAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _controleService.GetAllPagedAsync(pageNumber, pageSize);
             return Ok(result);
         }
 

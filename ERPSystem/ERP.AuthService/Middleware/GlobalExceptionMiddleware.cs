@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Exceptions.Role;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver;
 using System.Net;
 using System.Security;
 
@@ -50,6 +51,8 @@ namespace ERP.AuthService.Middleware
                 FluentValidation.ValidationException vex
                                                  => ((int)HttpStatusCode.BadRequest,    "AUTH_016", string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
                 PwnedPasswordException =>           ((int)HttpStatusCode.BadRequest,    "AUTH_017", exception.Message),
+                MongoWriteException mwx when mwx.WriteError?.Code == 11000
+                                        => ((int)HttpStatusCode.Conflict, "AUTH_018", "Invalid Argument"),
                 _ =>                                ((int)HttpStatusCode.InternalServerError, "INTERNAL_ERROR", exception.Message),
             };
 

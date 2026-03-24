@@ -20,8 +20,8 @@ namespace ERP.AuthService.Domain
         {
             Id = Guid.NewGuid();
             Category = category;
-            Libelle = libelle;
-            Description = description;
+            Libelle = libelle.Trim().ToUpper();
+            Description = description.Trim();
         }
 
 

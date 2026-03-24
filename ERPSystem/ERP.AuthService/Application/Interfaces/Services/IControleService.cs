@@ -5,7 +5,9 @@ namespace ERP.AuthService.Application.Interfaces.Services
 {
     public interface IControleService
     {
-        Task<PagedResultDto<ControleResponseDto>> GetAllAsync(int pageNum, int pageSize);
+        Task<PagedResultDto<ControleResponseDto>> GetAllPagedAsync(int pageNum, int pageSize);
+        Task<List<ControleResponseDto>> GetAllAsync();
+
         Task<PagedResultDto<ControleResponseDto>> GetByCategoryAsync(string category, int pageNum, int pageSize);
         Task<ControleResponseDto> GetByIdAsync(Guid id);
         Task<ControleResponseDto> CreateControleAsync(ControleRequestDto dto, Guid requesterId);

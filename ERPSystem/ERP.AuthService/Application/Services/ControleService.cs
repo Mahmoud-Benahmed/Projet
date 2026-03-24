@@ -23,16 +23,23 @@ namespace ERP.AuthService.Application.Services
         /// <summary>
         /// Get all controles.
         /// </summary>
-        public async Task<PagedResultDto<ControleResponseDto>> GetAllAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<ControleResponseDto>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _controleRepository.GetAllAsync(pageNumber, pageSize);
+            var (items, totalCount) = await _controleRepository.GetAllPagedAsync(pageNumber, pageSize);
             var mapped = items.Select(MapToDto).ToList();
             return new PagedResultDto<ControleResponseDto> (
                 mapped,
                 totalCount,
                 pageNumber, 
                 pageSize);
+        }
+
+        public async Task<List<ControleResponseDto>> GetAllAsync()
+        {
+            var items = await _controleRepository.GetAllAsync();
+            var mapped = items.Select(MapToDto).ToList();
+            return mapped;
         }
 
         /// <summary>

@@ -4,6 +4,7 @@ using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
+using MongoDB.Driver;
 
 namespace ERP.AuthService.Infrastructure.Persistence
 {
@@ -18,7 +19,12 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
             IConfiguration configuration)
         {
+            await controleRepository.DeleteAllAsync();
+            await roleRepository.DeleteAllAsync();
+            await privilegeRepository.DeleteAllAsync();
+            await userRepository.DeleteAllAsync();
             await auditLogRepository.ClearAsync();
+
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
@@ -29,62 +35,66 @@ namespace ERP.AuthService.Infrastructure.Persistence
         private static async Task<Dictionary<string, Controle>> SeedControlesAsync(
             IControleRepository controleRepository)
         {
+            if (await controleRepository.CountAsync() > 0)
+            {
+                await controleRepository.DeleteAllAsync();
+            }
             var controles = new List<(string Category, string Libelle, string Description)>
             {
                 // Auth
-                ("Auth", "ViewUsers",       "View users"),
-                ("Auth", "CreateUser",      "Register/Create users"),
-                ("Auth", "UpdateUser",      "Update/Modify users"),
-                ("Auth", "DeleteUser",      "Delete/Remove users"),
-                ("Auth", "RestoreUser",     "Restore deleted users"),
-                ("Auth", "ActivateUser",    "Activate users to allow access"),
-                ("Auth", "DeactivateUser",  "Deactivate users to deny access"),
-                ("Auth", "AssignRoles",     "Assign roles and manage privileges"),
-                ("Auth", "ManageAuditLogs", "View, clear Authentication-related audit logs"),
+                ("AUTH", "ViewUsers",       "View users"),
+                ("AUTH", "CreateUser",      "Register/Create users"),
+                ("AUTH", "UpdateUser",      "Update/Modify users"),
+                ("AUTH", "DeleteUser",      "Delete/Remove users"),
+                ("AUTH", "RestoreUser",     "Restore deleted users"),
+                ("AUTH", "ActivateUser",    "Activate users to allow access"),
+                ("AUTH", "DeactivateUser",  "Deactivate users to deny access"),
+                ("AUTH", "AssignRoles",     "Assign roles and manage privileges"),
+                ("AUTH", "ManageAuditLogs", "View, clear Authentication-related audit logs"),
 
-                // Clients
-                ("Clients", "ViewClients",   "View client list and details"),
-                ("Clients", "CreateClient",  "Create a new client"),
-                ("Clients", "UpdateClient",  "Edit an existing client"),
-                ("Clients", "DeleteClient",  "Delete a client"),
-                ("Clients", "RestoreClient",  "Restore deleted client"),
+                // Client
+                ("CLIENTS", "ViewClients",   "View client list and details"),
+                ("CLIENTS", "CreateClient",  "Create a new client"),
+                ("CLIENTS", "UpdateClient",  "Edit an existing client"),
+                ("CLIENTS", "DeleteClient",  "Delete a client"),
+                ("CLIENTS", "RestoreClient",  "Restore deleted client"),
 
-                // Articles
-                ("Articles", "ViewArticles",  "View article list and details"),
-                ("Articles", "CreateArticle", "Create a new article"),
-                ("Articles", "UpdateArticle",   "Edit an existing article"),
-                ("Articles", "DeleteArticle", "Delete an article"),
-                ("Articles", "RestoreArticle", "Restore deleted article"),
+                // Article
+                ("ARTICLES", "ViewArticles",  "View article list and details"),
+                ("ARTICLES", "CreateArticle", "Create a new article"),
+                ("ARTICLES", "UpdateArticle",   "Edit an existing article"),
+                ("ARTICLES", "DeleteArticle", "Delete an article"),
+                ("ARTICLES", "RestoreArticle", "Restore deleted article"),
 
                 // Facturation
-                ("Facturation", "ViewInvoices",    "View invoice list and details"),
-                ("Facturation", "CreateInvoice",   "Create a new invoice"),
-                ("Facturation", "ValidateInvoice", "Validate an invoice"),
-                ("Facturation", "DeleteInvoice",   "Delete an invoice"),
-                ("Facturation", "RestoreInvoice",   "Restore deleted invoice"),
+                ("FACTURATION", "ViewInvoices",    "View invoice list and details"),
+                ("FACTURATION", "CreateInvoice",   "Create a new invoice"),
+                ("FACTURATION", "ValidateInvoice", "Validate an invoice"),
+                ("FACTURATION", "DeleteInvoice",   "Delete an invoice"),
+                ("FACTURATION", "RestoreInvoice",   "Restore deleted invoice"),
 
-                // Paiements
-                ("Paiements", "ViewPayments",   "View payment list and details"),
-                ("Paiements", "RecordPayment",  "Record a new payment"),
-                ("Paiements", "DeletePayment",  "Delete a payment"),
-                ("Paiements", "RestorePayment",  "Restore deleted payment"),
+                // Paiement
+                ("PAIEMENT", "ViewPayments",   "View payment list and details"),
+                ("PAIEMENT", "RecordPayment",  "Record a new payment"),
+                ("PAIEMENT", "DeletePayment",  "Delete a payment"),
+                ("PAIEMENT", "RestorePayment",  "Restore deleted payment"),
 
-                // Stocks
-                ("Stocks", "ViewStock",    "View stock levels"),
-                ("Stocks", "UpdateStock",  "Update stock quantities"),
-                ("Stocks", "AddEntry",     "Add a stock entry"),
+                // Stock
+                ("STOCK", "ViewStock",    "View stock levels"),
+                ("STOCK", "UpdateStock",  "Update stock quantities"),
+                ("STOCK", "AddEntry",     "Add a stock entry"),
 
                 // Reporting
-                ("Reporting", "ViewReports",   "View reports"),
-                ("Reporting", "ExportReports", "Export reports"),
+                ("REPORTING", "ViewReports",   "View reports"),
+                ("REPORTING", "ExportReports", "Export reports"),
             };
 
             // Use case-insensitive dictionary
-            var result = new Dictionary<string, Controle>();
+            var result = new Dictionary<string, Controle>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var (category, libelle, description) in controles)
             {
-                var existing = await controleRepository.GetByLibelleAsync(libelle);
+                var existing = await controleRepository.GetByLibelleAsync(libelle.ToUpper());
                 if (existing is null)
                 {
                     var controle = new Controle(category, libelle, description);
@@ -96,31 +106,37 @@ namespace ERP.AuthService.Infrastructure.Persistence
                     result[libelle] = existing;  // ← make sure this is present
                 }
             }
-
+            
             return result;
         }
 
 
 
         // ── 2. SEED ROLES ─────────────────────────────────
-        private static async Task<Dictionary<RoleEnum, Role>> SeedRolesAsync(
+        private static async Task<Dictionary<string, Role>> SeedRolesAsync(
             IRoleRepository roleRepository)
         {
-
-            var result = new Dictionary<RoleEnum, Role>();
-
-            foreach (RoleEnum roleEnum in Enum.GetValues<RoleEnum>())
+            if (await roleRepository.CountAsync() > 0)
             {
-                var existing = await roleRepository.GetByLibelleAsync(roleEnum);
-                if (existing is null)
+                await roleRepository.DeleteAllAsync();
+            }
+
+            var result = new Dictionary<string, Role>(StringComparer.OrdinalIgnoreCase);
+            string[] roleNames = ["SYSTEMADMIN", "ACCOUNTANT", "SALESMANAGER", "STOCKMANAGER"];
+
+            foreach (string roleName in roleNames)
+            {
+                try
                 {
-                    var role = new Role(roleEnum);
+                    var role = new Role(roleName);
                     await roleRepository.AddAsync(role);
-                    result[roleEnum] = role;
+                    result[roleName] = role;
                 }
-                else
+                catch (MongoWriteException ex) when (ex.WriteError?.Code == 11000)
                 {
-                    result[roleEnum] = existing;
+                    // Already exists → fetch it instead
+                    var existing = await roleRepository.GetByLibelleAsync(roleName.ToUpper());
+                    result[roleName] = existing!;
                 }
             }
 
@@ -132,170 +148,158 @@ namespace ERP.AuthService.Infrastructure.Persistence
         // ── 3. SEED PRIVILEGES ────────────────────────────
         private static async Task SeedPrivilegesAsync(
             IPrivilegeRepository privilegeRepository,
-            Dictionary<RoleEnum, Role> roles,
+            Dictionary<string, Role> roles,
             Dictionary<string, Controle> controles)
         {
+            if (await privilegeRepository.CountAsync() > 0)
+            {
+                await privilegeRepository.DeleteAllAsync();
+            }
 
             // Format: (RoleEnum, ControleName, IsGranted)
-            var matrix = new List<(RoleEnum Role, string Controle, bool IsGranted)>
+            var matrix = new List<(string RoleName, string Controle, bool IsGranted)>
             {
                 // ── SystemAdmin — full access ──────────────
-                (RoleEnum.SystemAdmin, "ViewUsers",        true),
-                (RoleEnum.SystemAdmin, "CreateUser",       true),
-                (RoleEnum.SystemAdmin, "UpdateUser",       true),
-                (RoleEnum.SystemAdmin, "DeleteUser",       true),
-
-                (RoleEnum.SystemAdmin, "AssignRoles",      true),
-                (RoleEnum.SystemAdmin, "ManageAuditLogs",  true),
-                (RoleEnum.SystemAdmin, "ViewArticles",     true),
-                (RoleEnum.SystemAdmin, "ViewClients",      true),
-                (RoleEnum.SystemAdmin, "ViewStock",        true),
-                (RoleEnum.SystemAdmin, "ViewInvoices",     true),
-                (RoleEnum.SystemAdmin, "ViewPayments",     true),
-                (RoleEnum.SystemAdmin, "ViewReports",      true),
-                (RoleEnum.SystemAdmin, "AddEntry",         true),
-                (RoleEnum.SystemAdmin, "ValidateInvoice",  true),
-                (RoleEnum.SystemAdmin, "CreateArticle",    true),
-                (RoleEnum.SystemAdmin, "CreateClient",     true),
-                (RoleEnum.SystemAdmin, "CreateInvoice",    true),
-                (RoleEnum.SystemAdmin, "RecordPayment",    true),
-                (RoleEnum.SystemAdmin, "UpdateArticle",    true),
-                (RoleEnum.SystemAdmin, "UpdateClient",     true),
-                (RoleEnum.SystemAdmin, "UpdateStock",      true),
-                (RoleEnum.SystemAdmin, "DeleteClient",     true),
-                (RoleEnum.SystemAdmin, "DeleteArticle",    true),
-                (RoleEnum.SystemAdmin, "DeleteInvoice",    true),
-                (RoleEnum.SystemAdmin, "DeletePayment",    true),
-                (RoleEnum.SystemAdmin, "ExportReports",    true),
-
-                (RoleEnum.SystemAdmin, "ActivateUser",     true),
-                (RoleEnum.SystemAdmin, "DeactivateUser",   true),
-                (RoleEnum.SystemAdmin, "RestoreUser",      true),
-                (RoleEnum.SystemAdmin, "RestoreArticle",   true),
-                (RoleEnum.SystemAdmin, "RestoreClient",    true),
-                (RoleEnum.SystemAdmin, "RestoreInvoice",   true),
-                (RoleEnum.SystemAdmin, "RestorePayment",   true),
+                ("SYSTEMADMIN", "ViewUsers",        true),
+                ("SYSTEMADMIN", "CreateUser",       true),
+                ("SYSTEMADMIN", "UpdateUser",       true),
+                ("SYSTEMADMIN", "DeleteUser",       true),
+                ("SYSTEMADMIN", "AssignRoles",      true),
+                ("SYSTEMADMIN", "ManageAuditLogs",  true),
+                ("SYSTEMADMIN", "ViewArticles",     true),
+                ("SYSTEMADMIN", "ViewClients",      true),
+                ("SYSTEMADMIN", "ViewStock",        true),
+                ("SYSTEMADMIN", "ViewInvoices",     true),
+                ("SYSTEMADMIN", "ViewPayments",     true),
+                ("SYSTEMADMIN", "ViewReports",      true),
+                ("SYSTEMADMIN", "AddEntry",         true),
+                ("SYSTEMADMIN", "ValidateInvoice",  true),
+                ("SYSTEMADMIN", "CreateArticle",    true),
+                ("SYSTEMADMIN", "CreateClient",     true),
+                ("SYSTEMADMIN", "CreateInvoice",    true),
+                ("SYSTEMADMIN", "RecordPayment",    true),
+                ("SYSTEMADMIN", "UpdateArticle",    true),
+                ("SYSTEMADMIN", "UpdateClient",     true),
+                ("SYSTEMADMIN", "UpdateStock",      true),
+                ("SYSTEMADMIN", "DeleteClient",     true),
+                ("SYSTEMADMIN", "DeleteArticle",    true),
+                ("SYSTEMADMIN", "DeleteInvoice",    true),
+                ("SYSTEMADMIN", "DeletePayment",    true),
+                ("SYSTEMADMIN", "ExportReports",    true),
+                ("SYSTEMADMIN", "ActivateUser",     true),
+                ("SYSTEMADMIN", "DeactivateUser",   true),
+                ("SYSTEMADMIN", "RestoreUser",      true),
+                ("SYSTEMADMIN", "RestoreArticle",   true),
+                ("SYSTEMADMIN", "RestoreClient",    true),
+                ("SYSTEMADMIN", "RestoreInvoice",   true),
+                ("SYSTEMADMIN", "RestorePayment",   true),
 
                 // ── SalesManager ───────────────────────────
-                (RoleEnum.SalesManager, "ViewClients",      true),
-                (RoleEnum.SalesManager, "CreateClient",     true),
-                (RoleEnum.SalesManager, "UpdateClient",     true),
-                (RoleEnum.SalesManager, "DeleteClient",     true),
-                
-                (RoleEnum.SalesManager, "ViewInvoices",     true),
-                (RoleEnum.SalesManager, "CreateInvoice",    true),
-                (RoleEnum.SalesManager, "DeleteInvoice",    true),
-                
-                (RoleEnum.SalesManager, "ViewArticles",     true),
-                (RoleEnum.SalesManager, "ViewStock",        true),
-                (RoleEnum.SalesManager, "ViewReports",      true),
-
-                (RoleEnum.SalesManager, "ViewUsers",        false),
-                (RoleEnum.SalesManager, "CreateUser",       false),
-                (RoleEnum.SalesManager, "UpdateUser",       false),
-                (RoleEnum.SalesManager, "DeleteUser",       false),
-
-                (RoleEnum.SalesManager, "AssignRoles",      false),
-                (RoleEnum.SalesManager, "ManageAuditLogs",  false),
-                (RoleEnum.SalesManager, "ViewPayments",     false),
-                (RoleEnum.SalesManager, "AddEntry",         false),
-                (RoleEnum.SalesManager, "CreateArticle",    false),
-                (RoleEnum.SalesManager, "UpdateArticle",    false),
-                (RoleEnum.SalesManager, "DeleteArticle",    false),
-                (RoleEnum.SalesManager, "ValidateInvoice",  false),
-                (RoleEnum.SalesManager, "RecordPayment",    false),
-                (RoleEnum.SalesManager, "DeletePayment",    false),
-                (RoleEnum.SalesManager, "UpdateStock",      false),
-                (RoleEnum.SalesManager, "ExportReports",    false),
-
-                (RoleEnum.SalesManager,  "ActivateUser",     false),
-                (RoleEnum.SalesManager,  "DeactivateUser",   false),
-                (RoleEnum.SalesManager, "RestoreUser",      false),
-                (RoleEnum.SalesManager, "RestoreArticle",   false),
-                (RoleEnum.SalesManager, "RestoreClient",    false),
-                (RoleEnum.SalesManager, "RestoreInvoice",   false),
-                (RoleEnum.SalesManager, "RestorePayment",   false),
+                ("SALESMANAGER", "ViewClients",      true),
+                ("SALESMANAGER", "CreateClient",     true),
+                ("SALESMANAGER", "UpdateClient",     true),
+                ("SALESMANAGER", "DeleteClient",     true),
+                ("SALESMANAGER", "ViewInvoices",     true),
+                ("SALESMANAGER", "CreateInvoice",    true),
+                ("SALESMANAGER", "DeleteInvoice",    true),
+                ("SALESMANAGER", "ViewArticles",     true),
+                ("SALESMANAGER", "ViewStock",        true),
+                ("SALESMANAGER", "ViewReports",      true),
+                ("SALESMANAGER", "ViewUsers",        false),
+                ("SALESMANAGER", "CreateUser",       false),
+                ("SALESMANAGER", "UpdateUser",       false),
+                ("SALESMANAGER", "DeleteUser",       false),
+                ("SALESMANAGER", "AssignRoles",      false),
+                ("SALESMANAGER", "ManageAuditLogs",  false),
+                ("SALESMANAGER", "ViewPayments",     false),
+                ("SALESMANAGER", "AddEntry",         false),
+                ("SALESMANAGER", "CreateArticle",    false),
+                ("SALESMANAGER", "UpdateArticle",    false),
+                ("SALESMANAGER", "DeleteArticle",    false),
+                ("SALESMANAGER", "ValidateInvoice",  false),
+                ("SALESMANAGER", "RecordPayment",    false),
+                ("SALESMANAGER", "DeletePayment",    false),
+                ("SALESMANAGER", "UpdateStock",      false),
+                ("SALESMANAGER", "ExportReports",    false),
+                ("SALESMANAGER",  "ActivateUser",    false),
+                ("SALESMANAGER",  "DeactivateUser",  false),
+                ("SALESMANAGER", "RestoreUser",      false),
+                ("SALESMANAGER", "RestoreArticle",   false),
+                ("SALESMANAGER", "RestoreClient",    false),
+                ("SALESMANAGER", "RestoreInvoice",   false),
+                ("SALESMANAGER", "RestorePayment",   false),
 
 
                 // ── StockManager ───────────────────────────
-                (RoleEnum.StockManager, "ViewArticles",     true),
-                (RoleEnum.StockManager, "CreateArticle",    true),
-                (RoleEnum.StockManager, "UpdateArticle",    true),
-                (RoleEnum.StockManager, "DeleteArticle",    true),
-
-                (RoleEnum.StockManager, "AddEntry",         true),
-                (RoleEnum.StockManager, "ViewStock",        true),
-                (RoleEnum.StockManager, "UpdateStock",      true),
-                (RoleEnum.StockManager, "ViewReports",      true),
-
-                (RoleEnum.StockManager, "ViewUsers",        false),
-                (RoleEnum.StockManager, "CreateUser",       false),
-                (RoleEnum.StockManager, "UpdateUser",       false),
-                (RoleEnum.StockManager, "DeleteUser",       false),
-
-                (RoleEnum.StockManager, "AssignRoles",      false),
-                (RoleEnum.StockManager, "ManageAuditLogs",  false),
-                (RoleEnum.StockManager, "ViewClients",      false),
-                (RoleEnum.StockManager, "CreateClient",     false),
-                (RoleEnum.StockManager, "UpdateClient",     false),
-                (RoleEnum.StockManager, "DeleteClient",     false),
-                (RoleEnum.StockManager, "ViewInvoices",     false),
-                (RoleEnum.StockManager, "CreateInvoice",    false),
-                (RoleEnum.StockManager, "ValidateInvoice",  false),
-                (RoleEnum.StockManager, "DeleteInvoice",    false),
-                (RoleEnum.StockManager, "ViewPayments",     false),
-                (RoleEnum.StockManager, "RecordPayment",    false),
-                (RoleEnum.StockManager, "DeletePayment",    false),
-                (RoleEnum.StockManager, "ExportReports",    false),
-
-                (RoleEnum.StockManager, "ActivateUser",     false),
-                (RoleEnum.StockManager, "DeactivateUser",   false),
-                (RoleEnum.StockManager, "RestoreUser",      false),
-                (RoleEnum.StockManager, "RestoreArticle",   false),
-                (RoleEnum.StockManager, "RestoreClient",    false),
-                (RoleEnum.StockManager, "RestoreInvoice",   false),
-                (RoleEnum.StockManager, "RestorePayment",   false),
+                ("STOCKMANAGER", "ViewArticles",     true),
+                ("STOCKMANAGER", "CreateArticle",    true),
+                ("STOCKMANAGER", "UpdateArticle",    true),
+                ("STOCKMANAGER", "DeleteArticle",    true),
+                ("STOCKMANAGER", "AddEntry",         true),
+                ("STOCKMANAGER", "ViewStock",        true),
+                ("STOCKMANAGER", "UpdateStock",      true),
+                ("STOCKMANAGER", "ViewReports",      true),
+                ("STOCKMANAGER", "ViewUsers",        false),
+                ("STOCKMANAGER", "CreateUser",       false),
+                ("STOCKMANAGER", "UpdateUser",       false),
+                ("STOCKMANAGER", "DeleteUser",       false),
+                ("STOCKMANAGER", "AssignRoles",      false),
+                ("STOCKMANAGER", "ManageAuditLogs",  false),
+                ("STOCKMANAGER", "ViewClients",      false),
+                ("STOCKMANAGER", "CreateClient",     false),
+                ("STOCKMANAGER", "UpdateClient",     false),
+                ("STOCKMANAGER", "DeleteClient",     false),
+                ("STOCKMANAGER", "ViewInvoices",     false),
+                ("STOCKMANAGER", "CreateInvoice",    false),
+                ("STOCKMANAGER", "ValidateInvoice",  false),
+                ("STOCKMANAGER", "DeleteInvoice",    false),
+                ("STOCKMANAGER", "ViewPayments",     false),
+                ("STOCKMANAGER", "RecordPayment",    false),
+                ("STOCKMANAGER", "DeletePayment",    false),
+                ("STOCKMANAGER", "ExportReports",    false),
+                ("STOCKMANAGER", "ActivateUser",     false),
+                ("STOCKMANAGER", "DeactivateUser",   false),
+                ("STOCKMANAGER", "RestoreUser",      false),
+                ("STOCKMANAGER", "RestoreArticle",   false),
+                ("STOCKMANAGER", "RestoreClient",    false),
+                ("STOCKMANAGER", "RestoreInvoice",   false),
+                ("STOCKMANAGER", "RestorePayment",   false),
 
 
                 // ── Accountant ─────────────────────────────
-                (RoleEnum.Accountant, "ViewInvoices",       true),
-                (RoleEnum.Accountant, "ViewClients",        true),
-                (RoleEnum.Accountant, "ViewReports",        true),
-                (RoleEnum.Accountant, "ExportReports",      true),
-                (RoleEnum.Accountant, "ValidateInvoice",    true),
-                (RoleEnum.Accountant, "ViewPayments",       true),
-                (RoleEnum.Accountant, "RecordPayment",      true),
-
-
-                (RoleEnum.Accountant, "ViewUsers",          false),
-                (RoleEnum.Accountant, "CreateUser",         false),
-                (RoleEnum.Accountant, "UpdateUser",         false),
-                (RoleEnum.Accountant, "DeleteUser",         false),
-
-                (RoleEnum.Accountant, "AssignRoles",        false),
-                (RoleEnum.Accountant, "ManageAuditLogs",    false),
-                (RoleEnum.Accountant, "CreateClient",       false),
-                (RoleEnum.Accountant, "UpdateClient",       false),
-                (RoleEnum.Accountant, "DeleteClient",       false),
-                (RoleEnum.Accountant, "ViewArticles",       false),
-                (RoleEnum.Accountant, "CreateArticle",      false),
-                (RoleEnum.Accountant, "UpdateArticle",      false),
-                (RoleEnum.Accountant, "DeleteArticle",      false),
-                (RoleEnum.Accountant, "CreateInvoice",      false),
-                (RoleEnum.Accountant, "DeleteInvoice",      false),
-                (RoleEnum.Accountant, "DeletePayment",      false),
-                (RoleEnum.Accountant, "ViewStock",          false),
-                (RoleEnum.Accountant, "UpdateStock",        false),
-                (RoleEnum.Accountant, "AddEntry",           false),
-
-
-                (RoleEnum.Accountant, "ActivateUser",       false),
-                (RoleEnum.Accountant, "DeactivateUser",     false),
-                (RoleEnum.Accountant, "RestoreUser",        false),
-                (RoleEnum.Accountant, "RestoreArticle",     false),
-                (RoleEnum.Accountant, "RestoreClient",      false),
-                (RoleEnum.Accountant, "RestoreInvoice",     false),
-                (RoleEnum.Accountant, "RestorePayment",     false),
+                ("ACCOUNTANT", "ViewInvoices",       true),
+                ("ACCOUNTANT", "ViewClients",        true),
+                ("ACCOUNTANT", "ViewReports",        true),
+                ("ACCOUNTANT", "ExportReports",      true),
+                ("ACCOUNTANT", "ValidateInvoice",    true),
+                ("ACCOUNTANT", "ViewPayments",       true),
+                ("ACCOUNTANT", "RecordPayment",      true),
+                ("ACCOUNTANT", "ViewUsers",          false),
+                ("ACCOUNTANT", "CreateUser",         false),
+                ("ACCOUNTANT", "UpdateUser",         false),
+                ("ACCOUNTANT", "DeleteUser",         false),
+                ("ACCOUNTANT", "AssignRoles",        false),
+                ("ACCOUNTANT", "ManageAuditLogs",    false),
+                ("ACCOUNTANT", "CreateClient",       false),
+                ("ACCOUNTANT", "UpdateClient",       false),
+                ("ACCOUNTANT", "DeleteClient",       false),
+                ("ACCOUNTANT", "ViewArticles",       false),
+                ("ACCOUNTANT", "CreateArticle",      false),
+                ("ACCOUNTANT", "UpdateArticle",      false),
+                ("ACCOUNTANT", "DeleteArticle",      false),
+                ("ACCOUNTANT", "CreateInvoice",      false),
+                ("ACCOUNTANT", "DeleteInvoice",      false),
+                ("ACCOUNTANT", "DeletePayment",      false),
+                ("ACCOUNTANT", "ViewStock",          false),
+                ("ACCOUNTANT", "UpdateStock",        false),
+                ("ACCOUNTANT", "AddEntry",           false),
+                ("ACCOUNTANT", "ActivateUser",       false),
+                ("ACCOUNTANT", "DeactivateUser",     false),
+                ("ACCOUNTANT", "RestoreUser",        false),
+                ("ACCOUNTANT", "RestoreArticle",     false),
+                ("ACCOUNTANT", "RestoreClient",      false),
+                ("ACCOUNTANT", "RestoreInvoice",     false),
+                ("ACCOUNTANT", "RestorePayment",     false),
 
             };
 
@@ -334,13 +338,16 @@ namespace ERP.AuthService.Infrastructure.Persistence
             IConfiguration configuration,
             IPasswordHasher<AuthUser> passwordHasher)
         {
+            if (await userRepository.CountAsync() > 0)
+            {
+                await userRepository.DeleteAllAsync();
+            }
+            List<Role> roles = await roleRepository.GetAllAsync();
 
-            List<Role> roles = await roleRepository.GetAllUnpagedAsync();
-
-            var adminRole = roles.Find(r => r.Libelle == RoleEnum.SystemAdmin)  ?? throw new InvalidOperationException($"Role '{RoleEnum.SystemAdmin}' not found. Ensure roles are seeded before users.");
-            var salesRole = roles.Find(r => r.Libelle == RoleEnum.SalesManager) ?? throw new InvalidOperationException($"Role '{RoleEnum.SalesManager}' not found.");
-            var stockRole = roles.Find(r => r.Libelle == RoleEnum.StockManager) ?? throw new InvalidOperationException($"Role '{RoleEnum.StockManager}' not found.");
-            var accountRole = roles.Find(r => r.Libelle == RoleEnum.Accountant) ?? throw new InvalidOperationException($"Role '{RoleEnum.Accountant}' not found.");
+            var adminRole = roles.Find(r => r.Libelle == "SYSTEMADMIN")  ?? throw new InvalidOperationException($"Role 'SYSTEMADMIN' not found. Ensure roles are seeded before users.");
+            var salesRole = roles.Find(r => r.Libelle == "SALESMANAGER") ?? throw new InvalidOperationException($"Role 'SALESMANAGER' not found.");
+            var stockRole = roles.Find(r => r.Libelle == "STOCKMANAGER") ?? throw new InvalidOperationException($"Role 'STOCKMANAGER' not found.");
+            var accountRole = roles.Find(r => r.Libelle == "ACCOUNTANT") ?? throw new InvalidOperationException($"Role 'ACCOUNTANT' not found.");
 
 
             var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>

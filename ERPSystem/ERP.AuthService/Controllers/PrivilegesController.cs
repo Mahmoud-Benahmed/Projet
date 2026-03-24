@@ -7,7 +7,6 @@ namespace ERP.AuthService.Api.Controllers
 {
     [ApiController]
     [Route(ApiRoutes.Privileges.Base)]
-    [Authorize]
     public class PrivilegesController : ControllerBase
     {
         private readonly IPrivilegeService _privilegeService;

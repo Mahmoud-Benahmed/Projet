@@ -4,15 +4,15 @@ namespace ERP.AuthService.Application.DTOs.Role
 {
     public record RoleResponseDto(
        Guid Id,
-       RoleEnum Libelle
+       string Libelle
     );
 
     public record RoleCreateDto(
-       RoleEnum Libelle
+       string Libelle
     );
 
     public record RoleUpdateDto(
-       RoleEnum Libelle
+       string Libelle
     );
 
 }

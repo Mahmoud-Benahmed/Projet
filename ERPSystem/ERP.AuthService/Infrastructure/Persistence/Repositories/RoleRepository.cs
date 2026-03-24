@@ -17,10 +17,13 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task<Role?> GetByIdAsync(Guid id)
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        public async Task<Role?> GetByLibelleAsync(RoleEnum libelle)
-            => await _collection.Find(x => x.Libelle.Equals(libelle)).FirstOrDefaultAsync();
+        public async Task<Role?> GetByLibelleAsync(string libelle)
+            => await _collection
+                .Find(x => x.Libelle == libelle.Trim().ToUpper())
+                .FirstOrDefaultAsync();
 
-        public async Task<(List<Role> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize)
+
+        public async Task<(List<Role> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             pageNumber = Math.Max(pageNumber, 1);
             pageSize = Math.Max(pageSize, 1);
@@ -34,7 +37,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return (items, totalCount);
         }
 
-        public async Task<List<Role>> GetAllUnpagedAsync()
+        public async Task<List<Role>> GetAllAsync()
             => await _collection
                 .Find(Builders<Role>.Filter.Empty)
                 .Sort(Builders<Role>.Sort.Ascending(r => r.Libelle))

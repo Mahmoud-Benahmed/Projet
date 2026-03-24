@@ -71,12 +71,12 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => throw new InvalidOperationException("DeleteAllAsync is not allowed in production.");
         #endif
 
-        public async Task<long> CountAsync()
-            => await _collection.CountDocumentsAsync(x => x.IsActive && !x.IsDeleted);
+        public async Task<int> CountAsync()
+            => (int)await _collection.CountDocumentsAsync(x => x.IsActive && !x.IsDeleted);
 
 
-        public async Task<long> CountByStatusAsync(bool status) =>
-            await _collection.CountDocumentsAsync(x=> x.IsActive == status);
+        public async Task<int> CountByStatusAsync(bool status) =>
+            (int)await _collection.CountDocumentsAsync(x=> x.IsActive == status);
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {

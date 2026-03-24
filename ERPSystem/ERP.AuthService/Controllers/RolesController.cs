@@ -17,9 +17,12 @@ namespace ERP.AuthService.Api.Controllers
             _roleService = roleService;
         }
 
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+            => Ok(await _roleService.GetAllPagedAsync(pageNumber, pageSize));
+
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-            => Ok(await _roleService.GetAllAsync(pageNumber, pageSize));
+        public async Task<IActionResult> GetAll()=> Ok(await _roleService.GetAllAsync());
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)

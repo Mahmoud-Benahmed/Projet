@@ -21,7 +21,7 @@ namespace ERP.AuthService.Infrastructure.Security
         public (string Token, DateTime ExpiresAt) GenerateAccessToken(
                 Guid userId,
                 string login,
-                RoleEnum role,
+                string role,
                 IEnumerable<string> privileges)
         {
             var key = new SymmetricSecurityKey(
@@ -32,9 +32,9 @@ namespace ERP.AuthService.Infrastructure.Security
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub,   userId.ToString()),
-                new Claim("login", login),
-                new Claim("role",                        role.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub,      userId.ToString()),
+                new Claim("login",                          login),
+                new Claim("role",                           role),
             };
 
             // add each privilege as a separate claim

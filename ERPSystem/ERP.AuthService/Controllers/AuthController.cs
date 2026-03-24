@@ -55,9 +55,9 @@ namespace ERP.AuthService.Controllers
             if (isSelf && !user.IsActive)
                 return Forbid();
 
-            bool isAdmin = role == RoleEnum.SystemAdmin.ToString();
+            bool hasAccess = User.HasClaim("privilege","ViewUsers");
 
-            if (!isSelf && !isAdmin)
+            if (!isSelf && !hasAccess)
                 throw new UnauthorizedAccessException("You are not authorized to access this resource.");
 
             return Ok(user);

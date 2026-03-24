@@ -22,11 +22,18 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
         public async Task<Controle?> GetByLibelleAsync(string libelle)
-            => await _collection.Find(x => x.Libelle == libelle).FirstOrDefaultAsync();
+            => await _collection
+                .Find(x => x.Libelle == libelle.Trim().ToUpper())
+                .FirstOrDefaultAsync();
 
-        public async Task<(List<Controle> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize)
+        public Task<(List<Controle> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize)
         {
-            return await GetPagedAsync(pageNumber, pageSize);
+            return GetPagedAsync(pageNumber, pageSize);
+        }
+
+        public async Task<List<Controle>> GetAllAsync()
+        {
+            return await _collection.Find(FilterDefinition<Controle>.Empty).ToListAsync();
         }
 
         public async Task<(List<Controle> Items, int TotalCount)> GetByCategoryAsync(string category, int pageNum, int pageSize)
@@ -48,6 +55,11 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         public async Task DeleteAllAsync()
         {
             await _collection.DeleteManyAsync(FilterDefinition<Controle>.Empty);
+        }
+
+        public async Task<int> CountAsync()
+        {
+            return (int) await _collection.CountDocumentsAsync(FilterDefinition<Controle>.Empty);
         }
 
 

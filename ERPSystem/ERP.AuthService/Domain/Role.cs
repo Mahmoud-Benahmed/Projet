@@ -10,17 +10,17 @@ namespace ERP.AuthService.Domain
         public Guid Id { get; private set; }
 
         [BsonRepresentation(BsonType.String)]
-        public RoleEnum Libelle { get; private set; }
+        public string Libelle { get; private set; }
 
         private Role() { }
 
-        public Role(RoleEnum libelle)
+        public Role(string libelle)
         {
             Id = Guid.NewGuid();
-            Libelle = libelle;
+            Libelle = libelle.Trim().ToUpper();
         }
 
-        public void UpdateRole(RoleEnum libelle)
+        public void UpdateRole(string libelle)
         {
             Libelle = libelle;
         }

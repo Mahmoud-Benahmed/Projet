@@ -20,10 +20,10 @@ namespace ERP.AuthService.Application.Services
             _roleRepository = roleRepository;
         }
 
-        public async Task<PagedResultDto<RoleResponseDto>> GetAllAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<RoleResponseDto>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _roleRepository.GetAllAsync(pageNumber, pageSize);
+            var (items, totalCount) = await _roleRepository.GetAllPagedAsync(pageNumber, pageSize);
             var mapped = items.Select(MapToDto).ToList();
             return new PagedResultDto<RoleResponseDto>(
                 mapped,
@@ -31,6 +31,13 @@ namespace ERP.AuthService.Application.Services
                 pageNumber,
                 pageSize);
 
+        }
+
+
+        public async Task<List<RoleResponseDto>> GetAllAsync()
+        {
+            var items= await _roleRepository.GetAllAsync();
+            return items.Select(MapToDto).ToList();
         }
 
         public async Task<RoleResponseDto> GetByIdAsync(Guid id)
@@ -42,8 +49,11 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<RoleResponseDto> CreateRole(RoleCreateDto dto, Guid performedById)
         {
+            var existing = await _roleRepository.GetByLibelleAsync(dto.Libelle);
+            if (existing is not null)
+                throw new RoleAlreadyExistException(dto.Libelle);
+            var newRole = new Role(dto.Libelle);
 
-            var newRole = new Role(dto.Libelle); 
             await _roleRepository.AddAsync(newRole);
 
             await _auditLogger.LogAsync(
