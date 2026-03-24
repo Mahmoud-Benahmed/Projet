@@ -18,10 +18,10 @@ public static class ApiRoutes
         public const string Create = Root;
         public const string Update = $"{Root}/{{id:guid}}";
         public const string Delete = $"{Root}/{{id:guid}}";
-        public const string Restore = $"{Root}/{{id:guid}}/restore";
+        public const string Restore = $"{Root}/restore/{{id:guid}}";
 
-        public const string Block = $"{Root}/{{id:guid}}/block";
-        public const string Unblock = $"{Root}/{{id:guid}}/unblock";
+        public const string Block = $"{Root}/block/{{id:guid}}";
+        public const string Unblock = $"{Root}/unblock/{{id:guid}}";
 
         public const string SetCreditLimit = $"{Root}/{{id:guid}}/credit-limit";
         public const string RemoveCreditLimit = $"{Root}/{{id:guid}}/credit-limit";
@@ -47,8 +47,8 @@ public static class ApiRoutes
         public const string Create = Root;
         public const string Update = $"{Root}/{{id:guid}}";
         public const string Delete = $"{Root}/{{id:guid}}";
-        public const string Restore = $"{Root}/{{id:guid}}/restore";
-        public const string Activate = $"{Root}/{{id:guid}}/activate";
-        public const string Deactivate = $"{Root}/{{id:guid}}/deactivate";
+        public const string Restore = $"{Root}/restore/{{id:guid}}";
+        public const string Activate = $"{Root}/activate/{{id:guid}}";
+        public const string Deactivate = $"{Root}/deactivate/{{id:guid}}";
     }
 }
