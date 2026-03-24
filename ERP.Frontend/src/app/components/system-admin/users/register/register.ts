@@ -1,8 +1,9 @@
+import { LoginRequestDto } from './../../../../interfaces/AuthDto';
 import { ChangeDetectorRef, Component, HostBinding, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../../services/auth.service';
+import { AuthService } from '../../../../services/auth/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,11 +14,10 @@ import { ModalComponent } from '../../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { generatePassword, checkPassword } from '../../../../util/PasswordUtil';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { RegisterRequestDto, RoleResponseDto } from '../../../../interfaces/AuthDto';
-import { M } from '@angular/cdk/keycodes';
 import { HttpError } from '../../../../interfaces/ErrorDto';
+import { RoleService } from '../../../../services/auth/roles.service';
 
 @HostBinding('class')
 @Component({
@@ -57,12 +57,20 @@ export class RegisterComponent implements OnDestroy {
 
   constructor(private router: Router,
               private authService: AuthService,
+              private roleService: RoleService,
               private cdr: ChangeDetectorRef,
               private dialog: MatDialog) {}
 
   ngOnInit(): void {
-    this.authService.getRoles().subscribe(
-      roles => this.roles = roles
+    this.roleService.getAll().subscribe({
+        next: (roles)=> {
+          this.roles = roles;
+        },
+        error: (err)=> {
+          const error= err.error as HttpError;
+          this.flash('error', error.message);
+        }
+      }
     );
   }
 
@@ -173,8 +181,8 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register(this.credentials).subscribe({
         next: (registeredUser) => {
           this.stopLoading();
+          this.resetForm()
           this.flash('success', `Account for ${registeredUser.fullName} has been created successfully.`);
-          setTimeout(() => this.resetForm(), 3000);
         },
         error: (error) => {
           const err= error.error as HttpError;

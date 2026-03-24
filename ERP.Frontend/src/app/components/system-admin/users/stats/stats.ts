@@ -1,10 +1,10 @@
+import { AuthService } from './../../../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { MatCardContent, MatCard } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router, RouterEvent, RouterLink, RouterLinkActive, RouterLinkWithHref } from '@angular/router';
-import { AuthService } from '../../../../services/auth.service';
+import { RouterLinkActive, RouterLinkWithHref } from '@angular/router';
 import { UserStatsDto } from '../../../../interfaces/AuthDto';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 

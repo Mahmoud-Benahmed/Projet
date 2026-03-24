@@ -1,7 +1,7 @@
 import { ModalComponent } from './../../../modal/modal';
 import { HttpError } from './../../../../interfaces/ErrorDto';
 import { AdminChangeProfileRequest } from './../../../../interfaces/AuthDto';
-import { AuthService } from './../../../../services/auth.service';
+import { AuthService } from '../../../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';

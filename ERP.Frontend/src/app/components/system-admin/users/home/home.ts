@@ -17,12 +17,13 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../../../services/auth.service';
 import { Stats } from '../stats/stats';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from '../../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../../../services/auth/auth.service';
+import { PaginationComponent } from "../../../pagination/pagination";
 
 @Component({
   selector: 'app-home',
@@ -46,8 +47,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MatDividerModule,
     MatSnackBarModule,
     RouterLinkActive,
-    RouterLink
-  ],
+    RouterLink,
+    PaginationComponent
+],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -67,9 +69,11 @@ export class UsersHomeComponent implements OnInit {
   dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
   // Pagination
-  totalCount = 0;
   pageNumber = 1;
   pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalCount: number =0;
+
 
   // State
   isLoading = false;
@@ -121,7 +125,10 @@ export class UsersHomeComponent implements OnInit {
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
   prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.reload(); } }
   nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.reload(); } }
-
+  onPageSizeChange(): void {
+    this.pageNumber = 1; // reset to first page on size change
+    this.reload();
+  }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
@@ -179,7 +186,7 @@ export class UsersHomeComponent implements OnInit {
     });
   }
 
-  private reload() {
+  public reload() {
     this.loadUsers();
     this.loadStats();
     this.cdr.markForCheck();

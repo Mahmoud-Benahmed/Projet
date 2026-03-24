@@ -1,3 +1,4 @@
+import { AuthService } from './../../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule, formatNumber, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,9 +17,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatChipsModule } from '@angular/material/chips';
 import { AuditAction, AuditLogResponseDto, AuditLogService } from '../../../services/audit-log.service';
-import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
 import { ModalComponent } from '../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 

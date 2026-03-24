@@ -8,8 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { environment } from  '../../../environment';
 import { forkJoin } from 'rxjs';
-import { MatDialogActions, MatDialogContent } from "@angular/material/dialog";
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth/auth.service';
+import { RoleService } from '../../../services/auth/roles.service';
+import { ControleService } from '../../../services/auth/controle.service';
 
 interface RoleDto {
   id: string;
@@ -66,7 +67,9 @@ export class PermissionMatrixComponent implements OnInit {
 
   constructor(private http: HttpClient,
               private cdr: ChangeDetectorRef,
-              public authService: AuthService
+              public authService: AuthService,
+              private roleService: RoleService,
+              private controleService: ControleService
   ) {}
 
   ngOnInit(): void {
@@ -76,13 +79,14 @@ export class PermissionMatrixComponent implements OnInit {
   loadMatrix(): void {
     this.isLoading = true;
     forkJoin({
-      roles: this.http.get<RoleDto[]>(`${this.baseUrl}/auth/roles`),
-      controles: this.http.get<ControleDto[]>(`${this.baseUrl}/auth/controles`),
+      roles: this.roleService.getAll(),
+      controles: this.controleService.getAll()
     }).subscribe({
       next: ({ roles, controles }) => {
         this.roles = roles;
         this.controles = controles;
-        this.categories = [...new Set(controles.map((c) => c.category))];
+
+        this.categories = [...new Set(this.controles.map((c) => c.category))];
         this.loadPrivileges();
       },
       error: () => {

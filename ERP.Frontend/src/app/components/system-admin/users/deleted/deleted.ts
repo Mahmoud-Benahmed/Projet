@@ -12,14 +12,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../../../services/auth.service';
+import { AuthService } from '../../../../services/auth/auth.service';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ModalComponent } from '../../../modal/modal';
-import { MatDialog } from '@angular/material/dialog';
+import { PaginationComponent } from "../../../pagination/pagination";
 
 @Component({
   selector: 'app-deactivated',
@@ -41,7 +39,8 @@ import { MatDialog } from '@angular/material/dialog';
     MatDividerModule,
     MatSnackBarModule,
     RouterLinkActive,
-    RouterLink
+    RouterLink,
+    PaginationComponent
 ],
   templateUrl: './deleted.html',
   styleUrl: './deleted.scss',
@@ -63,9 +62,10 @@ export class DeletedUsersComponent implements OnInit {
 
   dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
-  totalCount = 0;
   pageNumber = 1;
   pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalCount: number =0;
 
   isLoading = false;
   searchTerm = '';
@@ -114,7 +114,10 @@ export class DeletedUsersComponent implements OnInit {
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
   prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
   nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
-
+  onPageSizeChange(): void {
+    this.pageNumber = 1; // reset to first page on size change
+    this.reload();
+  }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
@@ -158,7 +161,7 @@ export class DeletedUsersComponent implements OnInit {
     }
   }
 
-  private reload() {
+  public reload() {
     this.loadUsers();
     this.loadStats();
   }

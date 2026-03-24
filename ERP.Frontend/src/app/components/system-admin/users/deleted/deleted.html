@@ -183,11 +183,13 @@
       </tbody>
     </table>
 
-    <div class="pagination" *ngIf="totalPages > 1 && !isLoading">
-      <button class="page-btn" (click)="prevPage()" [disabled]="pageNumber === 1">‹ Previous</button>
-      <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
-      <button class="page-btn" (click)="nextPage()" [disabled]="pageNumber === totalPages">Next ›</button>
-    </div>
+    <app-pagination [pageNumber]="pageNumber"
+            [totalPages]="totalPages"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            (pageChange)="pageNumber = $event; reload()"
+            (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+    </app-pagination>
 
   </div>
 
