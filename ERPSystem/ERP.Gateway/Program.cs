@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
+using ERP.Gateway.Properties;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -40,7 +40,6 @@ builder.Services.AddAuthentication(options =>
 //////////////////////////////////////////////////
 // Authorization
 //////////////////////////////////////////////////
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("JwtPolicy", policy =>
@@ -48,108 +47,77 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireAuthenticatedUser()
-              .RequireRole("SYSTEMADMIN"));
-    // ── Auth
-    options.AddPolicy("VIEWUSERS", p => p.RequireClaim("privilege", "VIEWUSERS"));
-    options.AddPolicy("CREATEUSER", p => p.RequireClaim("privilege", "CREATEUSER"));
-    options.AddPolicy("ACTIVATEUSER", p => p.RequireClaim("privilege", "ACTIVATEUSER"));
-    options.AddPolicy("DEACTIVATEUSER", p => p.RequireClaim("privilege", "DEACTIVATEUSER"));
-    options.AddPolicy("UPDATEUSER", p => p.RequireClaim("privilege", "UPDATEUSER"));
-    options.AddPolicy("DELETEUSER", p => p.RequireClaim("privilege", "DELETEUSER"));
-    options.AddPolicy("RESTOREUSER", p => p.RequireClaim("privilege", "RESTOREUSER"));
+              .RequireRole(Roles.SystemAdmin));
 
-    options.AddPolicy("MANAGEUSERS", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWUSERS") ||
-            context.User.HasClaim("privilege", "CREATEUSER") ||
-            context.User.HasClaim("privilege", "UPDATEUSER") ||
-            context.User.HasClaim("privilege", "DELETEUSER") ||
-            context.User.HasClaim("privilege", "ACTIVATEUSER") ||
-            context.User.HasClaim("privilege", "DEACTIVATEUSER")
-    ));
+    // ── Individual privilege policies ──────────────────────────────
+    foreach (var privilege in PrivilegeRegistry.All)
+    {
+        options.AddPolicy(privilege.Code, p =>
+            p.RequireAuthenticatedUser()
+             .RequireClaim("privilege", privilege.Code));
+    }
 
-    options.AddPolicy("ASSIGNROLES", p => p.RequireClaim("privilege", "ASSIGNROLES"));
+    // ── MANAGE policies ────────────────────────────────────────────
+    void AddManagePolicy(string manageCode, params string[] relatedPrivileges)
+    {
+        options.AddPolicy(manageCode, p =>
+            p.RequireAuthenticatedUser()
+             .RequireAssertion(context =>
+                 relatedPrivileges.Any(rp => context.User.HasClaim("privilege", rp))
+             ));
+    }
 
+    AddManagePolicy(Privileges.Users.MANAGE_USERS,
+        Privileges.Users.VIEW_USERS,
+        Privileges.Users.CREATE_USER,
+        Privileges.Users.UPDATE_USER,
+        Privileges.Users.DELETE_USER,
+        Privileges.Users.ACTIVATE_USER,
+        Privileges.Users.DEACTIVATE_USER
+    );
 
-    // ── Audit
-    options.AddPolicy("MANAGEAUDITLOGS", p => p.RequireClaim("privilege", "MANAGEAUDITLOGS"));
+    AddManagePolicy(Privileges.Clients.MANAGE_CLIENTS,
+        Privileges.Clients.VIEW_CLIENTS,
+        Privileges.Clients.CREATE_CLIENT,
+        Privileges.Clients.UPDATE_CLIENT,
+        Privileges.Clients.DELETE_CLIENT
+    );
 
+    AddManagePolicy(Privileges.Articles.MANAGE_ARTICLES,
+        Privileges.Articles.VIEW_ARTICLES,
+        Privileges.Articles.CREATE_ARTICLE,
+        Privileges.Articles.UPDATE_ARTICLE,
+        Privileges.Articles.DELETE_ARTICLE
+    );
 
-    // ── Clients
-    options.AddPolicy("VIEWCLIENTS", p => p.RequireClaim("privilege", "VIEWCLIENTS"));
-    options.AddPolicy("CREATECLIENT", p => p.RequireClaim("privilege", "CREATECLIENT"));
-    options.AddPolicy("UPDATECLIENT", p => p.RequireClaim("privilege", "UPDATECLIENT"));
-    options.AddPolicy("DELETECLIENT", p => p.RequireClaim("privilege", "DELETECLIENT"));
-    options.AddPolicy("RESTORECLIENT", p => p.RequireClaim("privilege", "RESTORECLIENT"));
+    AddManagePolicy(Privileges.Invoices.MANAGE_INVOICES,
+        Privileges.Invoices.VIEW_INVOICES,
+        Privileges.Invoices.CREATE_INVOICE,
+        Privileges.Invoices.VALIDATE_INVOICE,
+        Privileges.Invoices.DELETE_INVOICE
+    );
 
-    options.AddPolicy("MANAGECLIENTS", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWCLIENTS") ||
-            context.User.HasClaim("privilege", "CREATECLIENT") ||
-            context.User.HasClaim("privilege", "UPDATECLIENT") ||
-            context.User.HasClaim("privilege", "DELETECLIENT")
-    ));
+    AddManagePolicy(Privileges.Payments.MANAGE_PAYMENTS,
+        Privileges.Payments.VIEW_PAYMENTS,
+        Privileges.Payments.RECORD_PAYMENT,
+        Privileges.Payments.DELETE_PAYMENT
+    );
 
+    AddManagePolicy(Privileges.Stock.MANAGE_STOCK,
+        Privileges.Stock.VIEW_STOCK,
+        Privileges.Stock.UPDATE_STOCK,
+        Privileges.Stock.ADD_ENTRY
+    );
 
-    // ── Articles
-    options.AddPolicy("VIEWARTICLES", p => p.RequireClaim("privilege", "VIEWARTICLES"));
-    options.AddPolicy("CREATEARTICLE", p => p.RequireClaim("privilege", "CREATEARTICLE"));
-    options.AddPolicy("UPDATEARTICLE", p => p.RequireClaim("privilege", "UPDATEARTICLE"));
-    options.AddPolicy("DELETEARTICLE", p => p.RequireClaim("privilege", "DELETEARTICLE"));
-    options.AddPolicy("RESTOREARTICLE", p => p.RequireClaim("privilege", "RESTOREARTICLE"));
+    // ── Standalone policies for individual critical privileges ─────
+    options.AddPolicy(Privileges.Users.ASSIGN_ROLES,
+        p => p.RequireAuthenticatedUser()
+              .RequireClaim("privilege", Privileges.Users.ASSIGN_ROLES));
 
-    options.AddPolicy("MANAGEARTICLES", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWARTICLES") ||
-            context.User.HasClaim("privilege", "CREATEARTICLE") ||
-            context.User.HasClaim("privilege", "UPDATEARTICLE") ||
-            context.User.HasClaim("privilege", "DELETEARTICLE")
-    ));
-
-
-    // ── Invoices
-    options.AddPolicy("VIEWINVOICES", p => p.RequireClaim("privilege", "VIEWINVOICES"));
-    options.AddPolicy("CREATEINVOICE", p => p.RequireClaim("privilege", "CREATEINVOICE"));
-    options.AddPolicy("VALIDATEINVOICE", p => p.RequireClaim("privilege", "VALIDATEINVOICE"));
-    options.AddPolicy("DELETEINVOICE", p => p.RequireClaim("privilege", "DELETEINVOICE"));
-    options.AddPolicy("RESTOREINVOICE", p => p.RequireClaim("privilege", "RESTOREINVOICE"));
-
-    options.AddPolicy("MANAGEINVOICES", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWINVOICES") ||
-            context.User.HasClaim("privilege", "CREATEINVOICE") ||
-            context.User.HasClaim("privilege", "VALIDATEINVOICE") ||
-            context.User.HasClaim("privilege", "DELETEINVOICE")
-    ));
-
-
-    // ── Payments
-    options.AddPolicy("VIEWPAYMENTS", p => p.RequireClaim("privilege", "VIEWPAYMENTS"));
-    options.AddPolicy("RECORDPAYMENT", p => p.RequireClaim("privilege", "RECORDPAYMENT"));
-    options.AddPolicy("DELETEPAYMENT", p => p.RequireClaim("privilege", "DELETEPAYMENT"));
-    options.AddPolicy("RESTOREPAYMENT", p => p.RequireClaim("privilege", "RESTOREPAYMENT"));
-
-    options.AddPolicy("MANAGEPAYMENTS", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWPAYMENTS") ||
-            context.User.HasClaim("privilege", "RECORDPAYMENT") ||
-            context.User.HasClaim("privilege", "DELETEPAYMENT")
-    ));
-
-
-    // ── Stock
-    options.AddPolicy("VIEWSTOCK", p => p.RequireClaim("privilege", "VIEWSTOCK"));
-    options.AddPolicy("UPDATESTOCK", p => p.RequireClaim("privilege", "UPDATESTOCK"));
-    options.AddPolicy("ADDENTRY", p => p.RequireClaim("privilege", "ADDENTRY"));
-
-    options.AddPolicy("MANAGESTOCK", p =>
-        p.RequireAssertion(context =>
-            context.User.HasClaim("privilege", "VIEWSTOCK") ||
-            context.User.HasClaim("privilege", "UPDATESTOCK") ||
-            context.User.HasClaim("privilege", "ADDENTRY")
-    ));
+    options.AddPolicy(Privileges.Audit.MANAGE_AUDITLOGS,
+        p => p.RequireAuthenticatedUser()
+              .RequireClaim("privilege", Privileges.Audit.MANAGE_AUDITLOGS));
 });
-
 //////////////////////////////////////////////////
 // Rate Limiting
 //////////////////////////////////////////////////
