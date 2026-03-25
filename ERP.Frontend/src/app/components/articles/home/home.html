@@ -37,7 +37,7 @@
       <div class="stat-card stat-card--green">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Active Articles</p>
+            <p class="stat-card__label">Articles</p>
             <p class="stat-card__value">{{ activeCount }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--green">
@@ -48,7 +48,13 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--red" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
+      <div class="stat-card stat-card--red" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)"
+          [routerLink]="deletedCount > 0 ? '/articles/deleted' : null"
+          routerLinkActive="stat-card--current"
+          #articlesLink="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [class.stat-card--disabled]="deletedCount < 1"
+      >
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Deleted</p>
@@ -80,7 +86,13 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--blue" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
+      <div class="stat-card stat-card--blue" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)"
+          [routerLink]="categoriesCount > 0 ? '/articles/categories' : null"
+          routerLinkActive="stat-card--current"
+          #articlesLink="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [class.stat-card--disabled]="categoriesCount < 1"
+      >
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Categories</p>
