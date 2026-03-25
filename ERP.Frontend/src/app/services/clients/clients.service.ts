@@ -32,6 +32,23 @@ export interface PagedResult<T> {
   totalCount: number;
 }
 
+export interface ClientResponseDto{
+
+  id: string,
+  name: string,
+  email: string,
+  address: string,
+  phone: null | string,
+  taxNumber: null| string,
+  creditLimit: number,
+  delaiRetour: number,
+  isBlocked: boolean,
+  isDeleted: boolean,
+  createdAt: string,
+  updatedAt: null | string,
+  categories: ClientCategoryResponseDto[];
+}
+
 export interface CreateClientRequest {
   type: ClientType;
   name: string;

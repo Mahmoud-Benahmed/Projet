@@ -10,6 +10,7 @@ import { MatIcon } from "@angular/material/icon";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from "@angular/router";
 import { PaginationComponent } from "../../pagination/pagination";
+import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -23,7 +24,8 @@ type ViewMode = 'list' | 'create' | 'edit' | 'view';
 export class ClientComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  clients: Client[] = [];
+
+  dataSource = new MatTableDataSource<ClientResponseDto>([]);
   stats: ClientStatsDto | null = null;
 
   pageNumber = 1;
@@ -37,6 +39,7 @@ export class ClientComponent implements OnInit {
   errors: string[] = [];
   successMessage: string | null = null;
   searchQuery = '';
+
 
   readonly clientTypes: ClientType[] = ['Individual', 'Company'];
   readonly PRIVILEGES= PRIVILEGES;
@@ -97,15 +100,8 @@ export class ClientComponent implements OnInit {
   // -------------------------------------------------------
   // Search
   // -------------------------------------------------------
-  get filteredClients(): Client[] {
-    if (!this.searchQuery.trim()) return this.clients;
-    const q = this.searchQuery.toLowerCase();
-    return this.clients.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.type.toLowerCase().includes(q) ||
-      c.address.toLowerCase().includes(q)
-    );
+  applyFilter(): void {
+    this.dataSource.filter = this.searchQuery.trim().toLowerCase();
   }
 
   // -------------------------------------------------------
