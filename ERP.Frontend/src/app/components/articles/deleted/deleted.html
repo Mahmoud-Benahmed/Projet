@@ -95,51 +95,109 @@
     <!-- ── TABLE CARD ── -->
     <div class="table-card">
 
-      <!-- LOADING -->
-      <div class="loading-overlay" *ngIf="isLoading">
-        <mat-spinner diameter="40"></mat-spinner>
+      <div class="table-scroll-wrap">
+        <table class="table">
+            <thead>
+              <tr>
+                <th (click)="sortBy('codeRef')" class="th--sortable">
+                  CODE REF
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'codeRef' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'codeRef' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
+                <th (click)="sortBy('libelle')" class="th--sortable">
+                  LIBELLE
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'libelle' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'libelle' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
+                <th (click)="sortBy('category.name')" class="th--sortable">
+                  CATEGORY
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'category.name' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'category.name' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
+                <th (click)="sortBy('prix')" class="th--sortable">
+                  PRIX
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'prix' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'prix' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
+                <th (click)="sortBy('tva')" class="th--sortable">
+                  TVA
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'tva' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        [style.opacity]="sortColumn === 'tva' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
+                <th>BAR CODE</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let article of sortedData" class="table__row">
+                <td class="td--code">{{ article.codeRef }}</td>
+                <td class="td--name">{{ article.libelle }}</td>
+                <td class="td--category">{{ getCategoryName(article.categoryId) }}</td>
+                <!-- FIX 4: currencyCode and currencyLocale are now declared in the component -->
+                <td class="td--price">{{ article.prix | currency: currencyCode: 'symbol' :'1.2-2' : currencyLocale }}</td>
+                <td>
+                  <span class="td--barCode">{{ article.barCode }}</span>
+                </td>
+                <td class="td--actions">
+                  <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                      <path d="M3 3v5h5"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="sortedData.length<1">
+                <td colspan="7" class="td--empty">
+                  No deleted articles found.
+                </td>
+              </tr>
+            </tbody>
+        </table>
       </div>
-
-      <table class="table">
-        <thead>
-          <tr>
-            <th>CODE</th>
-            <th>NAME</th>
-            <th>CATEGORY</th>
-            <th>UNIT PRICE</th>
-            <th>BAR CODE</th>
-            <th>ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- FIX 2: was "dataSource." (trailing dot) — now iterates filteredArticles for search support -->
-          <!-- FIX 3: trackById method is now defined in the component -->
-          <tr *ngFor="let article of filteredArticles; trackBy: trackById" class="table__row">
-            <td class="td--code">{{ article.codeRef }}</td>
-            <td class="td--name">{{ article.libelle }}</td>
-            <td class="td--category">{{ getCategoryName(article.categoryId) }}</td>
-            <!-- FIX 4: currencyCode and currencyLocale are now declared in the component -->
-            <td class="td--price">{{ article.prix | currency: currencyCode: 'symbol' :'1.2-2' : currencyLocale }}</td>
-            <td>
-              <span class="td--barCode">{{ article.barCode }}</span>
-            </td>
-            <td class="td--actions">
-              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-              <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="filteredArticles.length === 0 && !isLoading">
-            <td colspan="6" class="td--empty">No deleted articles found.</td>
-          </tr>
-        </tbody>
-      </table>
 
       <!-- PAGINATION -->
       <app-pagination [pageNumber]="pageNumber"

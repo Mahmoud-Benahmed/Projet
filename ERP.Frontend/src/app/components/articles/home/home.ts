@@ -14,6 +14,7 @@ import { ModalComponent } from '../../modal/modal';
 import { PaginationComponent } from '../../pagination/pagination';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { CategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
+import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -27,7 +28,8 @@ type ViewMode = 'list' | 'create' | 'edit' | 'view';
 export class ArticleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  articles: ArticleResponseDto[] = [];
+  dataSource = new MatTableDataSource<ArticleResponseDto>([]);
+
   categories: CategoryResponseDto[] = [];
   stats: ArticleStatsDto | null = null;
 
@@ -46,6 +48,9 @@ export class ArticleComponent implements OnInit {
   readonly barCodePattern = /^\d{8,13}$/.source;
   readonly PRIVILEGES= PRIVILEGES;
   articleForm: FormGroup;
+
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   constructor(
     public authService: AuthService,
@@ -66,6 +71,10 @@ export class ArticleComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.dataSource.filterPredicate = (data, filter) => {
+      return this.flattenObject(data).includes(filter);
+    };
+
     this.reload();
   }
 
@@ -83,15 +92,36 @@ export class ArticleComponent implements OnInit {
 
   // ── Search ────────────────────────────────────────────────────────────────
 
-  get filteredArticles(): ArticleResponseDto[] {
-    if (!this.searchQuery.trim()) return this.articles;
-    const q = this.searchQuery.toLowerCase();
-    return this.articles.filter(a =>
-      a.libelle.toLowerCase().includes(q)   ||
-      a.codeRef.toLowerCase().includes(q)   ||
-      a.barCode.toLowerCase().includes(q)   ||
-      a.category.name.toLowerCase().includes(q)
-    );
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  get sortedData() {
+    const data = [...this.dataSource.filteredData];
+    if (!this.sortColumn) return data;
+
+    return data.sort((a, b) => {
+      let valA = this.getNestedValue(a, this.sortColumn);
+      let valB = this.getNestedValue(b, this.sortColumn);
+
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) *
+        (this.sortDirection === 'asc' ? 1 : -1);
+    });
+  }
+
+  applyFilter(): void {
+    this.dataSource.filter = this.searchQuery.trim().toLowerCase();
   }
 
   // ── Pagination ────────────────────────────────────────────────────────────
@@ -106,7 +136,7 @@ export class ArticleComponent implements OnInit {
     this.errors = [];
     this.articleService.getAll(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
-        this.articles = res.items;
+        this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
         this.loading = false;
         this.cdr.markForCheck();
@@ -249,4 +279,21 @@ export class ArticleComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   trackById(_: number, a: ArticleResponseDto): string { return a.id; }
+  private flattenObject(obj: any): string {
+    return Object.keys(obj)
+      .map(key => {
+        const value = obj[key];
+        if (value && typeof value === 'object') {
+          return this.flattenObject(value);
+        }
+        return value;
+      })
+      .join(' ')
+      .toLowerCase();
+  }
+
+  private getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((acc, key) => acc?.[key], obj);
+  }
+
 }

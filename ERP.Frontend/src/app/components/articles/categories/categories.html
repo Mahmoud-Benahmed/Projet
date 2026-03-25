@@ -30,7 +30,6 @@
   </div>
 
   <!-- ===================== LIST VIEW ===================== -->
-  <ng-container *ngIf="viewMode === 'list'">
 
     <!-- TOOLBAR -->
     <div class="toolbar">
@@ -57,8 +56,32 @@
         <table class="table">
           <thead>
             <tr>
-              <th>NAME</th>
-              <th>TVA (%)</th>
+              <th (click)="sortBy('name')" class="th--sortable">
+                LIBELLE
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'name' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'name' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
+              <th (click)="sortBy('tva')" class="th--sortable">
+                TVA
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'tva' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'tva' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
               <th>ACTIONS</th>
             </tr>
           </thead>
@@ -105,7 +128,7 @@
         (pageSizeChange)="pageSize = $event; onPageSizeChange()">
       </app-pagination>
     </div>
-  </ng-container>
+
 
   <!-- ===================== VIEW PANEL ===================== -->
   <div class="panel" *ngIf="viewMode === 'view' && selectedCategory">

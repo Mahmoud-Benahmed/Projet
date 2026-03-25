@@ -67,6 +67,8 @@ export class DeletedArticlesComponent implements OnInit {
   successMessage: string | null = null;
   searchQuery = '';
 
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   selectedArticle: Article | null = null;
   viewMode: 'list' | 'view' = 'list';
@@ -95,6 +97,9 @@ export class DeletedArticlesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.dataSource.filterPredicate = (data, filter) => {
+      return this.flattenObject(data).includes(filter);
+    };
     this.reload();
   }
 
@@ -155,6 +160,34 @@ export class DeletedArticlesComponent implements OnInit {
       this.pageNumber++;
       this.reload();
     }
+  }
+
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  get sortedData() {
+    const data = [...this.dataSource.filteredData];
+    if (!this.sortColumn) return data;
+
+    return data.sort((a, b) => {
+      let valA = this.getNestedValue(a, this.sortColumn);
+      let valB = this.getNestedValue(b, this.sortColumn);
+
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) *
+        (this.sortDirection === 'asc' ? 1 : -1);
+    });
   }
 
   applyFilter(): void {
@@ -227,5 +260,22 @@ export class DeletedArticlesComponent implements OnInit {
     this.load();
     this.loadStats();
     this.cdr.markForCheck();
+  }
+
+  private flattenObject(obj: any): string {
+    return Object.keys(obj)
+      .map(key => {
+        const value = obj[key];
+        if (value && typeof value === 'object') {
+          return this.flattenObject(value);
+        }
+        return value;
+      })
+      .join(' ')
+      .toLowerCase();
+  }
+
+  private getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((acc, key) => acc?.[key], obj);
   }
 }
