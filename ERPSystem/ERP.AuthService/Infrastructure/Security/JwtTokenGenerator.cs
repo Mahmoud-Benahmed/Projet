@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ERP.AuthService.Infrastructure.Security
@@ -12,6 +13,9 @@ namespace ERP.AuthService.Infrastructure.Security
     public class JwtTokenGenerator : IJwtTokenGenerator
     {
         private readonly JwtSettings _jwtSettings;
+        private const string CLAIM_LOGIN = "login";
+        private const string CLAIM_ROLE = "role";
+        private const string CLAIM_PRIVILEGE = "privilege";
 
         public JwtTokenGenerator(IOptions<JwtSettings> jwtSettings)
         {
@@ -32,16 +36,12 @@ namespace ERP.AuthService.Infrastructure.Security
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub,      userId.ToString()),
-                new Claim("login",                          login),
-                new Claim("role",                           role),
-            };
-
-            // add each privilege as a separate claim
-            foreach (var privilege in privileges)
-            {
-                claims.Add(new Claim("privilege", privilege));
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(CLAIM_LOGIN, login),
+                new Claim(CLAIM_ROLE, role),
             }
+            .Concat(privileges.Select(p => new Claim(CLAIM_PRIVILEGE, p)))
+            .ToList();
 
             var expires = DateTime.UtcNow
                 .AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
@@ -58,7 +58,10 @@ namespace ERP.AuthService.Infrastructure.Security
 
         public string GenerateRefreshToken()
         {
-            return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
         }
     }
 }

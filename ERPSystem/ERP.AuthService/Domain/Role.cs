@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.RegularExpressions;
 
 namespace ERP.AuthService.Domain
 {
@@ -17,7 +18,11 @@ namespace ERP.AuthService.Domain
         public Role(string libelle)
         {
             Id = Guid.NewGuid();
-            Libelle = libelle.Trim().ToUpper();
+            Libelle = Regex.Replace(
+                libelle.Trim().ToUpper(),
+                @"\s+",
+                "_"
+            );
         }
 
         public void UpdateRole(string libelle)

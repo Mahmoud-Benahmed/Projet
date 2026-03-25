@@ -1,6 +1,7 @@
 ﻿using ERP.AuthService.Application.DTOs.Role;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.RegularExpressions;
 
 namespace ERP.AuthService.Domain
 {
@@ -20,7 +21,11 @@ namespace ERP.AuthService.Domain
         {
             Id = Guid.NewGuid();
             Category = category;
-            Libelle = libelle.Trim().ToUpper();
+            Libelle = Regex.Replace(
+                libelle.Trim().ToUpper(),
+                @"\s+",
+                "_"
+            );
             Description = description.Trim();
         }
 

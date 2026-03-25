@@ -1,12 +1,8 @@
 ﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces.Services;
-using ERP.AuthService.Domain;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security;
 using System.Security.Claims;
 
 namespace ERP.AuthService.Controllers
@@ -55,7 +51,7 @@ namespace ERP.AuthService.Controllers
             if (isSelf && !user.IsActive)
                 return Forbid();
 
-            bool hasAccess = User.HasClaim("privilege","VIEWUSERS");
+            bool hasAccess = User.HasClaim("privilege",Privileges.Users.VIEW_USERS);
 
             if (!isSelf && !hasAccess)
                 throw new UnauthorizedAccessException("You are not authorized to access this resource.");
@@ -222,7 +218,7 @@ namespace ERP.AuthService.Controllers
         {
             if (!TryGetRequesterId(out var requesterId))
                 return Forbid();
-            var canManageUsers = User.HasClaim("privilege", "UPDATEUSER");
+            var canManageUsers = User.HasClaim("privilege", Privileges.Users.UPDATE_USER);
             var isOwner = requesterId == id;
 
             if (!isOwner && !canManageUsers)
