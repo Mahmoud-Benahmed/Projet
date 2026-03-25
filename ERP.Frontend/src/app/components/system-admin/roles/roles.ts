@@ -162,10 +162,10 @@ export class RoleComponent implements OnInit {
     if (this.viewMode === 'create') {
       const dto: RoleCreateDto = { libelle: val.libelle };
       this.roleService.create(dto).subscribe({
-        next: () => {
+        next: (role) => {
           this.reload();
           this.cancel();
-          this.flash('success', `Role "${val.libelle}" created successfully.`);
+          this.flash('success', `Role "${role.libelle}" created successfully.`);
         },
         error: (error) => {
           const err = error.error as HttpError;
@@ -175,10 +175,10 @@ export class RoleComponent implements OnInit {
     } else if (this.viewMode === 'edit' && this.selectedRole) {
       const dto: RoleUpdateDto = { libelle: val.libelle };
       this.roleService.update(this.selectedRole.id, dto).subscribe({
-        next: () => {
+        next: (role) => {
           this.cancel();
           this.reload();
-          this.flash('success', `Role "${val.libelle}" updated successfully.`);
+          this.flash('success', `Role "${role.libelle}" updated successfully.`);
         },
         error: (error) => {
           const err = error.error as HttpError;

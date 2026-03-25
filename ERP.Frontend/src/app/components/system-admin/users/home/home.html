@@ -14,6 +14,7 @@
     {{ error }}
     <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
+
   <div class="alert alert--success" *ngIf="successMessage">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
     {{ successMessage }}
@@ -100,149 +101,147 @@
 
   <!-- ── TABLE CARD ── -->
   <div class="table-card">
-    <div class="loading-overlay" *ngIf="isLoading">
-      <div class="spinner"></div>
-    </div>
-
-    <table class="table" *ngIf="!isLoading">
-      <thead>
-        <tr>
-          <th (click)="sortBy('fullName')" class="th--sortable">
-            FULL NAME
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'fullName' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'fullName' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
-          <th (click)="sortBy('email')" class="th--sortable">
-            EMAIL
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'email' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'email' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
-          <th (click)="sortBy('roleName')" class="th--sortable">
-            ROLE
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'roleName' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'roleName' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
-          <th (click)="sortBy('createdAt')" class="th--sortable">
-            JOINED
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
-          <th (click)="sortBy('lastLoginAt')" class="th--sortable">
-            LAST LOGIN
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
-          <th>ACTIONS</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of sortedData" class="table__row">
-
-          <td>
-            <div class="user-cell"
-              [routerLink]="['/users', user.id]"
-              routerLinkActive="user-cell--active"
-              [routerLinkActiveOptions]="{ exact: true }">
-              <div class="user-avatar">{{ getInitials(user) }}</div>
-              <div class="user-meta">
-                <span class="user-meta__name">{{ user.fullName }}</span>
-                <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
-              </div>
-            </div>
-          </td>
-
-          <td><span class="mono">{{ user.email }}</span></td>
-
-          <td><span class="role-badge">{{ user.roleName}}</span></td>
-
-          <td><span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span></td>
-
-          <td>
-            <span class="date-cell">
-              {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
-            </span>
-          </td>
-
-          <td class="td--actions">
-            <button class="icon-btn icon-btn--view"
-              title="View"
-              (click)="goToProfile(user.id)"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-            <button class="icon-btn icon-btn--deactivate"
-              title="Deactivate"
-              [disabled]="user.id === currentUserId"
-              [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-              (click)="deactivateUser(user)"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-              </svg>
-            </button>
-            <button class="icon-btn icon-btn--delete"
-                  title="Delete"
-                  [disabled]="user.id === currentUserId"
-                  [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-                  (click)="softDeleteUser(user)"
-                  *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.1">
-                  <path fill="currentColor" d="M7 6v13zm4.25 15H7q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v4.3q-.425-.125-.987-.213T17 10V6H7v13h3.3q.15.525.4 1.038t.55.962M9 17h1q0-1.575.5-2.588L11 13.4V8H9zm4-5.75q.425-.275.963-.55T15 10.3V8h-2zm.463 9.288Q12 19.075 12 17t1.463-3.537T17 12t3.538 1.463T22 17t-1.463 3.538T17 22t-3.537-1.463m5.187-1.187l.7-.7l-1.85-1.85V14h-1v3.2z"/>
+    <div class="table-scroll-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th (click)="sortBy('fullName')" class="th--sortable">
+              FULL NAME
+              <span class="sort-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'fullName' && sortDirection === 'asc' ? '1' : '0.25'">
+                  <polyline points="18 15 12 9 6 15"/>
                 </svg>
-            </button>
-          </td>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'fullName' && sortDirection === 'desc' ? '1' : '0.25'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </th>
+            <th (click)="sortBy('email')" class="th--sortable">
+              EMAIL
+              <span class="sort-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'email' && sortDirection === 'asc' ? '1' : '0.25'">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'email' && sortDirection === 'desc' ? '1' : '0.25'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </th>
+            <th (click)="sortBy('roleName')" class="th--sortable">
+              ROLE
+              <span class="sort-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'roleName' && sortDirection === 'asc' ? '1' : '0.25'">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'roleName' && sortDirection === 'desc' ? '1' : '0.25'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </th>
+            <th (click)="sortBy('createdAt')" class="th--sortable">
+              JOINED
+              <span class="sort-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </th>
+            <th (click)="sortBy('lastLoginAt')" class="th--sortable">
+              LAST LOGIN
+              <span class="sort-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'asc' ? '1' : '0.25'">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'desc' ? '1' : '0.25'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of sortedData" class="table__row">
 
-        </tr>
+            <td>
+              <div class="user-cell"
+                [routerLink]="['/users', user.id]"
+                routerLinkActive="user-cell--active"
+                [routerLinkActiveOptions]="{ exact: true }">
+                <div class="user-avatar">{{ getInitials(user) }}</div>
+                <div class="user-meta">
+                  <span class="user-meta__name">{{ user.fullName }}</span>
+                  <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
+                </div>
+              </div>
+            </td>
 
-        <tr *ngIf="sortedData.length === 0">
-          <td colspan="6" class="td--empty">
-            No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <td><span class="mono">{{ user.email }}</span></td>
+
+            <td><span class="role-badge">{{ user.roleName}}</span></td>
+
+            <td><span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span></td>
+
+            <td>
+              <span class="date-cell">
+                {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
+              </span>
+            </td>
+
+            <td class="td--actions">
+              <button class="icon-btn icon-btn--view"
+                title="View"
+                (click)="goToProfile(user.id)"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button class="icon-btn icon-btn--deactivate"
+                title="Deactivate"
+                [disabled]="user.id === currentUserId"
+                [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
+                (click)="deactivateUser(user)"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+              </button>
+              <button class="icon-btn icon-btn--delete"
+                    title="Delete"
+                    [disabled]="user.id === currentUserId"
+                    [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
+                    (click)="softDeleteUser(user)"
+                    *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.1">
+                    <path fill="currentColor" d="M7 6v13zm4.25 15H7q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v4.3q-.425-.125-.987-.213T17 10V6H7v13h3.3q.15.525.4 1.038t.55.962M9 17h1q0-1.575.5-2.588L11 13.4V8H9zm4-5.75q.425-.275.963-.55T15 10.3V8h-2zm.463 9.288Q12 19.075 12 17t1.463-3.537T17 12t3.538 1.463T22 17t-1.463 3.538T17 22t-3.537-1.463m5.187-1.187l.7-.7l-1.85-1.85V14h-1v3.2z"/>
+                  </svg>
+              </button>
+            </td>
+
+          </tr>
+
+          <tr *ngIf="sortedData.length === 0">
+            <td colspan="6" class="td--empty">
+              No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <app-pagination [pageNumber]="pageNumber"
                 [totalPages]="totalPages"
@@ -251,7 +250,6 @@
                 (pageChange)="pageNumber = $event; reload()"
                 (pageSizeChange)="pageSize = $event; onPageSizeChange()">
     </app-pagination>
-
   </div>
 
 </div>
