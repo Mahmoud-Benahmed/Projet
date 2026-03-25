@@ -24,7 +24,7 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // CREATE
         // =========================
-        public async Task<Article> CreateAsync(CreateArticleRequestDto request)
+        public async Task<ArticleResponseDto> CreateAsync(CreateArticleRequestDto request)
         {
             var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new KeyNotFoundException(
@@ -39,36 +39,36 @@ namespace ERP.ArticleService.Application.Services
             var article = new Article(code, request.Libelle, request.Prix, category, request.BarCode, request.TVA);
             await _articleRepository.AddAsync(article);
             await _articleRepository.SaveChangesAsync();
-            return article;
+            return MapToDto(article);
         }
 
         // =========================
         // READ
         // =========================
-        public async Task<Article> GetByIdAsync(Guid id)
+        public async Task<ArticleResponseDto> GetByIdAsync(Guid id)
         {
             var article = await _articleRepository.GetByIdAsync(id);
             if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(id);
-            return article;
+            return MapToDto(article);
         }
 
-        public async Task<Article> GetByCodeAsync(string code)
+        public async Task<ArticleResponseDto> GetByCodeAsync(string code)
         {
             var article = await _articleRepository.GetByCodeAsync(code);
             if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(code);
-            return article;
+            return MapToDto(article);
         }
 
         // =========================
         // UPDATE
         // =========================
-        public async Task<Article> UpdateAsync(Guid id, UpdateArticleRequestDto request)
+        public async Task<ArticleResponseDto> UpdateAsync(Guid id, UpdateArticleRequestDto request)
         {
-            var article = await _articleRepository.GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
 
-            if(article.IsDeleted || article is null)
+            if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(id);
 
             var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
@@ -77,7 +77,7 @@ namespace ERP.ArticleService.Application.Services
             article.Update(request.Libelle, request.Prix, category, request.BarCode, request.TVA);
 
             await _articleRepository.SaveChangesAsync();
-            return article;
+            return MapToDto(article);
         }
 
         // =========================
@@ -99,7 +99,7 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task DeleteAsync(Guid id)
         {
-            var article = await GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
             if (article.IsDeleted)
                 return;
 
@@ -110,31 +110,37 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // PAGING / FILTERING
         // =========================
-        public async Task<PagedResultDto<Article>> GetAllAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<ArticleResponseDto>> GetAllAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
 
             var (items, totalCount) = await _articleRepository.GetAllAsync(pageNumber, pageSize);
-            return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+            var mappedItems = items.Select(MapToDto).ToList();
+
+            return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
         
-        public async Task<PagedResultDto<Article>> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _articleRepository
                 .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
-            return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+            var mappedItems = items.Select(MapToDto).ToList();
+
+            return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
         
-        public async Task<PagedResultDto<Article>> GetPagedDeletedAsync(int pageNumber,int pageSize)
+        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedDeletedAsync(int pageNumber,int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _articleRepository
                 .GetPagedDeletedAsync(pageNumber, pageSize);
-            return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+            var mappedItems = items.Select(MapToDto).ToList();
+
+            return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
         
-        public async Task<PagedResultDto<Article>> GetPagedByLibelleAsync(string libelleFilter, int pageNumber,int pageSize)
+        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByLibelleAsync(string libelleFilter, int pageNumber,int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             if (string.IsNullOrWhiteSpace(libelleFilter))
@@ -142,7 +148,9 @@ namespace ERP.ArticleService.Application.Services
 
             var (items, totalCount) = await _articleRepository
                 .GetPagedByLibelleAsync(libelleFilter, pageNumber, pageSize);
-            return new PagedResultDto<Article>(items, totalCount, pageNumber, pageSize);
+            var mappedItems = items.Select(MapToDto).ToList();
+
+            return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
 
 
@@ -166,5 +174,23 @@ namespace ERP.ArticleService.Application.Services
                 throw new ArgumentOutOfRangeException(nameof(pageSize),
                     "Page size must be greater than zero.");
         }
+
+        private static CategoryResponseDto CategoryMapToDto(Category cat) => new CategoryResponseDto(
+            Id: cat.Id,
+            Name: cat.Name,
+            TVA: cat.TVA
+            );
+        private static ArticleResponseDto MapToDto(Article article) => new ArticleResponseDto(
+            Id: article.Id,
+            Category: CategoryMapToDto(article.Category),
+            CodeRef: article.CodeRef,
+            BarCode: article.BarCode,
+            Libelle: article.Libelle,
+            Prix: article.Prix,
+            TVA: article.TVA,
+            IsDeleted: article.IsDeleted,
+            CreatedAt: article.CreatedAt,
+            UpdatedAt: article.UpdatedAt
+            );
     }
 }

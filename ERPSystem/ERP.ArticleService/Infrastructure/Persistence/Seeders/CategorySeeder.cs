@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Application.Interfaces;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
@@ -37,7 +38,8 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                 try
                 {
                     var tva = Math.Round((decimal)(random.NextDouble() * 19 + 1), 2);
-                    await _categoryService.CreateAsync(name, tva);
+                    var dto= new CategoryRequestDto(name, tva);
+                    await _categoryService.CreateAsync(dto);
                     _logger.LogInformation("Seeded category: '{Name}'", name);
                 }
                 catch (InvalidOperationException)

@@ -8,26 +8,26 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // CREATE
         // =========================
-        Task<Category> CreateAsync(string name, decimal tva);
+        Task<CategoryResponseDto> CreateAsync(CategoryRequestDto dto);
 
         // =========================
         // READ
         // =========================
-        Task<Category> GetByIdAsync(Guid id);
-        Task<Category> GetByNameAsync(string name);
-        Task<List<Category>> GetAllAsync();
+        Task<CategoryResponseDto> GetByIdAsync(Guid id);
+        Task<CategoryResponseDto> GetByNameAsync(string name);
+        Task<List<CategoryResponseDto>> GetAllAsync();
 
         // =========================
         // TVA FILTERING
         // =========================
-        Task<List<Category>> GetBelowTVAAsync(decimal tva);
-        Task<List<Category>> GetHigherThanTVAAsync(decimal tva);
-        Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max);
+        Task<List<CategoryResponseDto>> GetBelowTVAAsync(decimal tva);
+        Task<List<CategoryResponseDto>> GetHigherThanTVAAsync(decimal tva);
+        Task<List<CategoryResponseDto>> GetBetweenTVAAsync(decimal min, decimal max);
 
         // =========================
         // UPDATE
         // =========================
-        Task<Category> UpdateAsync(Guid id, string newName, decimal tva);
+        Task<CategoryResponseDto> UpdateAsync(Guid id, CategoryRequestDto dto);
 
         // =========================
         // DELETE
@@ -37,16 +37,16 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // PAGING / FILTERING
         // =========================
-        Task<PagedResultDto<Category>> GetPagedAsync(
+        Task<PagedResultDto<CategoryResponseDto>> GetPagedAsync(
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Category>> GetPagedByNameAsync(
+        Task<PagedResultDto<CategoryResponseDto>> GetPagedByNameAsync(
             string nameFilter,
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Category>> GetPagedByDateRangeAsync(
+        Task<PagedResultDto<CategoryResponseDto>> GetPagedByDateRangeAsync(
             DateTime from,
             DateTime to,
             int pageNumber,

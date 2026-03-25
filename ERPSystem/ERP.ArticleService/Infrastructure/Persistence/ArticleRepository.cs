@@ -47,7 +47,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         public async Task<Article?> GetByCodeAsync(string code)
         {
             return await BaseQuery()
-                .FirstOrDefaultAsync(a => a.CodeRef == code);
+                .FirstOrDefaultAsync(a => a.CodeRef == code || a.BarCode == code);
         }
 
         // =========================

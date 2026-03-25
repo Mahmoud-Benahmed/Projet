@@ -8,18 +8,18 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // CREATE
         // =========================
-        Task<Article> CreateAsync(CreateArticleRequestDto request);
+        Task<ArticleResponseDto> CreateAsync(CreateArticleRequestDto request);
 
         // =========================
         // READ
         // =========================
-        Task<Article> GetByIdAsync(Guid id);
-        Task<Article> GetByCodeAsync(string code);
+        Task<ArticleResponseDto> GetByIdAsync(Guid id);
+        Task<ArticleResponseDto> GetByCodeAsync(string code);
 
         // =========================
         // UPDATE
         // =========================
-        Task<Article> UpdateAsync(Guid id, UpdateArticleRequestDto request);
+        Task<ArticleResponseDto> UpdateAsync(Guid id, UpdateArticleRequestDto request);
 
         // =========================
         // ACTIVATE / DEACTIVATE
@@ -34,20 +34,20 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         // PAGING / FILTERING
         // =========================
-        Task<PagedResultDto<Article>> GetPagedByCategoryIdAsync(
+        Task<PagedResultDto<ArticleResponseDto>> GetPagedByCategoryIdAsync(
             Guid categoryId,
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Article>> GetPagedDeletedAsync(
+        Task<PagedResultDto<ArticleResponseDto>> GetPagedDeletedAsync(
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Article>> GetAllAsync(
+        Task<PagedResultDto<ArticleResponseDto>> GetAllAsync(
             int pageNumber,
             int pageSize);
 
-        Task<PagedResultDto<Article>> GetPagedByLibelleAsync(
+        Task<PagedResultDto<ArticleResponseDto>> GetPagedByLibelleAsync(
             string libelleFilter,
             int pageNumber,
             int pageSize);

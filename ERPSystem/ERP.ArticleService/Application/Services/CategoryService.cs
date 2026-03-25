@@ -2,6 +2,9 @@
 using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
+using Microsoft.AspNetCore.Components;
+using Sprache;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ERP.ArticleService.Application.Services
 {
@@ -17,60 +20,61 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // CREATE
         // =========================
-        public async Task<Category> CreateAsync(string name, decimal tva)
+        public async Task<CategoryResponseDto> CreateAsync(CategoryRequestDto dto)
         {
-            var existing = await _categoryRepository.GetByNameAsync(name);
+            var existing = await _categoryRepository.GetByNameAsync(dto.Name);
             if (existing is not null)
-                throw new CategoryAlreadyExistsException(name);
+                throw new CategoryAlreadyExistsException(dto.Name);
 
-            var category = new Category(name, tva);
+            var category = new Category(dto.Name, dto.TVA);
             await _categoryRepository.AddAsync(category);
             await _categoryRepository.SaveChangesAsync();
-            return category;
+            return MapToDto(category);
         }
 
         // =========================
         // READ
         // =========================
-        public async Task<Category> GetByIdAsync(Guid id)
+        public async Task<CategoryResponseDto> GetByIdAsync(Guid id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
-            if (category is null)
-                throw new CategoryNotFoundException(id);
-            return category;
+            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
+            return MapToDto(category);
         }
 
-        public async Task<Category> GetByNameAsync(string name)
+        public async Task<CategoryResponseDto> GetByNameAsync(string name)
         {
             var category = await _categoryRepository.GetByNameAsync(name);
             if (category is null)
                 throw new CategoryNotFoundException(name);
-            return category;
+            return MapToDto(category);
         }
 
-        public async Task<List<Category>> GetAllAsync()
+        public async Task<List<CategoryResponseDto>> GetAllAsync()
         {
-            return await _categoryRepository.GetAllAsync();
+            var result = await _categoryRepository.GetAllAsync();
+            return result.Select(MapToDto).ToList();
         }
 
 
-        public async Task<List<Category>> GetBelowTVAAsync(decimal tva)
-        {
-            if (tva <= 0)
-                throw new ArgumentException("TVA must be greater than zero.");
-
-            return await _categoryRepository.GetBelowTVAAsync(tva);
-        }
-
-        public async Task<List<Category>> GetHigherThanTVAAsync(decimal tva)
+        public async Task<List<CategoryResponseDto>> GetBelowTVAAsync(decimal tva)
         {
             if (tva <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
-            return await _categoryRepository.GetHigherThanTVAAsync(tva);
+            var result= await _categoryRepository.GetBelowTVAAsync(tva);
+            return result.Select(MapToDto).ToList();
         }
 
-        public async Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max)
+        public async Task<List<CategoryResponseDto>> GetHigherThanTVAAsync(decimal tva)
+        {
+            if (tva <= 0)
+                throw new ArgumentException("TVA must be greater than zero.");
+
+            var result= await _categoryRepository.GetHigherThanTVAAsync(tva);
+            return result.Select(MapToDto).ToList();
+        }
+
+        public async Task<List<CategoryResponseDto>> GetBetweenTVAAsync(decimal min, decimal max)
         {
             if (min <= 0)
                 throw new ArgumentException("Min TVA must be greater than zero.");
@@ -79,23 +83,23 @@ namespace ERP.ArticleService.Application.Services
             if (min > max)
                 throw new ArgumentException("'min' TVA must be less than or equal to 'max' TVA.");
 
-            return await _categoryRepository.GetBetweenTVAAsync(min, max);
+            var result= await _categoryRepository.GetBetweenTVAAsync(min, max);
+            return result.Select(MapToDto).ToList();
         }
 
         // =========================
         // UPDATE
         // =========================
-        public async Task<Category> UpdateAsync(Guid id, string newName, decimal tva)
+        public async Task<CategoryResponseDto> UpdateAsync(Guid id, CategoryRequestDto dto)
         {
-            var category = await GetByIdAsync(id);
-
-            var existing = await _categoryRepository.GetByNameAsync(newName);
+            var existing = await _categoryRepository.GetByNameAsync(dto.Name);
             if (existing is not null && existing.Id != id)
-                throw new CategoryAlreadyExistsException(newName);
-
-            category.Update(newName, tva);
+                throw new CategoryAlreadyExistsException(dto.Name);
+            
+            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
+            category.Update(dto.Name, dto.TVA);
             await _categoryRepository.SaveChangesAsync();
-            return category;
+            return MapToDto(category);
         }
 
         // =========================
@@ -103,7 +107,7 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task DeleteAsync(Guid id)
         {
-            var category = await GetByIdAsync(id);
+            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
             _categoryRepository.Remove(category);
             await _categoryRepository.SaveChangesAsync();
         }
@@ -111,17 +115,19 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         // PAGING / FILTERING
         // =========================
-        public async Task<PagedResultDto<Category>> GetPagedAsync(
+        public async Task<PagedResultDto<CategoryResponseDto>> GetPagedAsync(
             int pageNumber,
             int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _categoryRepository
                 .GetPagedAsync(pageNumber, pageSize);
-            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+
+            var mappedItems = items.Select(MapToDto).ToList();
+            return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<PagedResultDto<Category>> GetPagedByNameAsync(
+        public async Task<PagedResultDto<CategoryResponseDto>> GetPagedByNameAsync(
             string nameFilter,
             int pageNumber,
             int pageSize)
@@ -132,10 +138,12 @@ namespace ERP.ArticleService.Application.Services
 
             var (items, totalCount) = await _categoryRepository
                 .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
-            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+
+            var mappedItems = items.Select(MapToDto).ToList();
+            return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<PagedResultDto<Category>> GetPagedByDateRangeAsync(
+        public async Task<PagedResultDto<CategoryResponseDto>> GetPagedByDateRangeAsync(
             DateTime from,
             DateTime to,
             int pageNumber,
@@ -147,7 +155,9 @@ namespace ERP.ArticleService.Application.Services
 
             var (items, totalCount) = await _categoryRepository
                 .GetPagedByDateRangeAsync(from, to, pageNumber, pageSize);
-            return new PagedResultDto<Category>(items, totalCount, pageNumber, pageSize);
+
+            var mappedItems = items.Select(MapToDto).ToList();
+            return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
 
         // =========================
@@ -161,6 +171,15 @@ namespace ERP.ArticleService.Application.Services
             if (pageSize < 1)
                 throw new ArgumentOutOfRangeException(nameof(pageSize),
                     "Page size must be greater than zero.");
+        }
+
+        private static CategoryResponseDto MapToDto(Category category)
+        {
+            return new CategoryResponseDto(
+                Id: category.Id,
+                Name: category.Name,
+                TVA: category.TVA
+                );
         }
     }
 }

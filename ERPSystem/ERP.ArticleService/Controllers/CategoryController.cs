@@ -32,32 +32,18 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Categories.GetById)]
         public async Task<ActionResult<Category>> GetById([FromRoute] Guid id)
         {
-            try
-            {
-                var category = await _categoryService.GetByIdAsync(id);
-                return Ok(category);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            var category = await _categoryService.GetByIdAsync(id);
+            return Ok(category);
         }
 
         // =========================
         // GET BY NAME
         // =========================
         [HttpGet(ApiRoutes.Categories.GetByName)]
-        public async Task<ActionResult<Category>> GetByName([FromRoute] string name)
+        public async Task<ActionResult<Category>> GetByName([FromQuery] string name)
         {
-            try
-            {
-                var category = await _categoryService.GetByNameAsync(name);
-                return Ok(category);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            var category = await _categoryService.GetByNameAsync(name);
+            return Ok(category);
         }
 
         // =========================
@@ -68,68 +54,25 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var result = await _categoryService.GetPagedAsync(pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _categoryService.GetPagedAsync(pageNumber, pageSize);
+            return Ok(new { result.Items, result.TotalCount });
         }
 
         // =========================
-        // GET PAGED BY NAME
+        // TVA FILTERS
         // =========================
-        [HttpGet(ApiRoutes.Categories.GetPagedByName)]
-        public async Task<ActionResult> GetPagedByName(
-            [FromQuery] string nameFilter,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
-        {
-            try
-            {
-                var result = await _categoryService.GetPagedByNameAsync(
-                    nameFilter, pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
         [HttpGet(ApiRoutes.Categories.GetBelowTVA)]
         public async Task<ActionResult<List<Category>>> GetBelowTVA([FromQuery] decimal tva)
         {
-            try
-            {
-                var result = await _categoryService.GetBelowTVAAsync(tva);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _categoryService.GetBelowTVAAsync(tva);
+            return Ok(result);
         }
 
         [HttpGet(ApiRoutes.Categories.GetHigherThanTVA)]
         public async Task<ActionResult<List<Category>>> GetHigherThanTVA([FromQuery] decimal tva)
         {
-            try
-            {
-                var result = await _categoryService.GetHigherThanTVAAsync(tva);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _categoryService.GetHigherThanTVAAsync(tva);
+            return Ok(result);
         }
 
         [HttpGet(ApiRoutes.Categories.GetBetweenTVA)]
@@ -137,42 +80,24 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] decimal min,
             [FromQuery] decimal max)
         {
-            try
-            {
-                var result = await _categoryService.GetBetweenTVAAsync(min, max);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _categoryService.GetBetweenTVAAsync(min, max);
+            return Ok(result);
         }
-
 
         // =========================
         // GET PAGED BY DATE RANGE
         // =========================
-        [HttpGet(ApiRoutes.Categories.GetPagedByDateRange)]
+        [HttpGet(ApiRoutes.Categories.GetByDateRange)]
         public async Task<ActionResult> GetPagedByDateRange(
             [FromQuery] DateTime from,
             [FromQuery] DateTime to,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var result = await _categoryService.GetPagedByDateRangeAsync(
-                    from, to, pageNumber, pageSize);
-                return Ok(new { result.Items, result.TotalCount });
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _categoryService.GetPagedByDateRangeAsync(
+                from, to, pageNumber, pageSize);
+
+            return Ok(new { result.Items, result.TotalCount });
         }
 
         // =========================
@@ -181,49 +106,24 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPost(ApiRoutes.Categories.Create)]
         public async Task<ActionResult<Category>> Create([FromBody] CategoryRequestDto request)
         {
-            try
-            {
-                var category = await _categoryService.CreateAsync(request.Name, request.TVA);
-                return CreatedAtAction(
-                    nameof(GetById),
-                    new { id = category.Id },
-                    category);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var category = await _categoryService.CreateAsync(request);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = category.Id },
+                category);
         }
 
         // =========================
-        // UPDATE NAME
+        // UPDATE
         // =========================
         [HttpPut(ApiRoutes.Categories.Update)]
         public async Task<ActionResult<Category>> Update(
             [FromRoute] Guid id,
-            [FromBody]  CategoryRequestDto request)
+            [FromBody] CategoryRequestDto request)
         {
-            try
-            {
-                var category = await _categoryService.UpdateAsync(id, request.Name, request.TVA);
-                return Ok(category);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var category = await _categoryService.UpdateAsync(id, request);
+            return Ok(category);
         }
 
         // =========================
@@ -232,15 +132,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpDelete(ApiRoutes.Categories.Delete)]
         public async Task<ActionResult> Delete([FromRoute] Guid id)
         {
-            try
-            {
-                await _categoryService.DeleteAsync(id);
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            await _categoryService.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

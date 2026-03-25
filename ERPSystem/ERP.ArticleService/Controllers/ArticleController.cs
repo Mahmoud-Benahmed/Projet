@@ -42,16 +42,15 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetById)]
         public async Task<ActionResult<Article>> GetById([FromRoute] Guid id)
         {
-
-                var article = await _articleService.GetByIdAsync(id);
-                return Ok(article);
+            var article = await _articleService.GetByIdAsync(id);
+            return Ok(article);
         }
 
         // =========================
         // GET BY CODE
         // =========================
         [HttpGet(ApiRoutes.Articles.GetByCode)]
-        public async Task<ActionResult<Article>> GetByCode([FromRoute] string code)
+        public async Task<ActionResult<Article>> GetByCode([FromQuery] string code)
         {
             var article = await _articleService.GetByCodeAsync(code);
             return Ok(article);
@@ -119,9 +118,8 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPatch(ApiRoutes.Articles.Restore)]
         public async Task<ActionResult> Restore([FromRoute] Guid id)
         {
-
-                await _articleService.RestoreAsync(id);
-                return NoContent();
+            await _articleService.RestoreAsync(id);
+            return NoContent();
         }
 
         // =========================

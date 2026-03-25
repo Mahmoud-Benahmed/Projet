@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ERP.ArticleService.Domain;
+using System.ComponentModel.DataAnnotations;
 
 namespace ERP.ArticleService.Application.DTOs
 {
@@ -40,4 +41,24 @@ namespace ERP.ArticleService.Application.DTOs
         [Range(0.01, 100, ErrorMessage = "TVA must be between 0.01 and 100.")]
         decimal? TVA
     );
+
+    public record ArticleStatsDto(
+        int TotalCount,
+        int ActiveCount,
+        int DeletedCount,
+        int CategoriesCount
+    );
+
+    public record ArticleResponseDto(
+        Guid Id,
+        CategoryResponseDto Category,
+        string CodeRef,
+        string BarCode,
+        string Libelle,
+        decimal Prix,
+        decimal TVA,
+        bool IsDeleted,
+        DateTime CreatedAt,
+        DateTime? UpdatedAt
+        );
 }

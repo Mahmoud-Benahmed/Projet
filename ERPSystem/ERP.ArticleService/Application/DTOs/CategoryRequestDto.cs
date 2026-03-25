@@ -10,4 +10,12 @@ namespace ERP.ArticleService.Application.DTOs
         [Range(0, 100, ErrorMessage = "TVA must be between 0 and 100")]
         decimal TVA
     );
+
+    public record CategoryResponseDto(
+        Guid Id,
+        string Name,
+        decimal TVA
+    );
+
+
 }
