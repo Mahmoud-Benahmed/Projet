@@ -1,3 +1,11 @@
+<!--
+  TODO: FIX NAVBAR COLLAPSING STYLING
+  TODO: FIX NAVBAR COLLAPSING STYLING
+  TODO: FIX NAVBAR COLLAPSING STYLING
+  TODO: FIX NAVBAR COLLAPSING STYLING
+  TODO: FIX NAVBAR COLLAPSING STYLING
+  -->
+
 <div class="shell-layout" [class.shell-layout--collapsed]="collapsed">
   <!-- ══════════ MOBILE NAV DRAWER ══════════ -->
   <div class="mobile-nav" *ngIf="mobileNavOpen" [class.mobile-nav--closing]="mobileNavClosing">
@@ -5,14 +13,11 @@
     <nav class="mobile-nav__drawer">
 
       <!-- Logo / close -->
-      <div class="sidebar__logo" style="justify-content: space-between;" (click)="toggleSidebar()">
+      <div class="sidebar__logo" style="justify-content: space-between;" (click)="closeMobileNav(); $event.stopPropagation()">
         <div style="display:flex; align-items:center; gap:9px;">
           <div class="sidebar__logo-icon">E</div>
           <span class="sidebar__logo-text">ERPSuite</span>
         </div>
-        <button class="sidebar__toggle" (click)="closeMobileNav(); $event.stopPropagation()" type="button">
-          <mat-icon>close</mat-icon>
-        </button>
       </div>
 
       <!-- Navigation -->
@@ -154,44 +159,44 @@
       <!-- Home -->
       <a class="sidebar__item" routerLink="/home" routerLinkActive="sidebar__item--active"
          [routerLinkActiveOptions]="{exact:true}">
-        <mat-icon>home</mat-icon> Home
+        <mat-icon>home</mat-icon> <span>Home</span>
       </a>
 
       <!-- Auth & Users -->
       <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
         <button class="sidebar__item sidebar__item--group" (click)="toggleGroup('auth')" type="button"
                 [class.sidebar__item--group-open]="openGroups['auth']">
-          <mat-icon>manage_accounts</mat-icon> Auth & Users
+          <mat-icon>manage_accounts</mat-icon> <span>Auth & Users</span>
           <mat-icon class="sidebar__chevron" [class.open]="openGroups['auth']">expand_more</mat-icon>
         </button>
         <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['auth']">
           <a class="sidebar__subitem" routerLink="/users" routerLinkActive="sidebar__subitem--active"
              [routerLinkActiveOptions]="{exact:true}">
-            <mat-icon>group</mat-icon> Users
+            <mat-icon>group</mat-icon> <span>Users</span>
           </a>
           <a class="sidebar__subitem" routerLink="/users/deactivated" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER) || authService.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)">
-            <mat-icon>person_off</mat-icon> Deactivated
+            <mat-icon>person_off</mat-icon> <span>Deactivated</span>
           </a>
           <a class="sidebar__subitem" routerLink="/users/deleted" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.RESTORE_USER)">
-            <mat-icon>group_remove</mat-icon> Deleted
+            <mat-icon>group_remove</mat-icon> <span>Deleted</span>
           </a>
           <a class="sidebar__subitem" routerLink="/users/register" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)">
-            <mat-icon>person_add</mat-icon> Register
+            <mat-icon>person_add</mat-icon> <span>Register</span>
           </a>
           <a class="sidebar__subitem" routerLink="/users/controles" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
-            <mat-icon>verified_user</mat-icon> Controles
+            <mat-icon>verified_user</mat-icon> <span>Controles</span>
           </a>
           <a class="sidebar__subitem" routerLink="/users/roles" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
-            <mat-icon>groups</mat-icon> Roles
+            <mat-icon>groups</mat-icon> <span>Roles</span>
           </a>
           <a class="sidebar__subitem" routerLink="/permissions" routerLinkActive="sidebar__subitem--active"
              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
-            <mat-icon>shield</mat-icon> Permissions
+            <mat-icon>shield</mat-icon> <span>Permissions</span>
           </a>
         </div>
       </div>
@@ -202,7 +207,7 @@
                   (click)="toggleGroup('articles')"
                   type="button"
                   [class.sidebar__item--group-open]="openGroups['articles']">
-          <mat-icon>warehouse</mat-icon> Articles
+          <mat-icon>warehouse</mat-icon> <span>Articles</span>
           <mat-icon class="sidebar__chevron" [class.open]="openGroups['articles']">expand_more</mat-icon>
         </button>
         <div  class="sidebar__sub" [class.sidebar__sub--open]="openGroups['articles']">
@@ -210,20 +215,20 @@
               routerLink="/articles"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
-            <mat-icon>inventory_2</mat-icon> Articles
+            <mat-icon>inventory_2</mat-icon> <span>Articles</span>
           </a>
           <a  class="sidebar__subitem"
               routerLink="/articles/categories"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
-            <mat-icon>list_alt</mat-icon> Categories
+            <mat-icon>list_alt</mat-icon> <span>Categories</span>
           </a>
           <a  class="sidebar__subitem"
               routerLink="/articles/deleted"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}"
               *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
-            <mat-icon>recycling</mat-icon> Deleted
+            <mat-icon>recycling</mat-icon> <span>Deleted</span>
           </a>
         </div>
       </div>
@@ -235,21 +240,21 @@
                 (click)="toggleGroup('clients')"
                 type="button"
                 [class.sidebar__item--group-open]="openGroups['clients']">
-          <mat-icon>people</mat-icon> Clients
+          <mat-icon>people</mat-icon> <span>Clients</span>
           <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
         </button>
         <div  class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
           <a  class="sidebar__subitem"
               routerLink="/clients" routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
-            <mat-icon>person</mat-icon> Clients
+            <mat-icon>person</mat-icon> <span>Clients</span>
           </a>
           <a  class="sidebar__subitem"
               routerLink="/clients/deleted"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}"
               *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
-            <mat-icon>person_remove</mat-icon> Deleted
+            <mat-icon>person_remove</mat-icon> <span>Deleted</span>
           </a>
         </div>
       </div>
@@ -257,7 +262,7 @@
       <!-- Audit Log -->
       <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
          *ngIf="authService.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS)">
-        <mat-icon>history</mat-icon> Audit Log
+        <mat-icon>history</mat-icon> <span>Audit Log</span>
       </a>
     </nav>
 
