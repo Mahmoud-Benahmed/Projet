@@ -63,6 +63,8 @@ export class PermissionMatrixComponent implements OnInit {
   error: string | null = null;
   successMessage: string | null = null;
 
+  collapsedCategories = new Set<string>();
+  readonly cellWidth = 160; // ← only value to change
   private baseUrl = `${environment.apiUrl}`;
 
   constructor(private http: HttpClient,
@@ -87,6 +89,7 @@ export class PermissionMatrixComponent implements OnInit {
         this.controles = controles;
 
         this.categories = [...new Set(this.controles.map((c) => c.category))];
+        this.collapsedCategories = new Set(this.categories);
         this.loadPrivileges();
       },
       error: () => {
@@ -123,6 +126,8 @@ export class PermissionMatrixComponent implements OnInit {
     });
   }
 
+  get cellWidthPx(): string { return `${this.cellWidth}px`; }
+
   getCell(roleId: string, controleId: string): MatrixCell | undefined {
     return this.matrix.get(this.cellKey(roleId, controleId));
   }
@@ -148,6 +153,21 @@ export class PermissionMatrixComponent implements OnInit {
         this.flash('error', 'Operation failed, please retry later.');
       },
     });
+  }
+
+  toggleCategory(category: string): void {
+    const next = new Set(this.collapsedCategories);
+    if (next.has(category)) {
+      next.delete(category);
+    } else {
+      next.add(category);
+    }
+    this.collapsedCategories = next; // new reference → triggers change detection
+    this.cdr.markForCheck();
+  }
+
+  isCategoryCollapsed(category: string): boolean {
+    return this.collapsedCategories.has(category);
   }
 
   getControlesByCategory(category: string): ControleDto[] {

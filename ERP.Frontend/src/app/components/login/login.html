@@ -30,7 +30,7 @@
             #loginInput="ngModel" />
         </div>
         <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
-          Login requis
+          Login required
         </span>
       </div>
 
@@ -53,6 +53,9 @@
             <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
+        <span class="field__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
+          Password required
+        </span>
       </div>
 
       <!-- Submit -->

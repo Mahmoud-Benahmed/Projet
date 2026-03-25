@@ -17,7 +17,7 @@ import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms'
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Article, ArticleService, ArticleStatsDto, Category, PagedResult } from '../../../services/articles.service';
 import { PaginationComponent } from "../../pagination/pagination";
-import { AuthService } from '../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { HttpError } from '../../../interfaces/ErrorDto';
 
 @Component({
@@ -75,7 +75,10 @@ export class DeletedArticlesComponent implements OnInit {
   currencyCode = 'EUR';
   currencyLocale = 'fr-FR';
 
+  readonly PRIVILEGES= PRIVILEGES;
+
   articleForm: FormGroup;
+
 
   constructor(
     public authService: AuthService,

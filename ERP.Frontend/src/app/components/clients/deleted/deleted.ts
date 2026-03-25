@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ModalComponent } from '../../modal/modal';
 import { ClientService, Client, ClientStatsDto } from '../../../services/client.service';
 import { PaginationComponent } from '../../pagination/pagination';
-import { AuthService } from '../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 @Component({
   selector: 'app-deleted-clients',
   standalone: true,
@@ -45,6 +45,8 @@ export class DeletedClientsComponent implements OnInit {
 
   selectedClient: Client | null = null;
   viewMode: 'list' | 'view' = 'list';
+
+  readonly PRIVILEGES= PRIVILEGES;
 
   constructor(
     public authService: AuthService,

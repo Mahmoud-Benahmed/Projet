@@ -25,9 +25,9 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 
     if (!hasAccess) {
       // Redirect to the most relevant page based on what the user CAN access
-      if (auth.hasPrivilege(PRIVILEGES.VIEW_USERS))    return router.createUrlTree(['/users']);
-      if (auth.hasPrivilege(PRIVILEGES.VIEW_ARTICLES)) return router.createUrlTree(['/articles']);
-      if (auth.hasPrivilege(PRIVILEGES.VIEW_CLIENTS))  return router.createUrlTree(['/clients']);
+      if (auth.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS))    return router.createUrlTree(['/users']);
+      if (auth.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)) return router.createUrlTree(['/articles']);
+      if (auth.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS))  return router.createUrlTree(['/clients']);
       return router.createUrlTree(['/home']);
     }
   }

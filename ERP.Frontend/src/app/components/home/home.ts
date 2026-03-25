@@ -1,3 +1,4 @@
+import { PRIVILEGES } from './../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AuthService } from '../../services/auth/auth.service';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,6 +24,7 @@ export class HomeComponent implements OnInit {
   lastLogin: string = '';
   error: string | null = null;
   successMessage: string | null = null;
+  readonly PRIVILEGES = PRIVILEGES;
 
   constructor(
     public authService: AuthService,

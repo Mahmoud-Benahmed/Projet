@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <div class="stat-card stat-card--blue" *ngIf="authService.canRestoreClients">
+    <div class="stat-card stat-card--blue" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Total</p>
@@ -124,10 +124,10 @@
               <td class="td--code">{{ client.phone ?? '—' }}</td>
               <td class="date-cell">{{ client.updatedAt | date:'dd MMM yyyy, HH:mm' }}</td>
               <td class="td--actions">
-                <button class="icon-btn icon-btn--view" (click)="openView(client)" title="View" *ngIf="authService.canViewClients">
+                <button class="icon-btn icon-btn--view" (click)="openView(client)" title="View" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button class="icon-btn icon-btn--reactivate" (click)="restore(client)" title="Restore" *ngIf="authService.canRestoreClients">
+                <button class="icon-btn icon-btn--reactivate" (click)="restore(client)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
@@ -197,7 +197,7 @@
         </div>
       </div>
       <div class="panel__actions">
-        <button class="btn-success" (click)="restore(selectedClient)" *ngIf="authService.canRestoreClients">
+        <button class="btn-success" (click)="restore(selectedClient)" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
           Restore
         </button>
       </div>

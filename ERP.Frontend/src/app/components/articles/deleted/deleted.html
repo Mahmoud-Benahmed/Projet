@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <div class="stat-card stat-card--blue" *ngIf="authService.canRestoreArticles">
+    <div class="stat-card stat-card--blue" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Total</p>
@@ -124,10 +124,10 @@
               <span class="td--barCode">{{ article.barCode }}</span>
             </td>
             <td class="td--actions">
-              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View" *ngIf="authService.canViewArticles">
+              <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
-              <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.canRestoreArticles">
+              <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
@@ -184,7 +184,7 @@
         </div>
       </div>
       <div class="panel__actions">
-        <button class="btn-success" (click)="restore(selectedArticle)" *ngIf="authService.canRestoreArticles">Restore</button>
+        <button class="btn-success" (click)="restore(selectedArticle)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">Restore</button>
       </div>
     </div>
   </div>

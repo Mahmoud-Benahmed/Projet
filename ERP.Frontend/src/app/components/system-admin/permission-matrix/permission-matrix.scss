@@ -1,49 +1,129 @@
 @use 'shared' as *;
 
-// ── All removed (already in shared):
-// .page-header, .btn-refresh, .loading-overlay--page, .loading-text
+// ── Matrix wrapper — owns the cell-width token ────────────────────────────
+.matrix-wrap {
+  --cell-width: 80px;
+}
 
+// ── Legend ────────────────────────────────────────────────────────────────
 .legend-card { margin-bottom: 1rem; }
+
 .legend {
-  display: flex; align-items: center; gap: 1.5rem; padding: 1rem 1.25rem;
-  &__label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; color: $text-lo; text-transform: uppercase; white-space: nowrap; min-width: 180px; }
-  &__roles { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  display: flex; justify-content: space-between; padding: 1rem 1.5rem;
+  
+  &__label {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+    color: $text-lo; text-transform: uppercase; white-space: nowrap;
+    min-width: 200px;
+  }
+
+  &__roles { display: flex; }
+
+  &__role-label {
+    width: var(--cell-width);
+    font-size: 0.72rem; font-weight: 600;
+    color: $text-hi; text-align: center; letter-spacing:0.1em;
+  }
 }
 
+// ── Category card ─────────────────────────────────────────────────────────
 .category-card { margin-bottom: 1rem; }
+
 .category-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.85rem 1.25rem; background: $bg-card-hi; border-bottom: 1px solid $border;
-  &__name { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: $text-hi; min-width: 180px; }
-  &__roles { display: flex; gap: 0.5rem; }
+  display: flex; justify-content: space-between;
+  padding: 0.85rem 1.25rem; background: $bg-card-hi;
+  border-bottom: 1px solid $border;
+  cursor: pointer; user-select: none; transition: background 0.15s;
+
+  &__name {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.82rem; font-weight: 600; color: $text-hi;
+    min-width: 180px;
+  }
+
+  &__roles { display: flex; }
+
+  &:hover { background: $bg-card-hi; filter: brightness(1.04); }
+  &--collapsed { border-bottom: none; }
 }
 
-.category-dot { width: 7px; height: 7px; border-radius: 50%; background: $blue; flex-shrink: 0; }
-.category-role-label { font-size: 0.72rem; font-weight: 600; color: $text-lo; width: 80px; text-align: center; letter-spacing: 0.05em; }
+.category-chevron {
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+  &--open { transform: rotate(0deg); }
+}
+
+.category-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: $blue; flex-shrink: 0;
+}
+
+.category-role-label {
+  width: var(--cell-width);
+  font-size: 0.72rem; font-weight: 600;
+  color: $text-lo; text-align: center; letter-spacing: 0.05em;
+}
+
+// ── Collapsible rows ──────────────────────────────────────────────────────
+.controle-rows-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.25s ease, opacity 0.25s ease;
+  opacity: 1;
+
+  &--collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.controle-rows-inner {
+  overflow: hidden;
+  min-height: 0;
+}
 
 .controle-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.85rem 1.25rem; border-bottom: 1px solid $border; transition: background 0.15s;
-  &:hover    { background: $bg-card-hi; }
-  &--last    { border-bottom: none; }
+  padding: 0.85rem 1.25rem; border-bottom: 1px solid $border;
+  transition: background 0.15s;
+  &:hover   { background: $bg-card-hi; }
+  &--last   { border-bottom: none; }
 }
 
-.controle-info { display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
+.controle-info {
+  display: flex; flex-direction: column; gap: 2px; min-width: 180px;
+}
 .controle-name { font-size: 0.88rem; font-weight: 500; color: $text-hi; }
 .controle-desc { font-size: 0.75rem; color: $text-lo; }
-.controle-cells { display: flex; gap: 0.5rem; }
 
-.cell-wrapper { width: 80px; display: flex; justify-content: center; }
+.controle-cells { display: flex; }
 
+.cell-wrapper {
+  width: var(--cell-width);
+  display: flex; justify-content: center;
+}
+
+// ── Cells ─────────────────────────────────────────────────────────────────
 .cell {
   width: 32px; height: 32px; border-radius: 8px; border: 1px solid $border;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.15s; background: transparent;
-  &--granted { background: $green-bg; border-color: $green-border; color: $green; &:hover { background: rgba(62, 207, 142, 0.22); border-color: $green; } }
-  &--denied  { background: $red-bg;   border-color: $red-border;   color: $red;   &:hover { background: rgba(224, 82, 82, 0.22);  border-color: $red; } }
-  &--loading { cursor: default; border-color: $border; background: $bg-card-hi; }
+
+  &--granted {
+    background: $green-bg; border-color: $green-border; color: $green;
+    &:hover { background: rgba(62, 207, 142, 0.22); border-color: $green; }
+  }
+  &--denied {
+    background: $red-bg; border-color: $red-border; color: $red;
+    &:hover { background: rgba(224, 82, 82, 0.22); border-color: $red; }
+  }
+  &--loading {
+    cursor: default; border-color: $border; background: $bg-card-hi;
+  }
 }
 
+// ── Stats footer ──────────────────────────────────────────────────────────
 .matrix-footer {
   display: flex; align-items: center; justify-content: center; gap: 2rem;
   padding: 1.5rem; margin-top: 1rem;
@@ -52,7 +132,16 @@
 
 .matrix-stat {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  &__value   { font-size: 1.5rem; font-weight: 700; color: $text-hi; letter-spacing: -0.04em; line-height: 1; }
-  &__label   { font-size: 0.75rem; color: $text-lo; font-weight: 500; letter-spacing: 0.05em; }
-  &__divider { width: 1px; height: 36px; background: $border; }
+
+  &__value {
+    font-size: 1.5rem; font-weight: 700; color: $text-hi;
+    letter-spacing: -0.04em; line-height: 1;
+  }
+  &__label {
+    font-size: 0.75rem; color: $text-lo;
+    font-weight: 500; letter-spacing: 0.05em;
+  }
+  &__divider {
+    width: 1px; height: 36px; background: $border;
+  }
 }

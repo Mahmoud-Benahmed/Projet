@@ -47,6 +47,7 @@
           type="text"
           placeholder="Search by libelle, category or description..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilter()"
         />
       </div>
       <button class="btn-add" (click)="openCreate()">
@@ -60,14 +61,38 @@
         <table class="table">
           <thead>
             <tr>
-              <th>CATEGORY</th>
-              <th>LIBELLE</th>
-              <th>DESCRIPTION</th>
-              <th>ACTIONS</th>
+              <th (click)="sortBy('category')" class="th--sortable">
+                Category
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'category' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'category' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
+              <th (click)="sortBy('libelle')" class="th--sortable">
+                Libelle
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'libelle' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'libelle' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
+              <th>Description</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let controle of filteredControles; trackBy: trackById" class="table__row">
+            <tr *ngFor="let controle of sortedData; trackBy: trackById" class="table__row">
               <td>
                 <span class="td--category">{{ controle.category }}</span>
               </td>
@@ -99,7 +124,7 @@
                 </button>
               </td>
             </tr>
-            <tr *ngIf="filteredControles.length === 0">
+            <tr *ngIf="sortedData.length === 0">
               <td colspan="4" class="td--empty">No controles found.</td>
             </tr>
           </tbody>

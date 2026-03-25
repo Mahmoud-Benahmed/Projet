@@ -1,4 +1,4 @@
-import { AuthService } from './../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from './../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
@@ -34,6 +34,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   userName = '';
   userRole = '';
   initials = '';
+  readonly PRIVILEGES= PRIVILEGES;
 
 
   constructor(private router: Router, public authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
@@ -89,6 +90,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/users'))             return [{ label: 'Users' }];
 
     if (url.startsWith('/articles/deleted'))  return [{ label: 'Articles', link: '/articles' }, { label: 'Deleted' }];
+    if (url.startsWith('/articles/categories'))  return [{ label: 'Articles', link: '/articles/categories' }, { label: 'Categories' }];
     if (url.startsWith('/articles'))          return [{ label: 'Articles' }];
 
     if (url.startsWith('/clients/deleted'))   return [{ label: 'Clients', link: '/clients' }, { label: 'Deleted' }];

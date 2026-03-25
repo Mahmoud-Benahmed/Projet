@@ -22,7 +22,7 @@ import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../.
 import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from '../../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
 import { PaginationComponent } from "../../../pagination/pagination";
 
 @Component({
@@ -75,6 +75,9 @@ export class UsersHomeComponent implements OnInit {
   totalCount: number =0;
 
 
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   // State
   isLoading = false;
   searchTerm = '';
@@ -83,6 +86,8 @@ export class UsersHomeComponent implements OnInit {
 
   pageTitle= 'Active Users';
   stats: UserStatsDto | null= null;
+
+  readonly PRIVILEGES= PRIVILEGES;
 
   constructor(
     private router: Router,
@@ -128,6 +133,34 @@ export class UsersHomeComponent implements OnInit {
   onPageSizeChange(): void {
     this.pageNumber = 1; // reset to first page on size change
     this.reload();
+  }
+
+
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  get sortedData() {
+    const data = [...this.dataSource.filteredData];
+    if (!this.sortColumn) return data;
+
+    return data.sort((a, b) => {
+      let valA = (a as any)[this.sortColumn];
+      let valB = (b as any)[this.sortColumn];
+
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) * (this.sortDirection === 'asc' ? 1 : -1);
+    });
   }
 
   applyFilter(): void {

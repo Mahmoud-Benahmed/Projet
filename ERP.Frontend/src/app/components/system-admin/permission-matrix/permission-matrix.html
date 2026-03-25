@@ -1,42 +1,14 @@
-<div class="page">
+<!-- ── MATRIX ── -->
+<ng-container *ngIf="!isLoading">
 
-  <!-- ── PAGE HEADER ── -->
-  <div class="page-header">
-    <div>
-      <p class="breadcrumb">SYSTEM ADMIN</p>
-      <h1 class="page-title">Permission Matrix</h1>
-    </div>
-    <button class="btn-secondary btn-refresh" (click)="loadMatrix()" [disabled]="isLoading">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="23 4 23 10 17 10"/>
-        <polyline points="1 20 1 14 7 14"/>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-      </svg>
-      Refresh
-    </button>
-  </div>
-
-  <!-- ===================== ALERTS ===================== -->
-  <div class="alert alert--error" *ngIf="error">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    {{ error }}
-    <button class="alert__close" (click)="dismissError()">✕</button>
-  </div>
-  <div class="alert alert--success" *ngIf="successMessage">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-    {{ successMessage }}
-    <button class="alert__close" (click)="dismissError()">✕</button>
-  </div>
-
-  <!-- ── MATRIX ── -->
-  <div *ngIf="!isLoading">
+  <div class="matrix-wrap" [style.--cell-width]="cellWidthPx">
 
     <!-- Role Legend -->
     <div class="table-card legend-card">
       <div class="legend">
         <span class="legend__label">Roles</span>
         <div class="legend__roles">
-          <div class="role-badge" *ngFor="let role of roles">
+          <div class="legend__role-label" *ngFor="let role of roles">
             {{ formatRole(role.libelle) }}
           </div>
         </div>
@@ -46,60 +18,68 @@
     <!-- Category Sections -->
     <div class="table-card category-card" *ngFor="let category of categories">
 
-      <!-- Category Header -->
-      <div class="category-header">
+      <div class="category-header"
+           (click)="toggleCategory(category)"
+           [class.category-header--collapsed]="isCategoryCollapsed(category)">
         <div class="category-header__name">
           <span class="category-dot"></span>
           {{ category }}
+          <svg class="category-chevron"
+               [class.category-chevron--open]="!isCategoryCollapsed(category)"
+               width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </div>
-        <div class="category-header__roles">
+        <div class="category-header__roles"
+             [style.opacity]="isCategoryCollapsed(category) ? '0' : '1'"
+             [style.transition]="'opacity 0.2s ease'">
           <div class="category-role-label" *ngFor="let role of roles">
             {{ formatRole(role.libelle) }}
           </div>
         </div>
       </div>
 
-      <!-- Controle Rows -->
-      <div class="controle-row"
-        *ngFor="let controle of getControlesByCategory(category); let last = last"
-        [class.controle-row--last]="last">
+      <div class="controle-rows-wrap"
+           [class.controle-rows-wrap--collapsed]="isCategoryCollapsed(category)">
+        <div class="controle-rows-inner">
+          <div class="controle-row"
+               *ngFor="let controle of getControlesByCategory(category); let last = last"
+               [class.controle-row--last]="last">
 
-        <div class="controle-info">
-          <span class="controle-name">{{ controle.libelle }}</span>
-          <span class="controle-desc">{{ controle.description }}</span>
-        </div>
+            <div class="controle-info">
+              <span class="controle-name">{{ controle.libelle }}</span>
+              <span class="controle-desc">{{ controle.description }}</span>
+            </div>
 
-        <div class="controle-cells">
-          <div class="cell-wrapper" *ngFor="let role of roles">
-            <ng-container [ngSwitch]="true">
-
-              <!-- Loading -->
-              <div class="cell cell--loading"
-                *ngSwitchCase="getCell(role.id, controle.id)?.loading === true">
-                <div class="spinner spinner--sm"></div>
+            <div class="controle-cells">
+              <div class="cell-wrapper" *ngFor="let role of roles">
+                <ng-container [ngSwitch]="true">
+                  <div class="cell cell--loading"
+                       *ngSwitchCase="getCell(role.id, controle.id)?.loading === true">
+                    <div class="spinner spinner--sm"></div>
+                  </div>
+                  <button class="cell cell--granted"
+                          *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
+                          (click)="togglePrivilege(role.id, controle.id)"
+                          [title]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <button class="cell cell--denied"
+                          *ngSwitchDefault
+                          (click)="togglePrivilege(role.id, controle.id)"
+                          [title]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </ng-container>
               </div>
+            </div>
 
-              <!-- Granted -->
-              <button class="cell cell--granted"
-                *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
-                (click)="togglePrivilege(role.id, controle.id)"
-                [title]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </button>
-
-              <!-- Denied -->
-              <button class="cell cell--denied"
-                *ngSwitchDefault
-                (click)="togglePrivilege(role.id, controle.id)"
-                [title]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-
-            </ng-container>
           </div>
         </div>
       </div>
@@ -125,4 +105,4 @@
     </div>
 
   </div>
-</div>
+</ng-container>

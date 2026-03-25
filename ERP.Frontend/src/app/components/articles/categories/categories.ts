@@ -1,30 +1,31 @@
-import { RoleCreateDto, RoleService, RoleUpdateDto } from '../../../services/auth/roles.service';
+// category.component.ts
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { ModalComponent } from '../../modal/modal';
 import { MatDialog } from '@angular/material/dialog';
-import { HttpError } from '../../../interfaces/ErrorDto';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PaginationComponent } from '../../pagination/pagination';
+
 import { AuthService } from '../../../services/auth/auth.service';
-import { PagedResultDto, RoleResponseDto } from '../../../interfaces/AuthDto';
+import { ModalComponent } from '../../modal/modal';
+import { PaginationComponent } from '../../pagination/pagination';
+import { HttpError } from '../../../interfaces/ErrorDto';
+import { CategoryRequestDto, CategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
-  selector: 'app-role',
+  selector: 'app-article-categories',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent],
-  templateUrl: './roles.html',
-  styleUrls: ['./roles.scss'],
+  templateUrl: './categories.html',
+  styleUrls: ['./categories.scss'],
 })
-export class RoleComponent implements OnInit {
+export class ArticleCategoriesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  dataSource = new MatTableDataSource<RoleResponseDto>([]);
+    dataSource = new MatTableDataSource<CategoryResponseDto>([]);
 
   pageNumber = 1;
   pageSize = 10;
@@ -35,23 +36,24 @@ export class RoleComponent implements OnInit {
   sortDirection: 'asc' | 'desc' = 'asc';
 
   viewMode: ViewMode = 'list';
-  selectedRole: RoleResponseDto | null = null;
+  selectedCategory: CategoryResponseDto | null = null;
   loading = false;
   errors: string[] = [];
   successMessage: string | null = null;
   searchQuery = '';
 
-  roleForm: FormGroup;
+  categoryForm: FormGroup;
 
   constructor(
     public authService: AuthService,
-    private roleService: RoleService,
+    private categoryService: CategoryService,
     private fb: FormBuilder,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {
-    this.roleForm = this.fb.group({
-      libelle: ['', [Validators.required, Validators.minLength(2)]],
+    this.categoryForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      tva:  [null, [Validators.required, Validators.min(0), Validators.max(100)]],
     });
   }
 
@@ -59,18 +61,18 @@ export class RoleComponent implements OnInit {
     this.reload();
   }
 
-  // ── Pagination ────────────────────────────────────────────────────────────
-
-  get totalPages(): number {
-    return Math.ceil(this.totalCount / this.pageSize);
-  }
+  // ── Search ────────────────────────────────────────────────────────────────
 
   applyFilter(): void {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
     this.pageNumber = 1;
   }
 
-    // ── Sorting ───────────────────────────────────────────────────────────────
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+
+  onPageSizeChange(): void { this.pageNumber = 1; this.load(); }
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -81,7 +83,7 @@ export class RoleComponent implements OnInit {
     }
   }
 
-  get sortedData(): RoleResponseDto[] {
+  get sortedData(): CategoryResponseDto[] {
     const filtered = [...this.dataSource.filteredData];
 
     if (this.sortColumn) {
@@ -103,116 +105,96 @@ export class RoleComponent implements OnInit {
     const start = (this.pageNumber - 1) * this.pageSize;
     return filtered.slice(start, start + this.pageSize);
   }
-
   // ── Load ──────────────────────────────────────────────────────────────────
 
   load(): void {
     this.loading = true;
     this.errors = [];
-    this.roleService.getAll().subscribe({
-      next: (res: RoleResponseDto[]) => {
-        this.dataSource.data = res;
-        this.totalCount = this.dataSource.data.length;
+    this.categoryService.getPaged(this.pageNumber, this.pageSize).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items;
+        this.totalCount = res.totalCount;
         this.loading = false;
         this.cdr.markForCheck();
       },
       error: () => {
-        this.flash('error', 'Failed to load roles.');
+        this.flash('error', 'Failed to load categories.');
         this.loading = false;
       },
     });
   }
 
-  reload(): void {
-    this.load();
-    this.cdr.markForCheck();
-  }
+  reload(): void { this.load(); }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   openCreate(): void {
     this.viewMode = 'create';
-    this.selectedRole = null;
-    this.roleForm.reset({ libelle: '' });
+    this.selectedCategory = null;
+    this.categoryForm.reset({ name: '', tva: null });
   }
 
-  openEdit(role: RoleResponseDto): void {
+  openEdit(category: CategoryResponseDto): void {
     this.viewMode = 'edit';
-    this.selectedRole = role;
-    this.roleForm.patchValue({ libelle: role.libelle });
+    this.selectedCategory = category;
+    this.categoryForm.patchValue({ name: category.name, tva: category.tva });
     this.cdr.markForCheck();
   }
 
-  openView(role: RoleResponseDto): void {
+  openView(category: CategoryResponseDto): void {
     this.viewMode = 'view';
-    this.selectedRole = role;
+    this.selectedCategory = category;
     this.cdr.markForCheck();
   }
 
   cancel(): void {
     this.viewMode = 'list';
-    this.selectedRole = null;
-    this.roleForm.reset();
+    this.selectedCategory = null;
+    this.categoryForm.reset();
   }
 
   submit(): void {
-    if (this.roleForm.invalid) return;
-    const val = this.roleForm.value;
+    if (this.categoryForm.invalid) return;
+    const dto: CategoryRequestDto = this.categoryForm.value;
 
     if (this.viewMode === 'create') {
-      const dto: RoleCreateDto = { libelle: val.libelle };
-      this.roleService.create(dto).subscribe({
-        next: () => {
-          this.reload();
-          this.cancel();
-          this.flash('success', `Role "${val.libelle}" created successfully.`);
-        },
-        error: (error) => {
-          const err = error.error as HttpError;
-          this.flash('error', err?.message ?? 'Failed to create role.');
-        },
+      this.categoryService.create(dto).subscribe({
+        next: () => { this.reload(); this.cancel(); this.flash('success', `Category "${dto.name}" created successfully.`); },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
       });
-    } else if (this.viewMode === 'edit' && this.selectedRole) {
-      const dto: RoleUpdateDto = { libelle: val.libelle };
-      this.roleService.update(this.selectedRole.id, dto).subscribe({
-        next: () => {
-          this.cancel();
-          this.reload();
-          this.flash('success', `Role "${val.libelle}" updated successfully.`);
-        },
-        error: (error) => {
-          const err = error.error as HttpError;
-          this.flash('error', err?.message ?? 'Failed to update role.');
-        },
+
+    } else if (this.viewMode === 'edit' && this.selectedCategory) {
+      this.categoryService.update(this.selectedCategory.id, dto).subscribe({
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" updated successfully.`); },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update category.'),
       });
     }
   }
 
-  delete(role: RoleResponseDto): void {
+  delete(category: CategoryResponseDto): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title: 'Delete Role',
-        message: `Role "${role.libelle}" will be permanently deleted. Do you want to proceed?`,
+        title:       'Delete Category',
+        message:     `Category "${category.name}" will be permanently deleted. Do you want to proceed?`,
         confirmText: 'Delete',
-        showCancel: true,
-        icon: 'auto_delete',
-        iconColor: 'danger',
+        showCancel:  true,
+        icon:        'auto_delete',
+        iconColor:   'danger',
       },
     });
 
-    dialogRef
-      .afterClosed()
+    dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
-        this.roleService.delete(role.id).subscribe({
+        this.categoryService.delete(category.id).subscribe({
           next: () => {
             if (this.viewMode === 'view') this.cancel();
-            this.flash('success', `Role "${role.libelle}" deleted successfully.`);
+            this.flash('success', `Category "${category.name}" deleted successfully.`);
             this.reload();
           },
-          error: () => this.flash('error', `Failed to delete role "${role.libelle}".`),
+          error: () => this.flash('error', `Failed to delete category "${category.name}".`),
         });
       });
   }
@@ -230,18 +212,9 @@ export class RoleComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  dismissError(): void {
-    this.errors = [];
-  }
+  dismissError(): void { this.errors = []; }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  onPageSizeChange(): void {
-    this.pageNumber = 1;
-    this.reload();
-  }
-
-  trackById(_: number, r: RoleResponseDto): string {
-    return r.id;
-  }
+  trackById(_: number, c: CategoryResponseDto): string { return c.id; }
 }

@@ -1,4 +1,3 @@
-import { Client } from './services/client.service';
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login';
 import { HomeComponent } from './components/home/home';
@@ -19,7 +18,13 @@ import { DeletedClientsComponent } from './components/clients/deleted/deleted';
 import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 import { ControleComponent } from './components/system-admin/controles/controles';
 import { RoleComponent } from './components/system-admin/roles/roles';
+import { ArticleCategoriesComponent } from './components/articles/categories/categories';
 import { PRIVILEGES } from './services/auth/auth.service';
+
+// helper function to pick multiple privileges from a category
+function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
+  return keys.map(k => PRIVILEGES[category][k as keyof typeof PRIVILEGES[typeof category]]);
+}
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -30,23 +35,24 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'change-password', component: MustChangePasswordComponent },
-      { path: 'change-password/:authUserId', component: ChangePasswordComponent, data: { privileges: [PRIVILEGES.VIEW_USERS, PRIVILEGES.UPDATE_USER] } },
-      { path: 'audit-log', component: AuditLogComponent, data: { privileges: [PRIVILEGES.MANAGE_AUDIT_LOGS] } },
-      { path: 'permissions', component: PermissionMatrixComponent, data: { privileges: [PRIVILEGES.ASSIGN_ROLES] } },
+      { path: 'change-password/:authUserId', component: ChangePasswordComponent, data: { privileges: pickPrivileges('USERS', ['VIEW_USERS', 'UPDATE_USER']) } },
+      { path: 'audit-log', component: AuditLogComponent, data: { privileges: pickPrivileges('AUDIT', ['MANAGE_AUDITLOGS']) } },
+      { path: 'permissions', component: PermissionMatrixComponent, data: { privileges: pickPrivileges('USERS', ['ASSIGN_ROLES']) } },
 
-      { path: 'users', component: UsersHomeComponent, data: { privileges: [PRIVILEGES.VIEW_USERS, PRIVILEGES.CREATE_USER, PRIVILEGES.UPDATE_USER, PRIVILEGES.DELETE_USER, PRIVILEGES.DEACTIVATE_USER] } },
-      { path: 'users/register', component: RegisterComponent, data: { privileges: [PRIVILEGES.CREATE_USER] } },
-      { path: 'users/deactivated', component: DeactivatedComponent, data: { privileges: [PRIVILEGES.ACTIVATE_USER, PRIVILEGES.DEACTIVATE_USER] } },
-      { path: 'users/deleted', component: DeletedUsersComponent, data: { privileges: [PRIVILEGES.RESTORE_USER] } },
-      { path: 'users/controles', component: ControleComponent, data: { privileges: [PRIVILEGES.ASSIGN_ROLES] } },
-      { path: 'users/roles', component: RoleComponent, data: { privileges: [PRIVILEGES.ASSIGN_ROLES] } },
-      { path: 'users/:authUserId', component: ProfileComponent, data: { privileges: [PRIVILEGES.VIEW_USERS, PRIVILEGES.UPDATE_USER] } },
+      { path: 'users', component: UsersHomeComponent, data: { privileges: pickPrivileges('USERS', ['VIEW_USERS','CREATE_USER','UPDATE_USER','DELETE_USER','DEACTIVATE_USER']) } },
+      { path: 'users/register', component: RegisterComponent, data: { privileges: pickPrivileges('USERS', ['CREATE_USER']) } },
+      { path: 'users/deactivated', component: DeactivatedComponent, data: { privileges: pickPrivileges('USERS', ['ACTIVATE_USER','DEACTIVATE_USER']) } },
+      { path: 'users/deleted', component: DeletedUsersComponent, data: { privileges: pickPrivileges('USERS', ['RESTORE_USER']) } },
+      { path: 'users/controles', component: ControleComponent, data: { privileges: pickPrivileges('USERS', ['ASSIGN_ROLES']) } },
+      { path: 'users/roles', component: RoleComponent, data: { privileges: pickPrivileges('USERS', ['ASSIGN_ROLES']) } },
+      { path: 'users/:authUserId', component: ProfileComponent, data: { privileges: pickPrivileges('USERS', ['VIEW_USERS','UPDATE_USER']) } },
 
-      { path: 'articles', component: ArticleComponent, data: { privileges: [PRIVILEGES.VIEW_ARTICLES, PRIVILEGES.CREATE_ARTICLE, PRIVILEGES.UPDATE_ARTICLE, PRIVILEGES.DELETE_ARTICLE] } },
-      { path: 'articles/deleted', component: DeletedArticlesComponent, data: { privileges: [PRIVILEGES.RESTORE_ARTICLE] } },
+      { path: 'articles', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
+      { path: 'articles/categories', component: ArticleCategoriesComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
+      { path: 'articles/deleted', component: DeletedArticlesComponent, data: { privileges: pickPrivileges('ARTICLES', ['RESTORE_ARTICLE']) } },
 
-      { path: 'clients', component: ClientComponent, data: { privileges: [PRIVILEGES.VIEW_CLIENTS, PRIVILEGES.CREATE_CLIENT, PRIVILEGES.UPDATE_CLIENT, PRIVILEGES.DELETE_CLIENT] } },
-      { path: 'clients/deleted', component: DeletedClientsComponent, data: { privileges: [PRIVILEGES.RESTORE_CLIENT] } },
+      { path: 'clients', component: ClientComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
+      { path: 'clients/deleted', component: DeletedClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['RESTORE_CLIENT']) } },
 
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]

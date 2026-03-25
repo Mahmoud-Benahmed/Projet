@@ -403,6 +403,24 @@ $bp-xl:  1200px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch; // smooth momentum scroll on iOS
 }
+
+.th--sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover { opacity: 0.75; }
+
+  .sort-icon {
+    display: inline-flex;
+    flex-direction: column;
+    margin-left: 4px;
+    vertical-align: middle;
+    gap: 1px;
+    transform: translateY(-1px);
+  }
+}
+
 // ========================
 // Badges
 // ========================

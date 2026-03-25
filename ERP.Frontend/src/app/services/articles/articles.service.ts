@@ -1,22 +1,20 @@
+// article.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../environment';
-import { Category } from './categories.service';
+import { CategoryResponseDto } from './categories.service';
 
-// ========================
-// Models
-// ========================
-export interface Article {
+// ── DTOs ──────────────────────────────────────────────────────────────────────
+
+export interface ArticleResponseDto {
   id: string;
+  category: CategoryResponseDto;
   codeRef: string;
   barCode: string;
   libelle: string;
   prix: number;
   tva: number;
-  categoryId: string;
-  categoryName: string;
-  category: Category
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string | null;
@@ -29,112 +27,102 @@ export interface ArticleStatsDto {
   categoriesCount: number;
 }
 
-export interface PagedResult<T> {
-  items: T[];
-  totalCount: number;
-  pageNumber: number;
-  pageSize: number;
-}
-
-export interface CreateArticleRequest {
+export interface CreateArticleRequestDto {
   libelle: string;
   prix: number;
   categoryId: string;
   barCode: string;
-  tva: number | null;
+  tva?: number;
 }
 
-export interface UpdateArticleRequest {
+export interface UpdateArticleRequestDto {
   libelle: string;
   prix: number;
   categoryId: string;
-  barCode: string | null;
-  tva: number | null;
+  barCode?: string;
+  tva?: number;
 }
-// ========================
-// Service
-// ========================
-@Injectable({
-  providedIn: 'root',
-})
-export class ArticleService {
 
-  private readonly articlesUrl = `${environment.apiUrl}${environment.routes.articles}`;
+export interface PagedResultDto<T> {
+  items: T[];
+  totalCount: number;
+}
+
+// ── Service ───────────────────────────────────────────────────────────────────
+
+@Injectable({ providedIn: 'root' })
+export class ArticleService {
+  private readonly base = `${environment.apiUrl}/articles`;
 
   constructor(private http: HttpClient) {}
 
-  // -------------------------------------------------------
-  // ARTICLES
-  // -------------------------------------------------------
-
-  getStats(): Observable<ArticleStatsDto> {
-    return this.http.get<ArticleStatsDto>(`${this.articlesUrl}/stats`);
-  }
-
-  getAllArticles(pageNumber: number = 1,
-                  pageSize: number = 10): Observable<PagedResult<Article>> {
+  // GET /articles?pageNumber=&pageSize=
+  getAll(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(this.articlesUrl, {params});
+    return this.http.get<PagedResultDto<ArticleResponseDto>>(this.base, { params });
   }
 
-  getDeletedArticles(pageNumber: number = 1,
-                  pageSize: number = 10): Observable<PagedResult<Article>> {
+  // GET /articles/deleted?pageNumber=&pageSize=
+  getDeleted(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/deleted`, {params});
+    return this.http.get<PagedResultDto<ArticleResponseDto>>(`${this.base}/deleted`, { params });
   }
 
-  getArticleById(id: string): Observable<Article> {
-    return this.http.get<Article>(`${this.articlesUrl}/${id}`);
+  // GET /articles/{id}
+  getById(id: string): Observable<ArticleResponseDto> {
+    return this.http.get<ArticleResponseDto>(`${this.base}/${id}`);
   }
 
-  getArticleByCode(code: string): Observable<Article> {
+  // GET /articles/by-code?code=
+  getByCode(code: string): Observable<ArticleResponseDto> {
     const params = new HttpParams().set('code', code);
-    return this.http.get<Article>(`${this.articlesUrl}/by-code`, {params});
+    return this.http.get<ArticleResponseDto>(`${this.base}/by-code`, { params });
   }
 
-  getArticlesPagedByCategory(
-    categoryId: string,
-    pageNumber: number = 1,
-    pageSize: number = 10
-  ): Observable<PagedResult<Article>> {
+  // GET /articles/by-category?categoryId=&pageNumber=&pageSize=
+  getByCategory(categoryId: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('categoryId', categoryId)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/by-category`, { params });
+    return this.http.get<PagedResultDto<ArticleResponseDto>>(`${this.base}/by-category`, { params });
   }
 
-  getArticlesPagedByLibelle(
-    libelleFilter: string,
-    pageNumber: number = 1,
-    pageSize: number = 10
-  ): Observable<PagedResult<Article>> {
+  // GET /articles/by-libelle?libelleFilter=&pageNumber=&pageSize=
+  getByLibelle(libelleFilter: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ArticleResponseDto>> {
     const params = new HttpParams()
-      .set('libelle', libelleFilter)
+      .set('libelleFilter', libelleFilter)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/by-libelle`, { params });
+    return this.http.get<PagedResultDto<ArticleResponseDto>>(`${this.base}/by-libelle`, { params });
   }
 
-  createArticle(request: CreateArticleRequest): Observable<Article> {
-    return this.http.post<Article>(this.articlesUrl, request);
+  // GET /articles/stats
+  getStats(): Observable<ArticleStatsDto> {
+    return this.http.get<ArticleStatsDto>(`${this.base}/stats`);
   }
 
-  updateArticle(id: string, request: UpdateArticleRequest): Observable<Article> {
-    return this.http.put<Article>(`${this.articlesUrl}/${id}`, request);
+  // POST /articles
+  create(dto: CreateArticleRequestDto): Observable<ArticleResponseDto> {
+    return this.http.post<ArticleResponseDto>(this.base, dto);
   }
 
-  delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.articlesUrl}/${id}`);
+  // PUT /articles/{id}
+  update(id: string, dto: UpdateArticleRequestDto): Observable<ArticleResponseDto> {
+    return this.http.put<ArticleResponseDto>(`${this.base}/${id}`, dto);
   }
 
+  // PATCH /articles/restore/{id}
   restore(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.articlesUrl}/restore/${id}`, {});
+    return this.http.patch<void>(`${this.base}/restore/${id}`, null);
   }
 
-
+  // DELETE /articles/{id}
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
 }

@@ -1,3 +1,4 @@
+import { PRIVILEGES } from './../../../services/auth/auth.service';
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
@@ -104,7 +105,7 @@ export class ProfileComponent implements OnInit {
       }
 
 
-      if (this.authService.canViewUsers && this.authService.UserId !== this.authUserId) {
+      if (this.authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS) && this.authService.UserId !== this.authUserId) {
         this.authService.getById(this.authUserId).subscribe({
           next: (authUser) => {
             this.userProfile = authUser;
@@ -343,7 +344,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get hasPrivilege():boolean{
-    return this.authService.canUpdateUsers && !this.isOwnProfile;
+    return this.authService.hasPrivilege(PRIVILEGES.USERS.UPDATE_USER) && !this.isOwnProfile;
   }
 
   get isOwnProfile(): boolean {

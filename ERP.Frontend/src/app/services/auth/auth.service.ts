@@ -13,59 +13,63 @@ interface JwtPayload {
   privilege: string | string[];
   exp: number;
 }
+
 export const PRIVILEGES = {
-  // ── Users
-  VIEW_USERS: 'VIEWUSERS',
-  CREATE_USER: 'CREATEUSER',
-  UPDATE_USER: 'UPDATEUSER',
-  DELETE_USER: 'DELETEUSER',
-  RESTORE_USER: 'RESTOREUSER',
-  ACTIVATE_USER: 'ACTIVATEUSER',
-  DEACTIVATE_USER: 'DEACTIVATEUSER',
-  MANAGE_USERS: 'MANAGEUSERS',
-
-  // ── Roles & Controls
-  ASSIGN_ROLES: 'ASSIGNROLES',
-
-  // ── Audit
-  MANAGE_AUDIT_LOGS: 'MANAGEAUDITLOGS',
-
-  // ── Clients
-  VIEW_CLIENTS: 'VIEWCLIENTS',
-  CREATE_CLIENT: 'CREATECLIENT',
-  UPDATE_CLIENT: 'UPDATECLIENT',
-  DELETE_CLIENT: 'DELETECLIENT',
-  RESTORE_CLIENT: 'RESTORECLIENT',
-  MANAGE_CLIENTS: 'MANAGECLIENTS',
-
-  // ── Articles
-  VIEW_ARTICLES: 'VIEWARTICLES',
-  CREATE_ARTICLE: 'CREATEARTICLE',
-  UPDATE_ARTICLE: 'UPDATEARTICLE',
-  DELETE_ARTICLE: 'DELETEARTICLE',
-  RESTORE_ARTICLE: 'RESTOREARTICLE',
-  MANAGE_ARTICLES: 'MANAGEARTICLES',
-
-  // ── Invoices
-  VIEW_INVOICES: 'VIEWINVOICES',
-  CREATE_INVOICE: 'CREATEINVOICE',
-  VALIDATE_INVOICE: 'VALIDATEINVOICE',
-  DELETE_INVOICE: 'DELETEINVOICE',
-  RESTORE_INVOICE: 'RESTOREINVOICE',
-  MANAGE_INVOICES: 'MANAGEINVOICES',
-
-  // ── Payments
-  VIEW_PAYMENTS: 'VIEWPAYMENTS',
-  RECORD_PAYMENT: 'RECORDPAYMENT',
-  DELETE_PAYMENT: 'DELETEPAYMENT',
-  RESTORE_PAYMENT: 'RESTOREPAYMENT',
-  MANAGE_PAYMENTS: 'MANAGEPAYMENTS',
-
-  // ── Stock
-  VIEW_STOCK: 'VIEWSTOCK',
-  UPDATE_STOCK: 'UPDATESTOCK',
-  ADD_ENTRY: 'ADDENTRY',
-  MANAGE_STOCK: 'MANAGESTOCK',
+  USERS: {
+    VIEW_USERS: "VIEW_USERS",
+    CREATE_USER: "CREATE_USER",
+    UPDATE_USER: "UPDATE_USER",
+    DELETE_USER: "DELETE_USER",
+    RESTORE_USER: "RESTORE_USER",
+    ACTIVATE_USER: "ACTIVATE_USER",
+    DEACTIVATE_USER: "DEACTIVATE_USER",
+    MANAGE_USERS: "MANAGE_USERS",
+    ASSIGN_ROLES: "ASSIGN_ROLES",
+  },
+  AUDIT: {
+    MANAGE_AUDITLOGS: "MANAGE_AUDITLOGS",
+  },
+  CLIENTS: {
+    VIEW_CLIENTS: "VIEW_CLIENTS",
+    CREATE_CLIENT: "CREATE_CLIENT",
+    UPDATE_CLIENT: "UPDATE_CLIENT",
+    DELETE_CLIENT: "DELETE_CLIENT",
+    RESTORE_CLIENT: "RESTORE_CLIENT",
+    MANAGE_CLIENTS: "MANAGE_CLIENTS",
+  },
+  ARTICLES: {
+    VIEW_ARTICLES: "VIEW_ARTICLES",
+    CREATE_ARTICLE: "CREATE_ARTICLE",
+    UPDATE_ARTICLE: "UPDATE_ARTICLE",
+    DELETE_ARTICLE: "DELETE_ARTICLE",
+    RESTORE_ARTICLE: "RESTORE_ARTICLE",
+    MANAGE_ARTICLES: "MANAGE_ARTICLES",
+  },
+  INVOICES: {
+    VIEW_INVOICES: "VIEW_INVOICES",
+    CREATE_INVOICE: "CREATE_INVOICE",
+    VALIDATE_INVOICE: "VALIDATE_INVOICE",
+    DELETE_INVOICE: "DELETE_INVOICE",
+    RESTORE_INVOICE: "RESTORE_INVOICE",
+    MANAGE_INVOICES: "MANAGE_INVOICES",
+  },
+  PAYMENTS: {
+    VIEW_PAYMENTS: "VIEW_PAYMENTS",
+    RECORD_PAYMENT: "RECORD_PAYMENT",
+    DELETE_PAYMENT: "DELETE_PAYMENT",
+    RESTORE_PAYMENT: "RESTORE_PAYMENT",
+    MANAGE_PAYMENTS: "MANAGE_PAYMENTS",
+  },
+  STOCK: {
+    VIEW_STOCK: "VIEW_STOCK",
+    UPDATE_STOCK: "UPDATE_STOCK",
+    ADD_ENTRY: "ADD_ENTRY",
+    MANAGE_STOCK: "MANAGE_STOCK",
+  },
+  REPORTS: {
+    VIEW_REPORTS: "VIEW_REPORTS",
+    EXPORT_REPORTS: "EXPORT_REPORTS",
+  },
 };
 
 @Injectable({
@@ -163,86 +167,40 @@ export class AuthService {
     return this.getPayload()?.login ?? null;
   }
 
-  // ========================
-  // ROLES
-  // ========================
-  get isSystemAdmin(): boolean {
-    return this.Role === 'SYSTEMADMIN';}
-
-  get isStockManager(): boolean {
-    return this.Role === 'STOCKMANAGER';}
-
-  get isSalesManager(): boolean {
-    return this.Role === 'SALESMANAGER';}
-  get isAccountant(): boolean {
-    return this.Role === 'ACCOUNTANT';}
-
-  // ========================
+  // =========================
   // PRIVILEGES
-  // ========================
+  // =========================
   get Privileges(): string[] {
     const payload = this.getPayload();
     if (!payload?.privilege) return [];
-    return Array.isArray(payload.privilege)
-      ? payload.privilege
-      : [payload.privilege];
+    return Array.isArray(payload.privilege) ? payload.privilege : [payload.privilege];
   }
 
-  hasPrivilege(privilege: string): boolean {
-    return this.Privileges.includes(privilege);
-  }
+  hasPrivilege(privilege: string): boolean { return this.Privileges.includes(privilege); }
 
-  // =========================
-  // USERS + AUDIT LOGS
-  // =========================
   get canManageUsers(): boolean {
-    return this.hasPrivilege(PRIVILEGES.VIEW_USERS)
-        || this.hasPrivilege(PRIVILEGES.ACTIVATE_USER)
-        || this.hasPrivilege(PRIVILEGES.DEACTIVATE_USER)
-        || this.hasPrivilege(PRIVILEGES.CREATE_USER)
-        || this.hasPrivilege(PRIVILEGES.UPDATE_USER)
-        || this.hasPrivilege(PRIVILEGES.DELETE_USER);
+    return this.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)
+        || this.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)
+        || this.hasPrivilege(PRIVILEGES.USERS.UPDATE_USER)
+        || this.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)
+        || this.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)
+        || this.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER);
   }
-  get canViewUsers(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_USERS); }
-  get canUpdateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_USER); }
-  get canActivateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.ACTIVATE_USER); }
-  get canDeactivateUsers(): boolean { return this.hasPrivilege(PRIVILEGES.DEACTIVATE_USER); }
-  get canRegisterUsers(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_USER); }
-  get canDeleteUsers(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_USER); }
-  get canRestoreUsers(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_USER); }
-  get canSeePermissions(): boolean { return this.hasPrivilege(PRIVILEGES.ASSIGN_ROLES); }
-  get canAssignRoles(): boolean {return this.hasPrivilege(PRIVILEGES.ASSIGN_ROLES);}
-  get canSeeAuditLog(): boolean { return this.hasPrivilege(PRIVILEGES.MANAGE_AUDIT_LOGS); }
+  get canAssignRoles(): boolean { return this.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES); }
+  get canSeeAuditLog(): boolean { return this.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS); }
 
-  // =============================
-  // ARTICLES
-  // =============================
   get canManageArticles(): boolean {
-    return this.hasPrivilege(PRIVILEGES.VIEW_ARTICLES)
-        || this.hasPrivilege(PRIVILEGES.CREATE_ARTICLE)
-        || this.hasPrivilege(PRIVILEGES.UPDATE_ARTICLE)
-        || this.hasPrivilege(PRIVILEGES.DELETE_ARTICLE);
+    return this.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)
+        || this.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE)
+        || this.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE)
+        || this.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE);
   }
-  get canViewArticles(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_ARTICLES); }
-  get canCreateArticles(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_ARTICLE); }
-  get canUpdateArticles(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_ARTICLE); }
-  get canDeleteArticles(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_ARTICLE); }
-  get canRestoreArticles(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_ARTICLE); }
-
-  // =============================
-  // CLIENTS
-  // =============================
   get canManageClients(): boolean {
-    return this.hasPrivilege(PRIVILEGES.VIEW_CLIENTS)
-        || this.hasPrivilege(PRIVILEGES.CREATE_CLIENT)
-        || this.hasPrivilege(PRIVILEGES.UPDATE_CLIENT)
-        || this.hasPrivilege(PRIVILEGES.DELETE_CLIENT);
+    return this.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)
+        || this.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT)
+        || this.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT)
+        || this.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT);
   }
-  get canViewClients(): boolean { return this.hasPrivilege(PRIVILEGES.VIEW_CLIENTS); }
-  get canCreateClients(): boolean { return this.hasPrivilege(PRIVILEGES.CREATE_CLIENT); }
-  get canUpdateClients(): boolean { return this.hasPrivilege(PRIVILEGES.UPDATE_CLIENT); }
-  get canDeleteClients(): boolean { return this.hasPrivilege(PRIVILEGES.DELETE_CLIENT); }
-  get canRestoreClients(): boolean { return this.hasPrivilege(PRIVILEGES.RESTORE_CLIENT); }
 
   storeMustChangePassword(value: boolean): void {
     localStorage.setItem('mustChangePassword', String(value));

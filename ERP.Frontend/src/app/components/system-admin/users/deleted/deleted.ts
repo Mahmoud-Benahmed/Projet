@@ -15,7 +15,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 import { PaginationComponent } from "../../../pagination/pagination";
 
@@ -67,10 +67,16 @@ export class DeletedUsersComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalCount: number =0;
 
+
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   isLoading = false;
   searchTerm = '';
   error: string | null = null;
   successMessage: string | null = null;
+
+  readonly PRIVILEGES= PRIVILEGES;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -117,6 +123,34 @@ export class DeletedUsersComponent implements OnInit {
     this.pageNumber = 1; // reset to first page on size change
     this.reload();
   }
+
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  get sortedData() {
+    const data = [...this.dataSource.filteredData];
+    if (!this.sortColumn) return data;
+
+    return data.sort((a, b) => {
+      let valA = (a as any)[this.sortColumn];
+      let valB = (b as any)[this.sortColumn];
+
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) * (this.sortDirection === 'asc' ? 1 : -1);
+    });
+  }
+
 
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();

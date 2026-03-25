@@ -10,7 +10,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaginationComponent } from '../../pagination/pagination';
-import { ControleResponseDto, PagedResultDto } from '../../../interfaces/AuthDto';
+import { ControleResponseDto } from '../../../interfaces/AuthDto';
+import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
@@ -24,12 +25,23 @@ type ViewMode = 'list' | 'create' | 'edit' | 'view';
 export class ControleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  controles: ControleResponseDto[] = [];
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  dataSource = new MatTableDataSource<ControleResponseDto>([]);
+
+  // ── Pagination ────────────────────────────────────────────────────────────
 
   pageNumber = 1;
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
-  totalCount: number =0;
+  totalCount = 0;
+
+  // ── Sorting ───────────────────────────────────────────────────────────────
+
+  sortColumn = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
+  // ── State ─────────────────────────────────────────────────────────────────
 
   viewMode: ViewMode = 'list';
   selectedControle: ControleResponseDto | null = null;
@@ -48,8 +60,8 @@ export class ControleComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {
     this.controleForm = this.fb.group({
-      category: ['', [Validators.required, Validators.minLength(2)]],
-      libelle: ['', [Validators.required, Validators.minLength(2)]],
+      category:    ['', [Validators.required, Validators.minLength(2)]],
+      libelle:     ['', [Validators.required, Validators.minLength(2)]],
       description: ['', [Validators.required, Validators.minLength(5)]],
     });
   }
@@ -60,29 +72,49 @@ export class ControleComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-    get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-    prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.reload(); } }
-    nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.reload(); } }
-    onPageSizeChange(): void {
-      this.pageNumber = 1;
-      this.reload();
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+
+  onPageSizeChange(): void { this.pageNumber = 1; this.reload(); }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
+  applyFilter(): void {
+    this.dataSource.filter = this.searchQuery.trim().toLowerCase();
+    this.pageNumber = 1;
+  }
+
+  // ── Sorting ───────────────────────────────────────────────────────────────
+
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  get sortedData(): ControleResponseDto[] {
+    const filtered = [...this.dataSource.filteredData];
+
+    if (this.sortColumn) {
+      filtered.sort((a, b) => {
+        let valA = (a as any)[this.sortColumn];
+        let valB = (b as any)[this.sortColumn];
+
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        return (valA < valB ? -1 : valA > valB ? 1 : 0) * (this.sortDirection === 'asc' ? 1 : -1);
+      });
     }
 
-  // ── Search / filter ───────────────────────────────────────────────────────
-
-  get filteredControles(): ControleResponseDto[] {
-    let result = this.controles;
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase();
-      result = result.filter(c =>
-        c.libelle.toLowerCase().includes(q) ||
-        c.category.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q)
-      );
-    }
-    // ✅ Slice to current page
+    // client-side pagination slice
     const start = (this.pageNumber - 1) * this.pageSize;
-    return result.slice(start, start + this.pageSize);
+    return filtered.slice(start, start + this.pageSize);
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -92,7 +124,7 @@ export class ControleComponent implements OnInit {
     this.errors = [];
     this.controleService.getAll().subscribe({
       next: (res: ControleResponseDto[]) => {
-        this.controles = res;
+        this.dataSource.data = res;
         this.totalCount = res.length;
         this.loading = false;
         this.cdr.markForCheck();
@@ -121,8 +153,8 @@ export class ControleComponent implements OnInit {
     this.viewMode = 'edit';
     this.selectedControle = controle;
     this.controleForm.patchValue({
-      category: controle.category,
-      libelle: controle.libelle,
+      category:    controle.category,
+      libelle:     controle.libelle,
       description: controle.description,
     });
     this.cdr.markForCheck();
@@ -175,17 +207,16 @@ export class ControleComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title: 'Delete Controle',
-        message: `Controle "${controle.libelle}" will be permanently deleted. Do you want to proceed?`,
+        title:       'Delete Controle',
+        message:     `Controle "${controle.libelle}" will be permanently deleted. Do you want to proceed?`,
         confirmText: 'Delete',
-        showCancel: true,
-        icon: 'auto_delete',
-        iconColor: 'danger',
+        showCancel:  true,
+        icon:        'auto_delete',
+        iconColor:   'danger',
       },
     });
 
-    dialogRef
-      .afterClosed()
+    dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
@@ -213,13 +244,9 @@ export class ControleComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  dismissError(): void {
-    this.errors = [];
-  }
+  dismissError(): void { this.errors = []; }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  trackById(_: number, c: ControleResponseDto): string {
-    return c.id;
-  }
+  trackById(_: number, c: ControleResponseDto): string { return c.id; }
 }

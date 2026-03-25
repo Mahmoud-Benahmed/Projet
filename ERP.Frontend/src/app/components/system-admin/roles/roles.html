@@ -47,6 +47,7 @@
           type="text"
           placeholder="Search roles..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilter()"
         />
       </div>
       <button class="btn-add" (click)="openCreate()">
@@ -60,13 +61,25 @@
         <table class="table">
           <thead>
             <tr>
-              <th>LIBELLE</th>
+              <th (click)="sortBy('libelle')" class="th--sortable">
+                Libelle
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'libelle' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'libelle' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
               <th>ID</th>
               <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let role of filteredRoles; trackBy: trackById" class="table__row">
+            <tr *ngFor="let role of sortedData; trackBy: trackById" class="table__row">
               <td class="td--name">
                 <span class="td--badge">{{ role.libelle }}</span>
               </td>
@@ -97,7 +110,7 @@
                 </button>
               </td>
             </tr>
-            <tr *ngIf="filteredRoles.length === 0">
+            <tr *ngIf="sortedData.length === 0">
               <td colspan="3" class="td--empty">No roles found.</td>
             </tr>
           </tbody>

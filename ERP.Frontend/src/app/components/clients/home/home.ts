@@ -1,4 +1,4 @@
-import { AuthService } from './../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from './../../../services/auth/auth.service';
 import { ClientService, Client, CreateClientRequest, UpdateClientRequest, ClientStatsDto, ClientType } from '../../../services/client.service';
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -39,6 +39,7 @@ export class ClientComponent implements OnInit {
   searchQuery = '';
 
   readonly clientTypes: ClientType[] = ['Individual', 'Company'];
+  readonly PRIVILEGES= PRIVILEGES;
 
   clientForm: FormGroup;
 
