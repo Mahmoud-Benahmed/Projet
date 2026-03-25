@@ -20,7 +20,11 @@ namespace ERP.AuthService.Domain
         public Controle(string category, string libelle, string description)
         {
             Id = Guid.NewGuid();
-            Category = category;
+            Category = Regex.Replace(
+                category.Trim().ToUpper(),
+                @"\s+",
+                "_"
+            );
             Libelle = Regex.Replace(
                 libelle.Trim().ToUpper(),
                 @"\s+",
