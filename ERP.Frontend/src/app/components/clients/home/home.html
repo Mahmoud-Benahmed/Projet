@@ -152,7 +152,6 @@
                   </span>
                 </th>
                 <th>PHONE</th>
-                <th>CATEGORIES</th>
                 <th (click)="sortBy('creditLimit')" class="th--sortable">
                   CREDIT LIMIT
                   <span class="sort-icon">
@@ -167,6 +166,7 @@
                   </span>
                 </th>
                 <th>TAX NUMBER</th>
+                <th>CREATED AT</th>
                 <th>STATUS</th>
                 <th>ACTIONS</th>
               </tr>
@@ -176,18 +176,16 @@
                 <td class="td--name">{{ client.name }}</td>
                 <td class="td--email">{{ client.email }}</td>
                 <td class="td--phone">{{ client.phone ?? '—' }}</td>
-                <td>
-                  <span class="td--category" *ngIf="client.categories.length > 0">
-                    {{ getCategoryNames(client) }}
-                  </span>
-                  <span class="td--empty-value" *ngIf="client.categories.length === 0">—</span>
-                </td>
                 <td class="td--price">
                   <span *ngIf="client.creditLimit != null">{{ client.creditLimit | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale }}</span>
                   <span class="td--empty-value" *ngIf="client.creditLimit == null">—</span>
                 </td>
                 <td class="td--tax">
                   <span *ngIf="client.taxNumber">{{ client.taxNumber}}</span>
+                  <span class="td--empty-value" *ngIf="client.taxNumber == null">—</span>
+                </td>
+                <td class="td--tax">
+                  <span *ngIf="client.taxNumber">{{ client.createdAt | date:'yyyy-MM-dd HH:mm'}}</span>
                   <span class="td--empty-value" *ngIf="client.taxNumber == null">—</span>
                 </td>
                 <td>

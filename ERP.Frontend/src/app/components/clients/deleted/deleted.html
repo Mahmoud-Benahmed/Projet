@@ -140,7 +140,6 @@
                   </span>
                 </th>
                 <th>PHONE</th>
-                <th>CATEGORIES</th>
                 <th (click)="sortBy('creditLimit')" class="th--sortable">
                   CREDIT LIMIT
                   <span class="sort-icon">
@@ -155,6 +154,19 @@
                   </span>
                 </th>
                 <th>TAX NUMBER</th>
+                <th (click)="sortBy('createdAt')" class="th--sortable">
+                  CREATED AT
+                  <span class="sort-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </th>
                 <th>STATUS</th>
                 <th>ACTIONS</th>
               </tr>
@@ -164,12 +176,6 @@
               <td class="td--name">{{ client.name }}</td>
               <td class="td--email">{{ client.email }}</td>
               <td class="td--phone">{{ client.phone ?? '—' }}</td>
-              <td>
-                <span class="td--category" *ngIf="client.categories.length > 0">
-                  {{ getCategoryNames(client) }}
-                </span>
-                <span class="td--empty-value" *ngIf="client.categories.length === 0">—</span>
-              </td>
               <td class="td--credit">
                 <span *ngIf="client.creditLimit != null">{{ client.creditLimit | number:'1.2-2' }}</span>
                 <span class="td--empty-value" *ngIf="client.creditLimit == null">—</span>
@@ -177,6 +183,9 @@
               <td class="td--tax">
                 <span *ngIf="client.taxNumber">{{ client.taxNumber}}</span>
                 <span class="td--empty-value" *ngIf="client.taxNumber == null">—</span>
+              </td>
+              <td>
+                <span class="td--category" >{{ client.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
               </td>
               <td>
                 <span class="badge" [ngClass]="client.isBlocked ? 'badge--blocked' : 'badge--active'">
