@@ -61,6 +61,8 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
             icon: 'timer',
             iconColor: 'warn'
           }
+        }).afterClosed().subscribe(() => {
+            router.navigate(['/home']);
         });
         return throwError(() => error);
       }
@@ -148,6 +150,9 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      if(error.status === 404){
+        router.navigate(['/home']);
+      }
       return throwError(() => error);
     })
   );
