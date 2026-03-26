@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Domain;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Domain;
 
 namespace ERP.ArticleService.Application.Interfaces
 {
@@ -6,9 +7,11 @@ namespace ERP.ArticleService.Application.Interfaces
     {
         Task AddAsync(Category category);
         Task<Category?> GetByIdAsync(Guid id);
+        Task<Category?> GetByIdDeletedAsync(Guid id);
+
         Task<Category?> GetByNameAsync(string name);
         Task<List<Category>> GetAllAsync();
-
+        Task<CategoryStatsDto> GetStatsAsync();
 
         Task<Category?> GetByTVAsync(decimal tva);
         Task<List<Category>> GetBetweenTVAAsync(decimal min, decimal max);
@@ -23,6 +26,10 @@ namespace ERP.ArticleService.Application.Interfaces
         // PAGING / FILTERING
         // =========================
         Task<(List<Category> Items, int TotalCount)> GetPagedAsync(
+            int pageNumber,
+            int pageSize);
+
+        Task<(List<Category> Items, int TotalCount)> GetDeletedPagedAsync(
             int pageNumber,
             int pageSize);
 

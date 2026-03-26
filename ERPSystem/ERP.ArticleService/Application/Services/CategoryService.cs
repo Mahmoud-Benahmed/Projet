@@ -107,8 +107,26 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task DeleteAsync(Guid id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
-            _categoryRepository.Remove(category);
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category is null || category.IsDeleted)
+                throw new CategoryNotFoundException(id);
+
+            category.Delete();
+            await _categoryRepository.SaveChangesAsync();
+        }
+
+        // =========================
+        // RESTORE
+        // =========================
+        public async Task RestoreAsync(Guid id)
+        {
+            var category = await _categoryRepository.GetByIdDeletedAsync(id)
+                ?? throw new CategoryNotFoundException(id);
+
+            if (!category.IsDeleted)
+                return;
+
+            category.Restore();
             await _categoryRepository.SaveChangesAsync();
         }
 
@@ -122,6 +140,17 @@ namespace ERP.ArticleService.Application.Services
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _categoryRepository
                 .GetPagedAsync(pageNumber, pageSize);
+
+            var mappedItems = items.Select(MapToDto).ToList();
+            return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<PagedResultDto<CategoryResponseDto>> GetPagedDeletedAsync(
+            int pageNumber,
+            int pageSize)
+        {
+            ValidatePaging(pageNumber, pageSize);
+            var (items, totalCount) = await _categoryRepository.GetDeletedPagedAsync(pageNumber, pageSize);
 
             var mappedItems = items.Select(MapToDto).ToList();
             return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
@@ -158,6 +187,11 @@ namespace ERP.ArticleService.Application.Services
 
             var mappedItems = items.Select(MapToDto).ToList();
             return new PagedResultDto<CategoryResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<CategoryStatsDto> GetStatsAsync()
+        {
+            return await _categoryRepository.GetStatsAsync();
         }
 
         // =========================

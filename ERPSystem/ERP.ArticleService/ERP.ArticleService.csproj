@@ -22,7 +22,6 @@
   <ItemGroup>
     <Folder Include="Application\Events\" />
     <Folder Include="Infrastructure\Messaging\" />
-    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

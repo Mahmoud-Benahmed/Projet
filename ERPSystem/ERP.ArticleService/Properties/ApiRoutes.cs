@@ -11,10 +11,13 @@ namespace ERP.ArticleService.API
 
             public const string GetAll = Controller;
             public const string GetPaged = Controller + "/paged";
+            public const string GetDeleted = Controller + "/deleted";
             public const string Create = Controller;
             public const string Update = Controller + $"/{{id:guid}}";
             public const string Delete = Controller + $"/{{id:guid}}";
+            public const string Restore = Controller + $"/restore/{{id:guid}}";
             public const string GetById = Controller + $"/{{id:guid}}";
+            public const string Stats = Controller + "/stats";
             public const string GetByName = Controller + "/by-name";
             public const string GetByDateRange = Controller + "/by-date-range";
             public const string GetBelowTVA = Controller + "/tva/below";

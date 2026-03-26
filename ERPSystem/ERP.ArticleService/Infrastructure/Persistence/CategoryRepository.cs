@@ -1,4 +1,5 @@
-﻿using ERP.ArticleService.Application.Interfaces;
+﻿using ERP.ArticleService.Application.DTOs;
+using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,20 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             return await _context.Categories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
+
+        public async Task<Category?> GetByIdDeletedAsync(Guid id)
+        {
+            return await _context.Categories.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<(List<Category> Items, int TotalCount)> GetDeletedPagedAsync(
+            int pageNumber,
+            int pageSize)
+        {
+            return await PaginationHelper.ToPagedResultAsync(
+                _context.Categories.IgnoreQueryFilters().Where(c => c.IsDeleted), pageNumber, pageSize, q => q.OrderBy(c => c.Name));
+        }
+
 
         // =========================
         // READ - BY NAME
@@ -139,6 +154,16 @@ namespace ERP.ArticleService.Infrastructure.Persistence
 
             return await PaginationHelper.ToPagedResultAsync(
                 query, pageNumber, pageSize, q => q.OrderBy(c => c.Name));
+        }
+
+        public async Task<CategoryStatsDto> GetStatsAsync()
+        {
+            // IgnoreQueryFilters to count ALL categories including deleted
+            var active = await _context.Categories.CountAsync(_ => true);
+            var deleted = await _context.Categories.IgnoreQueryFilters().CountAsync(c => c.IsDeleted);
+
+
+            return new CategoryStatsDto(active, deleted);
         }
     }
 }

@@ -26,6 +26,23 @@ namespace ERP.ArticleService.API.Controllers
             return Ok(categories);
         }
 
+        [HttpGet(ApiRoutes.Categories.Stats)]
+        public async Task<ActionResult<CategoryStatsDto>> GetStats()
+        {
+            var stats = await _categoryService.GetStatsAsync();
+            return Ok(stats);
+        }
+
+        [HttpGet(ApiRoutes.Categories.GetDeleted)]
+        public async Task<ActionResult> GetDeletedAsync(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
+            return Ok(new { items = result.Items, totalCount = result.TotalCount });
+        }
+
+
         // =========================
         // GET BY ID
         // =========================
@@ -135,5 +152,16 @@ namespace ERP.ArticleService.API.Controllers
             await _categoryService.DeleteAsync(id);
             return NoContent();
         }
+
+        // =========================
+        // RESTORE
+        // =========================
+        [HttpPatch(ApiRoutes.Categories.Restore)]
+        public async Task<ActionResult> Restore([FromRoute] Guid id)
+        {
+            await _categoryService.RestoreAsync(id);
+            return NoContent();
+        }
+
     }
 }

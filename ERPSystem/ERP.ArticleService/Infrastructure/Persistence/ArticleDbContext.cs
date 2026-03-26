@@ -118,6 +118,17 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                 // Unique index on Name
                 entity.HasIndex(c => c.Name)
                       .IsUnique();
+
+
+                entity.Property(c => c.IsDeleted)
+                      .HasDefaultValue(false);
+                entity.Property(c => c.CreatedAt)
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(c => c.UpdatedAt)
+                      .IsRequired(false);
+
+                entity.HasQueryFilter(c => !c.IsDeleted);
             });
         }
     }

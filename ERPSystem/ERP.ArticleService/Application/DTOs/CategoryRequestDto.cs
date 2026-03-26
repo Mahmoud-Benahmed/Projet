@@ -17,5 +17,9 @@ namespace ERP.ArticleService.Application.DTOs
         decimal TVA
     );
 
+    public sealed record CategoryStatsDto(
+        int ActiveCategories,
+        int DeletedCategories
+    );
 
 }

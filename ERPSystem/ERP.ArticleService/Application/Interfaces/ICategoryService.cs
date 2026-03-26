@@ -16,6 +16,7 @@ namespace ERP.ArticleService.Application.Interfaces
         Task<CategoryResponseDto> GetByIdAsync(Guid id);
         Task<CategoryResponseDto> GetByNameAsync(string name);
         Task<List<CategoryResponseDto>> GetAllAsync();
+        Task<CategoryStatsDto> GetStatsAsync();
 
         // =========================
         // TVA FILTERING
@@ -34,6 +35,12 @@ namespace ERP.ArticleService.Application.Interfaces
         // =========================
         Task DeleteAsync(Guid id);
 
+
+        // =========================
+        // RESTORE
+        // =========================
+        Task RestoreAsync(Guid id);
+
         // =========================
         // PAGING / FILTERING
         // =========================
@@ -51,5 +58,6 @@ namespace ERP.ArticleService.Application.Interfaces
             DateTime to,
             int pageNumber,
             int pageSize);
+        Task<PagedResultDto<CategoryResponseDto>> GetPagedDeletedAsync(int pageNumber, int pageSize);
     }
 }

@@ -5,6 +5,7 @@
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public decimal TVA { get; private set; }
+        public bool IsDeleted { get; private set; } = false;
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 
@@ -37,6 +38,20 @@
 
             TVA= tva;
             Name = name.Trim();
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Delete()
+        {
+            if (IsDeleted) return;
+            IsDeleted = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Restore()
+        {
+            if (!IsDeleted) return;
+            IsDeleted = false;
             UpdatedAt = DateTime.UtcNow;
         }
     }
