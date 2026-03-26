@@ -35,7 +35,7 @@ namespace ERP.AuthService.Api.Controllers
         public async Task<IActionResult> Create([FromBody] RoleCreateDto dto)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var created = await _roleService.CreateRole(dto, requesterId);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -45,7 +45,7 @@ namespace ERP.AuthService.Api.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] RoleUpdateDto dto)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _roleService.UpdateAsync(id, dto, requesterId);
             return result is null ? NotFound() : Ok(result);
@@ -55,7 +55,7 @@ namespace ERP.AuthService.Api.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _roleService.DeleteAsync(id, requesterId);
             return NoContent();

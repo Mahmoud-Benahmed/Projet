@@ -25,7 +25,7 @@ namespace ERP.AuthService.Controllers
         {
             // Extract authUserId from the JWT claim
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var user = await _authService.GetByIdAsync(requesterId);
 
@@ -42,14 +42,14 @@ namespace ERP.AuthService.Controllers
             var role = User.FindFirstValue("role");
 
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var user = await _authService.GetByIdAsync(id);
             if (user is null) return NotFound();
 
             bool isSelf = requesterId == id;
             if (isSelf && !user.IsActive)
-                return Forbid();
+                return Unauthorized();
 
             bool hasAccess = User.HasClaim("privilege",Privileges.Users.VIEW_USERS);
 
@@ -75,7 +75,7 @@ namespace ERP.AuthService.Controllers
         {
 
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetAllAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
@@ -86,7 +86,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetDeactivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, requesterId);
             return Ok(result);
@@ -97,7 +97,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetActivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, requesterId);
             return Ok(result);
@@ -108,7 +108,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> Activate(Guid id)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.ActivateAsync(id, requesterId);
             return NoContent();
@@ -120,7 +120,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> Deactivate(Guid id)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.DeactivateAsync(id, requesterId);
             return NoContent();
@@ -132,7 +132,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> DeleteSoft(Guid id)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.SoftDeleteAsync(id, requesterId);
             return NoContent();
@@ -143,7 +143,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> Restore(Guid id)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.RestoreAsync(id, requesterId);
             return NoContent();
@@ -154,7 +154,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetDeleted([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
@@ -169,7 +169,7 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, requesterId);
             return Ok(result);
@@ -197,7 +197,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetStats()
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.GetStatsAsync(requesterId);
             return Ok(result);
@@ -217,12 +217,12 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateProfileDto updatedProfile)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
             var canManageUsers = User.HasClaim("privilege", Privileges.Users.UPDATE_USER);
             var isOwner = requesterId == id;
 
             if (!isOwner && !canManageUsers)
-                return Forbid();
+                return Unauthorized();
 
             var result = await _authService.UpdateProfile(id, updatedProfile);
             return Ok(result);
@@ -241,7 +241,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.ChangePasswordAsync(
                     requesterId,
@@ -255,7 +255,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> AdminChangePassword(Guid userId, [FromBody] AdminChangeProfileRequest request)
         {
             if (!TryGetRequesterId(out var requesterId))
-                return Forbid();
+                return Unauthorized();
 
             await _authService.ChangePasswordByAdminAsync(userId, request, requesterId);
             return NoContent();
@@ -280,7 +280,7 @@ namespace ERP.AuthService.Controllers
         private bool TryGetRequesterId(out Guid requesterId)
         {
             requesterId = Guid.Empty;
-            var raw = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
             return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         }
 
