@@ -1,159 +1,235 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { environment } from '../../environment';
 
-// ========================
-// Models
-// ========================
-export type ClientType = 'Individual' | 'Company';
+// ── DTOs ─────────────────────────────────────────────
 
-export interface Client {
+export interface ClientCategoryResponseDto {
   id: string;
-  type: ClientType;
+  name: string;
+  code: string;
+  assignedAt: string;
+}
+
+export interface ClientResponseDto {
+  id: string;
   name: string;
   email: string;
   address: string;
   phone?: string;
   taxNumber?: string;
+  creditLimit?: number;
+  delaiRetour?: number;
+  isBlocked: boolean;
   isDeleted: boolean;
   createdAt: string;
   updatedAt?: string;
+  categories: ClientCategoryResponseDto[];
+}
+
+export interface CategoryClientCountDto {
+  categoryId: string;
+  categoryName: string;
+  count: number;
 }
 
 export interface ClientStatsDto {
-  TotalCount: number;
-  ActiveCount: number;
-  DeletedCount: number;
+  totalClients: number;
+  activeClients: number;
+  blockedClients: number;
+  deletedClients: number;
+  clientsPerCategory: CategoryClientCountDto[];
 }
 
-export interface PagedResult<T> {
+export interface CreateClientRequestDto {
+  name: string;
+  email: string;
+  address: string;
+  phone?: string;
+  taxNumber?: string;
+  creditLimit?: number;
+  delaiRetour?: number;
+}
+
+export interface UpdateClientRequestDto extends CreateClientRequestDto {}
+
+export interface AddCategoryRequestDto {
+  categoryId: string;
+}
+
+export interface PagedResultDto<T> {
   items: T[];
   totalCount: number;
 }
 
-export interface ClientResponseDto{
+// ── SERVICE ──────────────────────────────────────────
 
-  id: string,
-  name: string,
-  email: string,
-  address: string,
-  phone: null | string,
-  taxNumber: null| string,
-  creditLimit: number,
-  delaiRetour: number,
-  isBlocked: boolean,
-  isDeleted: boolean,
-  createdAt: string,
-  updatedAt: null | string,
-  categories: ClientCategoryResponseDto[];
-}
-
-export interface CreateClientRequest {
-  type: ClientType;
-  name: string;
-  email: string;
-  address: string;
-  phone?: string;
-  taxNumber?: string;
-}
-
-export interface UpdateClientRequest {
-  type: ClientType;
-  name: string;
-  email: string;
-  address: string;
-  phone?: string;
-  taxNumber?: string;
-}
-
-// ========================
-// Service
-// ========================
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
-export class ClientService {
+export class ClientsService {
+  private readonly baseUrl = `${environment.apiUrl}/clients`;
 
-  private readonly baseUrl = `${environment.apiUrl}${environment.routes.clients}`;
+  private readonly endpoints = {
+    deleted: `${this.baseUrl}/deleted`,
+    byCategory: `${this.baseUrl}/by-category`,
+    byName: `${this.baseUrl}/by-name`,
+    stats: `${this.baseUrl}/stats`,
+    restore: (id: string) => `${this.baseUrl}/restore/${id}`,
+    block: (id: string) => `${this.baseUrl}/block/${id}`,
+    unblock: (id: string) => `${this.baseUrl}/unblock/${id}`,
+    creditLimit: (id: string) => `${this.baseUrl}/${id}/credit-limit`,
+    returnWindow: (id: string) => `${this.baseUrl}/${id}/return-window`,
+    effectiveReturn: (id: string) => `${this.baseUrl}/${id}/return-window/effective`,
+    canPlaceOrder: (id: string) => `${this.baseUrl}/${id}/can-place-order`,
+    categories: (id: string) => `${this.baseUrl}/${id}/categories`
+  };
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
-  // -------------------------------------------------------
-  // GET ALL
-  // -------------------------------------------------------
-  getAll(pageNumber: number = 1, pageSize: number = 10): Observable<PagedResult<Client>> {
-    const params = new HttpParams()
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Client>>(this.baseUrl, { params });
+  // ── PARAM BUILDER ──────────────────────────────────
+
+  private buildParams<T extends Record<string, any>>(paramsObj: T): HttpParams {
+    let params = new HttpParams();
+
+    Object.keys(paramsObj).forEach(key => {
+      const value = paramsObj[key];
+      if (value !== undefined && value !== null) {
+        params = params.set(key, value.toString());
+      }
+    });
+
+    return params;
   }
 
-  // -------------------------------------------------------
-  // GET BY ID
-  // -------------------------------------------------------
-  getById(id: string): Observable<Client> {
-    return this.http.get<Client>(`${this.baseUrl}/${id}`);
+  // ── GET ────────────────────────────────────────────
+
+  getAll(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ClientResponseDto>> {
+    const params = this.buildParams({ pageNumber, pageSize });
+    return this.http.get<PagedResultDto<ClientResponseDto>>(this.baseUrl, { params });
   }
 
-  // -------------------------------------------------------
-  // GET PAGED BY TYPE
-  // -------------------------------------------------------
-  getPagedByType(type: ClientType, pageNumber: number = 1, pageSize: number = 10): Observable<PagedResult<Client>> {
-    const params = new HttpParams()
-      .set('type', type)
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Client>>(`${this.baseUrl}/by-type`, { params });
+  getDeleted(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ClientResponseDto>> {
+    const params = this.buildParams({ pageNumber, pageSize });
+    return this.http.get<PagedResultDto<ClientResponseDto>>(this.endpoints.deleted, { params });
   }
 
-  // -------------------------------------------------------
-  // GET DELETED
-  // -------------------------------------------------------
-  getDeleted(pageNumber: number = 1, pageSize: number = 10): Observable<PagedResult<Client>> {
-    const params = new HttpParams()
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Client>>(`${this.baseUrl}/deleted`, { params });
+  getById(id: string): Observable<ClientResponseDto> {
+    return this.http.get<ClientResponseDto>(`${this.baseUrl}/${id}`);
   }
 
-  // -------------------------------------------------------
-  // STATS
-  // -------------------------------------------------------
+  getByCategory(categoryId: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ClientResponseDto>> {
+    const params = this.buildParams({ categoryId, pageNumber, pageSize });
+    return this.http.get<PagedResultDto<ClientResponseDto>>(this.endpoints.byCategory, { params });
+  }
+
+  getByName(nameFilter: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<ClientResponseDto>> {
+    const params = this.buildParams({ nameFilter, pageNumber, pageSize });
+    return this.http.get<PagedResultDto<ClientResponseDto>>(this.endpoints.byName, { params });
+  }
+
   getStats(): Observable<ClientStatsDto> {
-    return this.http.get<any>(`${this.baseUrl}/stats`).pipe(
-          map(res => ({
-            TotalCount: res.totalCount,
-            ActiveCount: res.activeCount,
-            DeletedCount: res.deletedCount
-          })));
+    return this.http.get<ClientStatsDto>(this.endpoints.stats);
   }
 
-  // -------------------------------------------------------
-  // CREATE
-  // -------------------------------------------------------
-  create(request: CreateClientRequest): Observable<Client> {
-    return this.http.post<Client>(this.baseUrl, request);
+  // ── CREATE / UPDATE ────────────────────────────────
+
+  create(dto: CreateClientRequestDto): Observable<ClientResponseDto> {
+    return this.http.post<ClientResponseDto>(this.baseUrl, dto);
   }
 
-  // -------------------------------------------------------
-  // UPDATE
-  // -------------------------------------------------------
-  update(id: string, request: UpdateClientRequest): Observable<Client> {
-    return this.http.put<Client>(`${this.baseUrl}/${id}`, request);
+  update(id: string, dto: UpdateClientRequestDto): Observable<ClientResponseDto> {
+    return this.http.put<ClientResponseDto>(`${this.baseUrl}/${id}`, dto);
   }
 
-  // -------------------------------------------------------
-  // DELETE
-  // -------------------------------------------------------
+  // ── DELETE / RESTORE ───────────────────────────────
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
-  // -------------------------------------------------------
-  // RESTORE
-  // -------------------------------------------------------
   restore(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/restore/${id}`, {});
+    return this.http.patch<void>(this.endpoints.restore(id), {});
+  }
+
+  // ── BLOCK / UNBLOCK ────────────────────────────────
+
+  block(id: string): Observable<ClientResponseDto> {
+    return this.http.patch<ClientResponseDto>(this.endpoints.block(id), {});
+  }
+
+  unblock(id: string): Observable<ClientResponseDto> {
+    return this.http.patch<ClientResponseDto>(this.endpoints.unblock(id), {});
+  }
+
+  toggleBlock(client: ClientResponseDto): Observable<ClientResponseDto> {
+    return client.isBlocked ? this.unblock(client.id) : this.block(client.id);
+  }
+
+  // ── CREDIT LIMIT ───────────────────────────────────
+
+  setCreditLimit(id: string, limit: number): Observable<ClientResponseDto> {
+    return this.http.put<ClientResponseDto>(this.endpoints.creditLimit(id), { limit });
+  }
+
+  removeCreditLimit(id: string): Observable<ClientResponseDto> {
+    return this.http.delete<ClientResponseDto>(this.endpoints.creditLimit(id));
+  }
+
+  // ── DELAI RETOUR ───────────────────────────────────
+
+  setDelaiRetour(id: string, days: number): Observable<ClientResponseDto> {
+    return this.http.put<ClientResponseDto>(this.endpoints.returnWindow(id), { days });
+  }
+
+  clearDelaiRetour(id: string): Observable<ClientResponseDto> {
+    return this.http.delete<ClientResponseDto>(this.endpoints.returnWindow(id));
+  }
+
+  getEffectiveDelaiRetour(id: string): Observable<{ effectiveDays: number | null }> {
+    return this.http.get<{ effectiveDays: number | null }>(
+      this.endpoints.effectiveReturn(id)
+    );
+  }
+
+  // ── BUSINESS LOGIC ─────────────────────────────────
+
+  canPlaceOrder(
+    id: string,
+    orderAmount: number,
+    currentBalance: number
+  ): Observable<{ canPlace: boolean }> {
+    const params = this.buildParams({ orderAmount, currentBalance });
+    return this.http.get<{ canPlace: boolean }>(
+      this.endpoints.canPlaceOrder(id),
+      { params }
+    );
+  }
+
+  // ── CATEGORY MANAGEMENT ────────────────────────────
+
+  addCategory(id: string, dto: AddCategoryRequestDto): Observable<ClientResponseDto> {
+    return this.http.post<ClientResponseDto>(this.endpoints.categories(id), dto);
+  }
+
+  removeCategory(id: string, categoryId: string): Observable<ClientResponseDto> {
+    return this.http.delete<ClientResponseDto>(
+      `${this.endpoints.categories(id)}/${categoryId}`
+    );
+  }
+
+  // ── HELPERS (UI LOGIC) ─────────────────────────────
+
+  getCategoryNames(client: ClientResponseDto): string {
+    return client.categories.map(c => c.name).join(', ');
+  }
+
+  getPrimaryCategory(client: ClientResponseDto): string {
+    return client.categories[0]?.name ?? '';
+  }
+
+  hasCategory(client: ClientResponseDto, categoryId: string): boolean {
+    return client.categories.some(c => c.id === categoryId);
   }
 }

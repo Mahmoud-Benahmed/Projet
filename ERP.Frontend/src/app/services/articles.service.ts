@@ -2,17 +2,19 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
+import { ArticleCategoryResponseDto } from './articles/categories.service';
 
 // ========================
 // Models
 // ========================
-export interface Article {
+export interface ArticleResponseDto {
   id: string;
   codeRef: string;
   barCode: string
   libelle: string;
+  tva: number
   prix: number;
-  categoryId: string;
+  category: ArticleCategoryResponseDto;
   isDeleted: boolean;
 }
 
@@ -21,12 +23,6 @@ export interface ArticleStatsDto{
     ActiveCount: number,
     DeletedCount: number,
     CategoriesCount: number
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  createdAt: string;
 }
 
 export interface PagedResult<T> {
@@ -74,59 +70,59 @@ export class ArticleService {
   }
 
   getAllArticles(pageNumber: number = 1,
-                  pageSize: number = 10): Observable<PagedResult<Article>> {
+                  pageSize: number = 10): Observable<PagedResult<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(this.articlesUrl, {params});
+    return this.http.get<PagedResult<ArticleResponseDto>>(this.articlesUrl, {params});
   }
 
   getDeletedArticles(pageNumber: number = 1,
-                  pageSize: number = 10): Observable<PagedResult<Article>> {
+                  pageSize: number = 10): Observable<PagedResult<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/deleted`, {params});
+    return this.http.get<PagedResult<ArticleResponseDto>>(`${this.articlesUrl}/deleted`, {params});
   }
 
-  getArticleById(id: string): Observable<Article> {
-    return this.http.get<Article>(`${this.articlesUrl}/${id}`);
+  getArticleById(id: string): Observable<ArticleResponseDto> {
+    return this.http.get<ArticleResponseDto>(`${this.articlesUrl}/${id}`);
   }
 
-  getArticleByCode(code: string): Observable<Article> {
-    return this.http.get<Article>(`${this.articlesUrl}/code/${code}`);
+  getArticleByCode(code: string): Observable<ArticleResponseDto> {
+    return this.http.get<ArticleResponseDto>(`${this.articlesUrl}/code/${code}`);
   }
 
   getArticlesPagedByCategory(
     categoryId: string,
     pageNumber: number = 1,
     pageSize: number = 10
-  ): Observable<PagedResult<Article>> {
+  ): Observable<PagedResult<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('categoryId', categoryId)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/paged/by-category`, { params });
+    return this.http.get<PagedResult<ArticleResponseDto>>(`${this.articlesUrl}/paged/by-ArticleCategoryResponseDto`, { params });
   }
 
   getArticlesPagedByLibelle(
     libelleFilter: string,
     pageNumber: number = 1,
     pageSize: number = 10
-  ): Observable<PagedResult<Article>> {
+  ): Observable<PagedResult<ArticleResponseDto>> {
     const params = new HttpParams()
       .set('libelleFilter', libelleFilter)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Article>>(`${this.articlesUrl}/paged/by-libelle`, { params });
+    return this.http.get<PagedResult<ArticleResponseDto>>(`${this.articlesUrl}/paged/by-libelle`, { params });
   }
 
-  createArticle(request: CreateArticleRequest): Observable<Article> {
-    return this.http.post<Article>(this.articlesUrl, request);
+  createArticle(request: CreateArticleRequest): Observable<ArticleResponseDto> {
+    return this.http.post<ArticleResponseDto>(this.articlesUrl, request);
   }
 
-  updateArticle(id: string, request: UpdateArticleRequest): Observable<Article> {
-    return this.http.put<Article>(`${this.articlesUrl}/${id}`, request);
+  updateArticle(id: string, request: UpdateArticleRequest): Observable<ArticleResponseDto> {
+    return this.http.put<ArticleResponseDto>(`${this.articlesUrl}/${id}`, request);
   }
 
   delete(id: string): Observable<void> {
@@ -142,38 +138,38 @@ export class ArticleService {
   // CATEGORIES
   // -------------------------------------------------------
 
-  getAllCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.categoriesUrl);
+  getAllCategories(): Observable<ArticleCategoryResponseDto[]> {
+    return this.http.get<ArticleCategoryResponseDto[]>(this.categoriesUrl);
   }
 
-  getCategoryById(id: string): Observable<Category> {
-    return this.http.get<Category>(`${this.categoriesUrl}/${id}`);
+  getCategoryById(id: string): Observable<ArticleCategoryResponseDto> {
+    return this.http.get<ArticleCategoryResponseDto>(`${this.categoriesUrl}/${id}`);
   }
 
-  getCategoryByName(name: string): Observable<Category> {
-    return this.http.get<Category>(`${this.categoriesUrl}/name/${name}`);
+  getCategoryByName(name: string): Observable<ArticleCategoryResponseDto> {
+    return this.http.get<ArticleCategoryResponseDto>(`${this.categoriesUrl}/name/${name}`);
   }
 
   getCategoriesPaged(
     pageNumber: number = 1,
     pageSize: number = 10
-  ): Observable<PagedResult<Category>> {
+  ): Observable<PagedResult<ArticleCategoryResponseDto>> {
     const params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Category>>(`${this.categoriesUrl}/paged`, { params });
+    return this.http.get<PagedResult<ArticleCategoryResponseDto>>(`${this.categoriesUrl}/paged`, { params });
   }
 
   getCategoriesPagedByName(
     nameFilter: string,
     pageNumber: number = 1,
     pageSize: number = 10
-  ): Observable<PagedResult<Category>> {
+  ): Observable<PagedResult<ArticleCategoryResponseDto>> {
     const params = new HttpParams()
       .set('nameFilter', nameFilter)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Category>>(`${this.categoriesUrl}/by-name`, { params });
+    return this.http.get<PagedResult<ArticleCategoryResponseDto>>(`${this.categoriesUrl}/by-name`, { params });
   }
 
   getCategoriesPagedByDateRange(
@@ -181,23 +177,23 @@ export class ArticleService {
     to: Date,
     pageNumber: number = 1,
     pageSize: number = 10
-  ): Observable<PagedResult<Category>> {
+  ): Observable<PagedResult<ArticleCategoryResponseDto>> {
     const params = new HttpParams()
       .set('from', from.toISOString())
       .set('to', to.toISOString())
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    return this.http.get<PagedResult<Category>>(`${this.categoriesUrl}/by-date-range`, { params });
+    return this.http.get<PagedResult<ArticleCategoryResponseDto>>(`${this.categoriesUrl}/by-date-range`, { params });
   }
 
-  createCategory(name: string): Observable<Category> {
-    return this.http.post<Category>(this.categoriesUrl, JSON.stringify(name), {
+  createCategory(name: string): Observable<ArticleCategoryResponseDto> {
+    return this.http.post<ArticleCategoryResponseDto>(this.categoriesUrl, JSON.stringify(name), {
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  updateCategoryName(id: string, newName: string): Observable<Category> {
-    return this.http.put<Category>(`${this.categoriesUrl}/${id}/name`, JSON.stringify(newName), {
+  updateCategoryName(id: string, newName: string): Observable<ArticleCategoryResponseDto> {
+    return this.http.put<ArticleCategoryResponseDto>(`${this.categoriesUrl}/${id}/name`, JSON.stringify(newName), {
       headers: { 'Content-Type': 'application/json' },
     });
   }

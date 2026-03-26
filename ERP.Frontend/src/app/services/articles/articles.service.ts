@@ -3,13 +3,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environment';
-import { CategoryResponseDto } from './categories.service';
+import { ArticleCategoryResponseDto } from './categories.service';
 
 // ── DTOs ──────────────────────────────────────────────────────────────────────
 
 export interface ArticleResponseDto {
   id: string;
-  category: CategoryResponseDto;
+  category: ArticleCategoryResponseDto;
   codeRef: string;
   barCode: string;
   libelle: string;
