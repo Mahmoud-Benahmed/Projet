@@ -130,12 +130,6 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddHttpClient<PwnedPasswordService>(client =>
-{
-    client.DefaultRequestHeaders.Add("Add-Padding", "true");
-    client.Timeout = TimeSpan.FromSeconds(3); // fail fast if API is slow
-});
-
 //builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
 var app = builder.Build();

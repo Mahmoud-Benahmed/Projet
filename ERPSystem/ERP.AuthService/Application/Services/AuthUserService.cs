@@ -30,7 +30,6 @@ namespace ERP.AuthService.Application.Services
         private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
-        private readonly PwnedPasswordService _pwnedPasswordService;
         //private readonly IEventPublisher _eventPublisher;
 
         public AuthUserService(
@@ -42,8 +41,7 @@ namespace ERP.AuthService.Application.Services
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository,
-            PwnedPasswordService pwnedPasswordService
+            IPrivilegeRepository privilegeRepository
             )
             //,IEventPublisher eventPublisher
         {
@@ -56,8 +54,6 @@ namespace ERP.AuthService.Application.Services
             _privilegeRepository = privilegeRepository;
             _auditLogger = auditLogger;
             _httpContext = httpContextAccessor;
-            _pwnedPasswordService = pwnedPasswordService;
-
             //_eventPublisher = eventPublisher;
         }
 
@@ -170,11 +166,6 @@ namespace ERP.AuthService.Application.Services
 
             if (await _userRepository.ExistsByEmailAsync(request.Email))
                 throw new EmailAlreadyExistsException();
-
-            if (await _pwnedPasswordService.IsPwnedAsync(request.Password))
-                throw new PwnedPasswordException(
-                    "This password has appeared in known data breaches. Please choose a different one."
-                );
 
             var role = await _roleRepository.GetByIdAsync(request.RoleId) ?? throw new InvalidOperationException("Role not found.");
 
@@ -375,11 +366,6 @@ namespace ERP.AuthService.Application.Services
             if (!user.IsActive)
                 throw new UserInactiveException();
 
-            if (await _pwnedPasswordService.IsPwnedAsync(request.NewPassword))
-                throw new PwnedPasswordException(
-                    "This password has appeared in known data breaches. Please choose a different one."
-                );
-
             if (request.CurrentPassword.Equals(request.NewPassword))
                 throw new ArgumentException("The new password cannot be the same as the current password.");
             
@@ -405,11 +391,6 @@ namespace ERP.AuthService.Application.Services
         {
             var user = await _userRepository.GetByIdAsync(userId)
                        ?? throw new UserNotFoundException(userId);
-
-            if (await _pwnedPasswordService.IsPwnedAsync(request.NewPassword))
-                throw new PwnedPasswordException(
-                    "This password has appeared in known data breaches. Please choose a different one."
-                );
 
             var hashedNewPassword = _passwordHasher.HashPassword(user, request.NewPassword);
 
