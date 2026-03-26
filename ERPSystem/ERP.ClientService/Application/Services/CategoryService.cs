@@ -124,11 +124,16 @@ public class CategoryService : ICategoryService
     // =========================
     // PAGING / FILTERING
     // =========================
-    public async Task<PagedResultDto<CategoryResponseDto>> GetAllAsync(
+    public async Task<List<CategoryResponseDto>> GetAllAsync()
+    {
+        var items = await _categoryRepository.GetAllAsync();
+        return items.Select(c => MapToDto(c)).ToList();
+    }
+    public async Task<PagedResultDto<CategoryResponseDto>> GetAllPagedAsync(
         int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _categoryRepository.GetAllAsync(pageNumber, pageSize);
+        var (items, totalCount) = await _categoryRepository.GetAllPagedAsync(pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
     }
 

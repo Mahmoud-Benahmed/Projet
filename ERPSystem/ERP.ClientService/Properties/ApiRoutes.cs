@@ -6,7 +6,7 @@ public static class ApiRoutes
 
     public static class Clients
     {
-        private const string Root = $"{Base}/clients";
+        public const string Root = $"{Base}/clients";
 
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
@@ -36,9 +36,10 @@ public static class ApiRoutes
 
     public static class Categories
     {
-        private const string Root = $"{Base}/categories";
+        private const string Root = $"{Clients.Root}/categories";
 
         public const string GetAll = Root;
+        public const string GetAllPaged = $"{Root}/paged";
         public const string GetById = $"{Root}/{{id:guid}}";
         public const string GetDeleted = $"{Root}/deleted";
         public const string GetByName = $"{Root}/by-name";

@@ -2,6 +2,7 @@
 using ERP.ClientService.Application.DTOs;
 using ERP.ClientService.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ERP.ClientService.API.Controllers;
 
@@ -21,7 +22,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _clientService.GetAllAsync(pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetDeleted)]
@@ -30,7 +31,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _clientService.GetPagedDeletedAsync(pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetById)]
@@ -49,7 +50,7 @@ public class ClientController : ControllerBase
     {
         var result = await _clientService
             .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetByName)]
@@ -60,7 +61,7 @@ public class ClientController : ControllerBase
     {
         var result = await _clientService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.Stats)]
@@ -179,8 +180,11 @@ public class ClientController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] AddCategoryRequestDto request)
     {
+        if (!TryGetRequesterId(out var requesterId))
+            return Forbid();
+
         var client = await _clientService
-            .AddCategoryAsync(id, request.CategoryId, request.AssignedById);
+            .AddCategoryAsync(id, request.CategoryId, requesterId);
         return Ok(client);
     }
 
@@ -193,4 +197,11 @@ public class ClientController : ControllerBase
         var client = await _clientService.RemoveCategoryAsync(id, categoryId);
         return Ok(client);
     }
+    private bool TryGetRequesterId(out Guid requesterId)
+    {
+        requesterId = Guid.Empty;
+        var raw = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+    }
+
 }

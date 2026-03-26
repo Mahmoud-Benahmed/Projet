@@ -21,9 +21,9 @@ public static class ClientMappings
             UpdatedAt: client.UpdatedAt,
             Categories: client.ClientCategories
                                .Select(cc => new ClientCategoryResponseDto(
-                                   CategoryId: cc.CategoryId,
-                                   CategoryName: cc.Category?.Name ?? string.Empty,
-                                   CategoryCode: cc.Category?.Code ?? string.Empty,
+                                   Id: cc.CategoryId,
+                                   Name: cc.Category?.Name ?? string.Empty,
+                                   Code: cc.Category?.Code ?? string.Empty,
                                    AssignedAt: cc.AssignedAt))
                                .ToList()
         );

@@ -15,13 +15,21 @@ public class CategoryController : ControllerBase
         _categoryService = categoryService;
     }
 
-    [HttpGet(ApiRoutes.Categories.GetAll)]
-    public async Task<ActionResult> GetAllAsync(
+    [HttpGet(ApiRoutes.Categories.GetAllPaged)]
+    public async Task<ActionResult> GetAllPagedAsync(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _categoryService.GetAllAsync(pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        var result = await _categoryService.GetAllPagedAsync(pageNumber, pageSize);
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+    }
+
+
+    [HttpGet(ApiRoutes.Categories.GetAll)]
+    public async Task<ActionResult> GetAllAsync()
+    {
+        var result = await _categoryService.GetAllAsync();
+        return Ok(result);
     }
 
     [HttpGet(ApiRoutes.Categories.GetDeleted)]
@@ -30,7 +38,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Categories.GetById)]
@@ -49,7 +57,7 @@ public class CategoryController : ControllerBase
     {
         var result = await _categoryService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
-        return Ok(new { result.Items, result.TotalCount });
+        return Ok(new { items=result.Items, totalCount= result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Categories.Stats)]

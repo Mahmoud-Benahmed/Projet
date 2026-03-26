@@ -75,10 +75,7 @@ public record SetDelaiRetourRequestDto(
 
 public record AddCategoryRequestDto(
     [Required(ErrorMessage = "CategoryId is required.")]
-    Guid CategoryId,
-
-    [Required(ErrorMessage = "AssignedById is required.")]
-    Guid AssignedById
+    Guid CategoryId
 );
 
 public sealed record ClientResponseDto(
@@ -98,8 +95,8 @@ public sealed record ClientResponseDto(
 );
 
 public sealed record ClientCategoryResponseDto(
-    Guid CategoryId,
-    string CategoryName,
-    string CategoryCode,
+    Guid Id,
+    string Name,
+    string Code,
     DateTime AssignedAt
 );

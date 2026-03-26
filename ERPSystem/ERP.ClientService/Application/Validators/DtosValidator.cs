@@ -199,9 +199,5 @@ public class AddCategoryRequestValidator : AbstractValidator<AddCategoryRequestD
         RuleFor(x => x.CategoryId)
             .NotEmpty()
                 .WithMessage("CategoryId is required.");
-
-        RuleFor(x => x.AssignedById)
-            .NotEmpty()
-                .WithMessage("AssignedById is required.");
     }
 }

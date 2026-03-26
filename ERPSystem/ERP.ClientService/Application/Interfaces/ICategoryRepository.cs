@@ -15,7 +15,9 @@ namespace ERP.ClientService.Application.Interfaces
         Task<Category?> GetByCodeAsync(string code);
 
         // ── Paging & filtering ────────────────────────────────────────────────────
-        Task<(List<Category> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize);
+
+        Task<List<Category>> GetAllAsync();
+        Task<(List<Category> Items, int TotalCount)> GetAllPagedAsync(int pageNumber, int pageSize);
 
         Task<(List<Category> Items, int TotalCount)> GetPagedDeletedAsync(
             int pageNumber, int pageSize);

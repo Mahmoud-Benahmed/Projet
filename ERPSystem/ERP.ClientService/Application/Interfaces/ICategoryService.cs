@@ -11,7 +11,8 @@ public interface ICategoryService
     Task<CategoryResponseDto> ActivateAsync(Guid id);
     Task<CategoryResponseDto> DeactivateAsync(Guid id);
     Task<CategoryResponseDto> GetByIdAsync(Guid id);
-    Task<PagedResultDto<CategoryResponseDto>> GetAllAsync(int pageNumber, int pageSize);
+    Task<List<CategoryResponseDto>> GetAllAsync();
+    Task<PagedResultDto<CategoryResponseDto>> GetAllPagedAsync(int pageNumber, int pageSize);
     Task<PagedResultDto<CategoryResponseDto>> GetPagedDeletedAsync(int pageNumber, int pageSize);
     Task<PagedResultDto<CategoryResponseDto>> GetPagedByNameAsync(string nameFilter, int pageNumber, int pageSize);
     Task<CategoryStatsDto> GetStatsAsync();

@@ -39,7 +39,16 @@ public class CategoryRepository : ICategoryRepository
                 .FirstOrDefaultAsync(c =>
                     c.Code == code.Trim().ToUpperInvariant());
 
-    public async Task<(List<Category> Items, int TotalCount)> GetAllAsync(
+    // Repository method
+    public async Task<List<Category>> GetAllAsync()
+    {
+        return await _context.Categories
+                             .Where(c => !c.IsDeleted && c.IsActive)
+                             .OrderBy(c => c.Name)
+                             .ToListAsync();
+    }
+
+    public async Task<(List<Category> Items, int TotalCount)> GetAllPagedAsync(
         int pageNumber, int pageSize)
     {
         var query = _context.Categories
