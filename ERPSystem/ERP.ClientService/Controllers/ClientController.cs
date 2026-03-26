@@ -181,7 +181,7 @@ public class ClientController : ControllerBase
         [FromBody] AddCategoryRequestDto request)
     {
         if (!TryGetRequesterId(out var requesterId))
-            return Forbid();
+            return Unauthorized();
 
         var client = await _clientService
             .AddCategoryAsync(id, request.CategoryId, requesterId);
@@ -200,8 +200,10 @@ public class ClientController : ControllerBase
     private bool TryGetRequesterId(out Guid requesterId)
     {
         requesterId = Guid.Empty;
-        var raw = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+        var raw= HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        var res=!string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+        Console.WriteLine($">>>>>>>>>>>> {res} <<<<<<<<<<<<");
+        return res;
     }
 
 }

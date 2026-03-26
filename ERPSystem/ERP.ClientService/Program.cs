@@ -93,7 +93,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
