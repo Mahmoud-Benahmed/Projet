@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using ERP.Gateway.Properties;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
+using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -241,7 +243,24 @@ builder.Services.AddCors(options =>
 //////////////////////////////////////////////////
 
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(config.GetSection("ReverseProxy"));
+    .LoadFromConfig(config.GetSection("ReverseProxy"))
+    .AddTransforms(context =>
+    {
+        context.AddRequestTransform(async transformContext =>
+        {
+            var user = transformContext.HttpContext.User;
+
+            var sub = user.FindFirstValue("sub");
+            if (!string.IsNullOrEmpty(sub))
+                transformContext.ProxyRequest.Headers
+                    .TryAddWithoutValidation("X-User-Id", sub);
+
+            var role = user.FindFirstValue("role");
+            if (!string.IsNullOrEmpty(role))
+                transformContext.ProxyRequest.Headers
+                    .TryAddWithoutValidation("X-User-Role", role);
+        });
+    });
 
 var app = builder.Build();
 
