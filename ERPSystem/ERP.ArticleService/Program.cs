@@ -103,8 +103,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 
-app.UseAuthentication(); // must be before UseAuthorization
-app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 
