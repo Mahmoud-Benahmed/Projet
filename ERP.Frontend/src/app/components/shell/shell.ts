@@ -85,14 +85,17 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/users/deactivated')) return [{ label: 'Users', link: '/users' }, { label: 'Deactivated' }];
     if (url.startsWith('/users/deleted'))     return [{ label: 'Users', link: '/users' }, { label: 'Deleted' }];
     if (url.startsWith('/users/categories'))  return [{ label: 'Users', link: '/users' }, { label: 'Controles' }];
-    if (url.startsWith('/users/roles'))  return [{ label: 'Users', link: '/roles' }, { label: 'Roles' }];
+    if (url.startsWith('/users/roles'))       return [{ label: 'Users', link: '/roles' }, { label: 'Roles' }];
     if (url.startsWith('/users/'))            return [{ label: 'Users', link: '/users' }, { label: 'Profile' }];
     if (url.startsWith('/users'))             return [{ label: 'Users' }];
 
-    if (url.startsWith('/articles/deleted'))  return [{ label: 'Articles', link: '/articles' }, { label: 'Deleted' }];
+    if (url.startsWith('/articles/categories/deleted'))  return [{ label: 'Articles', link: '/articles/categories/deleted' }, { label: 'Deleted' }];
     if (url.startsWith('/articles/categories'))  return [{ label: 'Articles', link: '/articles/categories' }, { label: 'Categories' }];
+    if (url.startsWith('/articles/deleted'))  return [{ label: 'Articles', link: '/articles' }, { label: 'Deleted' }];
     if (url.startsWith('/articles'))          return [{ label: 'Articles' }];
 
+    if (url.startsWith('/clients/categories/deleted'))  return [{ label: 'Clients', link: '/clients/categories' }, { label: 'Deleted' }];
+    if (url.startsWith('/clients/categories'))  return [{ label: 'Clients', link: '/clients/categories' }, { label: 'Categories' }];
     if (url.startsWith('/clients/deleted'))   return [{ label: 'Clients', link: '/clients' }, { label: 'Deleted' }];
     if (url.startsWith('/clients'))           return [{ label: 'Clients' }];
 

@@ -13,7 +13,7 @@ import { CurrencyConfigService } from '../../../services/currency-config.service
 import { ModalComponent } from '../../modal/modal';
 import { PaginationComponent } from '../../pagination/pagination';
 import { HttpError } from '../../../interfaces/ErrorDto';
-import { CategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
+import { ArticleCategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
@@ -30,7 +30,7 @@ export class ArticleComponent implements OnInit {
 
   dataSource = new MatTableDataSource<ArticleResponseDto>([]);
 
-  categories: CategoryResponseDto[] = [];
+  categories: ArticleCategoryResponseDto[] = [];
   stats: ArticleStatsDto | null = null;
 
   pageNumber = 1;

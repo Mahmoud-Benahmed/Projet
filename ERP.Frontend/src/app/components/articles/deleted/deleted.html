@@ -172,9 +172,11 @@
               <tr *ngFor="let article of sortedData" class="table__row">
                 <td class="td--code">{{ article.codeRef }}</td>
                 <td class="td--name">{{ article.libelle }}</td>
-                <td class="td--category">{{ getCategoryName(article.categoryId) }}</td>
-                <!-- FIX 4: currencyCode and currencyLocale are now declared in the component -->
+                <td class="td--category">{{ article.category.name}}</td>
                 <td class="td--price">{{ article.prix | currency: currencyCode: 'symbol' :'1.2-2' : currencyLocale }}</td>
+                <td>
+                  <span class="td--tva">{{ article.tva }} %</span>
+                </td>
                 <td>
                   <span class="td--barCode">{{ article.barCode }}</span>
                 </td>
@@ -230,11 +232,15 @@
         </div>
         <div class="detail-item">
           <span class="detail-label">CATEGORY</span>
-          <span class="detail-value">{{ getCategoryName(selectedArticle.categoryId) }}</span>
+          <span class="detail-value">{{ selectedArticle.category.name }}</span>
         </div>
         <div class="detail-item">
           <span class="detail-label">UNIT PRICE</span>
           <span class="detail-value">{{ selectedArticle.prix | number:'1.2-2' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">TVA</span>
+          <span class="detail-value">{{ selectedArticle.tva | number:'1.2-2' }} %</span>
         </div>
         <div class="detail-item">
           <span class="detail-label">Bar Code</span>

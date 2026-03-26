@@ -1,32 +1,30 @@
+import { PRIVILEGES } from './../../../../services/auth/auth.service';
 // category.component.ts
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
-import { ModalComponent } from '../../modal/modal';
-import { PaginationComponent } from '../../pagination/pagination';
-import { HttpError } from '../../../interfaces/ErrorDto';
-import { CategoryRequestDto, ArticleCategoryResponseDto, CategoryService, ArticleCategoryStatsDto } from '../../../services/articles/categories.service';
+import { AuthService } from '../../../../services/auth/auth.service';
+import { PaginationComponent } from '../../../pagination/pagination';
+import { HttpError } from '../../../../interfaces/ErrorDto';
+import { CategoryRequestDto, ArticleCategoryResponseDto, CategoryService, ArticleCategoryStatsDto } from '../../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
-  selector: 'app-article-categories',
+  selector: 'app-article-categories-deleted',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent],
-  templateUrl: './categories.html',
-  styleUrls: ['./categories.scss'],
+  templateUrl: './deleted-categories.html',
+  styleUrls: ['./deleted-categories.scss'],
 })
-export class ArticleCategoriesComponent implements OnInit {
+export class DeletedArticleCategoriesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  dataSource = new MatTableDataSource<ArticleCategoryResponseDto>([]);
-  stats: ArticleCategoryStatsDto | null = null;
+    dataSource = new MatTableDataSource<ArticleCategoryResponseDto>([]);
 
   pageNumber = 1;
   pageSize = 10;
@@ -43,14 +41,16 @@ export class ArticleCategoriesComponent implements OnInit {
   successMessage: string | null = null;
   searchQuery = '';
 
+  stats: ArticleCategoryStatsDto | null = null;
+
   readonly PRIVILEGES= PRIVILEGES;
+
   categoryForm: FormGroup;
 
   constructor(
     public authService: AuthService,
     private categoryService: CategoryService,
     private fb: FormBuilder,
-    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {
     this.categoryForm = this.fb.group({
@@ -116,7 +116,7 @@ export class ArticleCategoriesComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.errors = [];
-    this.categoryService.getPaged(this.pageNumber, this.pageSize).subscribe({
+    this.categoryService.getDeleted(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
@@ -141,20 +141,6 @@ export class ArticleCategoriesComponent implements OnInit {
   reload(): void { this.load(); this.loadStats(); this.cdr.markForCheck();}
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
-
-  openCreate(): void {
-    this.viewMode = 'create';
-    this.selectedCategory = null;
-    this.categoryForm.reset({ name: '', tva: null });
-  }
-
-  openEdit(category: ArticleCategoryResponseDto): void {
-    this.viewMode = 'edit';
-    this.selectedCategory = category;
-    this.categoryForm.patchValue({ name: category.name, tva: category.tva });
-    this.cdr.markForCheck();
-  }
-
   openView(category: ArticleCategoryResponseDto): void {
     this.viewMode = 'view';
     this.selectedCategory = category;
@@ -170,47 +156,26 @@ export class ArticleCategoriesComponent implements OnInit {
   submit(): void {
     if (this.categoryForm.invalid) return;
     const dto: CategoryRequestDto = this.categoryForm.value;
-
-    if (this.viewMode === 'create') {
-      this.categoryService.create(dto).subscribe({
+    this.categoryService.create(dto).subscribe({
         next: () => { this.reload(); this.cancel(); this.flash('success', `Category "${dto.name}" created successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
-      });
-
-    } else if (this.viewMode === 'edit' && this.selectedCategory) {
-      this.categoryService.update(this.selectedCategory.id, dto).subscribe({
-        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" updated successfully.`); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update category.'),
-      });
-    }
+    });
   }
 
-  delete(category: ArticleCategoryResponseDto): void {
-    const dialogRef = this.dialog.open(ModalComponent, {
-      width: '400px',
-      data: {
-        title:       'Delete Category',
-        message:     `Category "${category.name}" will be permanently deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
-        showCancel:  true,
-        icon:        'auto_delete',
-        iconColor:   'danger',
+  restore(cat: ArticleCategoryResponseDto): void {
+    this.categoryService.restore(cat.id).subscribe({
+      next: () => {
+        this.flash('success', `Category "${cat.name}" has been restored. You can find it in the Categories page.`);
+        this.reload();
+        if(this.viewMode==='view'){
+          this.cancel();
+        }
       },
+      error: (error) =>{
+        const err= error.error as HttpError;
+        this.flash('error', error.message);
+      }
     });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (!result) return;
-        this.categoryService.delete(category.id).subscribe({
-          next: () => {
-            if (this.viewMode === 'view') this.cancel();
-            this.flash('success', `Category "${category.name}" deleted successfully.`);
-            this.reload();
-          },
-          error: () => this.flash('error', `Failed to delete category "${category.name}".`),
-        });
-      });
   }
 
   // ── Feedback ──────────────────────────────────────────────────────────────

@@ -15,10 +15,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { Article, ArticleService, ArticleStatsDto, Category, PagedResult } from '../../../services/articles.service';
+import { ArticleResponseDto, ArticleService, ArticleStatsDto, PagedResult } from '../../../services/articles.service';
 import { PaginationComponent } from "../../pagination/pagination";
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { HttpError } from '../../../interfaces/ErrorDto';
+import { ArticleCategoryResponseDto } from '../../../services/articles/categories.service';
 
 @Component({
   selector: 'app-deactivated',
@@ -51,11 +52,11 @@ export class DeletedArticlesComponent implements OnInit {
 
   private readonly destroyRef = inject(DestroyRef);
 
-  articles: Article[] = [];
+  articles: ArticleResponseDto[] = [];
   stats: ArticleStatsDto | null = null;
-  categories: Category[] = [];
+  categories: ArticleCategoryResponseDto[] = [];
 
-  dataSource = new MatTableDataSource<Article>([]);
+  dataSource = new MatTableDataSource<ArticleResponseDto>([]);
 
   totalCount= 0;
   pageNumber = 1;
@@ -70,7 +71,7 @@ export class DeletedArticlesComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  selectedArticle: Article | null = null;
+  selectedArticle: ArticleResponseDto | null = null;
   viewMode: 'list' | 'view' = 'list';
 
   // FIX 8: declare currency properties referenced in the template
@@ -106,7 +107,7 @@ export class DeletedArticlesComponent implements OnInit {
   load(): void {
     this.isLoading = true;
     this.articleService.getDeletedArticles(this.pageNumber, this.pageSize).subscribe({
-      next: (result: PagedResult<Article>) => {
+      next: (result: PagedResult<ArticleResponseDto>) => {
         this.articles = result.items;
         this.dataSource.data = result.items;
         this.totalCount = result.totalCount;
@@ -140,8 +141,8 @@ export class DeletedArticlesComponent implements OnInit {
   }
 
   // FIX 11: trackById was referenced in the template but never defined
-  trackById(_index: number, article: Article): string {
-    return article.id;
+  trackById(_index: number, ArticleResponseDto: ArticleResponseDto): string {
+    return ArticleResponseDto.id;
   }
 
   get totalPages(): number {
@@ -195,25 +196,21 @@ export class DeletedArticlesComponent implements OnInit {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
   }
 
-  get filteredArticles(): Article[] {
+  get filteredArticles(): ArticleResponseDto[] {
     if (!this.searchQuery.trim()) return this.articles;
     const q = this.searchQuery.toLowerCase();
     return this.articles.filter(
       (a) =>
         a.libelle.toLowerCase().includes(q) ||
         a.codeRef.toLowerCase().includes(q) ||
-        this.getCategoryName(a.categoryId).toLowerCase().includes(q),
+        a.category.name.toLowerCase().includes(q),
     );
   }
 
-  getCategoryName(id: string): string {
-    return this.categories.find((c) => c.id === id)?.name ?? '—';
-  }
-
-  restore(article: Article): void {
-    this.articleService.restore(article.id).subscribe({
+  restore(ArticleResponseDto: ArticleResponseDto): void {
+    this.articleService.restore(ArticleResponseDto.id).subscribe({
       next: () => {
-        this.flash('success', `Article "${article.libelle}" has been restored. You can find it in the Articles page.`);
+        this.flash('success', `ArticleResponseDto "${ArticleResponseDto.libelle}" has been restored. You can find it in the Articles page.`);
         this.reload();
         if(this.viewMode==='view'){
           this.cancel();
@@ -231,8 +228,8 @@ export class DeletedArticlesComponent implements OnInit {
     this.reload();
   }
 
-  openView(article: Article): void {
-    this.selectedArticle = article;
+  openView(ArticleResponseDto: ArticleResponseDto): void {
+    this.selectedArticle = ArticleResponseDto;
     this.viewMode = 'view';
     this.cdr.markForCheck();
   }

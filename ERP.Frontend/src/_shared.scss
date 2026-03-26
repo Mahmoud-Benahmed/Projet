@@ -193,6 +193,7 @@ $bp-xl:  1200px;
     pointer-events: none;
     &.stat-card--green { background: $green-bg; border-color: $green; .stat-card__value { color: $green; } }
     &.stat-card--red   { background: $red-bg;   border-color: $red;   .stat-card__value { color: $red; } }
+    &.stat-card--amber   { background: $amber-bg;   border-color: $amber;   .stat-card__value { color: $amber; } }
   }
 
   &--disabled {
@@ -431,8 +432,9 @@ $bp-xl:  1200px;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  &--active   { background: $green-bg; color: $green; border: 1px solid $green-border; }
-  &--inactive { background: $red-bg;   color: $red;   border: 1px solid $red-border; }
+  &--active   { background: $green-bg;  color: $green; border: 1px solid $green-border; }
+  &--inactive { background: $red-bg;    color: $red;   border: 1px solid $red-border; }
+  &--blocked  { background: $red-bg;    color: $red;  border: 1px solid $red-border;}
 }
 
 .role-badge {
@@ -500,6 +502,8 @@ $bp-xl:  1200px;
   &--delete:hover     { background: $red-bg;    border-color: $red-border;    color: $red; }
   &--deactivate:hover { background: $orange-bg; border-color: $orange-border; color: $orange; }
   &--reactivate:hover { background: $green-bg;  border-color: $green-border;  color: $green; }
+  &--block:hover      { background: $orange-bg; border-color: $orange-border; color: $orange;}
+  &--unblock:hover      { background: $green-bg; border-color: $green-border; color: $green;}
 }
 
 // ========================
@@ -680,7 +684,9 @@ $bp-xl:  1200px;
     }
   }
 
-  &__field { display: flex; flex-direction: column; gap: 0.4rem; }
+  &__field {
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
 
   &__label {
     font-size: 0.8rem;
@@ -880,6 +886,28 @@ $bp-xl:  1200px;
   &:hover { background: rgba($red, 0.2); }
 }
 
+.btn-warning {
+  background: $amber-bg;
+  border: 1px solid $amber-border;
+  border-radius: 8px;
+  color: $amber;
+
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba($amber, 0.2);
+    color: $text-hi;
+    border-color: $amber;
+  }
+}
+
 .btn-icon    { display: inline-flex; align-items: center; gap: 6px; }
 .btn-refresh { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
   &:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -1031,3 +1059,122 @@ $bp-xl:  1200px;
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+
+
+
+.section-divider {
+  margin: 1.5rem 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $border;
+  }
+
+  &__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-lo;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+}
+
+.categories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  background: $blue-bg;
+  border: 1px solid $blue-border;
+  color: $blue;
+
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+
+  &__code {
+    font-family: monospace;
+    font-size: 0.7rem;
+    opacity: 0.8;
+  }
+
+  &__name {
+    font-weight: 600;
+  }
+
+  &__date {
+    font-size: 0.65rem;
+    color: $text-lo;
+  }
+
+  &__remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    border-radius: 4px;
+    color: $text-lo;
+    transition: all 0.15s;
+
+    &:hover {
+      background: $red-bg;
+      color: $red;
+    }
+  }
+}
+
+.add-category-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+
+  .form__input--inline {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .form__select--inline {
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .btn-add--sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+}
+
+
+.no-data-hint {
+  font-size: 0.85rem;
+  color: $text-lo;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+
