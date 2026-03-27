@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -62,8 +62,8 @@ export class DeactivatedComponent implements OnInit {
   dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
   totalCount = 0;
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
 
   sortColumn: string = '';
@@ -88,7 +88,7 @@ export class DeactivatedComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading = true;
-    this.authService.getDeactivatedUsers(this.pageNumber, this.pageSize).subscribe({
+    this.authService.getDeactivatedUsers(this.pageNumber(), this.pageSize()).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items;
 
@@ -115,9 +115,9 @@ export class DeactivatedComponent implements OnInit {
     });
   }
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.loadUsers(); } }
-  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.loadUsers(); } }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
+  prevPage(): void { if (this.pageNumber() > 1) { this.pageNumber.set(this.pageNumber()-1); this.loadUsers(); } }
+  nextPage(): void { if (this.pageNumber() < this.totalPages) { this.pageNumber.set(this.pageNumber()+1); this.loadUsers(); } }
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -175,7 +175,7 @@ export class DeactivatedComponent implements OnInit {
   }
 
   onPageSizeChange(): void {
-    this.pageNumber = 1; // reset to first page on size change
+    this.pageNumber.set(1); // reset to first page on size change
     this.reload();
   }
 

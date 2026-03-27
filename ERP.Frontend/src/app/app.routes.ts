@@ -12,8 +12,6 @@ import { PermissionMatrixComponent } from './components/system-admin/permission-
 import { ArticleComponent } from './components/articles/home/home';
 import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
 import { DeletedUsersComponent } from './components/system-admin/users/deleted/deleted';
-import { DeletedArticlesComponent } from './components/articles/deleted/deleted';
-import { DeletedClientsComponent } from './components/clients/deleted/deleted';
 import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 import { ControleComponent } from './components/system-admin/controles/controles';
 import { RoleComponent } from './components/system-admin/roles/roles';
@@ -21,8 +19,6 @@ import { ArticleCategoriesComponent } from './components/articles/categories/cat
 import { PRIVILEGES } from './services/auth/auth.service';
 import { ClientsComponent } from './components/clients/home/home';
 import { ClientCategoriesComponent } from './components/clients/categories/categories';
-import { DeletedArticleCategoriesComponent } from './components/articles/categories/deleted-categories/deleted-categories';
-import { DeletedClientCategoriesComponent } from './components/clients/categories/deleted-categories/deleted-categories';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
@@ -52,13 +48,9 @@ export const routes: Routes = [
 
       { path: 'articles', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
       { path: 'articles/categories', component: ArticleCategoriesComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE']) } },
-      { path: 'articles/categories/deleted', component: DeletedArticleCategoriesComponent, data: { privileges: pickPrivileges('ARTICLES', ['RESTORE_ARTICLE']) } },
-      { path: 'articles/deleted', component: DeletedArticlesComponent, data: { privileges: pickPrivileges('ARTICLES', ['RESTORE_ARTICLE']) } },
 
       { path: 'clients', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
-      { path: 'clients/deleted', component: DeletedClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['RESTORE_CLIENT']) } },
       { path: 'clients/categories', component: ClientCategoriesComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT']) } },
-      { path: 'clients/categories/deleted', component: DeletedClientCategoriesComponent, data: { privileges: pickPrivileges('CLIENTS', ['RESTORE_CLIENT']) } },
 
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]

@@ -1,5 +1,4 @@
-// article.component.ts
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -16,7 +15,7 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 import { ArticleCategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article',
@@ -33,12 +32,11 @@ export class ArticleComponent implements OnInit {
   categories: ArticleCategoryResponseDto[] = [];
   stats: ArticleStatsDto | null = null;
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
-  viewMode: ViewMode = 'list';
   selectedArticle: ArticleResponseDto | null = null;
   loading = false;
   errors: string[] = [];
@@ -51,6 +49,21 @@ export class ArticleComponent implements OnInit {
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+
+
+  viewMode = signal<ViewMode>('list');
+  isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
+
+  isList = this.isMode('list')
+
+  isDeletedList = this.isMode('list-deleted');
+
+  isCreate = this.isMode('create');
+
+  isEdit = this.isMode('edit');
+
+  isView = this.isMode('view');
+  private previousMode: ViewMode = 'list';
 
   constructor(
     public authService: AuthService,
@@ -74,9 +87,9 @@ export class ArticleComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) => {
       return this.flattenObject(data).includes(filter);
     };
-
     this.reload();
   }
+
 
   // ── Stats ─────────────────────────────────────────────────────────────────
 
@@ -126,15 +139,14 @@ export class ArticleComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  onPageSizeChange(): void { this.pageNumber = 1; this.load(); }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
+  onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
   load(): void {
-    this.loading = true;
     this.errors = [];
-    this.articleService.getAll(this.pageNumber, this.pageSize).subscribe({
+    this.articleService.getAll(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
@@ -148,6 +160,17 @@ export class ArticleComponent implements OnInit {
     });
   }
 
+  loadDeleted(): void {
+    this.articleService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items;
+        this.totalCount = res.totalCount;
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', 'Failed to load deleted articles.'),
+    });
+  }
+
   loadCategories(): void {
     this.categoryService.getAll().subscribe({
       next: (cats) => { this.categories = cats; this.cdr.markForCheck(); },
@@ -157,27 +180,53 @@ export class ArticleComponent implements OnInit {
 
   loadStats(): void {
     this.articleService.getStats().subscribe({
-      next: (res) => { this.stats = res; this.cdr.markForCheck(); },
+      next: (res) => {
+        this.stats = res;
+        if (this.isDeletedList() && res.deletedCount === 0) {
+          this.setViewMode('list');
+          this.load();
+        }
+        this.cdr.markForCheck();
+      },
       error: () => this.flash('error', 'Failed to load stats.'),
     });
   }
 
   reload(): void {
-    this.load();
+    if (this.isDeletedList()) {
+      this.loadDeleted();
+    } else {
+      this.load();
+    }
     this.loadCategories();
     this.loadStats();
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
+  onDeletedCardClick(): void {
+    if (this.isDeletedList() || this.deletedCount < 1) return;
+    this.setViewMode('list-deleted');
+    this.loadDeleted();
+  }
+
+  onActiveCardClick(): void {
+    if (this.isList()) return;
+    this.setViewMode('list');
+    this.load();
+  }
+
   openCreate(): void {
-    this.viewMode = 'create';
+    if(this.isCreate()) return;
+    this.setViewMode('create');
     this.selectedArticle = null;
     this.articleForm.reset({ libelle: '', prix: null, categoryId: '', barCode: '', tva: null });
   }
 
   openEdit(article: ArticleResponseDto): void {
-    this.viewMode = 'edit';
+    this.previousMode = this.viewMode();
+    this.setViewMode('edit');
+
     this.selectedArticle = article;
     this.articleForm.patchValue({
       libelle:    article.libelle,
@@ -190,13 +239,13 @@ export class ArticleComponent implements OnInit {
   }
 
   openView(article: ArticleResponseDto): void {
-    this.viewMode = 'view';
+    this.previousMode = this.viewMode();
+    this.setViewMode('view');
     this.selectedArticle = article;
-    this.cdr.markForCheck();
   }
 
   cancel(): void {
-    this.viewMode = 'list';
+    this.setViewMode(this.previousMode);
     this.selectedArticle = null;
     this.articleForm.reset();
   }
@@ -205,7 +254,7 @@ export class ArticleComponent implements OnInit {
     if (this.articleForm.invalid) return;
     const val = this.articleForm.value;
 
-    if (this.viewMode === 'create') {
+    if (this.isCreate()) {
       const dto: CreateArticleRequestDto = {
         libelle:    val.libelle,
         prix:       val.prix,
@@ -218,7 +267,7 @@ export class ArticleComponent implements OnInit {
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create article.'),
       });
 
-    } else if (this.viewMode === 'edit' && this.selectedArticle) {
+    } else if (this.isEdit() && this.selectedArticle) {
       const dto: UpdateArticleRequestDto = {
         libelle:    val.libelle,
         prix:       val.prix,
@@ -252,12 +301,26 @@ export class ArticleComponent implements OnInit {
         if (!result) return;
         this.articleService.delete(article.id).subscribe({
           next: () => {
-            if (this.viewMode === 'view') this.cancel();
+            if (this.isView()) this.cancel();
             this.flash('success', `Article "${article.libelle}" deleted successfully.`);
             this.reload();
           },
           error: () => this.flash('error', `Failed to delete article "${article.libelle}".`),
         });
+      });
+  }
+
+  restore(ArticleResponseDto: ArticleResponseDto): void {
+      this.articleService.restore(ArticleResponseDto.id).subscribe({
+        next: () => {
+          this.flash('success', `ArticleResponseDto "${ArticleResponseDto.libelle}" has been restored. You can find it in the Articles page.`);
+          this.reload();
+          if(this.isView())this.cancel();
+        },
+        error: (error) =>{
+          const err= error.error as HttpError;
+          this.flash('error', error.message);
+        }
       });
   }
 
@@ -296,4 +359,9 @@ export class ArticleComponent implements OnInit {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
   }
 
+
+  setViewMode(mode: ViewMode) {
+    this.viewMode.set(mode);
+    this.cdr.markForCheck();
+  }
 }

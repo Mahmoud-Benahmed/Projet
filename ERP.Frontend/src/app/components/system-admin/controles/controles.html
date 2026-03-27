@@ -133,12 +133,12 @@
 
       <!-- PAGINATION -->
       <app-pagination
-        [pageNumber]="pageNumber"
+        [pageNumber]="pageNumber()"
         [totalPages]="totalPages"
-        [pageSize]="pageSize"
+        [pageSize]="pageSize()"
         [pageSizeOptions]="pageSizeOptions"
-        (pageChange)="pageNumber = $event; reload()"
-        (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+        (pageChange)="pageNumber.set($event); reload()"
+        (pageSizeChange)="pageSize.set($event); onPageSizeChange()">
       </app-pagination>
     </div>
   </ng-container>

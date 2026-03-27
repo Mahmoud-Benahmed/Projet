@@ -81,13 +81,6 @@
                 <mat-icon>inventory_2</mat-icon> Articles
             </a>
             <a  class="sidebar__subitem"
-                routerLink="/articles/deleted"
-                routerLinkActive="sidebar__subitem--active"
-                [routerLinkActiveOptions]="{exact:true}"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)" (click)="closeMobileNav()">
-              <mat-icon>recycling</mat-icon> Deleted
-            </a>
-            <a  class="sidebar__subitem"
                 routerLink="/articles/categories"
                 routerLinkActive="sidebar__subitem--active"
                 [routerLinkActiveOptions]="{exact:true}"
@@ -107,23 +100,11 @@
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
             <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
                [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
-              <mat-icon>person</mat-icon> Clients
-            </a>
-            <a class="sidebar__subitem" routerLink="/clients/deleted" routerLinkActive="sidebar__subitem--active"
-            *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)" (click)="closeMobileNav()">
-            <mat-icon>person_remove</mat-icon> Deleted
+              <mat-icon>people</mat-icon> Clients
             </a>
             <a class="sidebar__subitem" routerLink="/clients/categories" routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
               <mat-icon>list_alt</mat-icon> Categories
-            </a>
-            <a  class="sidebar__subitem"
-                routerLink="/clients/categories/deleted"
-                routerLinkActive="sidebar__subitem--active"
-                [routerLinkActiveOptions]="{exact:true}"
-                (click)="closeMobileNav()"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
-                <mat-icon>playlist_remove</mat-icon> Deleted Categories
             </a>
           </div>
         </div>
@@ -222,13 +203,6 @@
             <mat-icon>inventory_2</mat-icon> <span>Articles</span>
           </a>
           <a  class="sidebar__subitem"
-            routerLink="/articles/deleted"
-            routerLinkActive="sidebar__subitem--active"
-            [routerLinkActiveOptions]="{exact:true}"
-            *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
-            <mat-icon>recycling</mat-icon> <span>Deleted</span>
-          </a>
-          <a  class="sidebar__subitem"
               routerLink="/articles/categories"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
@@ -244,7 +218,7 @@
                 (click)="toggleGroup('clients')"
                 type="button"
                 [class.sidebar__item--group-open]="openGroups['clients']">
-          <mat-icon>people</mat-icon> <span>Clients</span>
+          <mat-icon>handshake</mat-icon> <span>Clients</span>
           <mat-icon class="sidebar__chevron" [class.open]="openGroups['clients']">expand_more</mat-icon>
         </button>
         <div  class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
@@ -254,24 +228,10 @@
             <mat-icon>person</mat-icon> <span>Clients</span>
           </a>
           <a  class="sidebar__subitem"
-              routerLink="/clients/deleted"
-              routerLinkActive="sidebar__subitem--active"
-              [routerLinkActiveOptions]="{exact:true}"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
-            <mat-icon>person_remove</mat-icon> <span>Deleted</span>
-          </a>
-          <a  class="sidebar__subitem"
               routerLink="/clients/categories"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
               <mat-icon>list_alt</mat-icon> <span>Categories</span>
-          </a>
-          <a  class="sidebar__subitem"
-                routerLink="/clients/categories/deleted"
-                routerLinkActive="sidebar__subitem--active"
-                [routerLinkActiveOptions]="{exact:true}"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
-                <mat-icon>playlist_remove</mat-icon> Deleted Categories
           </a>
         </div>
       </div>

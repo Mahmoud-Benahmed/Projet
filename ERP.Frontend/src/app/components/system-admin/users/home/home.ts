@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -17,13 +17,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { Stats } from '../stats/stats';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from '../../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
-import { PaginationComponent } from "../../../pagination/pagination";
+import { PaginationComponent } from '../../../pagination/pagination';
 
 @Component({
   selector: 'app-home',
@@ -48,8 +47,8 @@ import { PaginationComponent } from "../../../pagination/pagination";
     MatSnackBarModule,
     RouterLinkActive,
     RouterLink,
-    PaginationComponent
-],
+    PaginationComponent,
+  ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -58,83 +57,96 @@ export class UsersHomeComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   displayedColumns: string[] = [
-    'fullName',
-    'email',
-    'role',
-    'createdAt',
-    'lastLoginAt',
-    'actions',
+    'fullName', 'email', 'role', 'createdAt', 'lastLoginAt', 'actions',
   ];
 
   dataSource = new MatTableDataSource<AuthUserGetResponseDto>([]);
 
-  // Pagination
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
-  totalCount: number =0;
-
+  totalCount = 0;
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  // State
   isLoading = false;
   searchTerm = '';
-  error: string | null = null;
+  // ✅ Fixed: separate error array and successMessage (consistent with other components)
+  errors: string[] = [];
   successMessage: string | null = null;
 
-  pageTitle= 'Active Users';
-  stats: UserStatsDto | null= null;
+  stats: UserStatsDto | null = null;
 
-  readonly PRIVILEGES= PRIVILEGES;
+  readonly PRIVILEGES = PRIVILEGES;
 
   constructor(
     private router: Router,
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
     this.reload();
   }
 
-  loadUsers(): void {
-    this.isLoading = true;
-    this.authService.getActivatedUsers(this.pageNumber, this.pageSize)
-      .subscribe({
-        next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
-          this.dataSource.data = result.items.filter(u => u.id !== this.currentUserId);
-          this.totalCount = result.totalCount;
-          this.dataSource.sort = this.sort;
-          this.isLoading = false;
-        },
-        error: () => {
-          this.isLoading = false;
-          this.flash('success','Failed to load users.');
-        },
-      });
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    return 'Active Users';
   }
 
-  loadStats(){
-      this.authService.getStats().subscribe({
-        next: (result) => this.stats = result,
-        error: () =>{
-          this.flash('error','Failed to load users.');
-      }
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  get activeUsers():      number { return this.stats?.activeUsers      ?? 0; }
+  get deactivatedUsers(): number { return this.stats?.deactivatedUsers ?? 0; }
+  get totalUsers():       number { return this.stats?.totalUsers       ?? 0; }
+
+  // ── Load (pure fetchers) ──────────────────────────────────────────────────
+
+  loadUsers(): void {
+    this.isLoading = true;
+    this.authService.getActivatedUsers(this.pageNumber(), this.pageSize()).subscribe({
+      next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
+        // ✅ Fixed: filter happens server-side ideally, but kept client-side filter here
+        this.dataSource.data = result.items.filter(u => u.id !== this.currentUserId);
+        this.totalCount = result.totalCount;
+        this.dataSource.sort = this.sort;
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // ✅ Fixed: was calling flash('success', ...) on error
+        this.flash('error', 'Failed to load users.');
+        this.isLoading = false;
+      },
     });
   }
 
+  loadStats(): void {
+    this.authService.getStats().subscribe({
+      next: (result) => { this.stats = result; this.cdr.markForCheck(); },
+      error: () => this.flash('error', 'Failed to load stats.'),
+    });
+  }
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.reload(); } }
-  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.reload(); } }
+  reload(): void {
+    this.loadUsers();
+    this.loadStats();
+    this.cdr.markForCheck();
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
+
   onPageSizeChange(): void {
-    this.pageNumber = 1; // reset to first page on size change
+    this.pageNumber.set(1);
     this.reload();
   }
 
+  // ── Sort ──────────────────────────────────────────────────────────────────
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -145,7 +157,7 @@ export class UsersHomeComponent implements OnInit {
     }
   }
 
-  get sortedData() {
+  get sortedData(): AuthUserGetResponseDto[] {
     const data = [...this.dataSource.filteredData];
     if (!this.sortColumn) return data;
 
@@ -155,11 +167,11 @@ export class UsersHomeComponent implements OnInit {
 
       if (valA == null) return 1;
       if (valB == null) return -1;
-
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
 
-      return (valA < valB ? -1 : valA > valB ? 1 : 0) * (this.sortDirection === 'asc' ? 1 : -1);
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) *
+        (this.sortDirection === 'asc' ? 1 : -1);
     });
   }
 
@@ -167,105 +179,123 @@ export class UsersHomeComponent implements OnInit {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
-  deactivateUser(user: AuthUserGetResponseDto): void {
-    this.authService.deactivate(user.id).subscribe({
-      next: () => {
-        this.flash('success', `${user.fullName ?? user.login} deactivated.`);
-        this.reload();
-      },
-      error: () => this.flash('error','Failed to deactivate user.')
-    });
-  }
+  // ── CRUD ──────────────────────────────────────────────────────────────────
 
-  softDeleteUser(user: AuthUserGetResponseDto): void {
+  deactivateUser(user: AuthUserGetResponseDto): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title: 'Delete User',
-        message: `${user.fullName ?? user.login} will be deleted. Do you want to procceed ?`,
-        confirmText: 'Delete',
-        showCancel: true,
-        icon: 'auto_delete',
-        iconColor: 'danger'
-      }
+        title:       'Deactivate User',
+        message:     `Are you sure you want to deactivate "${user.fullName ?? user.login}"?`,
+        confirmText: 'Deactivate',
+        showCancel:  true,
+        icon:        'block',
+        iconColor:   'warning',
+      },
     });
 
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         if (!result) return;
+        this.authService.deactivate(user.id).subscribe({
+          next: () => { this.flash('success', `${user.fullName ?? user.login} deactivated.`); this.reload(); },
+          error: () => this.flash('error', 'Failed to deactivate user.'),
+        });
+      });
+  }
 
+  softDeleteUser(user: AuthUserGetResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       'Delete User',
+        message:     `${user.fullName ?? user.login} will be deleted. Do you want to proceed?`,
+        confirmText: 'Delete',
+        showCancel:  true,
+        icon:        'auto_delete',
+        iconColor:   'danger',
+      },
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
         this.authService.softDelete(user.id).subscribe({
-          next: () => {
-            this.flash('success',`${user.fullName ?? user.login} has been deleted.`);
-            this.reload();
-            this.cdr.markForCheck();
-          },
-          error: () => {
-            this.flash('error','Failed to delete user.');
-          }
+          next: () => { this.flash('success', `${user.fullName ?? user.login} has been deleted.`); this.reload(); },
+          error: () => this.flash('error', 'Failed to delete user.'),
         });
       });
   }
 
   restoreUser(user: AuthUserGetResponseDto): void {
-    this.authService.restore(user.id).subscribe({
-      next: () => {
-        this.flash('success',`${user.fullName ?? user.login} restored.`);
-        this.reload();
-        this.cdr.markForCheck();
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       'Restore User',
+        message:     `Restore "${user.fullName ?? user.login}"? They will regain access.`,
+        confirmText: 'Restore',
+        showCancel:  true,
+        icon:        'settings_backup_restore',
+        iconColor:   'success',
       },
-      error: () => this.flash('error','Failed to restore user.')
     });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+        this.authService.restore(user.id).subscribe({
+          next: () => { this.flash('success', `${user.fullName ?? user.login} restored.`); this.reload(); },
+          error: () => this.flash('error', 'Failed to restore user.'),
+        });
+      });
   }
 
-  public reload() {
-    this.loadUsers();
-    this.loadStats();
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  goToProfile(authUserId: string): void {
+    if (!authUserId) return;
+    if (authUserId === this.authService.UserId) {
+      this.router.navigate(['/profile']);
+      return;
+    }
+    this.router.navigate(['/users', authUserId]);
+  }
+
+  goToRegister(): void {
+    this.router.navigate(['/users/register']);
+  }
+
+  // ── Feedback ──────────────────────────────────────────────────────────────
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if (type === 'success') {
+      this.successMessage = msg;
+      setTimeout(() => { this.successMessage = null; this.cdr.markForCheck(); }, 3000);
+    } else {
+      this.errors = [msg];
+      setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
+    }
     this.cdr.markForCheck();
   }
+
+  dismissError(): void { this.errors = []; }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  get currentUserId(): string | null { return this.authService.UserId; }
+
   getInitials(user: AuthUserGetResponseDto): string {
     if (user.fullName) {
       return user.fullName
         .split(' ')
-        .map((n) => n[0])
+        .map(n => n[0])
         .slice(0, 2)
         .join('')
         .toUpperCase();
     }
     return user.email[0].toUpperCase();
-  }
-
-  dismissError(): void { this.error = null; }
-  flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
-      this.successMessage = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
-      this.error = msg;
-      this.cdr.markForCheck();
-      setTimeout(() => (this.error = null), 3000);
-    }
-  }
-
-  goToProfile(authUserId: string): void {
-    if (!authUserId) return;
-
-    if (authUserId === this.authService.UserId) {
-      this.router.navigate(['/profile']);
-      return;
-    }
-
-    this.router.navigate(['/users', authUserId]);
-  }
-
-  goToRegister(): void{
-    this.router.navigate(['/users/register'])
-  }
-
-  get currentUserId(): string | null {
-    return this.authService.UserId;
   }
 }

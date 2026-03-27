@@ -119,14 +119,14 @@
       </div>
 
       <!-- PAGINATION -->
-      <app-pagination
-        [pageNumber]="pageNumber"
-        [totalPages]="totalPages"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        (pageChange)="pageNumber = $event; reload()"
-        (pageSizeChange)="pageSize = $event; onPageSizeChange()">
-      </app-pagination>
+        <app-pagination
+          [pageNumber]="pageNumber()"
+          [totalPages]="totalPages"
+          [pageSize]="pageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (pageChange)="pageNumber.set($event); reload()"
+          (pageSizeChange)="pageSize.set($event); onPageSizeChange()">
+        </app-pagination>
     </div>
   </ng-container>
 

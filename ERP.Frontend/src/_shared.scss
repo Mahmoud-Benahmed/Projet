@@ -398,7 +398,7 @@ $bp-xl:  1200px;
 .td--name    { font-weight: 600; color: $text-hi; }
 .td--category{ color: $text-mid; }
 .td--price   { font-weight: 500; white-space: nowrap; }
-.td--actions { white-space: nowrap; }
+.td--actions { white-space: nowrap; display: flex; flex-direction: row; justify-content: space-around;}
 .td--empty   { text-align: center; color: $text-lo; padding: 3rem !important; font-size: 0.9rem; }
 
 
@@ -424,6 +424,9 @@ $bp-xl:  1200px;
   }
 }
 
+.text-center{
+  text-align: center;
+}
 // ========================
 // Badges
 // ========================

@@ -212,7 +212,10 @@ namespace ERP.ArticleService.Application.Services
             return new CategoryResponseDto(
                 Id: category.Id,
                 Name: category.Name,
-                TVA: category.TVA
+                TVA: category.TVA,
+                IsDeleted: category.IsDeleted,
+                CreatedAt: category.CreatedAt,
+                UpdatedAt: category.UpdatedAt
                 );
         }
     }

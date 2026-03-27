@@ -1,5 +1,5 @@
 import { RoleCreateDto, RoleService, RoleUpdateDto } from '../../../services/auth/roles.service';
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -26,8 +26,8 @@ export class RoleComponent implements OnInit {
 
   dataSource = new MatTableDataSource<RoleResponseDto>([]);
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
@@ -65,12 +65,12 @@ export class RoleComponent implements OnInit {
   // ── Pagination ────────────────────────────────────────────────────────────
 
   get totalPages(): number {
-    return Math.ceil(this.totalCount / this.pageSize);
+    return Math.ceil(this.totalCount / this.pageSize());
   }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
-    this.pageNumber = 1;
+    this.pageNumber.set(1);
   }
 
     // ── Sorting ───────────────────────────────────────────────────────────────
@@ -103,8 +103,8 @@ export class RoleComponent implements OnInit {
     }
 
     // client-side pagination slice
-    const start = (this.pageNumber - 1) * this.pageSize;
-    return filtered.slice(start, start + this.pageSize);
+    const start = (this.pageNumber() - 1) * this.pageSize();
+    return filtered.slice(start, start + this.pageSize());
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ export class RoleComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   onPageSizeChange(): void {
-    this.pageNumber = 1;
+    this.pageNumber.set(1);
     this.reload();
   }
 

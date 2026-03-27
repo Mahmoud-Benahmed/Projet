@@ -1,5 +1,4 @@
-// category.component.ts
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -13,7 +12,7 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 import { CategoryRequestDto, ArticleCategoryResponseDto, CategoryService, ArticleCategoryStatsDto } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article-categories',
@@ -28,22 +27,32 @@ export class ArticleCategoriesComponent implements OnInit {
   dataSource = new MatTableDataSource<ArticleCategoryResponseDto>([]);
   stats: ArticleCategoryStatsDto | null = null;
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  viewMode: ViewMode = 'list';
+  private previousMode: ViewMode = 'list';
+
   selectedCategory: ArticleCategoryResponseDto | null = null;
   loading = false;
   errors: string[] = [];
   successMessage: string | null = null;
   searchQuery = '';
 
-  readonly PRIVILEGES= PRIVILEGES;
+  viewMode = signal<ViewMode>('list');
+  isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
+
+  isList        = this.isMode('list');
+  isDeletedList = this.isMode('list-deleted');
+  isCreate      = this.isMode('create');
+  isEdit        = this.isMode('edit');
+  isView        = this.isMode('view');
+
+  readonly PRIVILEGES = PRIVILEGES;
   categoryForm: FormGroup;
 
   constructor(
@@ -63,22 +72,33 @@ export class ArticleCategoriesComponent implements OnInit {
     this.reload();
   }
 
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    if (this.isCreate())      return 'Add Category';
+    if (this.isEdit())        return 'Edit Category';
+    if (this.isView())        return 'Category Details';
+    if (this.isDeletedList()) return 'Deleted Categories';
+    return 'List Categories';
+  }
+
   // ── Search ────────────────────────────────────────────────────────────────
 
   applyFilter(): void {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
-    this.pageNumber = 1;
+    this.pageNumber.set(1);
   }
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
 
-  onPageSizeChange(): void { this.pageNumber = 1; this.load(); }
+  onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
-  get activeCategories():   number { return this.stats?.activeCategories   ?? 0; }
-  get deletedCategories():  number { return this.stats?.deletedCategories  ?? 0; }
+  get activeCategories():  number { return this.stats?.activeCategories  ?? 0; }
+  get deletedCategories(): number { return this.stats?.deletedCategories ?? 0; }
 
+  // ── Sort ──────────────────────────────────────────────────────────────────
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -107,77 +127,131 @@ export class ArticleCategoriesComponent implements OnInit {
       });
     }
 
-    // client-side pagination slice
-    const start = (this.pageNumber - 1) * this.pageSize;
-    return filtered.slice(start, start + this.pageSize);
+    const start = (this.pageNumber() - 1) * this.pageSize();
+    return filtered.slice(start, start + this.pageSize());
   }
+
   // ── Load ──────────────────────────────────────────────────────────────────
 
   load(): void {
-    this.loading = true;
     this.errors = [];
-    this.categoryService.getPaged(this.pageNumber, this.pageSize).subscribe({
+    this.categoryService.getPaged(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
-        this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => {
-        this.flash('error', 'Failed to load categories.');
-        this.loading = false;
+      error: () => this.flash('error', 'Failed to load categories.'),
+    });
+  }
+
+  listDeleted(): void {
+    this.categoryService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
+      next: (result) => {
+        this.dataSource.data = result.items;
+        this.totalCount = result.totalCount;
+        this.cdr.markForCheck();
       },
+      error: () => this.flash('error', 'Failed to load deleted categories.'),
     });
   }
 
   loadStats(): void {
     this.categoryService.getStats().subscribe({
-      next: (res) => { this.stats = res; this.cdr.markForCheck(); },
+      next: (res) => {
+        this.stats = res;
+        // auto-switch back to list when no deleted items remain
+        if (this.isDeletedList() && res.deletedCategories === 0) {
+          this.setViewMode('list');
+          this.load();
+        }
+        this.cdr.markForCheck();
+      },
       error: () => this.flash('error', 'Failed to load stats.'),
     });
   }
 
+  reload(): void {
+    if (this.isDeletedList()) {
+      this.listDeleted();
+    } else {
+      this.load();
+    }
+    this.loadStats();
+    this.cdr.markForCheck();
+  }
 
-  reload(): void { this.load(); this.loadStats(); this.cdr.markForCheck();}
+  // ── Stat card clicks ──────────────────────────────────────────────────────
+
+  onActiveCardClick(): void {
+    if (this.isList()) return;
+    this.setViewMode('list');
+    this.load();
+  }
+
+  onDeletedCardClick(): void {
+    if (this.isDeletedList() || this.deletedCategories < 1) return;
+    this.setViewMode('list-deleted');
+    this.listDeleted();
+  }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   openCreate(): void {
-    this.viewMode = 'create';
+    if (this.isCreate()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('create');
     this.selectedCategory = null;
     this.categoryForm.reset({ name: '', tva: null });
   }
 
   openEdit(category: ArticleCategoryResponseDto): void {
-    this.viewMode = 'edit';
+    if (this.isEdit()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('edit');
     this.selectedCategory = category;
     this.categoryForm.patchValue({ name: category.name, tva: category.tva });
     this.cdr.markForCheck();
   }
 
   openView(category: ArticleCategoryResponseDto): void {
-    this.viewMode = 'view';
+    if (this.isView()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('view');
     this.selectedCategory = category;
     this.cdr.markForCheck();
   }
 
   cancel(): void {
-    this.viewMode = 'list';
+    this.setViewMode(this.previousMode);
     this.selectedCategory = null;
     this.categoryForm.reset();
+  }
+
+  restore(cat: ArticleCategoryResponseDto): void {
+    this.categoryService.restore(cat.id).subscribe({
+      next: () => {
+        this.flash('success', `Category "${cat.name}" has been restored. You can find it in the Categories page.`);
+        if (this.isView()) this.cancel();
+        this.reload();
+      },
+      error: (error) => {
+        const err = error.error as HttpError;
+        this.flash('error', err?.message ?? error.message);
+      },
+    });
   }
 
   submit(): void {
     if (this.categoryForm.invalid) return;
     const dto: CategoryRequestDto = this.categoryForm.value;
 
-    if (this.viewMode === 'create') {
+    if (this.isCreate()) {
       this.categoryService.create(dto).subscribe({
-        next: () => { this.reload(); this.cancel(); this.flash('success', `Category "${dto.name}" created successfully.`); },
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" created successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
       });
-
-    } else if (this.viewMode === 'edit' && this.selectedCategory) {
+    } else if (this.isEdit() && this.selectedCategory) {
       this.categoryService.update(this.selectedCategory.id, dto).subscribe({
         next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" updated successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update category.'),
@@ -204,7 +278,7 @@ export class ArticleCategoriesComponent implements OnInit {
         if (!result) return;
         this.categoryService.delete(category.id).subscribe({
           next: () => {
-            if (this.viewMode === 'view') this.cancel();
+            if (this.isView()) this.cancel();
             this.flash('success', `Category "${category.name}" deleted successfully.`);
             this.reload();
           },
@@ -231,4 +305,9 @@ export class ArticleCategoriesComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   trackById(_: number, c: ArticleCategoryResponseDto): string { return c.id; }
+
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    this.cdr.markForCheck();
+  }
 }

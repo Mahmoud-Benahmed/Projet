@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -6,13 +6,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableDataSource } from '@angular/material/table';
 import {
-  ClientsService,
-  ClientResponseDto,
-  ClientStatsDto,
-  CreateClientRequestDto,
-  UpdateClientRequestDto,
-  AddCategoryRequestDto,
-  AssignedCategoryDto
+  ClientsService, ClientResponseDto, ClientStatsDto,
+  CreateClientRequestDto, UpdateClientRequestDto,
+  AddCategoryRequestDto, AssignedCategoryDto
 } from '../../../services/clients/clients.service';
 import { ModalComponent } from '../../modal/modal';
 import { PaginationComponent } from '../../pagination/pagination';
@@ -21,7 +17,7 @@ import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { CategoriesService, ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CurrencyConfigService } from '../../../services/currency-config.service';
 
-type ViewMode = 'list'| 'list-deleted'| 'list-blocked' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'list-deleted' | 'list-blocked' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-clients',
@@ -38,12 +34,25 @@ export class ClientsComponent implements OnInit {
   categories: ClientCategoryResponseDto[] = [];
   stats: ClientStatsDto | null = null;
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
-  viewMode!: ViewMode;
+  // ── Signals ───────────────────────────────────────────────────────────────
+
+  viewMode = signal<ViewMode>('list');
+  isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
+
+  isList        = this.isMode('list');
+  isDeletedList = this.isMode('list-deleted');
+  isBlockedList = this.isMode('list-blocked');
+  isCreate      = this.isMode('create');
+  isEdit        = this.isMode('edit');
+  isView        = this.isMode('view');
+
+  private previousMode: ViewMode = 'list';
+
   selectedClient: ClientResponseDto | null = null;
   loading = false;
   errors: string[] = [];
@@ -51,13 +60,11 @@ export class ClientsComponent implements OnInit {
   searchQuery = '';
 
   readonly PRIVILEGES = PRIVILEGES;
-
   clientForm: FormGroup;
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  // For managing category assignment in view mode
   selectedCategoryId = '';
 
   constructor(
@@ -84,7 +91,17 @@ export class ClientsComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
     this.reload();
-    this.setViewMode('list');
+  }
+
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    if (this.isCreate())      return 'Add Client';
+    if (this.isEdit())        return 'Edit Client';
+    if (this.isView())        return 'Client Details';
+    if (this.isDeletedList()) return 'Deleted Clients';
+    if (this.isBlockedList()) return 'Blocked Clients';
+    return 'List Clients';
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
@@ -132,27 +149,48 @@ export class ClientsComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  onPageSizeChange(): void { this.pageNumber = 1; this.load(); }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
+  onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // ── Load (pure fetchers — no mode switching) ──────────────────────────────
 
   load(): void {
-    const mode= 'list';
-    if(this.compViewMode(mode)) return;
-    this.setViewMode(mode);
     this.loading = true;
     this.errors = [];
-    this.clientsService.getAll(this.pageNumber, this.pageSize).subscribe({
+    this.clientsService.getAll(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items.filter(client=> !client.isBlocked);
+        this.dataSource.data = res.items.filter(c => !c.isBlocked);
         this.totalCount = res.totalCount;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.flash('error', 'Failed to load clients.');
         this.loading = false;
       },
+    });
+  }
+
+  loadDeleted(): void {
+    this.clientsService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items;
+        this.totalCount = res.totalCount;
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', 'Failed to load deleted clients.'),
+    });
+  }
+
+  loadBlocked(): void {
+    this.clientsService.getAll(this.pageNumber(), this.pageSize()).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items.filter(c => c.isBlocked);
+        this.totalCount = res.totalCount;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', 'Failed to load blocked clients.'),
     });
   }
 
@@ -165,22 +203,63 @@ export class ClientsComponent implements OnInit {
 
   loadStats(): void {
     this.clientsService.getStats().subscribe({
-      next: (res) => { this.stats = res; this.cdr.markForCheck(); },
+      next: (res) => {
+        this.stats = res;
+        // auto-switch back to list when no deleted clients remain
+        if (this.isDeletedList() && res.deletedClients === 0) {
+          this.setViewMode('list');
+          this.load();
+        }
+        // auto-switch back to list when no blocked clients remain
+        if (this.isBlockedList() && res.blockedClients === 0) {
+          this.setViewMode('list');
+          this.load();
+        }
+        this.cdr.markForCheck();
+      },
       error: () => this.flash('error', 'Failed to load stats.'),
     });
   }
 
   reload(): void {
-    this.load();
+    if (this.isDeletedList()) {
+      this.loadDeleted();
+    } else if (this.isBlockedList()) {
+      this.loadBlocked();
+    } else {
+      this.load();
+    }
     this.loadCategories();
     this.loadStats();
     this.cdr.markForCheck();
   }
 
+  // ── Stat card clicks ──────────────────────────────────────────────────────
+
+  onActiveCardClick(): void {
+    if (this.isList()) return;
+    this.setViewMode('list');
+    this.load();
+  }
+
+  onBlockedCardClick(): void {
+    if (this.isBlockedList() || this.blockedClients < 1) return;
+    this.setViewMode('list-blocked');
+    this.loadBlocked();
+  }
+
+  onDeletedCardClick(): void {
+    if (this.isDeletedList() || this.deletedClients < 1) return;
+    this.setViewMode('list-deleted');
+    this.loadDeleted();
+  }
+
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   openCreate(): void {
-    this.viewMode = 'create';
+    if (this.isCreate()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('create');
     this.selectedClient = null;
     this.clientForm.reset({
       name: '', email: '', address: '',
@@ -188,82 +267,9 @@ export class ClientsComponent implements OnInit {
     });
   }
 
-  listDeleted(): void {
-    const mode= 'list-deleted';
-    if(this.compViewMode(mode) || this.stats?.deletedClients! < 1) return;
-    this.setViewMode(mode);
-    this.selectedClient= null;
-    this.clientForm.reset({
-      name: '', email: '', address: '',
-      phone: '', taxNumber: '', creditLimit: null, delaiRetour: null
-    });
-    this.clientsService.getDeleted(this.pageNumber, this.pageSize).subscribe({
-      next: (result) => {
-        this.dataSource.data = result.items;
-        this.totalCount = result.totalCount;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.flash('error','Failed to load deleted clients.');
-      },
-    });
-  }
-
-  listBlocked(): void {
-    const mode= 'list-blocked';
-    if(this.compViewMode(mode) || this.stats?.blockedClients! < 1) return;
-    this.setViewMode(mode);
-    this.selectedClient= null;
-    this.clientForm.reset({
-      name: '', email: '', address: '',
-      phone: '', taxNumber: '', creditLimit: null, delaiRetour: null
-    });
-    this.clientsService.getAll(this.pageNumber, this.pageSize).subscribe({
-        next: (res) => {
-          this.dataSource.data = res.items.filter(client=> client.isBlocked);
-          this.totalCount = res.totalCount;
-          this.loading = false;
-        },
-        error: () => {
-          this.flash('error', 'Failed to load clients.');
-          this.loading = false;
-        }
-    });
-  }
-
-
-  restore(client: ClientResponseDto): void {
-    const dialogRef = this.dialog.open(ModalComponent, {
-      width: '400px',
-      data: {
-        title: 'Restore Client',
-        message: `Restore client "${client.name}"? It will reappear in the active clients list.`,
-        confirmText: 'Restore',
-        showCancel: true,
-        icon: 'settings_backup_restore',
-        iconColor: 'success'
-      }
-    });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
-        if (!result) return;
-        this.clientsService.restore(client.id).subscribe({
-          next: () => {
-            if(this.compViewMode('view')){
-              this.cancel();
-            }
-            this.flash('success', `Client ${client.name} has been restored. You can find it in the Clients page.`);
-             this.reload();
-          },
-          error: () => this.flash('error', 'Failed to restore client.'),
-        });
-      });
-  }
-
-
   openEdit(client: ClientResponseDto): void {
+    if (this.isEdit()) return;
+    this.previousMode = this.viewMode();
     this.setViewMode('edit');
     this.selectedClient = client;
     this.clientForm.patchValue({
@@ -279,6 +285,8 @@ export class ClientsComponent implements OnInit {
   }
 
   openView(client: ClientResponseDto): void {
+    if (this.isView()) return;
+    this.previousMode = this.viewMode();
     this.setViewMode('view');
     this.selectedClient = client;
     this.selectedCategoryId = '';
@@ -286,17 +294,45 @@ export class ClientsComponent implements OnInit {
   }
 
   cancel(): void {
-    this.setViewMode('list');
+    this.setViewMode(this.previousMode);
     this.selectedClient = null;
     this.clientForm.reset();
     this.selectedCategoryId = '';
+  }
+
+  restore(client: ClientResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       'Restore Client',
+        message:     `Restore client "${client.name}"? It will reappear in the active clients list.`,
+        confirmText: 'Restore',
+        showCancel:  true,
+        icon:        'settings_backup_restore',
+        iconColor:   'success',
+      },
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+        this.clientsService.restore(client.id).subscribe({
+          next: () => {
+            if (this.isView()) this.cancel();
+            this.flash('success', `Client "${client.name}" has been restored.`);
+            this.reload();
+          },
+          error: () => this.flash('error', 'Failed to restore client.'),
+        });
+      });
   }
 
   submit(): void {
     if (this.clientForm.invalid) return;
     const val = this.clientForm.value;
 
-    if (this.compViewMode('create')) {
+    if (this.isCreate()) {
       const dto: CreateClientRequestDto = {
         name:        val.name,
         email:       val.email,
@@ -307,14 +343,10 @@ export class ClientsComponent implements OnInit {
         delaiRetour: val.delaiRetour ?? undefined,
       };
       this.clientsService.create(dto).subscribe({
-        next: () => {
-          this.reload();
-          this.cancel();
-          this.flash('success', `Client "${val.name}" created successfully.`);
-        },
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Client "${val.name}" created successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create client.'),
       });
-    } else if (this.compViewMode('edit') && this.selectedClient) {
+    } else if (this.isEdit() && this.selectedClient) {
       const dto: UpdateClientRequestDto = {
         name:        val.name,
         email:       val.email,
@@ -325,11 +357,7 @@ export class ClientsComponent implements OnInit {
         delaiRetour: val.delaiRetour ?? undefined,
       };
       this.clientsService.update(this.selectedClient.id, dto).subscribe({
-        next: () => {
-          this.cancel();
-          this.reload();
-          this.flash('success', `Client "${val.name}" updated successfully.`);
-        },
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Client "${val.name}" updated successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update client.'),
       });
     }
@@ -354,7 +382,7 @@ export class ClientsComponent implements OnInit {
         if (!result) return;
         this.clientsService.delete(client.id).subscribe({
           next: () => {
-            if (this.compViewMode('view')) this.cancel();
+            if (this.isView()) this.cancel();
             this.flash('success', `Client "${client.name}" deleted successfully.`);
             this.reload();
           },
@@ -362,8 +390,6 @@ export class ClientsComponent implements OnInit {
         });
       });
   }
-
-  // ── Block / Unblock ───────────────────────────────────────────────────────
 
   toggleBlock(client: ClientResponseDto): void {
     const action = client.isBlocked ? 'Unblock' : 'Block';
@@ -386,9 +412,7 @@ export class ClientsComponent implements OnInit {
         this.clientsService.toggleBlock(client).subscribe({
           next: (updated) => {
             this.flash('success', `Client "${client.name}" ${action.toLowerCase()}ed successfully.`);
-            if (this.selectedClient?.id === client.id) {
-              this.selectedClient = updated;
-            }
+            if (this.selectedClient?.id === client.id) this.selectedClient = updated;
             this.reload();
           },
           error: () => this.flash('error', `Failed to ${action.toLowerCase()} client.`),
@@ -406,7 +430,7 @@ export class ClientsComponent implements OnInit {
       next: (result) => {
         this.selectedCategoryId = '';
         this.flash('success', 'Category assigned successfully.');
-        this.selectedClient= result;
+        this.selectedClient = result;
       },
       error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to assign category.'),
     });
@@ -432,7 +456,7 @@ export class ClientsComponent implements OnInit {
         this.clientsService.removeCategory(clientId, categoryId).subscribe({
           next: (client) => {
             this.flash('success', `Category "${categoryName}" removed.`);
-            this.selectedClient= client;
+            this.selectedClient = client;
           },
           error: () => this.flash('error', 'Failed to remove category.'),
         });
@@ -464,6 +488,7 @@ export class ClientsComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   trackById(_: number, c: ClientResponseDto): string { return c.id; }
+  trackByCategoryId(_: number, cat: AssignedCategoryDto): string { return cat.id; }
 
   getCategoryNames(client: ClientResponseDto): string {
     return this.clientsService.getCategoryNames(client);
@@ -484,14 +509,8 @@ export class ClientsComponent implements OnInit {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
   }
 
-  trackByCategoryId(_: number, cat: AssignedCategoryDto): string {
-    return cat.id;
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    this.cdr.markForCheck();
   }
-
-  setViewMode(mode: ViewMode) {
-    this.viewMode = mode;
-  }
-
-  compViewMode(vMode: ViewMode): boolean{
-    return this.viewMode === vMode; }
 }

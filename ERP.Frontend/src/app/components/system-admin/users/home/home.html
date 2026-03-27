@@ -1,6 +1,5 @@
 <div class="page">
 
-  <!-- ── PAGE HEADER ── -->
   <div class="page-header">
     <div>
       <p class="breadcrumb">USER MANAGEMENT</p>
@@ -8,33 +7,39 @@
     </div>
   </div>
 
-  <!-- ===================== ALERTS ===================== -->
-  <div class="alert alert--error" *ngIf="error">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    {{ error }}
+  <!-- ✅ Fixed: consistent alert structure with errors array -->
+  <div class="alert alert--error" *ngIf="errors.length > 0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <div class="alert__messages">
+      <span *ngFor="let msg of errors">{{ msg }}</span>
+    </div>
     <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
 
   <div class="alert alert--success" *ngIf="successMessage">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
     {{ successMessage }}
-    <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
 
-  <!-- ── STAT CARDS ── -->
   <div class="stats-grid">
 
-    <!-- Active Users → /users -->
     <div class="stat-card stat-card--green"
-      [routerLink]="(stats?.activeUsers ?? 0) > 0 ? '/users' : null"
+      [routerLink]="activeUsers > 0 ? '/users' : null"
       routerLinkActive="stat-card--current"
       #usersLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="usersLink.isActive || !stats?.activeUsers">
+      [class.stat-card--disabled]="usersLink.isActive || activeUsers < 1">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Active Users</p>
-          <p class="stat-card__value">{{ stats?.activeUsers }}</p>
+          <!-- ✅ Fixed: use getter instead of stats?. to avoid null display -->
+          <p class="stat-card__value">{{ activeUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--green">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -44,17 +49,16 @@
       </div>
     </div>
 
-    <!-- Deactivated → /users/deactivated -->
     <div class="stat-card stat-card--red"
-      [routerLink]="(stats?.deactivatedUsers ?? 0) > 0 ? '/users/deactivated' : null"
+      [routerLink]="deactivatedUsers > 0 ? '/users/deactivated' : null"
       routerLinkActive="stat-card--current"
       #deactivatedLink="routerLinkActive"
       [routerLinkActiveOptions]="{ exact: true }"
-      [class.stat-card--disabled]="deactivatedLink.isActive || !stats?.deactivatedUsers">
+      [class.stat-card--disabled]="deactivatedLink.isActive || deactivatedUsers < 1">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Deactivated</p>
-          <p class="stat-card__value">{{ stats?.deactivatedUsers }}</p>
+          <p class="stat-card__value">{{ deactivatedUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--red">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -64,11 +68,12 @@
       </div>
     </div>
 
-    <div class="stat-card stat-card--gray" *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.RESTORE_USER)">
+    <div class="stat-card stat-card--gray"
+         *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.RESTORE_USER)">
       <div class="stat-card__body">
         <div>
           <p class="stat-card__label">Total Users</p>
-          <p class="stat-card__value">{{ stats?.totalUsers }}</p>
+          <p class="stat-card__value">{{ totalUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--gray">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -78,9 +83,9 @@
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- ── TOOLBAR ── -->
   <div class="toolbar">
     <div class="search-wrap">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,12 +99,11 @@
         (ngModelChange)="applyFilter()" />
     </div>
     <button class="btn-add" (click)="goToRegister()"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)">
+            *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)">
       + Add User
     </button>
   </div>
 
-  <!-- ── TABLE CARD ── -->
   <div class="table-card">
     <div class="table-scroll-wrap">
       <table class="table">
@@ -144,19 +148,6 @@
                 </svg>
               </span>
             </th>
-            <th (click)="sortBy('createdAt')" class="th--sortable">
-              JOINED
-              <span class="sort-icon">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
-                  <polyline points="18 15 12 9 6 15"/>
-                </svg>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </span>
-            </th>
             <th (click)="sortBy('lastLoginAt')" class="th--sortable">
               LAST LOGIN
               <span class="sort-icon">
@@ -190,11 +181,7 @@
             </td>
 
             <td><span class="mono">{{ user.email }}</span></td>
-
-            <td><span class="role-badge">{{ user.roleName}}</span></td>
-
-            <td><span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span></td>
-
+            <td><span class="role-badge">{{ user.roleName }}</span></td>
             <td>
               <span class="date-cell">
                 {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
@@ -202,33 +189,33 @@
             </td>
 
             <td class="td--actions">
-              <button class="icon-btn icon-btn--view"
-                title="View"
-                (click)="goToProfile(user.id)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
+              <button class="icon-btn icon-btn--view" title="View"
+                      (click)="goToProfile(user.id)"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <button class="icon-btn icon-btn--deactivate"
-                title="Deactivate"
-                [disabled]="user.id === currentUserId"
-                [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-                (click)="deactivateUser(user)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER)">
+
+              <!-- ✅ Fixed: deactivate now wrapped in dialog, hidden for self -->
+              <button class="icon-btn icon-btn--deactivate" title="Deactivate"
+                      (click)="deactivateUser(user)"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER) && user.id !== currentUserId">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                 </svg>
               </button>
-              <button class="icon-btn icon-btn--delete"
-                    title="Delete"
-                    [disabled]="user.id === currentUserId"
-                    [style.visibility]="user.id === currentUserId ? 'hidden' : 'visible'"
-                    (click)="softDeleteUser(user)"
-                    *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.1">
-                    <path fill="currentColor" d="M7 6v13zm4.25 15H7q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v4.3q-.425-.125-.987-.213T17 10V6H7v13h3.3q.15.525.4 1.038t.55.962M9 17h1q0-1.575.5-2.588L11 13.4V8H9zm4-5.75q.425-.275.963-.55T15 10.3V8h-2zm.463 9.288Q12 19.075 12 17t1.463-3.537T17 12t3.538 1.463T22 17t-1.463 3.538T17 22t-3.537-1.463m5.187-1.187l.7-.7l-1.85-1.85V14h-1v3.2z"/>
-                  </svg>
+
+              <!-- ✅ Fixed: hidden for self using *ngIf instead of visibility:hidden -->
+              <button class="icon-btn icon-btn--delete" title="Delete"
+                      (click)="softDeleteUser(user)"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER) && user.id !== currentUserId">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
               </button>
             </td>
 
@@ -243,12 +230,13 @@
       </table>
     </div>
 
-    <app-pagination [pageNumber]="pageNumber"
-                [totalPages]="totalPages"
-                [pageSize]="pageSize"
-                [pageSizeOptions]="pageSizeOptions"
-                (pageChange)="pageNumber = $event; reload()"
-                (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+    <app-pagination
+      [pageNumber]="pageNumber()"
+      [totalPages]="totalPages"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      (pageChange)="pageNumber.set($event); reload()"
+      (pageSizeChange)="pageSize.set($event); onPageSizeChange()">
     </app-pagination>
   </div>
 

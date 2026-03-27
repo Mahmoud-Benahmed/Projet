@@ -3,7 +3,7 @@ import { Component, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
-  selector: 'app-custom-toggle',
+  selector: 'app-toggle-slider',
   template: `
   <div class="toggle-slider">
     <div class="toggle-wrapper" [class.checked]="value" (click)="toggle()">

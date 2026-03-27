@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -11,15 +11,14 @@ import { PaginationComponent } from '../../pagination/pagination';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { CategoriesService, CategoryStatsDto, CreateCategoryRequestDto, UpdateCategoryRequestDto } from '../../../services/clients/categories.service';
 import { ClientCategoryResponseDto } from '../../../services/clients/categories.service';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { CustomToggleComponent } from "../../toggle-slider/toggle-slider";
+import { CustomToggleComponent } from '../../toggle-slider/toggle-slider';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-client-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, ReactiveFormsModule, CustomToggleComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, CustomToggleComponent],
   templateUrl: './categories.html',
   styleUrls: ['./categories.scss'],
 })
@@ -27,15 +26,25 @@ export class ClientCategoriesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   dataSource = new MatTableDataSource<ClientCategoryResponseDto>([]);
-
   stats: CategoryStatsDto | null = null;
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
-  viewMode: ViewMode = 'list';
+  // ── Signals ───────────────────────────────────────────────────────────────
+
+  viewMode = signal<ViewMode>('list');
+  isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
+
+  isList   = this.isMode('list');
+  isCreate = this.isMode('create');
+  isEdit   = this.isMode('edit');
+  isView   = this.isMode('view');
+
+  private previousMode: ViewMode = 'list';
+
   selectedCategory: ClientCategoryResponseDto | null = null;
   loading = false;
   errors: string[] = [];
@@ -43,7 +52,6 @@ export class ClientCategoriesComponent implements OnInit {
   searchQuery = '';
 
   readonly PRIVILEGES = PRIVILEGES;
-
   categoryForm: FormGroup;
 
   sortColumn: string = '';
@@ -62,7 +70,7 @@ export class ClientCategoriesComponent implements OnInit {
       delaiRetour:           [null, [Validators.required, Validators.min(0)]],
       discountRate:          [null, [Validators.min(0), Validators.max(100)]],
       creditLimitMultiplier: [null, [Validators.min(0)]],
-      useBulkPricing:        [false]
+      useBulkPricing:        [false],
     });
   }
 
@@ -70,6 +78,15 @@ export class ClientCategoriesComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
     this.reload();
+  }
+
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    if (this.isCreate()) return 'Add Category';
+    if (this.isEdit())   return 'Edit Category';
+    if (this.isView())   return 'Category Details';
+    return 'Client Categories';
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
@@ -114,15 +131,15 @@ export class ClientCategoriesComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  onPageSizeChange(): void { this.pageNumber = 1; this.load(); }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
+  onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // ── Load (pure fetchers) ──────────────────────────────────────────────────
 
   load(): void {
     this.loading = true;
     this.errors = [];
-    this.categoriesService.getAllPaged(this.pageNumber, this.pageSize).subscribe({
+    this.categoriesService.getAllPaged(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
@@ -151,16 +168,20 @@ export class ClientCategoriesComponent implements OnInit {
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   openCreate(): void {
-    this.viewMode = 'create';
+    if (this.isCreate()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('create');
     this.selectedCategory = null;
     this.categoryForm.reset({
       name: '', code: '', delaiRetour: null,
-      useBulkPricing: false, discountRate: null, creditLimitMultiplier: null
+      useBulkPricing: false, discountRate: null, creditLimitMultiplier: null,
     });
   }
 
   openEdit(category: ClientCategoryResponseDto): void {
-    this.viewMode = 'edit';
+    if (this.isEdit()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('edit');
     this.selectedCategory = category;
     this.categoryForm.patchValue({
       name:                  category.name,
@@ -174,13 +195,15 @@ export class ClientCategoriesComponent implements OnInit {
   }
 
   openView(category: ClientCategoryResponseDto): void {
-    this.viewMode = 'view';
+    if (this.isView()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('view');
     this.selectedCategory = category;
     this.cdr.markForCheck();
   }
 
   cancel(): void {
-    this.viewMode = 'list';
+    this.setViewMode(this.previousMode);
     this.selectedCategory = null;
     this.categoryForm.reset();
   }
@@ -189,7 +212,7 @@ export class ClientCategoriesComponent implements OnInit {
     if (this.categoryForm.invalid) return;
     const val = this.categoryForm.value;
 
-    if (this.viewMode === 'create') {
+    if (this.isCreate()) {
       const dto: CreateCategoryRequestDto = {
         name:                  val.name,
         code:                  val.code,
@@ -199,14 +222,10 @@ export class ClientCategoriesComponent implements OnInit {
         creditLimitMultiplier: val.creditLimitMultiplier ?? null,
       };
       this.categoriesService.create(dto).subscribe({
-        next: () => {
-          this.reload();
-          this.cancel();
-          this.flash('success', `Category "${val.name}" created successfully.`);
-        },
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${val.name}" created successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
       });
-    } else if (this.viewMode === 'edit' && this.selectedCategory) {
+    } else if (this.isEdit() && this.selectedCategory) {
       const dto: UpdateCategoryRequestDto = {
         name:                  val.name,
         code:                  val.code,
@@ -216,11 +235,7 @@ export class ClientCategoriesComponent implements OnInit {
         creditLimitMultiplier: val.creditLimitMultiplier ?? null,
       };
       this.categoriesService.update(this.selectedCategory.id, dto).subscribe({
-        next: () => {
-          this.cancel();
-          this.reload();
-          this.flash('success', `Category "${val.name}" updated successfully.`);
-        },
+        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${val.name}" updated successfully.`); },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update category.'),
       });
     }
@@ -245,7 +260,7 @@ export class ClientCategoriesComponent implements OnInit {
         if (!result) return;
         this.categoriesService.delete(category.id).subscribe({
           next: () => {
-            if (this.viewMode === 'view') this.cancel();
+            if (this.isView()) this.cancel();
             this.flash('success', `Category "${category.name}" deleted successfully.`);
             this.reload();
           },
@@ -281,9 +296,7 @@ export class ClientCategoriesComponent implements OnInit {
         call.subscribe({
           next: (updated) => {
             this.flash('success', `Category "${category.name}" ${action.toLowerCase()}d successfully.`);
-            if (this.selectedCategory?.id === category.id) {
-              this.selectedCategory = updated;
-            }
+            if (this.selectedCategory?.id === category.id) this.selectedCategory = updated;
             this.reload();
           },
           error: () => this.flash('error', `Failed to ${action.toLowerCase()} category.`),
@@ -323,5 +336,10 @@ export class ClientCategoriesComponent implements OnInit {
 
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
+  }
+
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    this.cdr.markForCheck();
   }
 }

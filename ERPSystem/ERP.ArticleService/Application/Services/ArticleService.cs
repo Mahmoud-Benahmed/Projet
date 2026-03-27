@@ -178,7 +178,10 @@ namespace ERP.ArticleService.Application.Services
         private static CategoryResponseDto CategoryMapToDto(Category cat) => new CategoryResponseDto(
             Id: cat.Id,
             Name: cat.Name,
-            TVA: cat.TVA
+            TVA: cat.TVA,
+            IsDeleted: cat.IsDeleted,
+            CreatedAt: cat.CreatedAt,
+            UpdatedAt: cat.UpdatedAt
             );
         private static ArticleResponseDto MapToDto(Article article) => new ArticleResponseDto(
             Id: article.Id,

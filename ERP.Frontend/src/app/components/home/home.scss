@@ -76,18 +76,31 @@
 }
 
 .home__quick-icon {
-  width: 38px; height: 38px;
+  width: 38px;
+  height: 38px;
   border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   flex-shrink: 0;
 
-  mat-icon { font-size: 19px; }
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+    line-height: 19px; // 🔥 important
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   &--blue  { background: $blue-bg;  color: $blue; }
   &--green { background: $green-bg; color: $green; }
-  &--red { background: $red-bg; color: $red; }
-  &--amber  { background: $amber-bg;  color: $amber; }
-  &--purple { background: $purple-bg; color: $purple; }
+  &--red   { background: $red-bg;   color: $red; }
+  &--amber { background: $amber-bg; color: $amber; }
+  &--purple{ background: $purple-bg;color: $purple; }
 }
 
 .home__quick-label {

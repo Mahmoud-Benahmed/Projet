@@ -20,6 +20,9 @@ export interface ArticleCategoryResponseDto {
   id: string;
   name: string;
   tva: number;
+  isDeleted: boolean,
+  createdAt: string,
+  updatedAt?: string
 }
 
 export interface PagedResultDto<T> {

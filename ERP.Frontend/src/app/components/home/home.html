@@ -92,18 +92,18 @@
     <a class="home__quick-card" routerLink="/articles"
        *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
       <div class="home__quick-icon home__quick-icon--green">
-        <mat-icon>inventory_2</mat-icon>
+        <mat-icon>warehouse</mat-icon>
       </div>
       <span class="home__quick-label">Articles</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
-    <a class="home__quick-card" routerLink="/articles/deleted"
-       *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)">
-      <div class="home__quick-icon home__quick-icon--red">
-        <mat-icon>recycling</mat-icon>
+    <a class="home__quick-card" routerLink="/articles/categories"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
+      <div class="home__quick-icon home__quick-icon--amber">
+        <mat-icon>inventory_2</mat-icon>
       </div>
-      <span class="home__quick-label">Deleted Articles</span>
+      <span class="home__quick-label">Article Categories</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
@@ -111,18 +111,18 @@
     <a class="home__quick-card" routerLink="/clients"
        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
       <div class="home__quick-icon home__quick-icon--blue">
-        <mat-icon>people</mat-icon>
+        <mat-icon>handshake</mat-icon>
       </div>
       <span class="home__quick-label">Clients</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
-    <a class="home__quick-card" routerLink="/clients/deleted"
-       *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)">
-      <div class="home__quick-icon home__quick-icon--red">
-        <mat-icon>person_remove</mat-icon>
+    <a class="home__quick-card" routerLink="/clients/categories"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
+      <div class="home__quick-icon home__quick-icon--blue">
+        <mat-icon>people</mat-icon>
       </div>
-      <span class="home__quick-label">Deleted Clients</span>
+      <span class="home__quick-label">Client Categories</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 

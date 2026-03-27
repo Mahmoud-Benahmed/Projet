@@ -207,9 +207,10 @@ body, html {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 22px;
   position: sticky; top: 0; z-index: 100;
+  gap: 0.5rem;
 
   &__left  { display: flex; align-items: center; gap: 12px; }
-  &__right { display: flex; align-items: center; gap: 14px; }
+  &__right { display: flex; align-items: center; gap: 14px; justify-content: space-around;}
 
   &__menu-btn {
     background: none; border: none; cursor: pointer;

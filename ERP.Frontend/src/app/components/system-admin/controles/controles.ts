@@ -1,7 +1,7 @@
 import { AuthService, PRIVILEGES } from './../../../services/auth/auth.service';
 import { ControleRequestDto } from './../../../services/auth/controle.service';
 import { ControleService } from '../../../services/auth/controle.service';
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
@@ -31,8 +31,8 @@ export class ControleComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  pageNumber = 1;
-  pageSize = 10;
+  pageNumber = signal(1);
+  pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
@@ -74,15 +74,15 @@ export class ControleComponent implements OnInit {
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
+  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
 
-  onPageSizeChange(): void { this.pageNumber = 1; this.reload(); }
+  onPageSizeChange(): void { this.pageNumber.set(1); this.reload(); }
 
   // ── Search ────────────────────────────────────────────────────────────────
 
   applyFilter(): void {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
-    this.pageNumber = 1;
+    this.pageNumber.set(1);
   }
 
   // ── Sorting ───────────────────────────────────────────────────────────────
@@ -115,8 +115,8 @@ export class ControleComponent implements OnInit {
     }
 
     // client-side pagination slice
-    const start = (this.pageNumber - 1) * this.pageSize;
-    return filtered.slice(start, start + this.pageSize);
+    const start = (this.pageNumber() - 1) * this.pageSize();
+    return filtered.slice(start, start + this.pageSize());
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────

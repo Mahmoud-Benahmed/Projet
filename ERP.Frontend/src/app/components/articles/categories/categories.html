@@ -4,7 +4,7 @@
   <div class="page-header">
     <div>
       <p class="breadcrumb">CATEGORY MANAGEMENT</p>
-      <h1 class="page-title">List Categories</h1>
+      <h1 class="page-title">{{pageTitle}}</h1>
     </div>
   </div>
 
@@ -30,10 +30,10 @@
   </div>
 
   <!-- ===================== LIST VIEW ===================== -->
-  <ng-container *ngIf="compViewMode('list') || compViewMode('list-deleted')">
+  <ng-container *ngIf="isList() || isDeletedList()">
           <div class="stats-grid">
 
-        <div class="stat-card stat-card--green" (click)="load()" [class.disabled]="compViewMode('list')">
+        <div class="stat-card stat-card--green" (click)="onActiveCardClick()"[class.disabled]="isList()">
           <div class="stat-card__body">
             <div>
               <p class="stat-card__label">Active</p>
@@ -50,8 +50,9 @@
         </div>
 
 
-        <div class="stat-card stat-card--red" (click)="listDeleted()"
-              [class.disabled]="compViewMode('list-deleted')|| deletedCategories < 1" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
+        <div class="stat-card stat-card--red" (click)="onDeletedCardClick()"
+              [class.disabled]="isDeletedList()|| deletedCategories < 1"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">
           <div class="stat-card__body">
             <div>
               <p class="stat-card__label">Deleted</p>
@@ -83,7 +84,7 @@
             (ngModelChange)="applyFilter()"
           />
         </div>
-        <button class="btn-add" (click)="openCreate()"  *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE_CATEGORIES)">
+        <button class="btn-add" (click)="openCreate()"  *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE_CATEGORIES) && isList()">
           + Add Category
         </button>
       </div>
@@ -128,19 +129,19 @@
                 <td class="td--name">{{ category.name }}</td>
                 <td class="td--tva">{{ category.tva }}%</td>
                 <td class="td--actions">
-                  <button class="icon-btn icon-btn--view" (click)="openView(category)" title="View"  *ngIf="compViewMode('list') || compViewMode('list-deleted')">
+                  <button class="icon-btn icon-btn--view" (click)="openView(category)" title="View"  *ngIf="isList() || isDeletedList()">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--edit" (click)="openEdit(category)" title="Edit" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES) && compViewMode('list')" >
+                  <button class="icon-btn icon-btn--edit" (click)="openEdit(category)" title="Edit" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES) && !category.isDeleted" >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--delete" (click)="delete(category)" title="Delete" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)&& compViewMode('list')">
+                  <button class="icon-btn icon-btn--delete" (click)="delete(category)" title="Delete" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)&& !category.isDeleted">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -148,7 +149,7 @@
                       <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--reactivate" (click)="restore(category)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE_CATEGORIES)&& compViewMode('list-deleted')">
+                  <button class="icon-btn icon-btn--reactivate" (click)="restore(category)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE_CATEGORIES)&& category.isDeleted">
                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                       <path d="M3 3v5h5"/>
@@ -164,18 +165,18 @@
         </div>
 
         <app-pagination
-          [pageNumber]="pageNumber"
+          [pageNumber]="pageNumber()"
           [totalPages]="totalPages"
-          [pageSize]="pageSize"
+          [pageSize]="pageSize()"
           [pageSizeOptions]="pageSizeOptions"
-          (pageChange)="pageNumber = $event; reload()"
-          (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+          (pageChange)="pageNumber.set($event); reload()"
+          (pageSizeChange)="pageSize.set($event); onPageSizeChange()">
         </app-pagination>
       </div>
   </ng-container>
 
   <!-- ===================== VIEW PANEL ===================== -->
-  <div class="panel" *ngIf="viewMode === 'view' && selectedCategory">
+  <div class="panel" *ngIf="isView() && selectedCategory">
     <div class="panel__header">
       <h2 class="panel__title">Category Details</h2>
       <button class="btn-back" (click)="cancel()">← Back</button>
@@ -196,16 +197,17 @@
         </div>
       </div>
       <div class="panel__actions">
-        <button class="btn-secondary" (click)="openEdit(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES)">Edit Category</button>
-        <button class="btn-danger" (click)="delete(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">Delete</button>
+        <button class="btn-secondary" (click)="openEdit(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES) && !selectedCategory.isDeleted">Edit Category</button>
+        <button class="btn-danger" (click)="delete(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES) && !selectedCategory.isDeleted">Delete</button>
+        <button class="btn-success" (click)="restore(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE_CATEGORIES) && selectedCategory.isDeleted">Restore</button>
       </div>
     </div>
   </div>
 
   <!-- ===================== FORM PANEL ===================== -->
-  <div class="panel" *ngIf="viewMode === 'create' || viewMode === 'edit'">
+  <div class="panel" *ngIf="isCreate() || (isEdit() && selectedCategory)">
     <div class="panel__header">
-      <h2 class="panel__title">{{ viewMode === 'create' ? 'Add New Category' : 'Edit Category' }}</h2>
+      <h2 class="panel__title">{{ isCreate() ? 'Add New Category' : 'Edit Category' }}</h2>
       <button class="btn-back" (click)="cancel()">← Back</button>
     </div>
     <div class="panel__body">
@@ -259,7 +261,7 @@
         <div class="form__actions">
           <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
           <button type="submit" class="btn-add" [disabled]="categoryForm.invalid">
-            {{ viewMode === 'create' ? '+ Add Category' : 'Save Changes' }}
+            {{ isCreate() ? '+ Add Category' : 'Save Changes' }}
           </button>
         </div>
 
