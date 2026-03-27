@@ -177,20 +177,6 @@
                       </svg>
                     </span>
                   </th>
-                  <th (click)="sortBy('clientCount')" class="th--sortable">
-                    CLIENTS
-                    <span class="sort-icon">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        [style.opacity]="sortColumn === 'clientCount' && sortDirection === 'asc' ? '1' : '0.25'">
-                        <polyline points="18 15 12 9 6 15"/>
-                      </svg>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        [style.opacity]="sortColumn === 'clientCount' && sortDirection === 'desc' ? '1' : '0.25'">
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </span>
-                  </th>
-                  <th>BULK PRICING</th>
                   <th>STATUS</th>
                   <th>ACTIONS</th>
                 </tr>
@@ -203,14 +189,6 @@
                   <td class="td--discount">
                     <span *ngIf="cat.discountRate != null">{{ cat.discountRate }}%</span>
                     <span class="td--empty-value" *ngIf="cat.discountRate == null">—</span>
-                  </td>
-                  <td class="td--count">
-                    <span class="client-count">{{ cat.clientCount }}</span>
-                  </td>
-                  <td>
-                    <span class="badge" [ngClass]="cat.useBulkPricing ? 'badge--active' : 'badge--inactive'">
-                      {{ cat.useBulkPricing ? 'YES' : 'NO' }}
-                    </span>
                   </td>
                   <td>
                     <span class="badge" [ngClass]="cat.isActive ? 'badge--active' : 'badge--blocked'">
@@ -245,7 +223,8 @@
                         <polyline points="9 11 12 14 22 4"/>
                       </svg>
                     </button>
-                    <button class="icon-btn icon-btn--delete" (click)="delete(cat)" title="Delete">
+                    <button class="icon-btn icon-btn--delete" (click)="delete(cat)" title="Delete"
+                            *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -338,7 +317,7 @@
         <button class="btn-warning" (click)="toggleActive(selectedCategory)">
           {{ selectedCategory.isActive ? 'Deactivate' : 'Activate' }}
         </button>
-        <button class="btn-danger" (click)="delete(selectedCategory)">Delete</button>
+        <button class="btn-danger" (click)="delete(selectedCategory)" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">Delete</button>
       </div>
     </div>
   </div>

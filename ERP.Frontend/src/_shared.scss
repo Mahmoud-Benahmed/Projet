@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-
 // ========================
 // Tokens — CSS var bridges
 // ========================
@@ -55,7 +53,7 @@ $bp-xl:  1200px;
   background: $bg-page;
   min-height: 100vh;
   color: $text-hi;
-  padding: 2rem 2.5rem;
+  padding: 1rem 1.5rem;
   box-sizing: border-box;
 
   @media (max-width: $bp-lg) { padding: 1.5rem 1.5rem; }
@@ -315,6 +313,10 @@ $bp-xl:  1200px;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
+.disabled{
+  opacity: 0.5;
+  &:hover{cursor: not-allowed;}
+}
 // ========================
 // Table Card
 // ========================
@@ -434,7 +436,7 @@ $bp-xl:  1200px;
   font-weight: 600;
   &--active   { background: $green-bg;  color: $green; border: 1px solid $green-border; }
   &--inactive { background: $red-bg;    color: $red;   border: 1px solid $red-border; }
-  &--blocked  { background: $red-bg;    color: $red;  border: 1px solid $red-border;}
+  &--blocked  { background: $amber-bg;    color: $amber;  border: 1px solid $amber-border;}
 }
 
 .role-badge {

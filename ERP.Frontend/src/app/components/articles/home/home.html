@@ -40,7 +40,8 @@
           </div>
           <div class="stat-card__icon stat-card__icon--green">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="9 11 12 14 22 4"/>
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="9 11 12 14 22 4"/>
             </svg>
           </div>
         </div>
@@ -415,7 +416,7 @@
             <span class="form__info"
                   *ngIf="articleForm.get('barCode')?.value?.length > 0"
                   [class.text-red]="articleForm.get('barCode')?.value?.length > 13">
-              {{ articleForm.get('barCode')?.value?.length || 0 }} / 13
+              {{ articleForm.get('barCode')?.value?.length || 0 }} / {{ articleForm.get('barCode')?.value?.length <= 8 ? 8 : 13 }}
             </span>
           </div>
 
