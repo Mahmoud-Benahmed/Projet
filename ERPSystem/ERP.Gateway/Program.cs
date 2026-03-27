@@ -75,34 +75,60 @@ builder.Services.AddAuthorization(options =>
         Privileges.Users.UPDATE_USER,
         Privileges.Users.DELETE_USER,
         Privileges.Users.ACTIVATE_USER,
-        Privileges.Users.DEACTIVATE_USER
+        Privileges.Users.DEACTIVATE_USER,
+        Privileges.Users.RESTORE_USER,
+        Privileges.Users.ASSIGN_ROLES
+    );
+
+    AddManagePolicy(Privileges.Users.MANAGE_ROLES,
+        Privileges.Users.CREATE_ROLE,
+        Privileges.Users.UPDATE_ROLE,
+        Privileges.Users.DELETE_ROLE
+    );
+
+    AddManagePolicy(Privileges.Users.MANAGE_CONTROLES,
+        Privileges.Users.CREATE_CONTROLE,
+        Privileges.Users.UPDATE_CONTROLE,
+        Privileges.Users.DELETE_CONTROLE
     );
 
     AddManagePolicy(Privileges.Clients.MANAGE_CLIENTS,
         Privileges.Clients.VIEW_CLIENTS,
         Privileges.Clients.CREATE_CLIENT,
         Privileges.Clients.UPDATE_CLIENT,
-        Privileges.Clients.DELETE_CLIENT
+        Privileges.Clients.DELETE_CLIENT,
+        Privileges.Clients.RESTORE_CLIENT,
+        Privileges.Clients.CREATE_CLIENT_CATEGORIES,
+        Privileges.Clients.UPDATE_CLIENT_CATEGORIES, 
+        Privileges.Clients.DELETE_CLIENT_CATEGORIES,
+        Privileges.Clients.RESTORE_CLIENT_CATEGORIES
     );
 
     AddManagePolicy(Privileges.Articles.MANAGE_ARTICLES,
         Privileges.Articles.VIEW_ARTICLES,
         Privileges.Articles.CREATE_ARTICLE,
         Privileges.Articles.UPDATE_ARTICLE,
-        Privileges.Articles.DELETE_ARTICLE
+        Privileges.Articles.DELETE_ARTICLE,
+        Privileges.Articles.RESTORE_ARTICLE,
+        Privileges.Articles.CREATE_ARTICLE_CATEGORIES,
+        Privileges.Articles.UPDATE_ARTICLE_CATEGORIES,
+        Privileges.Articles.DELETE_ARTICLE_CATEGORIES,
+        Privileges.Articles.RESTORE_ARTICLE_CATEGORIES
     );
 
     AddManagePolicy(Privileges.Invoices.MANAGE_INVOICES,
         Privileges.Invoices.VIEW_INVOICES,
         Privileges.Invoices.CREATE_INVOICE,
         Privileges.Invoices.VALIDATE_INVOICE,
-        Privileges.Invoices.DELETE_INVOICE
+        Privileges.Invoices.DELETE_INVOICE,
+        Privileges.Invoices.RESTORE_INVOICE
     );
 
     AddManagePolicy(Privileges.Payments.MANAGE_PAYMENTS,
         Privileges.Payments.VIEW_PAYMENTS,
         Privileges.Payments.RECORD_PAYMENT,
-        Privileges.Payments.DELETE_PAYMENT
+        Privileges.Payments.DELETE_PAYMENT,
+        Privileges.Payments.RESTORE_PAYMENT
     );
 
     AddManagePolicy(Privileges.Stock.MANAGE_STOCK,
@@ -111,10 +137,11 @@ builder.Services.AddAuthorization(options =>
         Privileges.Stock.ADD_ENTRY
     );
 
-    // ── Standalone policies for individual critical privileges ─────
-    options.AddPolicy(Privileges.Users.ASSIGN_ROLES,
-        p => p.RequireAuthenticatedUser()
-              .RequireClaim("privilege", Privileges.Users.ASSIGN_ROLES));
+    AddManagePolicy(Privileges.Reports.MANAGE_REPORTS,
+        Privileges.Reports.VIEW_REPORTS,
+        Privileges.Reports.EXPORT_REPORTS
+    );
+
 
     options.AddPolicy(Privileges.Audit.MANAGE_AUDITLOGS,
         p => p.RequireAuthenticatedUser()
