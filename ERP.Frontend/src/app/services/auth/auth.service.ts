@@ -25,6 +25,12 @@ export const PRIVILEGES = {
     DEACTIVATE_USER: "DEACTIVATE_USER",
     MANAGE_USERS: "MANAGE_USERS",
     ASSIGN_ROLES: "ASSIGN_ROLES",
+    CREATE_CONTROLE:"CREATE_CONTROLE",
+    UPDATE_CONTROLE:"UPDATE_CONTROLE",
+    DELETE_CONTROLE:"DELETE_CONTROLE",
+    CREATE_ROLE:"CREATE_ROLE",
+    UPDATE_ROLE:"UPDATE_ROLE",
+    DELETE_ROLE:"DELETE_ROLE"
   },
   AUDIT: {
     MANAGE_AUDITLOGS: "MANAGE_AUDITLOGS",
@@ -35,6 +41,10 @@ export const PRIVILEGES = {
     UPDATE_CLIENT: "UPDATE_CLIENT",
     DELETE_CLIENT: "DELETE_CLIENT",
     RESTORE_CLIENT: "RESTORE_CLIENT",
+    CREATE_CLIENT_CATEGORIES: "CREATE_CLIENT_CATEGORIES",
+    UPDATE_CLIENT_CATEGORIES: "UPDATE_CLIENT_CATEGORIES",
+    DELETE_CLIENT_CATEGORIES: "DELETE_CLIENT_CATEGORIES",
+    RESTORE_CLIENT_CATEGORIES: "RESTORE_CLIENT_CATEGORIES",
     MANAGE_CLIENTS: "MANAGE_CLIENTS",
   },
   ARTICLES: {
@@ -43,6 +53,10 @@ export const PRIVILEGES = {
     UPDATE_ARTICLE: "UPDATE_ARTICLE",
     DELETE_ARTICLE: "DELETE_ARTICLE",
     RESTORE_ARTICLE: "RESTORE_ARTICLE",
+    CREATE_ARTICLE_CATEGORIES: "CREATE_ARTICLE_CATEGORIES",
+    UPDATE_ARTICLE_CATEGORIES: "UPDATE_ARTICLE_CATEGORIES",
+    DELETE_ARTICLE_CATEGORIES: "DELETE_ARTICLE_CATEGORIES",
+    RESTORE_ARTICLE_CATEGORIES: "RESTORE_ARTICLE_CATEGORIES",
     MANAGE_ARTICLES: "MANAGE_ARTICLES",
   },
   INVOICES: {
@@ -177,30 +191,6 @@ export class AuthService {
   }
 
   hasPrivilege(privilege: string): boolean { return this.Privileges.includes(privilege); }
-
-  get canManageUsers(): boolean {
-    return this.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)
-        || this.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)
-        || this.hasPrivilege(PRIVILEGES.USERS.UPDATE_USER)
-        || this.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)
-        || this.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)
-        || this.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER);
-  }
-  get canAssignRoles(): boolean { return this.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES); }
-  get canSeeAuditLog(): boolean { return this.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS); }
-
-  get canManageArticles(): boolean {
-    return this.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)
-        || this.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE)
-        || this.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE)
-        || this.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE);
-  }
-  get canManageClients(): boolean {
-    return this.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)
-        || this.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT)
-        || this.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT)
-        || this.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT);
-  }
 
   storeMustChangePassword(value: boolean): void {
     localStorage.setItem('mustChangePassword', String(value));

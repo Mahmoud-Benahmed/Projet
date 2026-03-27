@@ -2,10 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environment';
+import { ClientCategoryResponseDto } from './categories.service';
 
 // ── DTOs ─────────────────────────────────────────────
 
-export interface ClientCategoryResponseDto {
+export interface AssignedCategoryDto {
   id: string;
   name: string;
   code: string;
@@ -25,7 +26,7 @@ export interface ClientResponseDto {
   isDeleted: boolean;
   createdAt: string;
   updatedAt?: string;
-  categories: ClientCategoryResponseDto[];
+  categories: AssignedCategoryDto[];
 }
 
 export interface CategoryClientCountDto {

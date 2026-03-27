@@ -1,4 +1,4 @@
-import { AuthService } from './../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from './../../../services/auth/auth.service';
 import { ControleRequestDto } from './../../../services/auth/controle.service';
 import { ControleService } from '../../../services/auth/controle.service';
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
@@ -51,6 +51,8 @@ export class ControleComponent implements OnInit {
   searchQuery = '';
 
   controleForm: FormGroup;
+
+  readonly PRIVILEGES= PRIVILEGES;
 
   constructor(
     public authService: AuthService,

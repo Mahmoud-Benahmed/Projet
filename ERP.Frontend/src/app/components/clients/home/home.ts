@@ -11,7 +11,8 @@ import {
   ClientStatsDto,
   CreateClientRequestDto,
   UpdateClientRequestDto,
-  AddCategoryRequestDto
+  AddCategoryRequestDto,
+  AssignedCategoryDto
 } from '../../../services/clients/clients.service';
 import { ModalComponent } from '../../modal/modal';
 import { PaginationComponent } from '../../pagination/pagination';
@@ -20,7 +21,7 @@ import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { CategoriesService, ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CurrencyConfigService } from '../../../services/currency-config.service';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view';
+type ViewMode = 'list'| 'list-deleted'| 'list-blocked' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-clients',
@@ -42,7 +43,7 @@ export class ClientsComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
-  viewMode: ViewMode = 'list';
+  viewMode!: ViewMode;
   selectedClient: ClientResponseDto | null = null;
   loading = false;
   errors: string[] = [];
@@ -83,6 +84,7 @@ export class ClientsComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
     this.reload();
+    this.setViewMode('list');
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
@@ -136,11 +138,14 @@ export class ClientsComponent implements OnInit {
   // ── Load ──────────────────────────────────────────────────────────────────
 
   load(): void {
+    const mode= 'list';
+    if(this.compViewMode(mode)) return;
+    this.setViewMode(mode);
     this.loading = true;
     this.errors = [];
     this.clientsService.getAll(this.pageNumber, this.pageSize).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items;
+        this.dataSource.data = res.items.filter(client=> !client.isBlocked);
         this.totalCount = res.totalCount;
         this.loading = false;
       },
@@ -183,8 +188,83 @@ export class ClientsComponent implements OnInit {
     });
   }
 
+  listDeleted(): void {
+    const mode= 'list-deleted';
+    if(this.compViewMode(mode) || this.stats?.deletedClients! < 1) return;
+    this.setViewMode(mode);
+    this.selectedClient= null;
+    this.clientForm.reset({
+      name: '', email: '', address: '',
+      phone: '', taxNumber: '', creditLimit: null, delaiRetour: null
+    });
+    this.clientsService.getDeleted(this.pageNumber, this.pageSize).subscribe({
+      next: (result) => {
+        this.dataSource.data = result.items;
+        this.totalCount = result.totalCount;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.flash('error','Failed to load deleted clients.');
+      },
+    });
+  }
+
+  listBlocked(): void {
+    const mode= 'list-blocked';
+    if(this.compViewMode(mode) || this.stats?.blockedClients! < 1) return;
+    this.setViewMode(mode);
+    this.selectedClient= null;
+    this.clientForm.reset({
+      name: '', email: '', address: '',
+      phone: '', taxNumber: '', creditLimit: null, delaiRetour: null
+    });
+    this.clientsService.getAll(this.pageNumber, this.pageSize).subscribe({
+        next: (res) => {
+          this.dataSource.data = res.items.filter(client=> client.isBlocked);
+          this.totalCount = res.totalCount;
+          this.loading = false;
+        },
+        error: () => {
+          this.flash('error', 'Failed to load clients.');
+          this.loading = false;
+        }
+    });
+  }
+
+
+  restore(client: ClientResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title: 'Restore Client',
+        message: `Restore client "${client.name}"? It will reappear in the active clients list.`,
+        confirmText: 'Restore',
+        showCancel: true,
+        icon: 'settings_backup_restore',
+        iconColor: 'success'
+      }
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+        this.clientsService.restore(client.id).subscribe({
+          next: () => {
+            if(this.compViewMode('view')){
+              this.cancel();
+            }
+            this.flash('success', `Client ${client.name} has been restored. You can find it in the Clients page.`);
+             this.reload();
+          },
+          error: () => this.flash('error', 'Failed to restore client.'),
+        });
+      });
+  }
+
+
   openEdit(client: ClientResponseDto): void {
-    this.viewMode = 'edit';
+    this.setViewMode('edit');
     this.selectedClient = client;
     this.clientForm.patchValue({
       name:        client.name,
@@ -199,14 +279,14 @@ export class ClientsComponent implements OnInit {
   }
 
   openView(client: ClientResponseDto): void {
-    this.viewMode = 'view';
+    this.setViewMode('view');
     this.selectedClient = client;
     this.selectedCategoryId = '';
     this.cdr.markForCheck();
   }
 
   cancel(): void {
-    this.viewMode = 'list';
+    this.setViewMode('list');
     this.selectedClient = null;
     this.clientForm.reset();
     this.selectedCategoryId = '';
@@ -216,7 +296,7 @@ export class ClientsComponent implements OnInit {
     if (this.clientForm.invalid) return;
     const val = this.clientForm.value;
 
-    if (this.viewMode === 'create') {
+    if (this.compViewMode('create')) {
       const dto: CreateClientRequestDto = {
         name:        val.name,
         email:       val.email,
@@ -234,7 +314,7 @@ export class ClientsComponent implements OnInit {
         },
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create client.'),
       });
-    } else if (this.viewMode === 'edit' && this.selectedClient) {
+    } else if (this.compViewMode('edit') && this.selectedClient) {
       const dto: UpdateClientRequestDto = {
         name:        val.name,
         email:       val.email,
@@ -274,7 +354,7 @@ export class ClientsComponent implements OnInit {
         if (!result) return;
         this.clientsService.delete(client.id).subscribe({
           next: () => {
-            if (this.viewMode === 'view') this.cancel();
+            if (this.compViewMode('view')) this.cancel();
             this.flash('success', `Client "${client.name}" deleted successfully.`);
             this.reload();
           },
@@ -320,15 +400,13 @@ export class ClientsComponent implements OnInit {
 
   addCategory(clientId: string): void {
     if (!this.selectedCategoryId) return;
-    const dto: AddCategoryRequestDto = {
-      categoryId:   this.selectedCategoryId
-    };
+    const dto: AddCategoryRequestDto = { categoryId: this.selectedCategoryId };
+
     this.clientsService.addCategory(clientId, dto).subscribe({
-      next: (updated) => {
-        this.selectedClient = updated;
+      next: (result) => {
         this.selectedCategoryId = '';
         this.flash('success', 'Category assigned successfully.');
-        this.cdr.markForCheck();
+        this.selectedClient= result;
       },
       error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to assign category.'),
     });
@@ -352,10 +430,9 @@ export class ClientsComponent implements OnInit {
       .subscribe((result) => {
         if (!result) return;
         this.clientsService.removeCategory(clientId, categoryId).subscribe({
-          next: (updated) => {
-            this.selectedClient = updated;
+          next: (client) => {
             this.flash('success', `Category "${categoryName}" removed.`);
-            this.cdr.markForCheck();
+            this.selectedClient= client;
           },
           error: () => this.flash('error', 'Failed to remove category.'),
         });
@@ -406,4 +483,15 @@ export class ClientsComponent implements OnInit {
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
   }
+
+  trackByCategoryId(_: number, cat: AssignedCategoryDto): string {
+    return cat.id;
+  }
+
+  setViewMode(mode: ViewMode) {
+    this.viewMode = mode;
+  }
+
+  compViewMode(vMode: ViewMode): boolean{
+    return this.viewMode === vMode; }
 }

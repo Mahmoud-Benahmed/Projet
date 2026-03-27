@@ -8,7 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaginationComponent } from '../../pagination/pagination';
-import { AuthService } from '../../../services/auth/auth.service';
+import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { PagedResultDto, RoleResponseDto } from '../../../interfaces/AuthDto';
 import { MatTableDataSource } from '@angular/material/table';
 
@@ -42,6 +42,9 @@ export class RoleComponent implements OnInit {
   searchQuery = '';
 
   roleForm: FormGroup;
+
+
+  readonly PRIVILEGES= PRIVILEGES;
 
   constructor(
     public authService: AuthService,

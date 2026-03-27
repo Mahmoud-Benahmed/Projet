@@ -97,7 +97,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         const code = error.error?.code;
 
         // User deleted or inactive — session invalid
-        if (code === 'AUTH_009' || code === 'AUTH_003') {
+        if (code === 'AUTH_009') {
           dialog.open(ModalComponent, {
             width: '400px',
             data: {
