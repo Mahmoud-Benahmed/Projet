@@ -14,4 +14,13 @@
         public CategoryAlreadyExistsException(string code)
             : base($"A category with code '{code}' already exists.") { }
     }
+
+    public sealed class CategoryAssignedToUsersException : InvalidOperationException
+    {
+        public CategoryAssignedToUsersException()
+            : base($"This catgeory is assigned to existing clients.") { }
+
+        public CategoryAssignedToUsersException(string message)
+            : base(message) { }
+    }
 }

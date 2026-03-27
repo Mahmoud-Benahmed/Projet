@@ -47,6 +47,13 @@ public class GlobalExceptionMiddleware
                 StatusCode = (int)HttpStatusCode.NotFound
             },
 
+            CategoryAssignedToUsersException ex => new ErrorResponse
+            {
+                Code = "CLIENT_DELETE_FAIL",
+                Message = ex.Message,
+                StatusCode = (int)HttpStatusCode.Conflict
+            },
+
             CategoryNotFoundException ex => new ErrorResponse
             {
                 Code = "CATEGORY_NOT_FOUND",

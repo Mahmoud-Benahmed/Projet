@@ -2,17 +2,14 @@
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Repositories;
+
 public class CategoryRepository : ICategoryRepository
 {
     private readonly ClientDbContext _context;
 
-    public CategoryRepository(ClientDbContext context)
-    {
-        _context = context;
-    }
+    public CategoryRepository(ClientDbContext context) => _context = context;
 
     public async Task AddAsync(Category category) =>
         await _context.Categories.AddAsync(category);
@@ -20,40 +17,38 @@ public class CategoryRepository : ICategoryRepository
     public Task SaveChangesAsync() =>
         _context.SaveChangesAsync();
 
-    // Query filter applies — returns non-deleted only
     public Task<Category?> GetByIdAsync(Guid id) =>
-        _context.Categories
-                .Include(c => c.ClientCategories)
+        _context.Categories.Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Client)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-    // IgnoreQueryFilters — intentionally fetches deleted records for Restore
     public Task<Category?> GetByIdDeletedAsync(Guid id) =>
         _context.Categories
                 .IgnoreQueryFilters()
                 .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Client)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-    // Query filter applies — only searches non-deleted categories
     public Task<Category?> GetByCodeAsync(string code) =>
         _context.Categories
                 .FirstOrDefaultAsync(c =>
                     c.Code == code.Trim().ToUpperInvariant());
 
-    // Repository method
-    public async Task<List<Category>> GetAllAsync()
-    {
-        return await _context.Categories
-                             .Where(c => !c.IsDeleted && c.IsActive)
-                             .OrderBy(c => c.Name)
-                             .ToListAsync();
-    }
+    public async Task<List<Category>> GetAllAsync() =>
+        await _context.Categories
+                      .Where(c => c.IsActive)
+                      .Include(c => c.ClientCategories)
+                        .ThenInclude(cc => cc.Client)
+                        .OrderBy(c => c.Name)
+                        .ToListAsync();
 
     public async Task<(List<Category> Items, int TotalCount)> GetAllPagedAsync(
         int pageNumber, int pageSize)
     {
         var query = _context.Categories
+                            .OrderBy(c => c.Name)
                             .Include(c => c.ClientCategories)
-                            .OrderBy(c => c.Name);
+                            .ThenInclude(cc => cc.Client);
 
         var total = await query.CountAsync();
         var items = await query
@@ -64,13 +59,14 @@ public class CategoryRepository : ICategoryRepository
         return (items, total);
     }
 
-    // IgnoreQueryFilters — intentionally fetches only deleted records
     public async Task<(List<Category> Items, int TotalCount)> GetPagedDeletedAsync(
         int pageNumber, int pageSize)
     {
         var query = _context.Categories
                             .IgnoreQueryFilters()
                             .Where(c => c.IsDeleted)
+                            .Include(c => c.ClientCategories)
+                            .ThenInclude(cc => cc.Client)
                             .OrderByDescending(c => c.UpdatedAt);
 
         var total = await query.CountAsync();
@@ -88,6 +84,8 @@ public class CategoryRepository : ICategoryRepository
         var term = nameFilter.Trim().ToLower();
         var query = _context.Categories
                             .Where(c => c.Name.ToLower().Contains(term))
+                            .Include(c => c.ClientCategories)
+                            .ThenInclude(cc => cc.Client)
                             .OrderBy(c => c.Name);
 
         var total = await query.CountAsync();
@@ -99,23 +97,28 @@ public class CategoryRepository : ICategoryRepository
         return (items, total);
     }
 
-    // No paging — full list for dropdowns, query filter excludes deleted automatically
     public async Task<List<Category>> GetAllActiveAsync() =>
         await _context.Categories
-                      .Where(c => c.IsActive)
+                      .Where(c => c.IsActive).Include(c => c.ClientCategories).ThenInclude(cc => cc.Client)
                       .OrderBy(c => c.Name)
                       .ToListAsync();
 
     public async Task<CategoryStatsDto> GetStatsAsync()
     {
-        // IgnoreQueryFilters to count ALL categories including deleted
-        var active = await _context.Categories.CountAsync(c => c.IsActive);
-        var inactive = await _context.Categories.CountAsync(c => !c.IsActive);
-        var deleted = await _context.Categories.IgnoreQueryFilters()
-                                                .CountAsync(c => c.IsDeleted);
-        var total = await _context.Categories.IgnoreQueryFilters().CountAsync() -deleted;
+        var counts = await _context.Categories
+            .IgnoreQueryFilters()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(c => !c.IsDeleted),
+                Active = g.Count(c => c.IsActive && !c.IsDeleted),
+                Inactive = g.Count(c => !c.IsActive && !c.IsDeleted),
+                Deleted = g.Count(c => c.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
 
-
-        return new CategoryStatsDto(total, active, inactive, deleted);
+        return counts is null
+            ? new CategoryStatsDto(0, 0, 0, 0)
+            : new CategoryStatsDto(counts.Total, counts.Active, counts.Inactive, counts.Deleted);
     }
 }

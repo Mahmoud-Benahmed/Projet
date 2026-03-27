@@ -39,9 +39,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> GetByIdAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.ToResponseDto();
     }
 
@@ -50,9 +48,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> UpdateAsync(Guid id, UpdateClientRequestDto request)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         var normalised = request.Email.Trim().ToLowerInvariant();
         if (client.Email != normalised)
@@ -84,9 +80,7 @@ public class ClientService : IClientService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Delete();
         await _clientRepository.SaveChangesAsync();
@@ -97,8 +91,7 @@ public class ClientService : IClientService
     // =========================
     public async Task RestoreAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdDeletedAsync(id)
-            ?? throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdDeletedAsync(id) ?? throw new ClientNotFoundException(id);
 
         if (!client.IsDeleted)
             return;
@@ -112,9 +105,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> BlockAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Block();
         await _clientRepository.SaveChangesAsync();
@@ -123,9 +114,7 @@ public class ClientService : IClientService
 
     public async Task<ClientResponseDto> UnblockAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Unblock();
         await _clientRepository.SaveChangesAsync();
@@ -137,9 +126,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> SetCreditLimitAsync(Guid id, decimal limit)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.SetCreditLimit(limit);
         await _clientRepository.SaveChangesAsync();
@@ -148,9 +135,7 @@ public class ClientService : IClientService
 
     public async Task<ClientResponseDto> RemoveCreditLimitAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.RemoveCreditLimit();
         await _clientRepository.SaveChangesAsync();
@@ -162,9 +147,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> SetDelaiRetourAsync(Guid id, int days)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.SetDelaiRetour(days);
         await _clientRepository.SaveChangesAsync();
@@ -173,9 +156,7 @@ public class ClientService : IClientService
 
     public async Task<ClientResponseDto> ClearDelaiRetourAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.ClearDelaiRetour();
         await _clientRepository.SaveChangesAsync();
@@ -188,12 +169,12 @@ public class ClientService : IClientService
     public async Task<ClientResponseDto> AddCategoryAsync(
         Guid clientId, Guid categoryId, Guid assignedById)
     {
-        var client = await _clientRepository.GetByIdAsync(clientId);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(clientId);
+        var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
 
-        var category = await _categoryRepository.GetByIdAsync(categoryId)
-            ?? throw new CategoryNotFoundException(categoryId);
+        if (client.IsBlocked)
+            throw new ClientBlockedException(clientId);
+
+        var category = await _categoryRepository.GetByIdAsync(categoryId) ?? throw new CategoryNotFoundException(categoryId);
 
         client.AddCategory(category, assignedById);
         await _clientRepository.SaveChangesAsync();
@@ -202,9 +183,10 @@ public class ClientService : IClientService
 
     public async Task<ClientResponseDto> RemoveCategoryAsync(Guid clientId, Guid categoryId)
     {
-        var client = await _clientRepository.GetByIdAsync(clientId);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(clientId);
+        var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
+        
+        if(client.IsBlocked)
+            throw new ClientBlockedException(clientId);
 
         var category = await _categoryRepository.GetByIdAsync(categoryId)
             ?? throw new CategoryNotFoundException(categoryId);
@@ -270,18 +252,14 @@ public class ClientService : IClientService
     // =========================
     public async Task<int?> GetEffectiveDelaiRetourAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.GetEffectiveDelaiRetour();
     }
 
     public async Task<bool> CanPlaceOrderAsync(
         Guid id, decimal orderAmount, decimal currentBalance)
     {
-        var client = await _clientRepository.GetByIdAsync(id);
-        if (client is null || client.IsDeleted)
-            throw new ClientNotFoundException(id);
+        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.CanPlaceOrder(orderAmount, currentBalance);
     }
 

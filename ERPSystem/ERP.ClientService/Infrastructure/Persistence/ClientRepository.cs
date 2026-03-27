@@ -5,16 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Repositories;
 
-// ── Client ────────────────────────────────────────────────────────────────────
-
 public class ClientRepository : IClientRepository
 {
     private readonly ClientDbContext _context;
 
-    public ClientRepository(ClientDbContext context)
-    {
-        _context = context;
-    }
+    public ClientRepository(ClientDbContext context) => _context = context;
 
     public async Task AddAsync(Client client) =>
         await _context.Clients.AddAsync(client);
@@ -22,14 +17,12 @@ public class ClientRepository : IClientRepository
     public Task SaveChangesAsync() =>
         _context.SaveChangesAsync();
 
-    // Query filter applies — returns non-deleted only
     public Task<Client?> GetByIdAsync(Guid id) =>
         _context.Clients
                 .Include(c => c.ClientCategories)
                     .ThenInclude(cc => cc.Category)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-    // IgnoreQueryFilters — intentionally fetches deleted records for Restore
     public Task<Client?> GetByIdDeletedAsync(Guid id) =>
         _context.Clients
                 .IgnoreQueryFilters()
@@ -37,7 +30,6 @@ public class ClientRepository : IClientRepository
                     .ThenInclude(cc => cc.Category)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-    // Query filter applies — only searches non-deleted clients
     public Task<Client?> GetByEmailAsync(string email) =>
         _context.Clients
                 .FirstOrDefaultAsync(c =>
@@ -46,12 +38,12 @@ public class ClientRepository : IClientRepository
     public async Task<(List<Client> Items, int TotalCount)> GetAllAsync(
         int pageNumber, int pageSize)
     {
-        // Query filter automatically excludes deleted
         var query = _context.Clients.OrderBy(c => c.Name);
 
         var total = await query.CountAsync();
         var items = await query
-            .Include(c => c.ClientCategories).ThenInclude(cc => cc.Category)
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -69,6 +61,8 @@ public class ClientRepository : IClientRepository
 
         var total = await query.CountAsync();
         var items = await query
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -76,7 +70,6 @@ public class ClientRepository : IClientRepository
         return (items, total);
     }
 
-    // IgnoreQueryFilters — intentionally fetches only deleted records
     public async Task<(List<Client> Items, int TotalCount)> GetPagedDeletedAsync(
         int pageNumber, int pageSize)
     {
@@ -87,7 +80,8 @@ public class ClientRepository : IClientRepository
 
         var total = await query.CountAsync();
         var items = await query
-            .Include(c => c.ClientCategories).ThenInclude(cc => cc.Category)
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -105,7 +99,8 @@ public class ClientRepository : IClientRepository
 
         var total = await query.CountAsync();
         var items = await query
-            .Include(c => c.ClientCategories).ThenInclude(cc => cc.Category)
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -115,30 +110,39 @@ public class ClientRepository : IClientRepository
 
     public async Task<ClientStatsDto> GetStatsAsync()
     {
-        // IgnoreQueryFilters to count ALL clients including deleted
-        var active = await _context.Clients.CountAsync(c => !c.IsBlocked);
-        var blocked = await _context.Clients.CountAsync(c => c.IsBlocked);
-        var deleted = await _context.Clients.IgnoreQueryFilters()
-                                            .CountAsync(c => c.IsDeleted);
-        var total = await _context.Clients.IgnoreQueryFilters().CountAsync() -(blocked+deleted);
+        var counts = await _context.Clients
+            .IgnoreQueryFilters()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(c => !c.IsDeleted),
+                Active = g.Count(c => !c.IsBlocked && !c.IsDeleted),
+                Blocked = g.Count(c => c.IsBlocked && !c.IsDeleted),
+                Deleted = g.Count(c => c.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
 
-        var rawPerCategory = await _context.Categories
-                            .Select(c => new
-                            {
-                                CategoryId = c.Id,
-                                CategoryName = c.Name,
-                                ClientCount = c.ClientCategories.Count()
-                            })
-                            .OrderByDescending(x => x.ClientCount)
-                            .ToListAsync();
+        var perCategory = await _context.Categories
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                ClientCount = c.ClientCategories.Count()
+            })
+            .OrderByDescending(x => x.ClientCount)
+            .ToListAsync();
 
-        var perCategory = rawPerCategory
-            .Select(x => new CategoryClientCountDto(
-                x.CategoryId,
-                x.CategoryName,
-                x.ClientCount))
+        var perCategoryDto = perCategory
+            .Select(x => new CategoryClientCountDto(x.Id, x.Name, x.ClientCount))
             .ToList();
 
-        return new ClientStatsDto(total, active, blocked, deleted, perCategory);
+        return counts is null
+            ? new ClientStatsDto(0, 0, 0, 0, perCategoryDto)
+            : new ClientStatsDto(
+                counts.Total,
+                counts.Active,
+                counts.Blocked,
+                counts.Deleted,
+                perCategoryDto);
     }
 }

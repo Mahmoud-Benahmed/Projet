@@ -87,13 +87,13 @@ internal sealed class ClientCategoryConfiguration : IEntityTypeConfiguration<Cli
         b.HasOne(cc => cc.Client)
          .WithMany(c => c.ClientCategories)
          .HasForeignKey(cc => cc.ClientId)
-         .IsRequired(false)
+         .IsRequired()
          .OnDelete(DeleteBehavior.Cascade);
 
         b.HasOne(cc => cc.Category)
          .WithMany(c => c.ClientCategories)
          .HasForeignKey(cc => cc.CategoryId)
-         .IsRequired(false)
+         .IsRequired()
          .OnDelete(DeleteBehavior.Restrict);
     }
 }

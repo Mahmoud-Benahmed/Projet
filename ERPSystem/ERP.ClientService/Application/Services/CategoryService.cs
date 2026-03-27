@@ -2,6 +2,7 @@
 using ERP.ClientService.Application.Exceptions;
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
+using Microsoft.Data;
 
 namespace ERP.ClientService.Application.Services;
 
@@ -73,9 +74,10 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
-        if (category is null || category.IsDeleted)
-            throw new CategoryNotFoundException(id);
+        var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
+
+        if (category.ClientCategories != null && category.ClientCategories.Any())
+            throw new CategoryAssignedToUsersException("This category is assigned to existing users.");
 
         category.Delete();
         await _categoryRepository.SaveChangesAsync();
@@ -192,7 +194,7 @@ public class CategoryService : ICategoryService
             IsDeleted: category.IsDeleted,
             CreatedAt: category.CreatedAt,
             UpdatedAt: category.UpdatedAt,
-            ClientCount: category.ClientCategories.Count
+            ClientCount: category.ClientCategories.Count(cc => !cc.Client.IsDeleted)
         );
     }
 }
