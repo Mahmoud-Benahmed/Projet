@@ -95,68 +95,78 @@ namespace ERP.AuthService.Infrastructure.Persistence.Seeder
             IPrivilegeRepository privilegeRepository,
             Dictionary<string, Role> roles,
             Dictionary<string, Controle> controles
-        ){
+        )
+        {
             if (await privilegeRepository.CountAsync() > 0)
                 await privilegeRepository.DeleteAllAsync();
 
-            // ── Build matrix dynamically ─────────────────────────
-            var matrix = PrivilegeRegistry.All
-                .SelectMany(p =>
-                    roles.Keys.Select(role => (RoleName: role, PrivilegeCode: p.Code, IsGranted: RoleHasPrivilege(role, p.Code)))
-                )
-                .ToList();
-
-            foreach (var (roleEnum, controleName, isGranted) in matrix)
+            foreach (var rolePair in roles)
             {
-                if (!roles.TryGetValue(roleEnum, out var role))
-                {
-                    Console.WriteLine($"Role not found: {roleEnum}");
-                    continue;
-                }
+                var roleName = rolePair.Key;
+                var role = rolePair.Value;
 
-                if (!controles.TryGetValue(controleName, out var controle))
+                foreach (var def in PrivilegeRegistry.All)
                 {
-                    Console.WriteLine($"Controle not found: {controleName}");
-                    continue;
-                }
+                    if (!controles.TryGetValue(def.Code, out var controle))
+                    {
+                        Console.WriteLine($"Controle not found: {def.Code}");
+                        continue;
+                    }
 
-                var existing = await privilegeRepository
-                    .GetByRoleIdAndControleIdAsync(role.Id, controle.Id);
+                    bool isGranted = RoleHasPrivilege(roleName, def.Category, def.Code);
 
-                if (existing is null)
-                {
-                    var privilege = new Privilege(role.Id, controle.Id, isGranted);
-                    await privilegeRepository.AddAsync(privilege);
+                    var existing = await privilegeRepository
+                        .GetByRoleIdAndControleIdAsync(role.Id, controle.Id);
+
+                    if (existing is null)
+                    {
+                        var privilege = new Privilege(role.Id, controle.Id, isGranted);
+                        await privilegeRepository.AddAsync(privilege);
+                    }
                 }
             }
         }
 
-        // ── Helper to check if a role should have the privilege ──
-        private static bool RoleHasPrivilege(string role, string privilegeCode)
+        private static bool RoleHasPrivilege(string role, string category, string privilegeCode)
         {
             // SystemAdmin gets everything
             if (role == Roles.SystemAdmin) return true;
 
+            if (privilegeCode.StartsWith("RESTORE_")) return false;
+
             return role switch
             {
-                Roles.SalesManager => privilegeCode.StartsWith("Clients") ||
-                                     privilegeCode.StartsWith("Invoices") ||
-                                     privilegeCode.StartsWith("Articles") ||
-                                     privilegeCode.StartsWith("Stock") ||
-                                     privilegeCode.StartsWith("Reports"),
+                Roles.SalesManager => category switch
+                {
+                    "CLIENTS" => true,
+                    "FACTURATION" => true,
+                    "ARTICLES" => true,
+                    "STOCK" => true,
+                    "REPORTING" => true,
+                    _ => false
+                },
 
-                Roles.StockManager => privilegeCode.StartsWith("Articles") ||
-                                      privilegeCode.StartsWith("Stock") ||
-                                      privilegeCode.StartsWith("Reports"),
+                Roles.StockManager => category switch
+                {
+                    "ARTICLES" => true,
+                    "STOCK" => true,
+                    "REPORTING" => true,
+                    _ => false
+                },
 
-                Roles.Accountant => privilegeCode.StartsWith("Invoices") ||
-                                    privilegeCode.StartsWith("Clients") ||
-                                    privilegeCode.StartsWith("Payments") ||
-                                    privilegeCode.StartsWith("Reports"),
+                Roles.Accountant => category switch
+                {
+                    "CLIENTS" => true,
+                    "FACTURATION" => true,
+                    "PAIEMENT" => true,
+                    "REPORTING" => true,
+                    _ => false
+                },
 
                 _ => false
             };
         }
+
 
         // ── 4. SEED USERS ─────────────────────────────────
         private static async Task SeedUsersAsync(

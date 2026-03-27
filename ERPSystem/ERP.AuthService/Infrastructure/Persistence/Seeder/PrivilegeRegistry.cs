@@ -21,6 +21,15 @@ public static class PrivilegeRegistry
         new(Privileges.Users.ACTIVATE_USER,     "AUTH", "Activate users"),
         new(Privileges.Users.DEACTIVATE_USER,   "AUTH", "Deactivate users"),
         new(Privileges.Users.ASSIGN_ROLES,      "AUTH", "Assign roles"),
+        
+        new(Privileges.Users.CREATE_ROLE,       "AUTH", "Create roles"),
+        new(Privileges.Users.UPDATE_ROLE,       "AUTH", "Update roles"),
+        new(Privileges.Users.DELETE_ROLE,       "AUTH", "Delete roles"),
+
+        new(Privileges.Users.CREATE_CONTROLE,   "AUTH", "Create controles"),
+        new(Privileges.Users.UPDATE_CONTROLE,   "AUTH", "Update controles"),
+        new(Privileges.Users.DELETE_CONTROLE,   "AUTH", "Delete controles"),
+
         new(Privileges.Audit.MANAGE_AUDITLOGS,  "AUTH", "Manage audit logs"),
 
         // ── Clients
@@ -29,6 +38,10 @@ public static class PrivilegeRegistry
         new(Privileges.Clients.UPDATE_CLIENT,   "CLIENTS", "Update client"),
         new(Privileges.Clients.DELETE_CLIENT,   "CLIENTS", "Delete client"),
         new(Privileges.Clients.RESTORE_CLIENT,  "CLIENTS", "Restore client"),
+        new(Privileges.Clients.CREATE_CLIENT_CATEGORIES ,  "CLIENTS", "Create client categories"),
+        new(Privileges.Clients.UPDATE_CLIENT_CATEGORIES ,  "CLIENTS", "Update client categories"),
+        new(Privileges.Clients.DELETE_CLIENT_CATEGORIES ,  "CLIENTS", "Delete client categories"),
+        new(Privileges.Clients.RESTORE_CLIENT_CATEGORIES,  "CLIENTS", "Restore client categories"),
 
         // ── Articles
         new(Privileges.Articles.VIEW_ARTICLES,    "ARTICLES", "View articles"),
@@ -36,6 +49,10 @@ public static class PrivilegeRegistry
         new(Privileges.Articles.UPDATE_ARTICLE,   "ARTICLES", "Update article"),
         new(Privileges.Articles.DELETE_ARTICLE,   "ARTICLES", "Delete article"),
         new(Privileges.Articles.RESTORE_ARTICLE,  "ARTICLES", "Restore article"),
+        new(Privileges.Articles.CREATE_ARTICLE_CATEGORIES ,  "ARTICLES", "Create categories for articles"),
+        new(Privileges.Articles.UPDATE_ARTICLE_CATEGORIES ,  "ARTICLES", "Update categories for articles"),
+        new(Privileges.Articles.DELETE_ARTICLE_CATEGORIES ,  "ARTICLES", "Delete categories for articles"),
+        new(Privileges.Articles.RESTORE_ARTICLE_CATEGORIES,  "ARTICLES", "Restore categories for articles"),
 
         // ── Invoices
         new(Privileges.Invoices.VIEW_INVOICES,     "FACTURATION", "View invoices"),

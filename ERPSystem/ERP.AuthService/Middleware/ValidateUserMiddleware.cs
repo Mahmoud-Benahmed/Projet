@@ -16,7 +16,7 @@ namespace ERP.AuthService.Middleware
         {
             if (context.User.Identity?.IsAuthenticated == true)
             {
-                var sub = context.User.FindFirstValue("sub");
+                var sub= context.Request.Headers["X-User-Id"].FirstOrDefault();
 
                 if (Guid.TryParse(sub, out var userId))
                 {
@@ -29,7 +29,7 @@ namespace ERP.AuthService.Middleware
                         await context.Response.WriteAsJsonAsync(new
                         {
                             statusCode = 401,
-                            code = "USER_NOT_FOUND",
+                            code = "AUTH_009",
                             content = "Your session is no longer valid. Please log in again."
                         });
                         return;
@@ -42,7 +42,7 @@ namespace ERP.AuthService.Middleware
                         await context.Response.WriteAsJsonAsync(new
                         {
                             statusCode = 403,
-                            code = "USER_INACTIVE",
+                            code = "AUTH_003",
                             content = "Your account has been deactivated. Please contact an administrator."
                         });
                         return;

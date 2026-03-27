@@ -43,6 +43,11 @@ namespace ERP.AuthService.Infrastructure.Security
             .Concat(privileges.Select(p => new Claim(CLAIM_PRIVILEGE, p)))
             .ToList();
 
+            foreach (var claim in claims)
+            {
+                Console.WriteLine($">>> Claim: {claim.Type} = {claim.Value}");
+            }
+
             var expires = DateTime.UtcNow
                 .AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
 
