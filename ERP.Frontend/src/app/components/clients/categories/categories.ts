@@ -12,8 +12,9 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 import { CategoriesService, CategoryStatsDto, CreateCategoryRequestDto, UpdateCategoryRequestDto } from '../../../services/clients/categories.service';
 import { ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CustomToggleComponent } from '../../toggle-slider/toggle-slider';
+import { ArticleCategoryResponseDto } from '../../../services/articles/categories.service';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted';
 
 @Component({
   selector: 'app-client-categories',
@@ -39,6 +40,7 @@ export class ClientCategoriesComponent implements OnInit {
   isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
 
   isList   = this.isMode('list');
+  isListDeleted   = this.isMode('list-deleted');
   isCreate = this.isMode('create');
   isEdit   = this.isMode('edit');
   isView   = this.isMode('view');
@@ -153,6 +155,17 @@ export class ClientCategoriesComponent implements OnInit {
     });
   }
 
+  listDeleted(): void {
+    this.categoriesService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
+      next: (result) => {
+        this.dataSource.data = result.items;
+        this.totalCount = result.totalCount;
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', 'Failed to load deleted categories.'),
+    });
+  }
+
   loadStats(): void {
     this.categoriesService.getStats().subscribe({
       next: (res) => { this.stats = res; this.cdr.markForCheck(); },
@@ -206,6 +219,18 @@ export class ClientCategoriesComponent implements OnInit {
     this.setViewMode(this.previousMode);
     this.selectedCategory = null;
     this.categoryForm.reset();
+  }
+
+  onActiveCardClick(): void {
+    if (this.isList()) return;
+    this.setViewMode('list');
+    this.load();
+  }
+
+  onDeletedCardClick(): void {
+    if (this.isListDeleted() || this.deletedCategories < 1) return;
+    this.setViewMode('list-deleted');
+    this.listDeleted();
   }
 
   submit(): void {
@@ -264,10 +289,31 @@ export class ClientCategoriesComponent implements OnInit {
             this.flash('success', `Category "${category.name}" deleted successfully.`);
             this.reload();
           },
-          error: () => this.flash('error', `Failed to delete category "${category.name}".`),
+          error: (error) =>
+          {
+            const err= error.error as HttpError;
+            this.flash('error', err.message);
+          },
         });
       });
   }
+
+
+
+  restore(cat: ClientCategoryResponseDto): void {
+      this.categoriesService.restore(cat.id).subscribe({
+        next: () => {
+          this.flash('success', `ClientCategoryResponseDto "${cat.name}" has been restored. You can find it in the Categories page.`);
+          this.reload();
+          if(this.isView())this.cancel();
+        },
+        error: (error) =>{
+          const err= error.error as HttpError;
+          this.flash('error', error.message);
+        }
+      });
+  }
+
 
   // ── Activate / Deactivate ─────────────────────────────────────────────────
 

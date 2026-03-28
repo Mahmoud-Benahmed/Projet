@@ -33,13 +33,13 @@
   <ng-container *ngIf="isList() || isDeletedList()">
           <div class="stats-grid">
 
-        <div class="stat-card stat-card--green" (click)="onActiveCardClick()"[class.disabled]="isList()">
+        <div class="stat-card stat-card--blue" (click)="onActiveCardClick()" [class.stat-card--current]="isList()">
           <div class="stat-card__body">
             <div>
               <p class="stat-card__label">Active</p>
               <p class="stat-card__value">{{ activeCategories }}</p>
             </div>
-            <div class="stat-card__icon stat-card__icon--green">
+            <div class="stat-card__icon stat-card__icon--blue">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"/>
                 <polyline points="2 17 12 22 22 17"/>
@@ -51,7 +51,7 @@
 
 
         <div class="stat-card stat-card--red" (click)="onDeletedCardClick()"
-              [class.disabled]="isDeletedList()|| deletedCategories < 1"
+              [class.disabled]="deletedCategories < 1" [class.stat-card--current]="isDeletedList()"
               *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">
           <div class="stat-card__body">
             <div>

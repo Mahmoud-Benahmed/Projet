@@ -29,10 +29,10 @@
   </div>
 
   <!-- ✅ Fixed: use signal isList() instead of viewMode === 'list' -->
-  <ng-container *ngIf="isList()">
+  <ng-container *ngIf="isList() || isListDeleted()">
     <div class="stats-grid">
 
-      <div class="stat-card stat-card--green">
+      <div class="stat-card stat-card--green" [class.stat-card--current]="isList()" (click)="onActiveCardClick()">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Active</p>
@@ -65,7 +65,7 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--red">
+      <div class="stat-card stat-card--red"  [class.stat-card--current]="isListDeleted()" (click)="onDeletedCardClick()">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Deleted</p>
@@ -99,7 +99,7 @@
       </div>
       <!-- ✅ Fixed: added privilege guard -->
       <button class="btn-add" (click)="openCreate()"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES)">
+              *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES) && isList()">
         + Add Category
       </button>
     </div>
@@ -161,7 +161,19 @@
                   </svg>
                 </span>
               </th>
-              <th>STATUS</th>
+              <th (click)="sortBy('isActive')" class="th--sortable">
+                STATUS
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'isActive' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    [style.opacity]="sortColumn === 'isActive' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </th>
               <th>ACTIONS</th>
             </tr>
           </thead>
@@ -182,7 +194,7 @@
               <td class="td--actions">
                 <!-- ✅ Fixed: added privilege guard -->
                 <button class="icon-btn icon-btn--view" (click)="openView(cat)" title="View"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.MANAGE_CLIENTS)">
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
@@ -190,7 +202,7 @@
                 </button>
                 <!-- ✅ Fixed: added privilege guard -->
                 <button class="icon-btn icon-btn--edit" (click)="openEdit(cat)" title="Edit"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES)">
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !cat.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -214,7 +226,7 @@
                   </svg>
                 </button>
                 <button class="icon-btn icon-btn--delete" (click)="delete(cat)" title="Delete"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && !cat.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -307,17 +319,22 @@
       <div class="panel__actions">
         <!-- ✅ Fixed: added privilege guard -->
         <button class="btn-secondary" (click)="openEdit(selectedCategory)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES)">
+                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
           Edit Category
         </button>
         <!-- ✅ Fixed: added privilege guard -->
         <button class="btn-warning" (click)="toggleActive(selectedCategory)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES)">
+                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
           {{ selectedCategory.isActive ? 'Deactivate' : 'Activate' }}
         </button>
         <button class="btn-danger" (click)="delete(selectedCategory)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
+                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
           Delete
+        </button>
+
+        <button class="btn-success" (click)="restore(selectedCategory)"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && selectedCategory.isDeleted">
+          Restore
         </button>
       </div>
     </div>
