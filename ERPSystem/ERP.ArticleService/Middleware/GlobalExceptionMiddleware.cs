@@ -78,6 +78,12 @@ namespace ERP.ArticleService.Middleware
                     StatusCode = (int)HttpStatusCode.BadRequest
                 },
 
+                CategoryAssignedToArticlesException ex => new ErrorResponse
+                {
+                    Code = "ARTICLE_CATEGORY_DELETE_FAIL",
+                    Message = ex.Message,
+                    StatusCode = (int)HttpStatusCode.Conflict
+                },
                 // ── Database
                 DbUpdateException ex when ex.InnerException?.Message.Contains("unique index") == true ||
                                           ex.InnerException?.Message.Contains("duplicate key") == true => new ErrorResponse

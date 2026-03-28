@@ -16,4 +16,15 @@ namespace ERP.ArticleService.Application.Exceptions
         public CategoryAlreadyExistsException(string name)
             : base($"A category with the name '{name}' already exists.") { }
     }
+
+    public class CategoryAssignedToArticlesException : InvalidOperationException
+    {
+        public CategoryAssignedToArticlesException()
+            : base($"This catgeory is assigned to existing clients.") { }
+
+        public CategoryAssignedToArticlesException(string message)
+            : base(message) { }
+    }
+
+
 }

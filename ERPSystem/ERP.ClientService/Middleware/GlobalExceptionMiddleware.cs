@@ -49,7 +49,7 @@ public class GlobalExceptionMiddleware
 
             CategoryAssignedToUsersException ex => new ErrorResponse
             {
-                Code = "CLIENT_DELETE_FAIL",
+                Code = "CLIENT_CATEGORY_DELETE_FAIL",
                 Message = ex.Message,
                 StatusCode = (int)HttpStatusCode.Conflict
             },
