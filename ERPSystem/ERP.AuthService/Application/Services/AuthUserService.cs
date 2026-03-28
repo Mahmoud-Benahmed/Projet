@@ -159,7 +159,7 @@ namespace ERP.AuthService.Application.Services
         }
 
 
-        public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request)
+        public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request, Guid performedById)
         {
             if (await _userRepository.ExistsByLoginAsync(request.Login))
                 throw new LoginAlreadyExsistException();
@@ -180,6 +180,7 @@ namespace ERP.AuthService.Application.Services
             await _auditLogger.LogAsync(
                 AuditAction.UserRegistered,
                 success: true,
+                performedBy: performedById,
                 targetUserId: user.Id,
                 metadata: new() { ["login"] = request.Login, ["email"] = request.Email },
                 ipAddress: GetIp());
@@ -195,7 +196,7 @@ namespace ERP.AuthService.Application.Services
                     ?? throw new InvalidCredentialsException();
 
                 if (!user.CanLogin())
-                    throw new UserInactiveException();
+                    throw new UserInactiveException("Sorry, you cannot login because your account is disabled.");
 
 
                 var result = _passwordHasher.VerifyHashedPassword(

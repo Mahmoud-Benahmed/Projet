@@ -21,7 +21,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             => await _collection.InsertOneAsync(user);
 
         public async Task<AuthUser?> GetByLoginAsync(string login)
-            => await _collection.Find(x => x.Login == login && x.IsActive && !x.IsDeleted).FirstOrDefaultAsync();
+            => await _collection.Find(x => x.Login == login && !x.IsDeleted).FirstOrDefaultAsync();
 
         public async Task<AuthUser?> GetByEmailAsync(string email)
             => await _collection.Find(x => x.Email == email && x.IsActive && !x.IsDeleted).FirstOrDefaultAsync();
@@ -37,7 +37,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null)
         {
-            var filter = Builders<AuthUser>.Filter.Where(u => u.IsActive == status);
+            var filter = Builders<AuthUser>.Filter.Where(u => u.IsActive == status && !u.IsDeleted);
 
             return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
         }
@@ -66,13 +66,13 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return result.ModifiedCount > 0 ? user : null;
         }
 
-        #if DEBUG
+        //#if DEBUG
         public async Task DeleteAllAsync() => await _collection.DeleteManyAsync(_ => true);
-        #else
-        [Obsolete("DeleteAllAsync is only permitted in test/dev environments.")]
-        public Task DeleteAllAsync() 
-            => throw new InvalidOperationException("DeleteAllAsync is not allowed in production.");
-        #endif
+        //#else
+        //[Obsolete("DeleteAllAsync is only permitted in test/dev environments.")]
+        //public Task DeleteAllAsync() 
+        //    => throw new InvalidOperationException("DeleteAllAsync is not allowed in production.");
+        //#endif
 
         public async Task<int> CountAsync()
             => (int)await _collection.CountDocumentsAsync(x => x.IsActive && !x.IsDeleted);

@@ -2,7 +2,7 @@
 {
     public class UserInactiveException : Exception
     {
-        public UserInactiveException() : base("User already inactive.")
+        public UserInactiveException() : base("User is not active.")
         {
         }
         public UserInactiveException(string message) : base(message)

@@ -208,7 +208,9 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {
-            var result = await _authService.RegisterAsync(request);
+            if (!TryGetRequesterId(out var requesterId))
+                return Unauthorized();
+            var result = await _authService.RegisterAsync(request, requesterId);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
