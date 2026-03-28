@@ -6,19 +6,37 @@ import { environment } from '../environment';
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
 export type AuditAction =
+  // Auth
   | 'Login'
   | 'Logout'
   | 'TokenRefreshed'
   | 'TokenRevoked'
+
+  // Registration
   | 'UserRegistered'
+
+  // Password
   | 'PasswordChanged'
   | 'PasswordChangedByAdmin'
+
+  // Profile
   | 'ProfileUpdated'
+
+  // Account status
   | 'UserActivated'
   | 'UserDeactivated'
   | 'UserDeleted'
   | 'UserRestored'
-  | 'UserDeletedPermanently';
+
+  // Role
+  | 'RoleCreated'
+  | 'RoleUpdated'
+  | 'RoleDeleted'
+
+  // Controle
+  | 'ControleCreated'
+  | 'ControleUpdated'
+  | 'ControleDeleted';
 
 export interface AuditLogResponseDto {
   id: string;

@@ -192,6 +192,7 @@ $bp-xl:  1200px;
     &.stat-card--green { background: $green-bg; border-color: $green; .stat-card__value { color: $green; } }
     &.stat-card--red   { background: $red-bg;   border-color: $red;   .stat-card__value { color: $red; } }
     &.stat-card--amber   { background: $amber-bg;   border-color: $amber;   .stat-card__value { color: $amber; } }
+    &.stat-card--blue   { background: $blue-bg;   border-color: $blue;   .stat-card__value { color: $blue; } }
   }
 
   &--disabled {
