@@ -35,7 +35,7 @@
 
       <div class="stat-card stat-card--green"
            (click)="onActiveCardClick()"
-           [class.disabled]="isList()">
+           [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Active</p>
@@ -52,7 +52,8 @@
 
       <div class="stat-card stat-card--amber"
            (click)="onBlockedCardClick()"
-           [class.disabled]="isBlockedList() || blockedClients < 1">
+           [class.stat-card--current]="isBlockedList()"
+           [class.disabled]="blockedClients < 1">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Blocked</p>
@@ -70,8 +71,9 @@
       <!-- ✅ Fixed: added RESTORE_CLIENT privilege guard -->
       <div class="stat-card stat-card--red"
            *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT)"
-           (click)="onDeletedCardClick()"
-           [class.disabled]="isDeletedList() || deletedClients < 1">
+          (click)="onDeletedCardClick()"
+          [class.stat-card--current]="isDeletedList()"
+          [class.disabled]="deletedClients < 1">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Deleted</p>

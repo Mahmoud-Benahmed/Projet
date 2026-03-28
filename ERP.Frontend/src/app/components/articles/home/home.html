@@ -34,7 +34,7 @@
   <ng-container *ngIf="isList() || isDeletedList()">
     <!-- STAT CARDS -->
     <div class="stats-grid">
-      <div class="stat-card stat-card--green" (click)="onActiveCardClick()" [class.disabled]="isList()">
+      <div class="stat-card stat-card--green" (click)="onActiveCardClick()" [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">Articles</p>
@@ -50,7 +50,7 @@
       </div>
 
       <div class="stat-card stat-card--red" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE)"
-          (click)="onDeletedCardClick()" [class.disabled]="isDeletedList() || deletedCount < 1"
+          (click)="onDeletedCardClick()" [class.disabled]="deletedCount < 1" [class.stat-card--current]="isDeletedList()"
       >
         <div class="stat-card__body">
           <div>
@@ -166,20 +166,6 @@
                   </svg>
                 </span>
               </th>
-              <th (click)="sortBy('tva')" class="th--sortable">
-                TVA
-                <span class="sort-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                      [style.opacity]="sortColumn === 'tva' && sortDirection === 'asc' ? '1' : '0.25'">
-                    <polyline points="18 15 12 9 6 15"/>
-                  </svg>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                      [style.opacity]="sortColumn === 'tva' && sortDirection === 'desc' ? '1' : '0.25'">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </span>
-              </th>
-              <th>BAR CODE</th>
               <th>ACTIONS</th>
             </tr>
           </thead>
@@ -192,10 +178,6 @@
               </td>
               <td class="td--price">
                 {{ article.prix | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale }}
-              </td>
-              <td class="td--tva">{{ article.tva }}%</td>
-              <td>
-                <span class="td--barCode">{{ article.barCode }}</span>
               </td>
               <td class="td--actions">
                 <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View"
