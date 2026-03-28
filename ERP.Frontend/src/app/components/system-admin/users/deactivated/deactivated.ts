@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -18,6 +18,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 import { PaginationComponent } from "../../../pagination/pagination";
+import { ModalComponent } from '../../../modal/modal';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-deactivated',
@@ -46,6 +49,7 @@ import { PaginationComponent } from "../../../pagination/pagination";
   styleUrl: './deactivated.scss',
 })
 export class DeactivatedComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   @ViewChild(MatSort) sort!: MatSort;
 
   stats: UserStatsDto | null= null;
@@ -79,7 +83,8 @@ export class DeactivatedComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -160,6 +165,30 @@ export class DeactivatedComponent implements OnInit {
       error: () =>
         this.flash('error', `Failed to reactivate user "${user.fullName}".`),
     });
+  }
+
+  delete(user: AuthUserGetResponseDto): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       'Delete User',
+        message:     `${user.fullName ?? user.login} will be deleted. Do you want to proceed?`,
+        confirmText: 'Delete',
+        showCancel:  true,
+        icon:        'auto_delete',
+        iconColor:   'danger',
+      },
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+        this.authService.softDelete(user.id).subscribe({
+          next: () => { this.flash('success', `${user.fullName ?? user.login} has been deleted.`); this.reload(); },
+          error: () => this.flash('error', 'Failed to delete user.'),
+        });
+      });
   }
 
   getInitials(user: AuthUserGetResponseDto): string {

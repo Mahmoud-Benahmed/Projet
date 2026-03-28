@@ -106,9 +106,13 @@ export class PermissionMatrixComponent implements OnInit {
 
     forkJoin(requests).subscribe({
       next: (results) => {
+        // First, create a Set of existing privileges for quick lookup
+        const existingPrivileges = new Set<string>();
+
         results.forEach((privileges) => {
           privileges.forEach((p) => {
             const key = this.cellKey(p.roleId, p.controleId);
+            existingPrivileges.add(key);
             this.matrix.set(key, {
               roleId: p.roleId,
               controleId: p.controleId,
@@ -117,6 +121,23 @@ export class PermissionMatrixComponent implements OnInit {
             });
           });
         });
+
+        // Then, create empty cells for all missing combinations
+        this.roles.forEach(role => {
+          this.controles.forEach(controle => {
+            const key = this.cellKey(role.id, controle.id);
+            if (!existingPrivileges.has(key)) {
+              // Create a default "denied" cell for missing privileges
+              this.matrix.set(key, {
+                roleId: role.id,
+                controleId: controle.id,
+                isGranted: false,  // Default to denied
+                loading: false,
+              });
+            }
+          });
+        });
+
         this.isLoading = false;
       },
       error: () => {
@@ -142,7 +163,7 @@ export class PermissionMatrixComponent implements OnInit {
     const action = wasGranted ? 'deny' : 'allow';
     const url = `${this.baseUrl}/auth/privileges/${roleId}/${controleId}/${action}`;
 
-    this.http.put(url, {}).subscribe({
+    this.http.patch(url, {}).subscribe({
       next: () => {
         this.flash('success', 'Privilege has been updated succcessfully.');
         cell.isGranted = !wasGranted;

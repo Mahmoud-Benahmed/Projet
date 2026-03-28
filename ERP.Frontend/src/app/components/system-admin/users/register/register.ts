@@ -178,6 +178,7 @@ export class RegisterComponent implements OnDestroy {
 
   private register(): void {
     this.isLoading= true;
+    this.sanitizeInputs();
     this.authService.register(this.credentials).subscribe({
         next: (registeredUser) => {
           this.stopLoading();
@@ -262,6 +263,8 @@ export class RegisterComponent implements OnDestroy {
   private sanitizeInputs(): void {
     this.credentials.login = this.sanitizeText(this.credentials.login);
     this.credentials.email = this.sanitizeText(this.credentials.email).toLowerCase();
+    this.credentials.fullName= this.credentials.fullName.trim();
+    this.credentials.password= this.credentials.password.trim();
   }
 
   private sanitizeText(value: string): string {

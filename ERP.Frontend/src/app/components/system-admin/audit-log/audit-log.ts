@@ -60,19 +60,37 @@ export class AuditLogComponent implements OnInit {
   successMessage: string | null = null;
 
   readonly ACTION_MAP: Record<AuditAction, ActionMeta> = {
+    // Auth
     Login:                    { icon: 'login',              category: 'auth' },
     Logout:                   { icon: 'logout',             category: 'auth' },
     TokenRefreshed:           { icon: 'refresh',            category: 'auth' },
     TokenRevoked:             { icon: 'block',              category: 'danger' },
+
+    // Registration
     UserRegistered:           { icon: 'person_add',         category: 'user' },
+
+    // Password
     PasswordChanged:          { icon: 'lock_reset',         category: 'password' },
     PasswordChangedByAdmin:   { icon: 'admin_panel_settings', category: 'admin' },
+
+    // Profile
     ProfileUpdated:           { icon: 'edit',               category: 'user' },
+
+    // Account status
     UserActivated:            { icon: 'check_circle',       category: 'user' },
     UserDeactivated:          { icon: 'block',              category: 'danger' },
     UserDeleted:              { icon: 'auto_delete',        category: 'danger' },
-    UserRestored:            { icon: 'restore_from_trash', category: 'user' },
-    UserDeletedPermanently:   { icon: 'delete_forever',     category: 'danger' },
+    UserRestored:             { icon: 'restore_from_trash', category: 'user' },
+
+    // Role
+    RoleCreated:              { icon: 'person_add',           category: 'admin' },
+    RoleUpdated:              { icon: 'person_edit',          category: 'admin' },
+    RoleDeleted:              { icon: 'person_cancel',     category: 'danger' },
+
+    // Controle
+    ControleCreated:          { icon: 'add_moderator',         category: 'admin' },
+    ControleUpdated:          { icon: 'edit_location_alt',               category: 'admin' },
+    ControleDeleted:          { icon: 'remove_moderator',             category: 'danger' },
   };
 
   constructor(

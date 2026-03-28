@@ -172,10 +172,8 @@
                 [routerLink]="['/users', user.id]"
                 routerLinkActive="user-cell--active"
                 [routerLinkActiveOptions]="{ exact: true }">
-                <div class="user-avatar">{{ getInitials(user) }}</div>
                 <div class="user-meta">
                   <span class="user-meta__name">{{ user.fullName }}</span>
-                  <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
                 </div>
               </div>
             </td>
@@ -205,8 +203,16 @@
                   <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                 </svg>
               </button>
-
-              <!-- ✅ Fixed: hidden for self using *ngIf instead of visibility:hidden -->
+              <button class="icon-btn icon-btn--delete" title="Delete"
+                      (click)="softDeleteUser(user)"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER) && user.id !== currentUserId">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
               <button class="icon-btn icon-btn--delete" title="Delete"
                       (click)="softDeleteUser(user)"
                       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER) && user.id !== currentUserId">
