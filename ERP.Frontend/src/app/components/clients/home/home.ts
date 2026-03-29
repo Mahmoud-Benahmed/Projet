@@ -267,11 +267,20 @@ export class ClientsComponent implements OnInit {
     });
   }
 
+  openView(client: ClientResponseDto): void {
+    if (this.isView()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('view');
+    this.selectedClient = client;
+    this.selectedCategoryId = '';
+    this.cdr.markForCheck();
+  }
+
   openEdit(client: ClientResponseDto): void {
     if (this.isEdit()) return;
     this.previousMode = this.viewMode();
-    this.setViewMode('edit');
     this.selectedClient = client;
+    this.setViewMode('edit');
     this.clientForm.patchValue({
       name:        client.name,
       email:       client.email,
@@ -284,20 +293,46 @@ export class ClientsComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  openView(client: ClientResponseDto): void {
-    if (this.isView()) return;
-    this.previousMode = this.viewMode();
-    this.setViewMode('view');
-    this.selectedClient = client;
-    this.selectedCategoryId = '';
-    this.cdr.markForCheck();
+  cancel(): void {
+    const target = this.resolveCancel();
+    const needsClient: ViewMode[] = ['view', 'edit'];
+
+    this.setViewMode(target);
+
+    if (!needsClient.includes(target)) {
+      this.selectedClient = null;
+      this.selectedCategoryId = '';
+    }
+
+    if (target !== 'edit') {
+      this.clientForm.reset();
+    }
   }
 
-  cancel(): void {
-    this.setViewMode(this.previousMode);
-    this.selectedClient = null;
-    this.clientForm.reset();
-    this.selectedCategoryId = '';
+  private resolveCancel(): ViewMode {
+    const current = this.viewMode();
+
+    // edit → view: go back to view only if selectedClient is still available
+    if (current === 'edit' && this.previousMode === 'view' && this.selectedClient) {
+      return 'view';
+    }
+
+    // view → any list variant: go back to wherever the list was
+    if (current === 'view' && (
+      this.previousMode === 'list' ||
+      this.previousMode === 'list-deleted' ||
+      this.previousMode === 'list-blocked'
+    )) {
+      return this.previousMode;
+    }
+
+    // create → any list variant: always safe
+    if (current === 'create') {
+      return this.previousMode ?? 'list';
+    }
+
+    // fallback
+    return 'list';
   }
 
   restore(client: ClientResponseDto): void {

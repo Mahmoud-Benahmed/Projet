@@ -194,8 +194,8 @@ export class ClientCategoriesComponent implements OnInit {
   openEdit(category: ClientCategoryResponseDto): void {
     if (this.isEdit()) return;
     this.previousMode = this.viewMode();
-    this.setViewMode('edit');
     this.selectedCategory = category;
+    this.setViewMode('edit');
     this.categoryForm.patchValue({
       name:                  category.name,
       code:                  category.code,
@@ -216,9 +216,40 @@ export class ClientCategoriesComponent implements OnInit {
   }
 
   cancel(): void {
-    this.setViewMode(this.previousMode);
-    this.selectedCategory = null;
-    this.categoryForm.reset();
+    const target = this.resolveCancel();
+    const needsCategory: ViewMode[] = ['view', 'edit'];
+
+    this.setViewMode(target);
+
+    if (!needsCategory.includes(target)) {
+      this.selectedCategory = null;
+    }
+
+    if (target !== 'edit') {
+      this.categoryForm.reset();
+    }
+  }
+
+  private resolveCancel(): ViewMode {
+    const current = this.viewMode();
+
+    // edit → view: only go back to view if selectedCategory is still available
+    if (current === 'edit' && this.previousMode === 'view' && this.selectedCategory) {
+      return 'view';
+    }
+
+    // view → list / list-deleted: go back to wherever list was
+    if (current === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted')) {
+      return this.previousMode;
+    }
+
+    // create → list: always safe
+    if (current === 'create') {
+      return this.previousMode ?? 'list';
+    }
+
+    // fallback
+    return 'list';
   }
 
   onActiveCardClick(): void {

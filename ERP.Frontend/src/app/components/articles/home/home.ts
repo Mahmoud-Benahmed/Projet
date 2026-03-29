@@ -224,10 +224,10 @@ export class ArticleComponent implements OnInit {
   }
 
   openEdit(article: ArticleResponseDto): void {
+    if (this.isEdit()) return;
     this.previousMode = this.viewMode();
-    this.setViewMode('edit');
-
     this.selectedArticle = article;
+    this.setViewMode('edit');
     this.articleForm.patchValue({
       libelle:    article.libelle,
       prix:       article.prix,
@@ -239,16 +239,50 @@ export class ArticleComponent implements OnInit {
   }
 
   openView(article: ArticleResponseDto): void {
+    if (this.isView()) return;
     this.previousMode = this.viewMode();
     this.setViewMode('view');
     this.selectedArticle = article;
+    this.cdr.markForCheck();
   }
 
   cancel(): void {
-    this.setViewMode(this.previousMode);
-    this.selectedArticle = null;
-    this.articleForm.reset();
+    const target = this.resolveCancel();
+    const needsCategory: ViewMode[] = ['view', 'edit'];
+
+    this.setViewMode(target);
+
+    if (!needsCategory.includes(target)) {
+      this.selectedArticle = null;
+    }
+
+    if (target !== 'edit') {
+      this.articleForm.reset();
+    }
   }
+
+  private resolveCancel(): ViewMode {
+    const current = this.viewMode();
+
+    // edit → view: only go back to view if selectedCategory is still available
+    if (current === 'edit' && this.previousMode === 'view' && this.selectedArticle) {
+      return 'view';
+    }
+
+    // view → list / list-deleted: go back to wherever list was
+    if (current === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted')) {
+      return this.previousMode;
+    }
+
+    // create → list: always safe
+    if (current === 'create') {
+      return this.previousMode ?? 'list';
+    }
+
+    // fallback
+    return 'list';
+  }
+
 
   submit(): void {
     if (this.articleForm.invalid) return;
