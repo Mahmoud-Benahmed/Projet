@@ -1,0 +1,114 @@
+﻿using ERP.StockService.Domain;
+using ERP.StockService.Domain.Entre;
+
+public sealed class BonEntre : PieceStock
+{
+    public Guid FournisseurId { get; private set; }
+    public Fournisseur? Fournisseur { get; private set; }
+
+    private readonly List<LigneEntre> _lignes = [];
+    public IReadOnlyCollection<LigneEntre> Lignes => _lignes.AsReadOnly();
+
+    private BonEntre() { }
+
+    public static BonEntre Create(string numero, Guid fournisseurId, string? observation = null)
+    {
+        if (string.IsNullOrWhiteSpace(numero))
+            throw new ArgumentException("Numero is required.");
+
+        if (fournisseurId == Guid.Empty)
+            throw new ArgumentException("FournisseurId is required.");
+
+        return new BonEntre
+        {
+            Id = Guid.NewGuid(),
+            Numero = numero.Trim(),
+            FournisseurId = fournisseurId,
+            Observation = observation?.Trim(),
+            CreatedAt = DateTime.UtcNow,
+        };
+    }
+
+    public LigneEntre AddLigne(Guid articleId, decimal qty, decimal price)
+    {
+        GuardNotDeleted();
+
+        if (articleId == Guid.Empty)
+            throw new ArgumentException("ArticleId is required.");
+
+        if (qty <= 0)
+            throw new ArgumentException("Quantity must be > 0.");
+
+        if (price < 0)
+            throw new ArgumentException("Price cannot be negative.");
+
+        if (_lignes.Any(l => l.ArticleId == articleId))
+            throw new InvalidOperationException("Article already exists in lignes.");
+
+        var ligne = LigneEntre.Create(Id, articleId, qty, price);
+        _lignes.Add(ligne);
+
+        UpdatedAt = DateTime.UtcNow;
+        return ligne;
+    }
+
+    public void RemoveLigne(Guid ligneId)
+    {
+        GuardNotDeleted();
+
+        if (ligneId == Guid.Empty)
+            throw new ArgumentException("LigneId is required.");
+
+        if (!_lignes.Any())
+            throw new InvalidOperationException("No lignes to remove.");
+
+        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
+            ?? throw new InvalidOperationException("Ligne not found.");
+
+        // 🔥 Business rule: cannot remove last ligne
+        if (_lignes.Count == 1)
+            throw new InvalidOperationException("Cannot remove the last ligne.");
+
+        _lignes.Remove(ligne);
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateLigne(Guid ligneId, decimal qty, decimal price)
+    {
+        GuardNotDeleted();
+
+        if (ligneId == Guid.Empty)
+            throw new ArgumentException("LigneId is required.");
+
+        if (qty <= 0)
+            throw new ArgumentException("Quantity must be > 0.");
+
+        if (price < 0)
+            throw new ArgumentException("Price cannot be negative.");
+
+        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
+            ?? throw new InvalidOperationException("Ligne not found.");
+
+        ligne.Update(qty, price);
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public override void ValidateLignes()
+    {
+        if (!_lignes.Any())
+            throw new InvalidOperationException("BonEntre must have at least one ligne.");
+
+        foreach (var l in _lignes)
+            l.Validate();
+    }
+
+    public decimal CalculateTotal() => _lignes.Sum(l => l.CalculateTotalLigne());
+
+    private void GuardNotDeleted()
+    {
+        if (IsDeleted)
+            throw new InvalidOperationException("Cannot modify a deleted BonEntre.");
+    }
+}

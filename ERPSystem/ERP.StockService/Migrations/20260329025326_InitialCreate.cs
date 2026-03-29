@@ -1,0 +1,232 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace ERP.StockService.Migrations
+{
+    /// <inheritdoc />
+    public partial class InitialCreate : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "BonRetours",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SourceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SourceType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Motif = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BonRetours", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BonSorties",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BonSorties", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Fournisseurs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    TaxNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    RIB = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    IsBlocked = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Fournisseurs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LigneRetours",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BonRetourId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Remarque = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ArticleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LigneRetours", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LigneRetours_BonRetours_BonRetourId",
+                        column: x => x.BonRetourId,
+                        principalTable: "BonRetours",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LigneSorties",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BonSortieId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ArticleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LigneSorties", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LigneSorties_BonSorties_BonSortieId",
+                        column: x => x.BonSortieId,
+                        principalTable: "BonSorties",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BonEntres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FournisseurId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BonEntres", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BonEntres_Fournisseurs_FournisseurId",
+                        column: x => x.FournisseurId,
+                        principalTable: "Fournisseurs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LigneEntres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BonEntreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ArticleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LigneEntres", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LigneEntres_BonEntres_BonEntreId",
+                        column: x => x.BonEntreId,
+                        principalTable: "BonEntres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BonEntres_FournisseurId",
+                table: "BonEntres",
+                column: "FournisseurId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BonEntres_Numero",
+                table: "BonEntres",
+                column: "Numero",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BonRetours_Numero",
+                table: "BonRetours",
+                column: "Numero",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BonSorties_Numero",
+                table: "BonSorties",
+                column: "Numero",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Fournisseurs_TaxNumber",
+                table: "Fournisseurs",
+                column: "TaxNumber",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneEntres_BonEntreId",
+                table: "LigneEntres",
+                column: "BonEntreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneRetours_BonRetourId",
+                table: "LigneRetours",
+                column: "BonRetourId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneSorties_BonSortieId",
+                table: "LigneSorties",
+                column: "BonSortieId");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "LigneEntres");
+
+            migrationBuilder.DropTable(
+                name: "LigneRetours");
+
+            migrationBuilder.DropTable(
+                name: "LigneSorties");
+
+            migrationBuilder.DropTable(
+                name: "BonEntres");
+
+            migrationBuilder.DropTable(
+                name: "BonRetours");
+
+            migrationBuilder.DropTable(
+                name: "BonSorties");
+
+            migrationBuilder.DropTable(
+                name: "Fournisseurs");
+        }
+    }
+}
