@@ -31,6 +31,7 @@ namespace ERP.ArticleService.API
 
             public const string GetAll = Controller;
             public const string GetById = Controller + $"/{{id:guid}}";
+            public const string ExistsById = Controller + $"/{{id:guid}}/exists";
             public const string GetByCode = Controller + "/by-code";
             public const string GetPagedByCategory = Controller + "/by-category";
             public const string GetDeletedRoute = Controller + "/deleted";

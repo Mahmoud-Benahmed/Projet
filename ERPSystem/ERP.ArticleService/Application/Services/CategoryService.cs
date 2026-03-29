@@ -43,9 +43,7 @@ namespace ERP.ArticleService.Application.Services
 
         public async Task<CategoryResponseDto> GetByNameAsync(string name)
         {
-            var category = await _categoryRepository.GetByNameAsync(name);
-            if (category is null)
-                throw new CategoryNotFoundException(name);
+            var category = await _categoryRepository.GetByNameAsync(name) ?? throw new CategoryNotFoundException(name);
             return MapToDto(category);
         }
 
