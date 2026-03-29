@@ -213,10 +213,7 @@ export class ArticleCategoriesComponent implements OnInit {
     this.setViewMode('edit');
     this.categoryForm.patchValue({
       name:               category.name,
-      tva:                category.tva,
-      isDeleted:          category.isDeleted,
-      createdAt:          category.createdAt,
-      updatedAt:          category.updatedAt ?? null,
+      tva:                category.tva
     });
     this.cdr.markForCheck();
   }
