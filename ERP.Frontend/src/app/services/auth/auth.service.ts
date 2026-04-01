@@ -389,31 +389,31 @@ export class AuthService {
   }
 
   logout(): void {
-    if(this._loggingOut) return;
-    this._loggingOut= true;
+    if (this._loggingOut) return;
+    this._loggingOut = true;
 
     const refreshToken = this.getRefreshToken();
+
+    // Clear session immediately so no further authenticated requests fire
+    this.clearSession();
+    this.clearUserProfile();
 
     if (refreshToken) {
       this.revoke({ refreshToken })
         .pipe(take(1))
         .subscribe({
           complete: () => {
-            this.clearSession();
-            this.clearUserProfile();
             this._loggingOut = false;
             this.router.navigate(['/login']);
           },
           error: () => {
-            this.clearSession();
-            this.clearUserProfile();
+            // Revoke failed (token already expired server-side) — that's fine,
+            // session is already cleared above
             this._loggingOut = false;
             this.router.navigate(['/login']);
           }
         });
-    }else {
-      this.clearSession();
-      this.clearUserProfile();
+    } else {
       this._loggingOut = false;
       this.router.navigate(['/login']);
     }

@@ -28,6 +28,7 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
       if (auth.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS))    return router.createUrlTree(['/users']);
       if (auth.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)) return router.createUrlTree(['/articles']);
       if (auth.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS))  return router.createUrlTree(['/clients']);
+      if (auth.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK))      return router.createUrlTree(['/stock']);
       return router.createUrlTree(['/home']);
     }
   }

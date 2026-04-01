@@ -13,5 +13,6 @@ export const environment = {
     privileges:  '/auth/privileges',
     articles:    '/articles',
     clients:     '/clients',
+    stock:      '/stock',
   },
 } as const;

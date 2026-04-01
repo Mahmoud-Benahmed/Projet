@@ -1,13 +1,11 @@
-﻿using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Interfaces.Repositories;
-using ERP.AuthService.Application.Interfaces.Services;
+﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
+using ERP.AuthService.Infrastructure.Persistence.Seeder;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 
-namespace ERP.AuthService.Infrastructure.Persistence.Seeder
+namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
 {
     public static class AuthServiceSeeder
     {
@@ -129,43 +127,106 @@ namespace ERP.AuthService.Infrastructure.Persistence.Seeder
 
         private static bool RoleHasPrivilege(string role, string category, string privilegeCode)
         {
-            // SystemAdmin gets everything
             if (role == Roles.SystemAdmin) return true;
-
-            if (privilegeCode.StartsWith("RESTORE_")) return false;
 
             return role switch
             {
-                Roles.SalesManager => category switch
-                {
-                    "CLIENTS" => true,
-                    "FACTURATION" => true,
-                    "ARTICLES" => true,
-                    "STOCK" => true,
-                    "REPORTING" => true,
-                    _ => false
-                },
-
-                Roles.StockManager => category switch
-                {
-                    "ARTICLES" => true,
-                    "STOCK" => true,
-                    "REPORTING" => true,
-                    _ => false
-                },
-
-                Roles.Accountant => category switch
-                {
-                    "CLIENTS" => true,
-                    "FACTURATION" => true,
-                    "PAIEMENT" => true,
-                    "REPORTING" => true,
-                    _ => false
-                },
-
+                Roles.SalesManager => SalesManagerHas(privilegeCode),
+                Roles.StockManager => StockManagerHas(privilegeCode),
+                Roles.Accountant => AccountantHas(privilegeCode),
                 _ => false
             };
         }
+
+        private static bool SalesManagerHas(string code) => code switch
+        {
+            // Clients — full
+            Privileges.Clients.MANAGE_CLIENTS => true,
+            Privileges.Clients.VIEW_CLIENTS => true,
+            Privileges.Clients.CREATE_CLIENT => true,
+            Privileges.Clients.UPDATE_CLIENT => true,
+            Privileges.Clients.DELETE_CLIENT => true,
+            Privileges.Clients.RESTORE_CLIENT => true,
+            Privileges.Clients.CREATE_CLIENT_CATEGORIES => true,
+            Privileges.Clients.UPDATE_CLIENT_CATEGORIES => true,
+            Privileges.Clients.DELETE_CLIENT_CATEGORIES => true,
+            Privileges.Clients.RESTORE_CLIENT_CATEGORIES => true,
+
+            // Articles — create/update/view only (no delete/restore/categories)
+            Privileges.Articles.MANAGE_ARTICLES => true,
+            Privileges.Articles.VIEW_ARTICLES => true,
+            Privileges.Articles.CREATE_ARTICLE => true,
+            Privileges.Articles.UPDATE_ARTICLE => true,
+
+            // Invoices — create/view only
+            Privileges.Invoices.MANAGE_INVOICES => true,
+            Privileges.Invoices.VIEW_INVOICES => true,
+            Privileges.Invoices.CREATE_INVOICE => true,
+
+            // Payments — view only
+            Privileges.Payments.VIEW_PAYMENTS => true,
+
+            // Stock — read only
+            Privileges.Stock.VIEW_STOCK => true,
+
+            // Reports — view + export
+            Privileges.Reports.VIEW_REPORTS => true,
+            Privileges.Reports.EXPORT_REPORTS => true,
+
+            _ => false
+        };
+
+        private static bool StockManagerHas(string code) => code switch
+        {
+            // Articles — full
+            Privileges.Articles.MANAGE_ARTICLES => true,
+            Privileges.Articles.VIEW_ARTICLES => true,
+            Privileges.Articles.CREATE_ARTICLE => true,
+            Privileges.Articles.UPDATE_ARTICLE => true,
+            Privileges.Articles.DELETE_ARTICLE => true,
+            Privileges.Articles.RESTORE_ARTICLE => true,
+            Privileges.Articles.CREATE_ARTICLE_CATEGORIES => true,
+            Privileges.Articles.UPDATE_ARTICLE_CATEGORIES => true,
+            Privileges.Articles.DELETE_ARTICLE_CATEGORIES => true,
+            Privileges.Articles.RESTORE_ARTICLE_CATEGORIES => true,
+
+            // Stock — full
+            Privileges.Stock.MANAGE_STOCK => true,
+            Privileges.Stock.VIEW_STOCK => true,
+            Privileges.Stock.UPDATE_STOCK => true,
+            Privileges.Stock.ADD_ENTRY => true,
+
+            // Reports — view only
+            Privileges.Reports.VIEW_REPORTS => true,
+
+            _ => false
+        };
+
+        private static bool AccountantHas(string code) => code switch
+        {
+            // Audit
+            Privileges.Audit.MANAGE_AUDITLOGS => true,
+
+            // Clients — view only
+            Privileges.Clients.VIEW_CLIENTS => true,
+
+            // Invoices — view + validate only
+            Privileges.Invoices.MANAGE_INVOICES => true,
+            Privileges.Invoices.VIEW_INVOICES => true,
+            Privileges.Invoices.VALIDATE_INVOICE => true,
+
+            // Payments — full
+            Privileges.Payments.MANAGE_PAYMENTS => true,
+            Privileges.Payments.VIEW_PAYMENTS => true,
+            Privileges.Payments.RECORD_PAYMENT => true,
+
+            // Reports — full
+            Privileges.Reports.MANAGE_REPORTS => true,
+            Privileges.Reports.VIEW_REPORTS => true,
+            Privileges.Reports.EXPORT_REPORTS => true,
+
+            _ => false
+        };
 
 
         // ── 4. SEED USERS ─────────────────────────────────
@@ -189,10 +250,10 @@ namespace ERP.AuthService.Infrastructure.Persistence.Seeder
 
             var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
             {
-                ("admin_erp1234",   "admin@erp.com",    "John DOE",         "Admin@1234",   adminRole.Id),
-                ("sales_erp1234",   "sales@erp.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
-                ("stock_erp1234",   "stock@erp.com",    "Stock David",      "Stock@1234",   stockRole.Id),
-                ("account_erp1234", "account@erp.com",  "Accountant Jane",  "Account@1234", accountRole.Id),
+                ("admin_erp1234",   "admin@erPrivileges.com",    "John DOE",         "Admin@1234",   adminRole.Id),
+                ("sales_erp1234",   "sales@erPrivileges.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
+                ("stock_erp1234",   "stock@erPrivileges.com",    "Stock David",      "Stock@1234",   stockRole.Id),
+                ("account_erp1234", "account@erPrivileges.com",  "Accountant Jane",  "Account@1234", accountRole.Id),
             };
 
             foreach (var (login, email, fullName, password, roleId) in seedUsers)

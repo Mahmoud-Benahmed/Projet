@@ -15,10 +15,19 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const dialog = inject(MatDialog);
   const router = inject(Router);
 
-  const token = auth.getAccessToken();
-  const authReq = token ? req.clone({
-    setHeaders: { Authorization: `Bearer ${token}` }
-  }) : req;
+  // ── Never attach token or intercept errors for auth infrastructure calls
+  const isPublicCall = req.url.includes('/auth/refresh')
+                    || req.url.includes('/auth/revoke')
+                    || req.url.includes('/auth/login');
+
+  const token = !isPublicCall ? auth.getAccessToken() : null;
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+
+  if (isPublicCall) {
+    return next(authReq); // ← bypass all error handling below
+  }
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -152,6 +161,28 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
 
       if(error.status === 404){
         router.navigate(['/home']);
+      }
+
+      // ── Gateway / service unavailable ─────────────────────────────────────
+      if (error.status === 503 || error.status === 502 || error.status === 504) {
+        if (!serverDownDialogOpen) {
+          serverDownDialogOpen = true;
+          dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Service Unavailable',
+              message: 'The requested service is temporarily unavailable. Please try again later.',
+              confirmText: 'OK',
+              showCancel: false,
+              icon: 'cloud_off',
+              iconColor: 'warn'
+            }
+          }).afterClosed().subscribe(() => {
+            serverDownDialogOpen = false;
+            router.navigate(['/home']);
+          });
+        }
+        return throwError(() => error);
       }
       return throwError(() => error);
     })

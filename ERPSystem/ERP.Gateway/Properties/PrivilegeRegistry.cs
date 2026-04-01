@@ -64,10 +64,31 @@ public static class PrivilegeRegistry
         new(Privileges.Payments.DELETE_PAYMENT,    "PAIEMENT", "Delete payment"),
         new(Privileges.Payments.RESTORE_PAYMENT,   "PAIEMENT", "Restore payment"),
 
-        // ── Stock
+        // ── Stocknew(Privileges.Stock.MANAGE_STOCK,   "STOCK", "Full stock management"),
         new(Privileges.Stock.VIEW_STOCK,     "STOCK", "View stock"),
         new(Privileges.Stock.UPDATE_STOCK,   "STOCK", "Update stock"),
         new(Privileges.Stock.ADD_ENTRY,      "STOCK", "Add stock entry"),
+
+        // Fournisseurs
+        new(Privileges.Stock.MANAGE_STOCK,   "FOURNISSEURS", "Manage fournisseurs"),
+
+        // Bons d'Entrée
+        new(Privileges.Stock.ADD_ENTRY,      "BON_ENTRES",   "Create bon entrée"),
+        new(Privileges.Stock.VIEW_STOCK,     "BON_ENTRES",   "View bons entrée"),
+        new(Privileges.Stock.UPDATE_STOCK,   "BON_ENTRES",   "Update bon entrée"),
+        new(Privileges.Stock.MANAGE_STOCK,   "BON_ENTRES",   "Delete bon entrée"),
+
+        // Bons de Sortie
+        new(Privileges.Stock.ADD_ENTRY,      "BON_SORTIES",  "Create bon sortie"),
+        new(Privileges.Stock.VIEW_STOCK,     "BON_SORTIES",  "View bons sortie"),
+        new(Privileges.Stock.UPDATE_STOCK,   "BON_SORTIES",  "Update bon sortie"),
+        new(Privileges.Stock.MANAGE_STOCK,   "BON_SORTIES",  "Delete bon sortie"),
+
+        // Bons de Retour
+        new(Privileges.Stock.ADD_ENTRY,      "BON_RETOURS",  "Create bon retour"),
+        new(Privileges.Stock.VIEW_STOCK,     "BON_RETOURS",  "View bons retour"),
+        new(Privileges.Stock.UPDATE_STOCK,   "BON_RETOURS",  "Update bon retour"),
+        new(Privileges.Stock.MANAGE_STOCK,   "BON_RETOURS",  "Delete bon retour"),
 
         // ── Reports
         new(Privileges.Reports.VIEW_REPORTS,   "REPORTING", "View reports"),

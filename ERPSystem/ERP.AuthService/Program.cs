@@ -10,6 +10,7 @@ using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Persistence.Seeder;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
+using ERPrivileges.AuthService.Infrastructure.Persistence.Seeder;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
