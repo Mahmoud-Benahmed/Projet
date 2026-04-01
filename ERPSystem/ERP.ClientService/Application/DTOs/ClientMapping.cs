@@ -19,12 +19,12 @@ public static class ClientMappings
             IsDeleted: client.IsDeleted,
             CreatedAt: client.CreatedAt,
             UpdatedAt: client.UpdatedAt,
-            Categories: client.ClientCategories
-                               .Select(cc => new ClientCategoryResponseDto(
-                                   Id: cc.CategoryId,
-                                   Name: cc.Category?.Name ?? string.Empty,
-                                   Code: cc.Category?.Code ?? string.Empty,
-                                   AssignedAt: cc.AssignedAt))
-                               .ToList()
+            Categories: (client.ClientCategories ?? new List<ClientCategory>())
+                                    .Select(cc => new ClientCategoryResponseDto(
+                                        Id: cc.CategoryId,
+                                        Name: cc.Category?.Name ?? string.Empty,
+                                        Code: cc.Category?.Code ?? string.Empty,
+                                        AssignedAt: cc.AssignedAt))
+                                    .ToList()
         );
 }
