@@ -145,8 +145,11 @@ public class BonRetourService : IBonRetourService
         DateTime from, DateTime to, int page, int size)
     {
         ValidatePaging(page, size);
+        // Swap dates if needed
         if (from > to)
-            throw new ArgumentException("'from' must be earlier than or equal to 'to'.");
+        {
+            (from, to) = (to, from);
+        }
 
         var (items, total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
         return new PagedResultDto<BonRetourResponseDto>(
