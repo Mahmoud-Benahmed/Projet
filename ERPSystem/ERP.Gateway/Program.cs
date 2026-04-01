@@ -175,6 +175,15 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Privileges.Audit.MANAGE_AUDITLOGS, p =>
         p.RequireAuthenticatedUser()
          .RequireClaim("privilege", Privileges.Audit.MANAGE_AUDITLOGS));
+
+    options.AddPolicy("MANAGE_CLIENTS_STOCK", p =>
+    p.RequireAuthenticatedUser()
+     .RequireAssertion(context =>
+         context.User.Claims.Any(c =>
+             c.Type == "privilege" &&
+             (c.Value == Privileges.Clients.MANAGE_CLIENTS ||
+              c.Value == Privileges.Stock.ADD_ENTRY ||
+              c.Value == Privileges.Stock.UPDATE_STOCK))));
 });
 
 //////////////////////////////////////////////////
