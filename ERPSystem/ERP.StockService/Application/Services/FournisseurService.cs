@@ -112,7 +112,7 @@ public class FournisseurService : IFournisseurService
     // =========================
     // STATS
     // =========================
-    public async Task<StockStatsDto> GetStatsAsync() =>
+    public async Task<FournisseurStatsDto> GetStatsAsync() =>
         await _repo.GetStatsAsync();
 
     // =========================

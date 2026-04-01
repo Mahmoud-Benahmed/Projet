@@ -1,5 +1,6 @@
 ﻿
 using ERP.StockService.Domain;
+using ERP.StockService.Domain.Entre;
 
 public sealed class BonSortie : PieceStock
 {
@@ -11,6 +12,11 @@ public sealed class BonSortie : PieceStock
     public static BonSortie Create(string numero, Guid clientId, string? observation = null) =>
         new() { Id = Guid.NewGuid(), Numero = numero.Trim(), ClientId = clientId, Observation = observation?.Trim(), CreatedAt = DateTime.UtcNow };
 
+    public void Update(Guid clientId, string numero, string? observation= null)
+    {
+        ClientId = clientId;
+        base.Update(numero, observation);
+    }
     public LigneSortie AddLigne(Guid articleId, decimal qty, decimal price)
     {
         GuardNotDeleted();
@@ -22,31 +28,14 @@ public sealed class BonSortie : PieceStock
 
         var l = LigneSortie.Create(Id, articleId, qty, price);
         _lignes.Add(l);
-        UpdatedAt = DateTime.UtcNow;
         return l;
     }
 
-    public void RemoveLigne(Guid ligneId)
+    public void ClearLignes()
     {
         GuardNotDeleted();
-
-        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId);
-        if (ligne is null)
-            throw new KeyNotFoundException($"Ligne with Id '{ligneId}' not found");
-
-        _lignes.Remove(ligne);
-
-        UpdatedAt = DateTime.UtcNow;
+        _lignes.Clear();
     }
-
-    public void UpdateLigne(Guid ligneId, decimal qty, decimal price)
-    {
-        GuardNotDeleted();
-        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId) ?? throw new InvalidOperationException("Ligne not found.");
-        ligne.Update(qty, price);
-        UpdatedAt = DateTime.UtcNow;
-    }
-
 
     public override void ValidateLignes()
     {

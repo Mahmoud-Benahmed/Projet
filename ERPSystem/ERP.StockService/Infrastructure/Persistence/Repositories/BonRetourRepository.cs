@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ERP.StockService.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
 
@@ -23,7 +24,7 @@ public class BonRetourRepository : IBonRetourRepository
             .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
 
     public async Task<BonRetour?> GetByIdDeletedAsync(Guid id) =>
-        await _context.BonRetours
+        await _context.BonRetours.IgnoreQueryFilters()
             .Include(b => b.Lignes)
             .FirstOrDefaultAsync(b => b.Id == id && b.IsDeleted);
 
@@ -77,7 +78,7 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size)
     {
-        var query = _context.BonRetours
+        var query = _context.BonRetours.IgnoreQueryFilters()
             .Include(b => b.Lignes)
             .Where(b => b.IsDeleted);
 
@@ -110,5 +111,23 @@ public class BonRetourRepository : IBonRetourRepository
             .ToListAsync();
 
         return (items, total);
+    }
+
+    public async Task<BonStatsDto> GetStatsAsync()
+    {
+        var counts = await _context.BonEntres
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Deleted = g.Count(b => b.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
+
+        return new BonStatsDto(
+            TotalCount: counts?.Total ?? 0,
+            ActiveCount: (counts?.Total ?? 0) - (counts?.Deleted ?? 0),
+            DeletedCount: counts?.Deleted ?? 0
+        );
     }
 }

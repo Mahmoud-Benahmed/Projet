@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.StockService.Migrations
 {
     [DbContext(typeof(StockDbContext))]
-    [Migration("20260329025326_InitialCreate")]
+    [Migration("20260401010026_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -206,8 +206,8 @@ namespace ERP.StockService.Migrations
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("RIB")
                         .IsRequired()

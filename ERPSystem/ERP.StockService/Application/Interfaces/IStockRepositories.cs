@@ -12,7 +12,7 @@ public interface IFournisseurRepository
     string nameFilter, int page, int size);
     Task<(List<Fournisseur> Items, int TotalCount)> GetAllAsync(int page, int size);
     Task<(List<Fournisseur> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);
-    Task<StockStatsDto> GetStatsAsync();
+    Task<FournisseurStatsDto> GetStatsAsync();
 }
 
 // IBonEntreRepository
@@ -26,6 +26,7 @@ public interface IBonEntreRepository
     Task<(List<BonEntre> Items, int TotalCount)> GetByFournisseurAsync(Guid fournisseurId, int page, int size);
     Task<(List<BonEntre> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);
     Task<(List<BonEntre> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
+    Task<BonStatsDto> GetStatsAsync();
 }
 
 public interface IBonSortieRepository
@@ -39,6 +40,7 @@ public interface IBonSortieRepository
     Task<(List<BonSortie> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);
     Task<(List<BonSortie> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<(List<BonSortie> Items, int TotalCount)> GetPagedByClientAsync(Guid clientId, int page, int size);
+    Task<BonStatsDto> GetStatsAsync();
 }
 public interface IBonRetourRepository
 {
@@ -51,6 +53,6 @@ public interface IBonRetourRepository
     Task<(List<BonRetour> Items, int TotalCount)> GetByRetourSourceTypeAsync(RetourSourceType sourceType, int page, int size);
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedBySourceAsync(Guid sourceId, int page, int size);
-
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
+    Task<BonStatsDto> GetStatsAsync();
 }

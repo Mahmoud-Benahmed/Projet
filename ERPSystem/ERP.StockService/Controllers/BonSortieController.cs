@@ -1,6 +1,6 @@
-﻿using ERP.StockService.API.Routes;
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Interfaces;
+using ERP.StockService.Properties;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.StockService.API.Controllers;
@@ -60,6 +60,13 @@ public class BonSortieController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet(ApiRoutes.BonSorties.GetStats)]
+    public async Task<IActionResult> GetStats()
+    {
+        var result = await _service.GetStatsAsync();
+        return Ok(result);
+    }
+
     // =========================
     // CREATE / UPDATE / DELETE
     // =========================
@@ -87,36 +94,5 @@ public class BonSortieController : ControllerBase
     {
         await _service.DeleteAsync(id);
         return NoContent();
-    }
-
-    // =========================
-    // LIGNES
-    // =========================
-    [HttpPost(ApiRoutes.BonSorties.AddLigne)]
-    public async Task<IActionResult> AddLigne(
-        [FromRoute] Guid id,
-        [FromBody] AddLigneRequestDto dto)
-    {
-        var result = await _service.AddLigneAsync(id, dto);
-        return Ok(result);
-    }
-
-    [HttpPut(ApiRoutes.BonSorties.UpdateLigne)]
-    public async Task<IActionResult> UpdateLigne(
-        [FromRoute] Guid id,
-        [FromRoute] Guid ligneId,
-        [FromBody] AddLigneRequestDto dto)
-    {
-        var result = await _service.UpdateLigneAsync(id, ligneId, dto);
-        return Ok(result);
-    }
-
-    [HttpDelete(ApiRoutes.BonSorties.RemoveLigne)]
-    public async Task<IActionResult> RemoveLigne(
-        [FromRoute] Guid id,
-        [FromRoute] Guid ligneId)
-    {
-        var result = await _service.RemoveLigneAsync(id, ligneId);
-        return Ok(result);
     }
 }

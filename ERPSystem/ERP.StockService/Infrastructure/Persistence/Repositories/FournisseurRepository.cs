@@ -23,7 +23,7 @@ public class FournisseurRepository : IFournisseurRepository
         await _context.Fournisseurs.FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
 
     public async Task<Fournisseur?> GetByIdDeletedAsync(Guid id) =>
-        await _context.Fournisseurs.FirstOrDefaultAsync(f => f.Id == id && f.IsDeleted);
+        await _context.Fournisseurs.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == id && f.IsDeleted);
 
     // =========================
     // PAGING
@@ -48,7 +48,7 @@ public class FournisseurRepository : IFournisseurRepository
     {
         ValidatePaging(page, size);
 
-        var query = _context.Fournisseurs.Where(f => f.IsDeleted);
+        var query = _context.Fournisseurs.IgnoreQueryFilters().Where(f => f.IsDeleted);
 
         var total = await query.CountAsync();
         var items = await query
@@ -80,25 +80,23 @@ public class FournisseurRepository : IFournisseurRepository
     // =========================
     // STATS
     // =========================
-    public async Task<StockStatsDto> GetStatsAsync()
+    public async Task<FournisseurStatsDto> GetStatsAsync()
     {
-        // fournisseurs
-        var totalFournisseurs = await _context.Fournisseurs.CountAsync();
-        var activeFournisseurs = await _context.Fournisseurs.CountAsync(f => !f.IsDeleted && !f.IsBlocked);
-        var blockedFournisseurs = await _context.Fournisseurs.CountAsync(f => f.IsBlocked && !f.IsDeleted);
+        var counts = await _context.Fournisseurs.IgnoreQueryFilters()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Blocked = g.Count(f => f.IsBlocked && !f.IsDeleted),
+                Deleted = g.Count(f => f.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
 
-        // bon entre, sortie, retours
-        var totalBonEntres = await _context.BonEntres.CountAsync(b => !b.IsDeleted);
-        var totalBonSorties = await _context.BonSorties.CountAsync(b => !b.IsDeleted);
-        var totalBonRetours = await _context.BonRetours.CountAsync(b => !b.IsDeleted);
-
-        return new StockStatsDto(
-            TotalFournisseurs: totalFournisseurs,
-            ActiveFournisseurs: activeFournisseurs,
-            BlockedFournisseurs: blockedFournisseurs,
-            TotalBonEntres: totalBonEntres,
-            TotalBonSorties: totalBonSorties,
-            TotalBonRetours: totalBonRetours
+        return new FournisseurStatsDto(
+            TotalFournisseurs: counts?.Total ?? 0,
+            ActiveFournisseurs: (counts?.Total ?? 0) - (counts?.Blocked ?? 0) - (counts?.Deleted ?? 0),
+            BlockedFournisseurs: counts?.Blocked ?? 0,
+            DeletedFournisseurs: counts?.Deleted ?? 0
         );
     }
 

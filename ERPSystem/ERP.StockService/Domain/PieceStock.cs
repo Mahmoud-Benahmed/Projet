@@ -7,7 +7,7 @@ public abstract class PieceStock
     public string? Observation { get; protected set; }
     public bool IsDeleted { get; protected set; }
     public DateTime CreatedAt { get; protected set; }
-    public DateTime? UpdatedAt { get; protected set; }
+    public DateTime? UpdatedAt { get; private set; }
 
     public abstract void ValidateLignes();
 
@@ -15,7 +15,6 @@ public abstract class PieceStock
     {
         if (IsDeleted) return;
         IsDeleted = true;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Update(string numero, string? observation = null)
@@ -24,7 +23,7 @@ public abstract class PieceStock
             throw new ArgumentException("Numero is required.");
         Numero = numero.Trim();
         Observation = observation?.Trim();
-        UpdatedAt = DateTime.UtcNow;
     }
+
 
 }

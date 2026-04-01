@@ -53,7 +53,6 @@ public sealed class Fournisseur
         TaxNumber = taxNumber.Trim();
         RIB = rib.Trim();
         Email = email?.Trim();
-        UpdatedAt = DateTime.UtcNow;
     }
 
     // ---------------- BLOCK / UNBLOCK ----------------
@@ -63,7 +62,6 @@ public sealed class Fournisseur
         if (IsBlocked) return;
 
         IsBlocked = true;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Unblock()
@@ -71,7 +69,6 @@ public sealed class Fournisseur
         if (!IsBlocked) return;
 
         IsBlocked = false;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     // ---------------- DELETE / RESTORE ----------------
@@ -88,7 +85,6 @@ public sealed class Fournisseur
         if (!IsDeleted) return;
 
         IsDeleted = false;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     // ---------------- GUARD ----------------

@@ -54,7 +54,7 @@ namespace ERP.StockService.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     TaxNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RIB = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),

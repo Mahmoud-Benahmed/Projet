@@ -45,38 +45,21 @@ public class BonSortieService : IBonSortieService
     public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        bon.Update(dto.Numero, dto.Observation);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        await _clientService.ExistsByIdAsync(dto.ClientId);
 
-    // =========================
-    // LIGNES
-    // =========================
-    public async Task<BonSortieResponseDto> AddLigneAsync(Guid bonId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonSortieNotFoundException(bonId);
+        bon.Update(dto.ClientId, dto.Numero, dto.Observation);
 
-        await _articleService.ExistsByIdAsync(dto.ArticleId);
-        bon.AddLigne(dto.ArticleId, dto.Quantity, dto.Price);
-        
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        if (dto.Lignes is { Count: > 0 })
+        {
+            bon.ClearLignes();
+            foreach (var l in dto.Lignes)
+            {
+                await _articleService.ExistsByIdAsync(l.ArticleId);
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+            }
+            bon.ValidateLignes();
+        }
 
-    public async Task<BonSortieResponseDto> UpdateLigneAsync(
-        Guid bonId, Guid ligneId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonSortieNotFoundException(bonId);
-        bon.UpdateLigne(ligneId, dto.Quantity, dto.Price);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
-
-    public async Task<BonSortieResponseDto> RemoveLigneAsync(Guid bonId, Guid ligneId)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonSortieNotFoundException(bonId);
-        bon.RemoveLigne(ligneId);
         await _repo.SaveChangesAsync();
         return bon.ToResponseDto();
     }
@@ -138,6 +121,12 @@ public class BonSortieService : IBonSortieService
         return new PagedResultDto<BonSortieResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
+
+    public async Task<BonStatsDto> GetStatsAsync()
+    {
+        return await _repo.GetStatsAsync();
+    }
+
 
     // =========================
     // HELPERS

@@ -29,6 +29,12 @@ public sealed class BonEntre : PieceStock
         };
     }
 
+    public void ClearLignes()
+    {
+        GuardNotDeleted();
+        _lignes.Clear();
+    }
+
     public LigneEntre AddLigne(Guid articleId, decimal qty, decimal price)
     {
         GuardNotDeleted();
@@ -43,13 +49,18 @@ public sealed class BonEntre : PieceStock
             throw new ArgumentException("Price cannot be negative.");
 
         if (_lignes.Any(l => l.ArticleId == articleId))
-            throw new InvalidOperationException("Article already exists in lignes.");
+            qty++;
 
         var ligne = LigneEntre.Create(Id, articleId, qty, price);
         _lignes.Add(ligne);
 
-        UpdatedAt = DateTime.UtcNow;
         return ligne;
+    }
+    public void Update(string numero, Fournisseur fournisseur, string? observation = null)
+    {
+        Fournisseur = fournisseur;
+        FournisseurId = fournisseur.Id;
+        base.Update(numero, observation);
     }
 
     public void RemoveLigne(Guid ligneId)
@@ -71,7 +82,6 @@ public sealed class BonEntre : PieceStock
 
         _lignes.Remove(ligne);
 
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void UpdateLigne(Guid ligneId, decimal qty, decimal price)
@@ -92,7 +102,6 @@ public sealed class BonEntre : PieceStock
 
         ligne.Update(qty, price);
 
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public override void ValidateLignes()

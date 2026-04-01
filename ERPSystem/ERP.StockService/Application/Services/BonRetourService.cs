@@ -73,64 +73,26 @@ public class BonRetourService : IBonRetourService
     public async Task<BonRetourResponseDto> UpdateAsync(Guid id, UpdateBonRetourRequestDto dto)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
-        bon.Update(dto.Numero, dto.Motif, dto.Observation);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        var bonEntre = await _bonEntreRepo.GetByIdAsync(dto.SourceId);
+        var bonSortie = await _bonSortieRepo.GetByIdAsync(dto.SourceId);
+        if (bonEntre is null && bonSortie is null)
+            throw new BonNotFoundException(dto.SourceId);
 
-    // =========================
-    // LIGNES
-    // =========================
-    public async Task<BonRetourResponseDto> AddLigneAsync(Guid bonId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonRetourNotFoundException(bonId);
+        var sourceType = bonEntre is not null ? "BonEntre" : "BonSortie";
 
-        await _articleService.ExistsByIdAsync(dto.ArticleId);
-
-        var sourceLignes = bon.SourceType switch
+        bon.Update(dto.Numero, dto.SourceId, sourceType ,dto.Motif, dto.Observation);
+        
+        if (dto.Lignes is { Count: > 0 })
         {
-            RetourSourceType.BonSortie => await ResolveBonSortieSourceLignesAsync(bon.SourceId),
-            RetourSourceType.BonEntre => await ResolveBonEntreSourceLignesAsync(bon.SourceId),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+            bon.ClearLignes();
+            foreach (var l in dto.Lignes)
+            {
+                await _articleService.ExistsByIdAsync(l.ArticleId);
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+            }
+            bon.ValidateLignes();
+        }
 
-        var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == dto.ArticleId)
-            ?? throw new ArticleNotInSourceBonException(dto.ArticleId, bon.SourceId);
-
-        if (dto.Quantity > sourceLigne.Quantity)
-            throw new RetourQuantityExceedsSourceException(dto.ArticleId, dto.Quantity, sourceLigne.Quantity);
-
-        bon.AddLigne(dto.ArticleId, dto.Quantity, dto.Price);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
-
-    public async Task<BonRetourResponseDto> UpdateLigneAsync(Guid bonId, Guid ligneId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonRetourNotFoundException(bonId);
-
-        var sourceLignes = bon.SourceType switch
-        {
-            RetourSourceType.BonSortie => await ResolveBonSortieSourceLignesAsync(bon.SourceId),
-            RetourSourceType.BonEntre => await ResolveBonEntreSourceLignesAsync(bon.SourceId),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
-        var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == dto.ArticleId)
-            ?? throw new ArticleNotInSourceBonException(dto.ArticleId, bon.SourceId);
-
-        if (dto.Quantity > sourceLigne.Quantity)
-            throw new RetourQuantityExceedsSourceException(dto.ArticleId, dto.Quantity, sourceLigne.Quantity);
-
-        bon.UpdateLigne(ligneId, dto.Quantity, dto.Price);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
-
-    public async Task<BonRetourResponseDto> RemoveLigneAsync(Guid bonId, Guid ligneId)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonRetourNotFoundException(bonId);
-        bon.RemoveLigne(ligneId);
         await _repo.SaveChangesAsync();
         return bon.ToResponseDto();
     }
@@ -226,6 +188,11 @@ public class BonRetourService : IBonRetourService
             ?? throw new BonEntreNotFoundException(sourceId);
         return bonEntre.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
+    public async Task<BonStatsDto> GetStatsAsync()
+    {
+        return await _repo.GetStatsAsync();
+    }
+
 
     private static void ValidatePaging(int page, int size)
     {

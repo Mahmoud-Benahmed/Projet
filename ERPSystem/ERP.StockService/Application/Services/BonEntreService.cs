@@ -3,6 +3,7 @@ using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
 using ERP.StockService.Infrastructure.Persistence.Messaging;
+using static ERP.StockService.Properties.ApiRoutes;
 
 namespace ERP.StockService.Application.Services;
 
@@ -51,36 +52,22 @@ public class BonEntreService : IBonEntreService
     public async Task<BonEntreResponseDto> UpdateAsync(Guid id, UpdateBonEntreRequestDto dto)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
-        bon.Update(dto.Numero, dto.Observation);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        var fournisseur = await _fournisseurRepo.GetByIdAsync(dto.FournisseurId)
+            ?? throw new FournisseurNotFoundException(dto.FournisseurId);
 
-    // =========================
-    // LIGNES
-    // =========================
-    public async Task<BonEntreResponseDto> AddLigneAsync(Guid bonId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonEntreNotFoundException(bonId);
-        await _articleService.ExistsByIdAsync(dto.ArticleId);
-        bon.AddLigne(dto.ArticleId, dto.Quantity, dto.Price);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        bon.Update(dto.Numero, fournisseur, dto.Observation);
 
-    public async Task<BonEntreResponseDto> UpdateLigneAsync(
-        Guid bonId, Guid ligneId, AddLigneRequestDto dto)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonEntreNotFoundException(bonId);
-        bon.UpdateLigne(ligneId, dto.Quantity, dto.Price);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
-    }
+        if (dto.Lignes is { Count: > 0 })
+        {
+            bon.ClearLignes();
+            foreach (var l in dto.Lignes)
+            {
+                await _articleService.ExistsByIdAsync(l.ArticleId);
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+            }
+            bon.ValidateLignes();
+        }
 
-    public async Task<BonEntreResponseDto> RemoveLigneAsync(Guid bonId, Guid ligneId)
-    {
-        var bon = await _repo.GetByIdAsync(bonId) ?? throw new BonEntreNotFoundException(bonId);
-        bon.RemoveLigne(ligneId);
         await _repo.SaveChangesAsync();
         return bon.ToResponseDto();
     }
@@ -139,6 +126,11 @@ public class BonEntreService : IBonEntreService
         var (items, total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
         return new PagedResultDto<BonEntreResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
+    }
+
+    public async Task<BonStatsDto> GetStatsAsync()
+    {
+        return await _repo.GetStatsAsync();
     }
 
     // =========================

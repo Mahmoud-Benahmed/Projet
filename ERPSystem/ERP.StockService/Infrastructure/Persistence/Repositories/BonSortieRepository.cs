@@ -1,4 +1,5 @@
-﻿using ERP.StockService.Application.Interfaces;
+﻿using ERP.StockService.Application.DTOs;
+using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,7 @@ public class BonSortieRepository : IBonSortieRepository
             .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
 
     public async Task<BonSortie?> GetByIdDeletedAsync(Guid id) =>
-        await _context.BonSorties
+        await _context.BonSorties.IgnoreQueryFilters()
             .Include(b => b.Lignes)
             .FirstOrDefaultAsync(b => b.Id == id && b.IsDeleted);
 
@@ -47,7 +48,7 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<(List<BonSortie> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size)
     {
-        var query = _context.BonSorties
+        var query = _context.BonSorties.IgnoreQueryFilters()
             .Include(b => b.Lignes)
             .Where(b => b.IsDeleted);
 
@@ -108,5 +109,23 @@ public class BonSortieRepository : IBonSortieRepository
             .ToListAsync();
 
         return (items, total);
+    }
+
+    public async Task<BonStatsDto> GetStatsAsync()
+    {
+        var counts = await _context.BonEntres
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Deleted = g.Count(b => b.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
+
+        return new BonStatsDto(
+            TotalCount: counts?.Total ?? 0,
+            ActiveCount: (counts?.Total ?? 0) - (counts?.Deleted ?? 0),
+            DeletedCount: counts?.Deleted ?? 0
+        );
     }
 }

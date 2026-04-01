@@ -5,6 +5,8 @@ public class FournisseurNotFoundException(Guid id)
 public class FournisseurBlockedException(Guid id)
     : InvalidOperationException($"Fournisseur '{id}' is blocked.");
 
+public class BonNotFoundException(Guid id)
+    : KeyNotFoundException($"Bon with '{id}' was not found.");
 public class BonEntreNotFoundException(Guid id)
     : KeyNotFoundException($"BonEntre '{id}' was not found.");
 
@@ -24,7 +26,7 @@ public class ArticleNotInSourceBonException : Exception
 public class RetourQuantityExceedsSourceException : Exception
 {
     public RetourQuantityExceedsSourceException(Guid articleId, decimal requested, decimal max)
-        : base($"Returned quantity {requested} for article '{articleId}' exceeds source quantity of {max}.")
+        : base($"Returned quantity {(int)requested} for article '{articleId}' exceeds source quantity of {(int)max}.")
     {
     }
 }

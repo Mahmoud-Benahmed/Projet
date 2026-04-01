@@ -1,4 +1,4 @@
-﻿using ERP.StockService.API.Routes;
+﻿using ERP.StockService.Properties;
 using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -90,34 +90,11 @@ public class BonEntreController : ControllerBase
         return NoContent();
     }
 
-    // =========================
-    // LIGNES
-    // =========================
-    [HttpPost(ApiRoutes.BonEntres.AddLigne)]
-    public async Task<IActionResult> AddLigne(
-        [FromRoute] Guid id,
-        [FromBody] AddLigneRequestDto dto)
-    {
-        var result = await _service.AddLigneAsync(id, dto);
-        return Ok(result);
-    }
 
-    [HttpPut(ApiRoutes.BonEntres.UpdateLigne)]
-    public async Task<IActionResult> UpdateLigne(
-        [FromRoute] Guid id,
-        [FromRoute] Guid ligneId,
-        [FromBody] AddLigneRequestDto dto)
+    [HttpGet(ApiRoutes.BonEntres.GetStats)]
+    public async Task<IActionResult> GetStats()
     {
-        var result = await _service.UpdateLigneAsync(id, ligneId, dto);
-        return Ok(result);
-    }
-
-    [HttpDelete(ApiRoutes.BonEntres.RemoveLigne)]
-    public async Task<IActionResult> RemoveLigne(
-        [FromRoute] Guid id,
-        [FromRoute] Guid ligneId)
-    {
-        var result = await _service.RemoveLigneAsync(id, ligneId);
+        var result = await _service.GetStatsAsync();
         return Ok(result);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ERP.StockService.Domain;
 using ERP.StockService.Domain.Entre;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ERP.StockService.Infrastructure.Persistence;
@@ -17,6 +18,27 @@ public sealed class StockDbContext(DbContextOptions<StockDbContext> options) : D
 
     protected override void OnModelCreating(ModelBuilder m) =>
         m.ApplyConfigurationsFromAssembly(typeof(StockDbContext).Assembly);
+
+    public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified && e.Entity is PieceStock))
+        {
+            var prop = entry.Property("UpdatedAt");
+
+            // ✅ Tell EF: "the original DB value is whatever is currently there"
+            //    so the WHERE clause uses the current DB value, not null
+            prop.OriginalValue = prop.CurrentValue;
+
+            // ✅ Then set the new value we want to save
+            prop.CurrentValue = now;
+        }
+
+        return await base.SaveChangesAsync(ct);
+    }
+
 }
 
 // ── Fournisseur ───────────────────────────────────────────────────────────────
@@ -28,13 +50,17 @@ internal sealed class FournisseurConfiguration : IEntityTypeConfiguration<Fourni
         b.HasKey(f => f.Id);
         b.Property(f => f.Name).IsRequired().HasMaxLength(200);
         b.Property(f => f.Address).IsRequired().HasMaxLength(500);
-        b.Property(f => f.Phone).IsRequired().HasMaxLength(20);
+        b.Property(f => f.Phone).IsRequired().HasMaxLength(50);
         b.Property(f => f.Email).HasMaxLength(200);
         b.Property(f => f.TaxNumber).IsRequired().HasMaxLength(50);
         b.Property(f => f.RIB).IsRequired().HasMaxLength(50);
         b.Property(f => f.IsDeleted).IsRequired();
         b.Property(f => f.IsBlocked).IsRequired();
         b.Property(f => f.CreatedAt).IsRequired();
+        b.Property(f => f.UpdatedAt)
+                 .IsConcurrencyToken(false)
+                 .ValueGeneratedNever()
+                 .UsePropertyAccessMode(PropertyAccessMode.Property);
 
         b.HasIndex(f => f.TaxNumber)
          .IsUnique()
@@ -56,6 +82,10 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
         b.Property(x => x.Observation).HasMaxLength(1000);
         b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
+        b.Property(x => x.UpdatedAt)
+         .IsConcurrencyToken(false)
+         .ValueGeneratedNever()
+        .UsePropertyAccessMode(PropertyAccessMode.Property);
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
@@ -100,6 +130,11 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
         b.Property(x => x.Observation).HasMaxLength(1000);
         b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
+        b.Property(x => x.UpdatedAt)
+                 .IsConcurrencyToken(false)
+                 .ValueGeneratedNever()
+                 .UsePropertyAccessMode(PropertyAccessMode.Property);
+
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
@@ -140,6 +175,11 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
         b.Property(x => x.Observation).HasMaxLength(1000);
         b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
+        b.Property(x => x.UpdatedAt)
+                 .IsConcurrencyToken(false)
+                 .ValueGeneratedNever()
+                 .UsePropertyAccessMode(PropertyAccessMode.Property);
+
 
         b.Property(x => x.SourceType)
          .IsRequired()
