@@ -16,6 +16,8 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { CategoriesService, ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CurrencyConfigService } from '../../../services/currency-config.service';
+import { ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 type ViewMode = 'list' | 'list-deleted' | 'list-blocked' | 'create' | 'edit' | 'view';
 
@@ -74,7 +76,8 @@ export class ClientsComponent implements OnInit {
     private fb: FormBuilder,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
-    private currencyConfig: CurrencyConfigService
+    private currencyConfig: CurrencyConfigService,
+    private route: ActivatedRoute
   ) {
     this.clientForm = this.fb.group({
       name:        ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
@@ -90,7 +93,14 @@ export class ClientsComponent implements OnInit {
   ngOnInit(): void {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
-    this.reload();
+
+    const id = this.route.snapshot.paramMap.get('id');
+
+    if (id) {
+      this.openClientFromRoute(id);
+    } else {
+      this.reload();
+    }
   }
 
   // ── Page title ────────────────────────────────────────────────────────────
@@ -116,6 +126,26 @@ export class ClientsComponent implements OnInit {
 
   // ── Sorting ───────────────────────────────────────────────────────────────
 
+  get   sortedData(){
+    const data = [...this.dataSource.filteredData];
+
+    if (!this.sortColumn) return data;
+
+    return data.sort((a, b) => {
+      let valA = this.getNestedValue(a, this.sortColumn);
+      let valB = this.getNestedValue(b, this.sortColumn);
+
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      return (valA < valB ? -1 : valA > valB ? 1 : 0) *
+        (this.sortDirection === 'asc' ? 1 : -1);
+    });
+  }
+
   sortBy(column: string): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -125,23 +155,6 @@ export class ClientsComponent implements OnInit {
     }
   }
 
-  get sortedData(): ClientResponseDto[] {
-    const data = [...this.dataSource.filteredData];
-    if (!this.sortColumn) return data;
-
-    return data.sort((a, b) => {
-      let valA = this.getNestedValue(a, this.sortColumn);
-      let valB = this.getNestedValue(b, this.sortColumn);
-
-      if (valA == null) return 1;
-      if (valB == null) return -1;
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
-
-      return (valA < valB ? -1 : valA > valB ? 1 : 0) *
-        (this.sortDirection === 'asc' ? 1 : -1);
-    });
-  }
 
   applyFilter(): void {
     this.dataSource.filter = this.searchQuery.trim().toLowerCase();
@@ -155,18 +168,15 @@ export class ClientsComponent implements OnInit {
   // ── Load (pure fetchers — no mode switching) ──────────────────────────────
 
   load(): void {
-    this.loading = true;
     this.errors = [];
     this.clientsService.getAll(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
         this.dataSource.data = res.items.filter(c => !c.isBlocked);
         this.totalCount = res.totalCount;
-        this.loading = false;
         this.cdr.markForCheck();
       },
       error: () => {
         this.flash('error', 'Failed to load clients.');
-        this.loading = false;
       },
     });
   }
@@ -187,7 +197,6 @@ export class ClientsComponent implements OnInit {
       next: (res) => {
         this.dataSource.data = res.items.filter(c => c.isBlocked);
         this.totalCount = res.totalCount;
-        this.loading = false;
         this.cdr.markForCheck();
       },
       error: () => this.flash('error', 'Failed to load blocked clients.'),
@@ -197,7 +206,7 @@ export class ClientsComponent implements OnInit {
   loadCategories(): void {
     this.categoriesService.getAll().subscribe({
       next: (cats) => { this.categories = cats; this.cdr.markForCheck(); },
-      error: () => this.flash('error', 'Failed to load categories.'),
+      error: () => this.flash('error', 'Failed to load categories.')
     });
   }
 
@@ -222,16 +231,22 @@ export class ClientsComponent implements OnInit {
   }
 
   reload(): void {
-    if (this.isDeletedList()) {
-      this.loadDeleted();
-    } else if (this.isBlockedList()) {
-      this.loadBlocked();
-    } else {
-      this.load();
-    }
-    this.loadCategories();
-    this.loadStats();
-    this.cdr.markForCheck();
+    forkJoin({
+      clients: this.clientsService.getAll(this.pageNumber(), this.pageSize()),
+      stats: this.clientsService.getStats(),
+      categories: this.categoriesService.getAll()
+    })
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
+      next: ({ clients, stats, categories }) => {
+        this.dataSource.data = clients.items;
+        this.totalCount = clients.totalCount;
+        this.stats = stats;
+        this.categories = categories;
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', 'Failed to reload data')
+    });
   }
 
   // ── Stat card clicks ──────────────────────────────────────────────────────
@@ -272,6 +287,7 @@ export class ClientsComponent implements OnInit {
     this.previousMode = this.viewMode();
     this.setViewMode('view');
     this.selectedClient = client;
+
     this.selectedCategoryId = '';
     this.cdr.markForCheck();
   }
@@ -312,27 +328,39 @@ export class ClientsComponent implements OnInit {
   private resolveCancel(): ViewMode {
     const current = this.viewMode();
 
-    // edit → view: go back to view only if selectedClient is still available
     if (current === 'edit' && this.previousMode === 'view' && this.selectedClient) {
       return 'view';
     }
 
-    // view → any list variant: go back to wherever the list was
     if (current === 'view' && (
       this.previousMode === 'list' ||
       this.previousMode === 'list-deleted' ||
       this.previousMode === 'list-blocked'
     )) {
+      // ✅ data may never have been loaded if we arrived via route navigation
+      this.reloadForMode(this.previousMode);
       return this.previousMode;
     }
 
-    // create → any list variant: always safe
     if (current === 'create') {
+      this.reloadForMode(this.previousMode ?? 'list');
       return this.previousMode ?? 'list';
     }
 
-    // fallback
+    this.load();
     return 'list';
+  }
+
+  // ✅ new helper — loads the right dataset for any list mode
+  private reloadForMode(mode: ViewMode): void {
+    if (mode === 'list-deleted') {
+      this.loadDeleted();
+    } else if (mode === 'list-blocked') {
+      this.loadBlocked();
+    } else {
+      this.load();
+    }
+    this.loadStats();
   }
 
   restore(client: ClientResponseDto): void {
@@ -542,6 +570,25 @@ export class ClientsComponent implements OnInit {
 
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
+  }
+
+  private openClientFromRoute(id: string): void {
+    this.clientsService.getById(id).subscribe({
+      next: (client) => {
+        this.selectedClient = client;
+        this.setViewMode('view');
+
+        this.loadCategories();
+        this.loadStats();
+
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.flash('error', 'Client not found.');
+        this.setViewMode('list');
+        this.reload();
+      }
+    });
   }
 
   setViewMode(mode: ViewMode): void {

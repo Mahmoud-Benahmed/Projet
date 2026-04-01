@@ -109,6 +109,33 @@
           </div>
         </div>
 
+        <!-- Stock -->
+        <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+          <button class="sidebar__item sidebar__item--group"
+                  (click)="toggleGroup('stock')"
+                  type="button"
+                  [class.sidebar__item--group-open]="openGroups['stock']">
+            <mat-icon>inventory</mat-icon><span>Stock</span>
+            <mat-icon class="sidebar__chevron" [class.open]="openGroups['stock']">expand_more</mat-icon>
+          </button>
+          <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['stock']">
+            <a class="sidebar__subitem"
+              routerLink="/stock/fournisseurs"
+              routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}"
+              (click)="closeMobileNav()">
+              <mat-icon>local_shipping</mat-icon> Fournisseurs
+            </a>
+            <a class="sidebar__subitem"
+              routerLink="/stock/bons"
+              routerLinkActive="sidebar__subitem--active"
+              [routerLinkActiveOptions]="{exact:true}"
+              (click)="closeMobileNav()">
+              <mat-icon>receipt_long</mat-icon> Bons
+            </a>
+          </div>
+        </div>
+
         <!-- Audit Log -->
         <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
            *ngIf="authService.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS)" (click)="closeMobileNav()">
@@ -232,6 +259,31 @@
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}">
               <mat-icon>list_alt</mat-icon> <span>Categories</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Stock -->
+      <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+        <button class="sidebar__item sidebar__item--group"
+                (click)="toggleGroup('stock')"
+                type="button"
+                [class.sidebar__item--group-open]="openGroups['stock']">
+          <mat-icon>inventory</mat-icon> <span>Stock</span>
+          <mat-icon class="sidebar__chevron" [class.open]="openGroups['stock']">expand_more</mat-icon>
+        </button>
+        <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['stock']">
+          <a class="sidebar__subitem"
+            routerLink="/stock/fournisseurs"
+            routerLinkActive="sidebar__subitem--active"
+            [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>local_shipping</mat-icon> <span>Fournisseurs</span>
+          </a>
+          <a class="sidebar__subitem"
+            routerLink="/stock/bons"
+            routerLinkActive="sidebar__subitem--active"
+            [routerLinkActiveOptions]="{exact:true}">
+            <mat-icon>receipt_long</mat-icon> <span>Bons</span>
           </a>
         </div>
       </div>
