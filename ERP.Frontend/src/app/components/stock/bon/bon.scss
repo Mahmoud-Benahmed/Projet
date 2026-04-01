@@ -1,0 +1,105 @@
+@use 'shared' as *;
+
+// ── Add these rules to your existing bon.scss ─────────────────────────────
+
+// Section divider hint text (ligne count indicator)
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #6b7280);
+    font-weight: 400;
+  }
+
+  &__required {
+    color: var(--color-danger, #ef4444);
+    font-weight: 500;
+  }
+}
+
+// Empty state inside the form panel
+.lignes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: var(--text-muted, #6b7280);
+  text-align: center;
+
+  p {
+    font-size: 0.85rem;
+    margin: 0;
+  }
+}
+
+// Row that holds the "+ Add Ligne" button below the table
+.lignes-add-row {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0.75rem 0 0.25rem;
+}
+
+// Outline variant of btn-add (less prominent trigger)
+.btn-add--outline {
+  background: transparent !important;
+  border: 1.5px dashed var(--color-primary, #3b82f6) !important;
+  color: var(--color-primary, #3b82f6) !important;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary, #3b82f6) 8%, transparent) !important;
+  }
+}
+
+// Inline ligne form (embedded inside the form panel, not a modal)
+.inline-ligne-form {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--surface-secondary, #f9fafb);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    background: var(--surface-accent, #f1f5f9);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+  }
+
+  &__title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary, #374151);
+  }
+
+  &__body {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.85rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface-accent, #f1f5f9);
+  }
+}
+
+// Final form actions row pinned at the bottom of the form panel
+.form__actions--panel {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  justify-content: flex-end;
+}
