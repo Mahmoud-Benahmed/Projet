@@ -347,11 +347,6 @@
     <div class="panel__header">
       <h2 class="panel__title">Bon #{{ selectedBon.numero }}</h2>
       <div class="panel__header-actions">
-        <button class="btn-add btn-add--sm"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && !selectedBon.isDeleted"
-                (click)="openAddLigne(selectedBon)">
-          + Add Ligne
-        </button>
         <button class="btn-back" (click)="cancel()">← Back</button>
       </div>
     </div>
@@ -809,65 +804,6 @@
         </button>
       </div>
 
-    </div>
-  </div>
-
-  <!-- ===================== LIGNE MODAL (VIEW panel only) ===================== -->
-  <div class="panel" *ngIf="ligneModalOpen" (click)="closeLigneModal()">
-    <div (click)="$event.stopPropagation()">
-      <div class="panel__header">
-        <h2 class="panel__title">{{ editingLigneId ? 'Edit Ligne' : 'Add Ligne' }}</h2>
-        <button class="icon-btn" (click)="closeLigneModal()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <form class="panel__body" [formGroup]="ligneForm">
-        <div class="form">
-          <div class="form__field">
-            <label class="form__label">Article *</label>
-            <select class="form__input form__select" formControlName="articleId"
-                    (change)="onArticleSelected(ligneForm.get('articleId')!.value)"
-                    [class.form__input--error]="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
-              <option value="" selected disabled>— Select an article —</option>
-              <option *ngFor="let article of filteredArticles" [value]="article.id">
-                {{ article.codeRef }} — {{ article.libelle }} ({{ article.prix | number:'1.2-2' }})
-              </option>
-            </select>
-            <span class="form__error"
-                  *ngIf="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
-              Article is required
-            </span>
-          </div>
-          <div class="form__field">
-            <label class="form__label">Quantity *</label>
-            <input class="form__input" formControlName="quantity" type="number" min="0.1" step="0.1"
-                   [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"/>
-            <span class="form__error" *ngIf="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched">
-              Quantity must be > 0
-            </span>
-          </div>
-          <div class="form__field">
-            <label class="form__label">Price *</label>
-            <input class="form__input" formControlName="price" type="number" min="0" step="0.1"
-                   [class.form__input--error]="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched"/>
-            <span class="form__error" *ngIf="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched">
-              Price must be ≥ 0
-            </span>
-          </div>
-          <div class="form__field form__field--full" *ngIf="activeBonType === 'retour'">
-            <label class="form__label">Remarque <span class="form__optional">(optional)</span></label>
-            <input class="form__input" formControlName="remarque" placeholder="Optional remark" />
-          </div>
-        </div>
-        <div class="form__actions">
-          <button type="button" class="btn-secondary" (click)="closeLigneModal()">Cancel</button>
-          <button type="submit" class="btn-add" [disabled]="ligneForm.invalid || isLigneSubmitting">
-            {{ editingLigneId ? 'Update' : 'Add' }}
-          </button>
-        </div>
-      </form>
     </div>
   </div>
 

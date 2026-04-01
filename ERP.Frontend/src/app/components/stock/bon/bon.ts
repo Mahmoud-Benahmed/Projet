@@ -128,7 +128,6 @@ export class BonsComponent implements OnInit {
   isInlineLigneSubmitting = false;
 
   // ── Ligne modal (kept for VIEW panel only) ─────────────────────────────────
-  ligneModalOpen    = false;
   editingLigneId: string | null = null;
   isLigneSubmitting = false;
 
@@ -242,10 +241,10 @@ export class BonsComponent implements OnInit {
 
     switch (this.activeBonType) {
       case 'entre':
-        request$ = this.stock.getBonEntresByDateRange(from, to, this.pageSize(), this.pageNumber());
+        request$ = this.stock.getBonEntresByDateRange(from, to, this.pageNumber(), this.pageSize());
         break;
       case 'sortie':
-        request$ = this.stock.getBonSortiesByDateRange(from, to, this.pageSize(), this.pageNumber());
+        request$ = this.stock.getBonSortiesByDateRange(from, to,this.pageNumber(), this.pageSize());
         break;
       case 'retour':
         request$ = this.stock.getBonRetoursByDateRange(from, to, this.pageNumber(), this.pageSize());
@@ -468,53 +467,51 @@ export class BonsComponent implements OnInit {
   }
 
   onSourceBonChange(id: string): void {
-    const match = this.allSourceBons.find(b => b.id === id);
-    if (!match) return;
+      const match = this.allSourceBons.find(b => b.id === id);
+      if (!match) return;
 
-    this.headerForm.patchValue({ sourceType: match.sourceType });
+      this.headerForm.patchValue({ sourceType: match.sourceType });
 
-    if (this.isCreate() && this.activeBonType === 'retour') {
-      const $req: Observable<BonRecord> = match.sourceType === RetourSourceType.BonEntre
-        ? this.stock.getBonEntreById(id)
-        : this.stock.getBonSortieById(id);
+      if (this.isCreate() && this.activeBonType === 'retour') {
+        const $req: Observable<BonRecord> = match.sourceType === RetourSourceType.BonEntre
+          ? this.stock.getBonEntreById(id)
+          : this.stock.getBonSortieById(id);
 
-      $req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (res) => {
-          // Aggregate lignes by articleId
-          const aggregated = new Map<string, PendingLigne>();
+        $req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: (res) => {
+            // Aggregate lignes by articleId
+            const aggregated = new Map<string, PendingLigne>();
 
-          for (const l of res.lignes) {
-            const existing = aggregated.get(l.articleId);
-            if (existing) {
-              // Sum quantities and update total
-              existing.quantity += l.quantity;
-              existing.total = existing.quantity * existing.price;
-              // Optionally, keep the first remarque (or merge)
-              // existing.remarque = existing.remarque ?? l.remarque;
-            } else {
-              aggregated.set(l.articleId, {
-                _localId: crypto.randomUUID(),
-                articleId: l.articleId,
-                articleLabel: this.getArticleLabel(l.articleId),
-                quantity: l.quantity,
-                price: l.price,
-                remarque: l.remarque,
-                total: l.quantity * l.price,
-              });
+            for (const l of res.lignes) {
+              const existing = aggregated.get(l.articleId);
+              if (existing) {
+                // Sum quantities and recalculate total
+                existing.quantity += l.quantity;
+                existing.total = existing.quantity * existing.price; // ← FIXED: recalculate total after quantity update
+              } else {
+                aggregated.set(l.articleId, {
+                  _localId: crypto.randomUUID(),
+                  articleId: l.articleId,
+                  articleLabel: this.getArticleLabel(l.articleId),
+                  quantity: l.quantity,
+                  price: l.price,
+                  remarque: l.remarque,
+                  total: l.quantity * l.price,
+                });
+              }
             }
-          }
 
-          // Convert map to array
-          this.pendingLignes = Array.from(aggregated.values());
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          const error = err.error as HttpError;
-          this.flash('error', error.message ?? 'Failed to load source bon lignes.');
-        }
-      });
-    }
-}
+            // Convert map to array
+            this.pendingLignes = Array.from(aggregated.values());
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            const error = err.error as HttpError;
+            this.flash('error', error.message ?? 'Failed to load source bon lignes.');
+          }
+        });
+      }
+  }
 
   private getArticleLabel(articleId: string): string {
     const article = this.articles.find(a => a.id === articleId);
@@ -643,9 +640,7 @@ export class BonsComponent implements OnInit {
 
       if (this.inlineLigneLocalId) {
         // editing existing pending ligne
-        const idx = this.pendingLignes.findIndex(l => l._localId === this.inlineLigneLocalId
-                                                    && l.articleId === val.articleId
-                                                    && l.price === val.price);
+        const idx = this.pendingLignes.findIndex(l => l._localId === this.inlineLigneLocalId);
         if (idx !== -1) {
           this.pendingLignes[idx] = {
             ...this.pendingLignes[idx],
@@ -657,35 +652,32 @@ export class BonsComponent implements OnInit {
             total:        val.quantity * val.price,
           };
         }
+        this.closeInlineLigne();
+        this.cdr.markForCheck();
+        return;
       } else {
-        const existingIndex = this.pendingLignes.findIndex(l => l.articleId === val.articleId
-                                                              && l.price === val.price);
+        const existingIndex = this.pendingLignes.findIndex(l => l.articleId === val.articleId);
 
         if (existingIndex !== -1) {
-          this.pendingLignes = this.pendingLignes.map(l => {
-            if (l.articleId === val.articleId) {
-              const newQuantity = l.quantity + val.quantity;
-
-              return {
-                ...l,
-                quantity: newQuantity,
-                total: l.quantity * l.price,
-              };
-            }
-
-            return l; // IMPORTANT
-          });
+          // Merge with existing ligne of the same article
+          const existing = this.pendingLignes[existingIndex];
+          const newQuantity = existing.quantity + val.quantity;
+          this.pendingLignes[existingIndex] = {
+            ...existing,
+            quantity: newQuantity,
+            total: newQuantity * existing.price, // ← FIXED: recalculate total
+          };
         } else {
-            this.pendingLignes.push({
-              _localId: crypto.randomUUID(),
-              articleId: val.articleId,
-              articleLabel: label,
-              quantity: val.quantity,
-              price: val.price,
-              remarque: val.remarque || null,
-              total: val.quantity * val.price,
-            });
-          }
+          this.pendingLignes.push({
+            _localId: crypto.randomUUID(),
+            articleId: val.articleId,
+            articleLabel: label,
+            quantity: val.quantity,
+            price: val.price,
+            remarque: val.remarque || null,
+            total: val.quantity * val.price,
+          });
+        }
         this.closeInlineLigne();
         this.cdr.markForCheck();
         return;
@@ -882,7 +874,6 @@ export class BonsComponent implements OnInit {
     this.selectedBon    = bon;
     this.editingLigneId = null;
     this.ligneForm      = this.buildLigneForm();
-    this.ligneModalOpen = true;
     this.loadArticles();
   }
 
@@ -896,11 +887,8 @@ export class BonsComponent implements OnInit {
       price:     ligne.price,
       remarque:  ligne.remarque ?? '',
     });
-    this.ligneModalOpen = true;
     this.loadArticles();
   }
-
-  closeLigneModal(): void { this.ligneModalOpen = false; this.editingLigneId = null; }
 
   // ── Casting helpers ────────────────────────────────────────────────────────
   asEntre(b: BonRecord):  BonEntreResponse  { return b as BonEntreResponse; }
