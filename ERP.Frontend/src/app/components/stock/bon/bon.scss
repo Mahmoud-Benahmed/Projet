@@ -10,12 +10,12 @@
 
   &__hint {
     font-size: 0.75rem;
-    color: var(--text-muted, #6b7280);
+    color: $text-mid;
     font-weight: 400;
   }
 
   &__required {
-    color: var(--color-danger, #ef4444);
+    color: $red;
     font-weight: 500;
   }
 }
@@ -27,12 +27,17 @@
   align-items: center;
   gap: 0.5rem;
   padding: 2rem 1rem;
-  color: var(--text-muted, #6b7280);
+  color: $text-mid;
   text-align: center;
+
+  svg {
+    color: $text-lo;
+  }
 
   p {
     font-size: 0.85rem;
     margin: 0;
+    color: $text-mid;
   }
 }
 
@@ -46,20 +51,20 @@
 // Outline variant of btn-add (less prominent trigger)
 .btn-add--outline {
   background: transparent !important;
-  border: 1.5px dashed var(--color-primary, #3b82f6) !important;
-  color: var(--color-primary, #3b82f6) !important;
+  border: 1.5px dashed $blue !important;
+  color: $blue !important;
 
   &:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-primary, #3b82f6) 8%, transparent) !important;
+    background: $blue-bg !important;
   }
 }
 
 // Inline ligne form (embedded inside the form panel, not a modal)
 .inline-ligne-form {
   margin-top: 0.75rem;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
-  background: var(--surface-secondary, #f9fafb);
+  border: 1px solid $border;
+  border-radius: 12px;
+  background: $bg-card;
   overflow: hidden;
 
   &__header {
@@ -67,8 +72,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.65rem 1rem;
-    background: var(--surface-accent, #f1f5f9);
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: $bg-card-hi;
+    border-bottom: 1px solid $border;
   }
 
   &__title {
@@ -76,7 +81,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-secondary, #374151);
+    color: $text-mid;
   }
 
   &__body {
@@ -91,8 +96,8 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 0.65rem 1rem;
-    border-top: 1px solid var(--border-color, #e5e7eb);
-    background: var(--surface-accent, #f1f5f9);
+    border-top: 1px solid $border;
+    background: $bg-card-hi;
   }
 }
 
@@ -100,6 +105,278 @@
 .form__actions--panel {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color, #e5e7eb);
+  border-top: 1px solid $border;
   justify-content: flex-end;
+  display: flex;
+  gap: 1rem;
+}
+
+// Table styling for inner tables (lignes table)
+.table--inner {
+  background: $bg-card-hi;
+  border-radius: 12px;
+  overflow: hidden;
+
+  thead {
+    background: $bg-card-hi;
+
+    th {
+      color: $text-mid;
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid $border;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid $border;
+
+      &:hover {
+        background: $blue-bg;
+      }
+
+      td {
+        padding: 0.75rem 1rem;
+        color: $text-hi;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  tfoot {
+    background: $bg-card-hi;
+
+    td {
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      border-top: 1px solid $border;
+    }
+  }
+
+  .td--price {
+    font-family: monospace;
+    font-weight: 500;
+    color: $blue;
+  }
+
+  .td--total {
+    font-weight: 700;
+    color: $blue;
+  }
+
+  .td--total-label {
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .td--mono {
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+
+  .td--truncate {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .td--actions {
+    white-space: nowrap;
+    text-align: center;
+
+    button {
+      margin: 0 0.25rem;
+    }
+  }
+}
+
+// Icon buttons styling
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 15px;
+    height: 15px;
+    stroke: $text-mid;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  &:hover {
+    background: $bg-card-hi;
+
+    svg {
+      stroke: $blue;
+    }
+  }
+
+  &--edit:hover svg {
+    stroke: $blue;
+  }
+
+  &--delete:hover svg {
+    stroke: $red;
+  }
+}
+
+// Button variants (already defined in shared, but adding specific styles)
+.btn-add {
+  background: $blue;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #6b94ff;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid $border;
+  color: $text-mid;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: $bg-card-hi;
+    border-color: $blue;
+    color: $text-hi;
+  }
+}
+
+// Form field styling to match theme
+.form__field {
+  margin-bottom: 1rem;
+}
+
+.form__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: $text-mid;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form__optional {
+  font-weight: 400;
+  color: $text-lo;
+  font-size: 0.7rem;
+}
+
+.form__input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: $bg-page;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text-hi;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+    box-shadow: 0 0 0 2px $blue-bg;
+  }
+
+  &--error {
+    border-color: $red;
+
+    &:focus {
+      box-shadow: 0 0 0 2px $red-bg;
+    }
+  }
+}
+
+.form__select {
+  cursor: pointer;
+
+  option {
+    background: $bg-page;
+    color: $text-hi;
+  }
+}
+
+.form__error {
+  display: block;
+  font-size: 0.7rem;
+  color: $red;
+  margin-top: 0.25rem;
+}
+
+// Table scroll wrapper
+.table-scroll-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-page;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-hi;
+    border-radius: 3px;
+
+    &:hover {
+      background: $blue;
+    }
+  }
+}
+
+// Table card styling - using shared variables
+.table-card {
+  background: $bg-card;
+  border-radius: 12px;
+  border: 1px solid $border;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .inline-ligne-form__body {
+    grid-template-columns: 1fr;
+  }
+
+  .table--inner {
+    .td--truncate {
+      max-width: 120px;
+    }
+  }
 }
