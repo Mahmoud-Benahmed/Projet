@@ -19,6 +19,8 @@ import { ArticleCategoriesComponent } from './components/articles/categories/cat
 import { PRIVILEGES } from './services/auth/auth.service';
 import { ClientsComponent } from './components/clients/home/home';
 import { ClientCategoriesComponent } from './components/clients/categories/categories';
+import { FournisseurComponent } from './components/stock/fournisseur/fournisseur';
+import { BonsComponent } from './components/stock/bon/bon';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
@@ -49,8 +51,14 @@ export const routes: Routes = [
       { path: 'articles', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
       { path: 'articles/categories', component: ArticleCategoriesComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE']) } },
 
-      { path: 'clients', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
       { path: 'clients/categories', component: ClientCategoriesComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT']) } },
+      { path: 'clients/:id', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','UPDATE_CLIENT','DELETE_CLIENT']) } },
+      { path: 'clients', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
+
+
+      { path: 'stock/fournisseurs/:id', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK']) } },
+      { path: 'stock/fournisseurs', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK','UPDATE_STOCK','ADD_ENTRY']) } },
+      { path: 'stock/bons', component: BonsComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK', 'UPDATE_STOCK', 'ADD_ENTRY']) } },
 
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]

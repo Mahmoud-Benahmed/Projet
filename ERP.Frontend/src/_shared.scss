@@ -151,6 +151,77 @@ $bp-xl:  1200px;
 }
 
 // ========================
+// Type Tabs
+// ========================
+.type-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid $border;
+  padding-bottom: 0;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) {
+    gap: 0.25rem;
+  }
+}
+
+.type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; // sits on top of the container border-bottom
+
+  color: $text-hi;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.6rem 1rem;
+
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+
+  svg { flex-shrink: 0; transition: stroke 0.15s; }
+
+  &:hover {
+    color: $text-hi;
+    border-bottom-color: $border-hi;
+  }
+
+  &--active {
+    color: $blue;
+    border-bottom-color: $blue;
+    font-weight: 600;
+
+    svg { stroke: $blue; }
+
+    &:hover {
+      color: $blue;
+      border-bottom-color: $blue;
+    }
+  }
+
+  @media (max-width: $bp-sm) {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.65rem;
+    gap: 0.35rem;
+
+    // Hide label text, show only icon on very small screens
+    @media (max-width: 360px) {
+      font-size: 0;      // hides text
+      gap: 0;
+      padding: 0.5rem 0.75rem;
+      svg { font-size: initial; } // reset so icon stays visible
+    }
+  }
+}
+
+// ========================
 // Stat Cards
 // ========================
 .stats-grid {
@@ -288,6 +359,75 @@ $bp-xl:  1200px;
   transition: border-color 0.15s;
   &::placeholder { color: $text-lo; }
   &:focus { border-color: $blue; }
+}
+
+// ========================
+// Toolbar date filter
+// ========================
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) {
+    width: 100%;
+  }
+
+  // Constrain the date inputs so they don't blow out the toolbar
+  .form__input--sm {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.75rem;
+    width: auto;
+    min-width: 130px;
+    color: $text-hi;
+
+    @media (max-width: $bp-sm) {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__sep {
+    color: $text-hi;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  // Override the generic .btn-icon inside the date filter —
+  // it should look like a small toolbar action, not a table row button
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid $border;
+    background: $bg-card-hi;
+    color: $text-mid;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      border-color: $blue-border;
+      background: $blue-bg;
+      color: $blue;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    // The clear (×) button gets a red hover
+    &:last-child:hover:not(:disabled) {
+      border-color: $red-border;
+      background: $red-bg;
+      color: $red;
+    }
+  }
 }
 
 .btn-add {
@@ -444,6 +584,7 @@ $bp-xl:  1200px;
 }
 
 .role-badge {
+  text-align: center;
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
@@ -453,6 +594,14 @@ $bp-xl:  1200px;
   background: $blue-bg;
   color: $blue;
   border: 1px solid $blue-border;
+
+  &--clickable:hover {
+    background: $blue-bg;
+    color: $blue;
+    border: 1px solid $blue-border;
+    opacity: 0.8;
+    cursor: pointer;
+  }
 }
 
 // =======================
@@ -573,6 +722,7 @@ $bp-xl:  1200px;
 // Panel
 // ========================
 .panel {
+  margin-bottom: 1rem;
   background: $bg-card;
   border: 1px solid $border;
   border-radius: 12px;
