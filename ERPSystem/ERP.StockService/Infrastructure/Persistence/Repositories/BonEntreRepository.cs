@@ -108,10 +108,11 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             DateTime from, DateTime to, int page, int size)
         {
             var query = ActiveQueryWithFournisseur()
-                .Where(b => from<= b.CreatedAt && b.CreatedAt <= to)
+                .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date)
                 .OrderByDescending(b => b.CreatedAt);
 
             var total = await query.CountAsync();
+
             var items = await query
                 .Skip((page - 1) * size)
                 .Take(size)

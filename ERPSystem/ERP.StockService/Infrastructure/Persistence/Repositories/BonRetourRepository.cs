@@ -101,7 +101,7 @@ public class BonRetourRepository : IBonRetourRepository
     {
         var query = _context.BonRetours
             .Include(b => b.Lignes)
-            .Where(b => !b.IsDeleted && b.CreatedAt >= from && b.CreatedAt <= to);
+            .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date);
 
         var total = await query.CountAsync();
         var items = await query

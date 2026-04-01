@@ -82,7 +82,7 @@ public class BonSortieRepository : IBonSortieRepository
     {
         var query = _context.BonSorties
             .Include(b => b.Lignes)
-            .Where(b => !b.IsDeleted && b.CreatedAt >= from && b.CreatedAt <= to);
+            .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date);
 
         var total = await query.CountAsync();
         var items = await query
