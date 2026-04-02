@@ -181,7 +181,8 @@ builder.Services.AddAuthorization(options =>
      .RequireAssertion(context =>
          context.User.Claims.Any(c =>
              c.Type == "privilege" &&
-             (c.Value == Privileges.Clients.MANAGE_CLIENTS ||
+             (c.Value == Privileges.Clients.VIEW_CLIENTS ||
+             c.Value == Privileges.Stock.VIEW_STOCK ||
               c.Value == Privileges.Stock.ADD_ENTRY ||
               c.Value == Privileges.Stock.UPDATE_STOCK))));
 });
