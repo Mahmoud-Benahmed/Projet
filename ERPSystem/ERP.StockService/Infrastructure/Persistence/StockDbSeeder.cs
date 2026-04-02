@@ -75,22 +75,21 @@ public static class StockDbSeeder
         var fournisseur1 = db.Fournisseurs.First(f => f.Name == "Fournisseur Alpha");
         var fournisseur2 = db.Fournisseurs.First(f => f.Name == "Fournisseur Beta");
 
-        var be1 = BonEntre.Create("BE-001", fournisseur1.Id, "Première livraison Alpha");
+        var be1 = BonEntre.Create("BE-001", fournisseur1, "Première livraison Alpha");
         be1.AddLigne(Article1Id, 100, 15.00m);
         be1.AddLigne(Article2Id, 50, 30.00m);
 
-        var be2 = BonEntre.Create("BE-002", fournisseur1.Id, "Deuxième livraison Alpha");
+        var be2 = BonEntre.Create("BE-002", fournisseur1, "Deuxième livraison Alpha");
         be2.AddLigne(Article3Id, 200, 8.50m);
 
-        var be3 = BonEntre.Create("BE-003", fournisseur2.Id, "Livraison Beta");
+        var be3 = BonEntre.Create("BE-003", fournisseur2, "Livraison Beta");
         be3.AddLigne(Article1Id, 75, 18.00m);
         be3.AddLigne(Article2Id, 40, 32.00m);
         be3.AddLigne(Article3Id, 150, 9.00m);
 
         // One soft-deleted bon for deleted-list testing
-        var be4 = BonEntre.Create("BE-004", fournisseur2.Id, "Bon annulé");
-        be4.AddLigne(Article1Id, 10, 15.00m);
-        be4.Delete();
+        var be4 = BonEntre.Create("BE-004", fournisseur2, "Bon annulé");
+        be4.AddLigne(Article1Id, 10, 15.00m);       be4.Delete();
 
         await db.BonEntres.AddRangeAsync(be1, be2, be3, be4);
         await db.SaveChangesAsync();

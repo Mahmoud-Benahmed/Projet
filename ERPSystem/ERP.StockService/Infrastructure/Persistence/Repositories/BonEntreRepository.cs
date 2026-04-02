@@ -1,6 +1,4 @@
 ﻿using ERP.StockService.Application.DTOs;
-using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories
@@ -12,7 +10,18 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         public BonEntreRepository(StockDbContext context) => _context = context;
 
         public async Task AddAsync(BonEntre b) => await _context.BonEntres.AddAsync(b);
-        public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+        public async Task SaveChangesAsync()
+        {
+            foreach (var entry in _context.ChangeTracker.Entries())
+            {
+                Console.WriteLine($"Entity: {entry.Entity.GetType().Name}, State: {entry.State}");
+                foreach (var prop in entry.Properties)
+                {
+                    Console.WriteLine($"  {prop.Metadata.Name}: Original={prop.OriginalValue}, Current={prop.CurrentValue}, Modified={prop.IsModified}");
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
 
         // ── base query helpers ────────────────────────────────────────────────
         // FIX: Include Fournisseur with IgnoreQueryFilters so that BonEntres
@@ -124,8 +133,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         // ── stats ─────────────────────────────────────────────────────────────
         public async Task<BonStatsDto> GetStatsAsync()
         {
-            var counts = await _context.BonEntres
-                .IgnoreQueryFilters()
+            var counts = await _context.BonEntres.IgnoreQueryFilters()
                 .GroupBy(_ => 1)
                 .Select(g => new
                 {

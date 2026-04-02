@@ -15,29 +15,10 @@ public sealed class StockDbContext(DbContextOptions<StockDbContext> options) : D
     public DbSet<LigneEntre> LigneEntres => Set<LigneEntre>();
     public DbSet<LigneSortie> LigneSorties => Set<LigneSortie>();
     public DbSet<LigneRetour> LigneRetours => Set<LigneRetour>();
+    public DbSet<BonNumber> BonNumber => Set<BonNumber>();
 
     protected override void OnModelCreating(ModelBuilder m) =>
         m.ApplyConfigurationsFromAssembly(typeof(StockDbContext).Assembly);
-
-    public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-
-        foreach (var entry in ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Modified && e.Entity is PieceStock))
-        {
-            var prop = entry.Property("UpdatedAt");
-
-            // ✅ Tell EF: "the original DB value is whatever is currently there"
-            //    so the WHERE clause uses the current DB value, not null
-            prop.OriginalValue = prop.CurrentValue;
-
-            // ✅ Then set the new value we want to save
-            prop.CurrentValue = now;
-        }
-
-        return await base.SaveChangesAsync(ct);
-    }
 
 }
 
@@ -59,17 +40,44 @@ internal sealed class FournisseurConfiguration : IEntityTypeConfiguration<Fourni
         b.Property(f => f.CreatedAt).IsRequired();
         b.Property(f => f.UpdatedAt)
                  .IsConcurrencyToken(false)
-                 .ValueGeneratedNever()
-                 .UsePropertyAccessMode(PropertyAccessMode.Property);
+                 .ValueGeneratedNever();
 
         b.HasIndex(f => f.TaxNumber)
          .IsUnique()
          .HasDatabaseName("IX_Fournisseurs_TaxNumber")
          .HasFilter("[IsDeleted] = 0");
 
+
         b.HasQueryFilter(f => !f.IsDeleted);
     }
 }
+
+internal sealed class DocumentNumberSequenceConfiguration : IEntityTypeConfiguration<BonNumber>
+{
+    public void Configure(EntityTypeBuilder<BonNumber> b)
+    {
+        b.ToTable("BonNumbers");
+
+        b.HasKey(s => s.Id);
+        b.Property(s => s.Id)
+            .ValueGeneratedOnAdd();
+
+        b.Property(s => s.DocumentType)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        b.Property(s => s.Prefix)
+            .IsRequired()
+            .HasMaxLength(10);
+
+        b.Property(s => s.LastNumber)
+            .IsRequired();
+
+        b.Property(s => s.Padding)
+            .IsRequired();
+    }
+}
+
 
 // ── BonEntre ──────────────────────────────────────────────────────────────────
 internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
@@ -84,8 +92,7 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
          .IsConcurrencyToken(false)
-         .ValueGeneratedNever()
-        .UsePropertyAccessMode(PropertyAccessMode.Property);
+         .ValueGeneratedNever();
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
@@ -102,6 +109,10 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
          .HasForeignKey(l => l.BonEntreId)
          .OnDelete(DeleteBehavior.Cascade);
 
+        b.Navigation(x => x.Lignes)
+         .HasField("_lignes")                          // ← tell EF the backing field
+         .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
@@ -113,6 +124,8 @@ internal sealed class LigneEntreConfiguration : IEntityTypeConfiguration<LigneEn
     {
         b.ToTable("LigneEntres");
         b.HasKey(l => l.Id);
+        b.Property(l => l.Id)
+            .ValueGeneratedOnAdd();
         b.Property(l => l.ArticleId).IsRequired();
         b.Property(l => l.Quantity).IsRequired().HasPrecision(18, 4);
         b.Property(l => l.Price).IsRequired().HasPrecision(18, 4);
@@ -132,8 +145,7 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
                  .IsConcurrencyToken(false)
-                 .ValueGeneratedNever()
-                 .UsePropertyAccessMode(PropertyAccessMode.Property);
+                 .ValueGeneratedNever();
 
 
         b.HasIndex(x => x.Numero)
@@ -146,6 +158,10 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
          .HasForeignKey(l => l.BonSortieId)
          .OnDelete(DeleteBehavior.Cascade);
 
+        b.Navigation(x => x.Lignes)
+         .HasField("_lignes")                          // ← tell EF the backing field
+         .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
@@ -157,6 +173,8 @@ internal sealed class LigneSortieConfiguration : IEntityTypeConfiguration<LigneS
     {
         b.ToTable("LigneSorties");
         b.HasKey(l => l.Id);
+        b.Property(l => l.Id)
+            .ValueGeneratedOnAdd();
         b.Property(l => l.ArticleId).IsRequired();
         b.Property(l => l.Quantity).IsRequired().HasPrecision(18, 4);
         b.Property(l => l.Price).IsRequired().HasPrecision(18, 4);
@@ -177,8 +195,7 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
                  .IsConcurrencyToken(false)
-                 .ValueGeneratedNever()
-                 .UsePropertyAccessMode(PropertyAccessMode.Property);
+                 .ValueGeneratedNever();
 
 
         b.Property(x => x.SourceType)
@@ -196,6 +213,10 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
          .HasForeignKey(l => l.BonRetourId)
          .OnDelete(DeleteBehavior.Cascade);
 
+        b.Navigation(x => x.Lignes)
+         .HasField("_lignes")                          // ← tell EF the backing field
+         .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
@@ -207,6 +228,8 @@ internal sealed class LigneRetourConfiguration : IEntityTypeConfiguration<LigneR
     {
         b.ToTable("LigneRetours");
         b.HasKey(l => l.Id);
+        b.Property(l => l.Id)
+            .ValueGeneratedOnAdd();
         b.Property(l => l.ArticleId).IsRequired();
         b.Property(l => l.Quantity).IsRequired().HasPrecision(18, 4);
         b.Property(l => l.Price).IsRequired().HasPrecision(18, 4);

@@ -15,7 +15,18 @@ public class BonSortieRepository : IBonSortieRepository
     // CREATE / SAVE
     // =========================
     public async Task AddAsync(BonSortie b) => await _context.BonSorties.AddAsync(b);
-    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+    public async Task SaveChangesAsync()
+    {
+        foreach (var entry in _context.ChangeTracker.Entries())
+        {
+            Console.WriteLine($"Entity: {entry.Entity.GetType().Name}, State: {entry.State}");
+            foreach (var prop in entry.Properties)
+            {
+                Console.WriteLine($"  {prop.Metadata.Name}: Original={prop.OriginalValue}, Current={prop.CurrentValue}, Modified={prop.IsModified}");
+            }
+        }
+        await _context.SaveChangesAsync();
+    }
 
     // =========================
     // READ
@@ -113,7 +124,7 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var counts = await _context.BonEntres
+        var counts = await _context.BonSorties.IgnoreQueryFilters()
             .GroupBy(_ => 1)
             .Select(g => new
             {

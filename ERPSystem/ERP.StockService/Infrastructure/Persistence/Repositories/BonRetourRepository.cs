@@ -13,7 +13,10 @@ public class BonRetourRepository : IBonRetourRepository
     // CREATE
     // =========================
     public async Task AddAsync(BonRetour b) => await _context.BonRetours.AddAsync(b);
-    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 
     // =========================
     // READ
@@ -115,7 +118,7 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var counts = await _context.BonEntres
+        var counts = await _context.BonRetours.IgnoreQueryFilters()
             .GroupBy(_ => 1)
             .Select(g => new
             {
