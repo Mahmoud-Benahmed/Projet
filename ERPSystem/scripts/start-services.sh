@@ -10,7 +10,7 @@ if [ "$1" = "build" ]; then
 fi
 
 echo "Removing existing containers..."
-docker rm -f erp-kafka erp-auth erp-gateway erp-auth-mongo erp-article erp-article-sqlserver erp-client erp-client-sqlserver 2>/dev/null || true
+docker rm -f erp-kafka erp-auth erp-gateway erp-auth-mongo erp-article erp-article-sqlserver erp-client erp-client-sqlserver erp-stock erp-stock-sqlserver 2>/dev/null || true
 
 echo "Starting shared infrastructure..."
 bash "$ROOT_DIR/scripts/start-kafka.sh"
@@ -24,7 +24,7 @@ done
 echo "Kafka is healthy!"
 
 # Loop through all ERP service folders
-for service in ERP.AuthService ERP.Gateway ERP.ArticleService ERP.ClientService; do
+for service in ERP.AuthService ERP.Gateway ERP.ArticleService ERP.ClientService ERP.StockService; do
   [ -d "$ROOT_DIR/$service" ] || continue
   if [ -f "$ROOT_DIR/$service/docker-compose.yaml" ] || [ -f "$ROOT_DIR/$service/docker-compose.yml" ]; then
     echo "--------------------------------------"
