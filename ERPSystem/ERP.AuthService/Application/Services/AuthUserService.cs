@@ -260,8 +260,7 @@ namespace ERP.AuthService.Application.Services
             if (token.IsRevoked)
             {
                 // Possible token reuse attack
-                await _refreshTokenRepository.RevokeAllByUserIdAsync(token.UserId);
-                throw new SecurityException("Reusing revoked tokens is NOT ALLOWED");
+                throw new TokenAlreadyRevokedException();
             }
 
             var user = await _userRepository.GetByIdAsync(token.UserId);
@@ -293,7 +292,7 @@ namespace ERP.AuthService.Application.Services
 
             await RevokeRefreshTokenAsyncPrivate(token);
             await _auditLogger.LogAsync(
-                AuditAction.TokenRevoked,
+                AuditAction.Logout,
                 success: true,
                 performedBy: token.UserId,
                 ipAddress: GetIp());

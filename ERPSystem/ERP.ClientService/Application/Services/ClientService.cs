@@ -171,9 +171,6 @@ public class ClientService : IClientService
     {
         var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
 
-        if (client.IsBlocked)
-            throw new ClientBlockedException(clientId);
-
         var category = await _categoryRepository.GetByIdAsync(categoryId) ?? throw new CategoryNotFoundException(categoryId);
 
         client.AddCategory(category, assignedById);
@@ -184,9 +181,6 @@ public class ClientService : IClientService
     public async Task<ClientResponseDto> RemoveCategoryAsync(Guid clientId, Guid categoryId)
     {
         var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
-        
-        if(client.IsBlocked)
-            throw new ClientBlockedException(clientId);
 
         var category = await _categoryRepository.GetByIdAsync(categoryId)
             ?? throw new CategoryNotFoundException(categoryId);
