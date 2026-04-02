@@ -14,7 +14,7 @@ import { ClientCategoryResponseDto } from '../../../services/clients/categories.
 import { CustomToggleComponent } from '../../toggle-slider/toggle-slider';
 import { ArticleCategoryResponseDto } from '../../../services/articles/categories.service';
 
-type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted';
+type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted' | 'list-inactive';
 
 @Component({
   selector: 'app-client-categories',
@@ -41,6 +41,7 @@ export class ClientCategoriesComponent implements OnInit {
 
   isList   = this.isMode('list');
   isListDeleted   = this.isMode('list-deleted');
+  isInactiveList = this.isMode('list-inactive');
   isCreate = this.isMode('create');
   isEdit   = this.isMode('edit');
   isView   = this.isMode('view');
@@ -143,7 +144,7 @@ export class ClientCategoriesComponent implements OnInit {
     this.errors = [];
     this.categoriesService.getAllPaged(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items;
+        this.dataSource.data = res.items.filter(c => c.isActive);
         this.totalCount = res.totalCount;
         this.loading = false;
         this.cdr.markForCheck();
@@ -171,6 +172,19 @@ export class ClientCategoriesComponent implements OnInit {
       next: (res) => { this.stats = res; this.cdr.markForCheck(); },
       error: () => this.flash('error', 'Failed to load stats.'),
     });
+  }
+
+
+  loadInactive(): void {
+    this.categoriesService.getAllPaged(this.pageNumber(), this.pageSize()).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items.filter(c => !c.isActive && !c.isDeleted);
+        this.totalCount = res.totalCount;
+        this.cdr.markForCheck();
+      },
+      error: (error) => this.flash('error', (error as HttpError).message || 'Failed to load categories.'),
+    });
+    this.cdr.markForCheck();
   }
 
   reload(): void {
@@ -262,6 +276,12 @@ export class ClientCategoriesComponent implements OnInit {
     if (this.isListDeleted() || this.deletedCategories < 1) return;
     this.setViewMode('list-deleted');
     this.listDeleted();
+  }
+
+  onInactiveCardClick(): void {
+    if (this.isInactiveList() || this.inactiveCategories < 1) return;
+    this.setViewMode('list-inactive');
+    this.loadInactive();
   }
 
   submit(): void {

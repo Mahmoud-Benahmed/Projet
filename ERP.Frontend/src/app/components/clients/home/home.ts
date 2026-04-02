@@ -126,7 +126,7 @@ export class ClientsComponent implements OnInit {
 
   // ── Sorting ───────────────────────────────────────────────────────────────
 
-  get   sortedData(){
+  get sortedData(){
     const data = [...this.dataSource.filteredData];
 
     if (!this.sortColumn) return data;
@@ -171,7 +171,7 @@ export class ClientsComponent implements OnInit {
     this.errors = [];
     this.clientsService.getAll(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items.filter(c => !c.isBlocked);
+        this.dataSource.filteredData = res.items.filter(c => !c.isBlocked);
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
@@ -184,7 +184,7 @@ export class ClientsComponent implements OnInit {
   loadDeleted(): void {
     this.clientsService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items;
+        this.dataSource.filteredData = res.items;
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
@@ -195,7 +195,7 @@ export class ClientsComponent implements OnInit {
   loadBlocked(): void {
     this.clientsService.getAll(this.pageNumber(), this.pageSize()).subscribe({
       next: (res) => {
-        this.dataSource.data = res.items.filter(c => c.isBlocked);
+        this.dataSource.filteredData = res.items.filter(c => c.isBlocked);
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
@@ -239,7 +239,7 @@ export class ClientsComponent implements OnInit {
     .pipe(takeUntilDestroyed(this.destroyRef))
     .subscribe({
       next: ({ clients, stats, categories }) => {
-        this.dataSource.data = clients.items;
+        this.dataSource.filteredData = clients.items.filter(c => !c.isBlocked && !c.isDeleted);
         this.totalCount = clients.totalCount;
         this.stats = stats;
         this.categories = categories;

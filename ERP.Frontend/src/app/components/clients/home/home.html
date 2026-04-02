@@ -304,7 +304,7 @@
         <div class="category-tag" *ngFor="let cat of selectedClient.categories; trackBy: trackByCategoryId">
           <span class="category-tag__code">{{ cat.code }}</span>
           <span class="category-tag__name">{{ cat.name }}</span>
-          <button class="category-tag__remove" (click)="removeCategory(selectedClient!.id, cat.id, cat.name)" title="Remove"
+          <button class="category-tag__remove" (click)="removeCategory(selectedClient!.id, cat.id, cat.name)" title="Remove category {{ cat.name }}"
                   *ngIf="!selectedClient.isDeleted">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/>
