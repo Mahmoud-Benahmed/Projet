@@ -51,6 +51,7 @@ builder.Services.AddScoped<IBonSortieRepository, BonSortieRepository>();
 builder.Services.AddScoped<IBonRetourRepository, BonRetourRepository>();
 builder.Services.AddScoped<IFournisseurRepository, FournisseurRepository>();
 
+builder.Services.AddScoped<IBonNumeroRepository, BonNumeroRepository>();
 builder.Services.AddScoped<IBonEntreService,  BonEntreService>();
 builder.Services.AddScoped<IBonSortieService, BonSortieService>();
 builder.Services.AddScoped<IBonRetourService, BonRetourService>();
