@@ -64,8 +64,8 @@ export interface LigneResponseDto{
   articleId: string,
   quantity: number;
   price: number;
-  total: number;
   remarque: string | null;
+  total: number;
 }
 export interface LigneRequestDto{
   articleId: string,
@@ -96,7 +96,6 @@ export interface CreateBonEntreRequest {
 }
 
 export interface UpdateBonEntreRequest {
-  numero:       string;
   fournisseurId:string;
   observation?: string | null;
   lignes?:       LigneRequestDto[] | null;
@@ -116,14 +115,12 @@ export interface BonSortieResponse {
 }
 
 export interface CreateBonSortieRequest {
-  numero:       string;
   clientId:     string;
   observation?: string | null;
   lignes?:      LigneRequestDto[] | null;
 }
 
 export interface UpdateBonSortieRequest {
-  numero:       string;
   clientId:     string;
   observation?: string | null;
 }
@@ -150,7 +147,6 @@ export interface BonStatsDto {
 }
 
 export interface CreateBonRetourRequest {
-  numero:       string;
   sourceId:     string;
   sourceType:   RetourSourceType;
   motif:        string;
@@ -159,7 +155,6 @@ export interface CreateBonRetourRequest {
 }
 
 export interface UpdateBonRetourRequest {
-  numero:       string;
   sourceId:     string;
   motif:        string;
   observation?: string | null;
