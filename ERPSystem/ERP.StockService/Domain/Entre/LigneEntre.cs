@@ -11,7 +11,6 @@ public sealed class LigneEntre : LigneStock
     {
         var ligne = new LigneEntre
         {
-            Id = Guid.NewGuid(),
             BonEntreId = bonEntreId,
             ArticleId = articleId,
             Quantity = qty,
@@ -21,14 +20,14 @@ public sealed class LigneEntre : LigneStock
         return ligne;
     }
 
-    public void Update(decimal qty, decimal price)
+    public override void Update(decimal qty, decimal price)
     {
         Quantity = qty;
         Price = price;
         Validate();
     }
 
-    public void Validate()
+    public override void Validate()
     {
         if (ArticleId == Guid.Empty)
             throw new InvalidOperationException("ArticleId is required.");
@@ -40,5 +39,5 @@ public sealed class LigneEntre : LigneStock
             throw new InvalidOperationException("Price cannot be negative.");
     }
 
-    public decimal CalculateTotalLigne() => Quantity * Price;
+    public override decimal CalculateTotalLigne() => Quantity * Price;
 }

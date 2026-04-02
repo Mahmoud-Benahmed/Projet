@@ -39,7 +39,7 @@ public sealed class BonRetour : PieceStock
     }
 
     // ---------------- UPDATE BON ----------------
-    public void Update(string numero, Guid sourceId, string sourceType, string motif, string? observation )
+    public void Update(Guid sourceId, string sourceType, string motif, string? observation )
     {
         GuardNotDeleted();
 
@@ -53,7 +53,7 @@ public sealed class BonRetour : PieceStock
         SourceId = sourceId;
         SourceType = parsedSourceType;
 
-        base.Update(numero, observation);
+        base.Update(observation);
     }
 
     public void ClearLignes()

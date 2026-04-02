@@ -11,19 +11,20 @@ public sealed class BonEntre : PieceStock
 
     private BonEntre() { }
 
-    public static BonEntre Create(string numero, Guid fournisseurId, string? observation = null)
+    public static BonEntre Create(string numero, Fournisseur fournisseur, string? observation = null)
     {
         if (string.IsNullOrWhiteSpace(numero))
             throw new ArgumentException("Numero is required.");
 
-        if (fournisseurId == Guid.Empty)
+        if (fournisseur is null)
             throw new ArgumentException("FournisseurId is required.");
 
         return new BonEntre
         {
             Id = Guid.NewGuid(),
             Numero = numero.Trim(),
-            FournisseurId = fournisseurId,
+            FournisseurId = fournisseur.Id,
+            Fournisseur= fournisseur,
             Observation = observation?.Trim(),
             CreatedAt = DateTime.UtcNow,
         };
@@ -56,11 +57,11 @@ public sealed class BonEntre : PieceStock
 
         return ligne;
     }
-    public void Update(string numero, Fournisseur fournisseur, string? observation = null)
+    public void Update(Fournisseur fournisseur, string? observation = null)
     {
         Fournisseur = fournisseur;
         FournisseurId = fournisseur.Id;
-        base.Update(numero, observation);
+        base.Update(observation);
     }
 
     public void RemoveLigne(Guid ligneId)

@@ -6,9 +6,9 @@ public abstract class LigneStock
     public decimal Quantity { get; protected set; }
     public decimal Price { get; protected set; }
 
-    public decimal CalculateTotalLigne() => Quantity * Price;
+    public virtual decimal CalculateTotalLigne() => Quantity * Price;
 
-    public void Validate()
+    public virtual void Validate()
     {
         if (Quantity <= 0)
             throw new ArgumentException("Quantity must be greater than zero.");
@@ -16,7 +16,7 @@ public abstract class LigneStock
             throw new ArgumentException("Price cannot be negative.");
     }
 
-    public void Update(decimal qty, decimal price)
+    public virtual void Update(decimal qty, decimal price)
     {
         Quantity = qty;
         Price = price;

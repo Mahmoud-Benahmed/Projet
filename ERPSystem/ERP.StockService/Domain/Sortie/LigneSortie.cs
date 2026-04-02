@@ -7,7 +7,12 @@ public sealed class LigneSortie : LigneStock
     private LigneSortie() { }
     internal static LigneSortie Create(Guid bonSortieId, Guid articleId, decimal qty, decimal price)
     {
-        var l = new LigneSortie { Id = Guid.NewGuid(), BonSortieId = bonSortieId, ArticleId = articleId, Quantity = qty, Price = price };
+        var l = new LigneSortie { 
+            BonSortieId = bonSortieId, 
+            ArticleId = articleId, 
+            Quantity = qty, 
+            Price = price 
+        };
         l.Validate();
         return l;
     }

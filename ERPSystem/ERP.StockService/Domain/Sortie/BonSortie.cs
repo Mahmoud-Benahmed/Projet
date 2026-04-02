@@ -12,10 +12,10 @@ public sealed class BonSortie : PieceStock
     public static BonSortie Create(string numero, Guid clientId, string? observation = null) =>
         new() { Id = Guid.NewGuid(), Numero = numero.Trim(), ClientId = clientId, Observation = observation?.Trim(), CreatedAt = DateTime.UtcNow };
 
-    public void Update(Guid clientId, string numero, string? observation= null)
+    public void Update(Guid clientId, string? observation= null)
     {
         ClientId = clientId;
-        base.Update(numero, observation);
+        base.Update(observation);
     }
     public LigneSortie AddLigne(Guid articleId, decimal qty, decimal price)
     {
