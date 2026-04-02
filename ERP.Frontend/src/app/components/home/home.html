@@ -79,6 +79,24 @@
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
+    <a class="home__quick-card" routerLink="/users/controles"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
+      <div class="home__quick-icon home__quick-icon--purple">
+        <mat-icon>verified_user</mat-icon>
+      </div>
+      <span class="home__quick-label">Controles</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/users/roles"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
+      <div class="home__quick-icon home__quick-icon--purple">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <span class="home__quick-label">Roles</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
     <a class="home__quick-card" routerLink="/permissions"
        *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ASSIGN_ROLES)">
       <div class="home__quick-icon home__quick-icon--purple">
@@ -99,9 +117,11 @@
     </a>
 
     <a class="home__quick-card" routerLink="/articles/categories"
-       *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.VIEW_ARTICLES)">
+       *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">
       <div class="home__quick-icon home__quick-icon--amber">
-        <mat-icon>inventory_2</mat-icon>
+        <mat-icon>list_alt</mat-icon>
       </div>
       <span class="home__quick-label">Article Categories</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
@@ -118,11 +138,32 @@
     </a>
 
     <a class="home__quick-card" routerLink="/clients/categories"
-       *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
+       *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
       <div class="home__quick-icon home__quick-icon--blue">
-        <mat-icon>people</mat-icon>
+        <mat-icon>list_alt</mat-icon>
       </div>
       <span class="home__quick-label">Client Categories</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <!-- ── Stock ── -->
+    <a class="home__quick-card" routerLink="/stock/fournisseurs"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+      <div class="home__quick-icon home__quick-icon--green">
+        <mat-icon>local_shipping</mat-icon>
+      </div>
+      <span class="home__quick-label">Fournisseurs</span>
+      <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
+    </a>
+
+    <a class="home__quick-card" routerLink="/stock/bons"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+      <div class="home__quick-icon home__quick-icon--amber">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <span class="home__quick-label">Bons</span>
       <mat-icon class="home__quick-arrow">arrow_forward</mat-icon>
     </a>
 
@@ -147,5 +188,4 @@
     </a>
 
   </div>
-
 </div>

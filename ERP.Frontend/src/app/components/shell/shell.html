@@ -84,7 +84,9 @@
                 routerLink="/articles/categories"
                 routerLinkActive="sidebar__subitem--active"
                 [routerLinkActiveOptions]="{exact:true}"
-                (click)="closeMobileNav()">
+                (click)="closeMobileNav()"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">
                 <mat-icon>list_alt</mat-icon> Categories
             </a>
           </div>
@@ -99,11 +101,12 @@
           </button>
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['clients']">
             <a class="sidebar__subitem" routerLink="/clients" routerLinkActive="sidebar__subitem--active"
-               [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+               [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
               <mat-icon>people</mat-icon> Clients
             </a>
             <a class="sidebar__subitem" routerLink="/clients/categories" routerLinkActive="sidebar__subitem--active"
-              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()">
+              [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileNav()" *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
               <mat-icon>list_alt</mat-icon> Categories
             </a>
           </div>
@@ -232,7 +235,10 @@
           <a  class="sidebar__subitem"
               routerLink="/articles/categories"
               routerLinkActive="sidebar__subitem--active"
-              [routerLinkActiveOptions]="{exact:true}">
+              [routerLinkActiveOptions]="{exact:true}"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE_CATEGORIES)
+              || authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE_CATEGORIES)
+              || authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE_CATEGORIES)">
             <mat-icon>list_alt</mat-icon> <span>Categories</span>
           </a>
         </div>
@@ -257,7 +263,9 @@
           <a  class="sidebar__subitem"
               routerLink="/clients/categories"
               routerLinkActive="sidebar__subitem--active"
-              [routerLinkActiveOptions]="{exact:true}">
+              [routerLinkActiveOptions]="{exact:true}"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES) ||
+              authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) || authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES)">
               <mat-icon>list_alt</mat-icon> <span>Categories</span>
           </a>
         </div>
