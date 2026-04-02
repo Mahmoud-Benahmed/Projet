@@ -14,6 +14,8 @@ public class BonRetourService : IBonRetourService
     private readonly IArticleService _articleService;
     private readonly IClientService _clientService;
     private readonly IFournisseurRepository _fournisseurRepo;
+    private readonly IBonNumeroRepository _bonNumeroRepository;
+
 
     public BonRetourService(
         IBonRetourRepository repo,
@@ -21,7 +23,8 @@ public class BonRetourService : IBonRetourService
         IBonEntreRepository bonEntreRepo,
         IArticleService articleService,
         IClientService clientService,
-        IFournisseurRepository fournisseurRepo)
+        IFournisseurRepository fournisseurRepo,
+        IBonNumeroRepository bonNumeroRepository)
     {
         _repo = repo;
         _bonSortieRepo = bonSortieRepo;
@@ -29,6 +32,7 @@ public class BonRetourService : IBonRetourService
         _articleService = articleService;
         _clientService = clientService;
         _fournisseurRepo = fournisseurRepo;
+        _bonNumeroRepository = bonNumeroRepository;
     }
 
     // =========================
@@ -43,8 +47,8 @@ public class BonRetourService : IBonRetourService
             RetourSourceType.BonEntre => await ResolveBonEntreAsync(dto.SourceId),
             _ => throw new ArgumentOutOfRangeException(nameof(dto.SourceType))
         };
-
-        var bon = BonRetour.Create(dto.Numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
+        var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_RETOUR");
+        var bon = BonRetour.Create(numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
 
         // 2. Validate and add lignes
         foreach (var l in dto.Lignes ?? [])
@@ -80,7 +84,7 @@ public class BonRetourService : IBonRetourService
 
         var sourceType = bonEntre is not null ? "BonEntre" : "BonSortie";
 
-        bon.Update(dto.Numero, dto.SourceId, sourceType ,dto.Motif, dto.Observation);
+        bon.Update(dto.SourceId, sourceType ,dto.Motif, dto.Observation);
         
         if (dto.Lignes is { Count: > 0 })
         {

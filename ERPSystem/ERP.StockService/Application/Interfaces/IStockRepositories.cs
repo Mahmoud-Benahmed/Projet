@@ -15,6 +15,21 @@ public interface IFournisseurRepository
     Task<FournisseurStatsDto> GetStatsAsync();
 }
 
+
+public interface IBonNumeroRepository
+{
+    /// <summary>
+    /// Gets the next document number for the specified document type.
+    /// This method should be called within a transaction to ensure uniqueness.
+    /// </summary>
+    Task<string> GetNextDocumentNumberAsync(string documentType);
+
+    /// <summary>
+    /// Gets the current sequence for a document type (for inspection).
+    /// </summary>
+    Task<BonNumber?> GetSequenceAsync(string documentType);
+}
+
 // IBonEntreRepository
 public interface IBonEntreRepository
 {
@@ -22,6 +37,7 @@ public interface IBonEntreRepository
     Task SaveChangesAsync();
     Task<BonEntre?> GetByIdAsync(Guid id);
     Task<BonEntre?> GetByIdDeletedAsync(Guid id);
+
     Task<(List<BonEntre> Items, int TotalCount)> GetAllAsync(int page, int size);
     Task<(List<BonEntre> Items, int TotalCount)> GetByFournisseurAsync(Guid fournisseurId, int page, int size);
     Task<(List<BonEntre> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);

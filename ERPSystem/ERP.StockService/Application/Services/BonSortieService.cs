@@ -2,6 +2,7 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Infrastructure.Persistence.Messaging;
+using ERP.StockService.Infrastructure.Persistence.Repositories;
 
 namespace ERP.StockService.Application.Services;
 
@@ -10,12 +11,15 @@ public class BonSortieService : IBonSortieService
     private readonly IBonSortieRepository _repo;
     private readonly IArticleService _articleService;
     private readonly IClientService _clientService;
+    private readonly IBonNumeroRepository _bonNumeroRepository;
 
-    public BonSortieService(IBonSortieRepository repo, IArticleService articleService, IClientService clientService)
+    public BonSortieService(IBonSortieRepository repo, IArticleService articleService, 
+                            IClientService clientService, IBonNumeroRepository bonNumeroRepository)
     {
         _repo = repo;
-        _clientService= clientService;
-        _articleService= articleService;
+        _clientService = clientService;
+        _articleService = articleService;
+        _bonNumeroRepository = bonNumeroRepository;
     }
 
     // =========================
@@ -23,9 +27,11 @@ public class BonSortieService : IBonSortieService
     // =========================
     public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto)
     {
-        var bon = BonSortie.Create(dto.Numero, dto.ClientId, dto.Observation);
+        await _clientService.ExistsByIdAsync(dto.ClientId);
 
-        await _clientService.ExistsByIdAsync(bon.ClientId);
+        var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_SORTIE");
+        var bon = BonSortie.Create(numero, dto.ClientId, dto.Observation);
+
         foreach (var l in dto.Lignes ?? [])
         {
             await _articleService.ExistsByIdAsync(l.ArticleId);
@@ -47,7 +53,7 @@ public class BonSortieService : IBonSortieService
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
         await _clientService.ExistsByIdAsync(dto.ClientId);
 
-        bon.Update(dto.ClientId, dto.Numero, dto.Observation);
+        bon.Update(dto.ClientId, dto.Observation);
 
         if (dto.Lignes is { Count: > 0 })
         {

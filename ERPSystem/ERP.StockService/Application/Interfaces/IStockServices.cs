@@ -1,4 +1,5 @@
 ﻿using ERP.StockService.Application.DTOs;
+using ERP.StockService.Domain;
 
 namespace ERP.StockService.Application.Interfaces;
 

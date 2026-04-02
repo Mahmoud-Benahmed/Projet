@@ -12,12 +12,15 @@ public class BonEntreService : IBonEntreService
     private readonly IBonEntreRepository _repo;
     private readonly IFournisseurRepository _fournisseurRepo;
     private readonly IArticleService _articleService;
+    private readonly IBonNumeroRepository _bonNumberRepo;
 
-    public BonEntreService(IBonEntreRepository repo, IFournisseurRepository fournisseurRepo, IArticleService articleService)
+    public BonEntreService(IBonEntreRepository repo, IFournisseurRepository fournisseurRepo, 
+                            IArticleService articleService, IBonNumeroRepository bonNumberRepository)
     {
         _repo = repo;
         _fournisseurRepo = fournisseurRepo;
         _articleService = articleService;
+        _bonNumberRepo= bonNumberRepository;
     }
 
     // =========================
@@ -31,7 +34,8 @@ public class BonEntreService : IBonEntreService
         if (fournisseur.IsBlocked)
             throw new FournisseurBlockedException(dto.FournisseurId);
 
-        var bon = BonEntre.Create(dto.Numero, dto.FournisseurId, dto.Observation);
+        var numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
+        var bon = BonEntre.Create(numero, fournisseur, dto.Observation);
 
         foreach (var l in dto.Lignes ?? [])
         {
@@ -55,7 +59,7 @@ public class BonEntreService : IBonEntreService
         var fournisseur = await _fournisseurRepo.GetByIdAsync(dto.FournisseurId)
             ?? throw new FournisseurNotFoundException(dto.FournisseurId);
 
-        bon.Update(dto.Numero, fournisseur, dto.Observation);
+        bon.Update(fournisseur, dto.Observation);
 
         if (dto.Lignes is { Count: > 0 })
         {
@@ -63,7 +67,7 @@ public class BonEntreService : IBonEntreService
             foreach (var l in dto.Lignes)
             {
                 await _articleService.ExistsByIdAsync(l.ArticleId);
-                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);  // Id = Guid.Empty → Added
             }
             bon.ValidateLignes();
         }
