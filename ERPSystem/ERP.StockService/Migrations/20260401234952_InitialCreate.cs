@@ -12,6 +12,21 @@ namespace ERP.StockService.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "BonNumbers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DocumentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Prefix = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    LastNumber = table.Column<int>(type: "int", nullable: false),
+                    Padding = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BonNumbers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BonRetours",
                 columns: table => new
                 {
@@ -207,6 +222,9 @@ namespace ERP.StockService.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "BonNumbers");
+
             migrationBuilder.DropTable(
                 name: "LigneEntres");
 

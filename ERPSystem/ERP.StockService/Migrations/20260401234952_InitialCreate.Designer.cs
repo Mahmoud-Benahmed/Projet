@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.StockService.Migrations
 {
     [DbContext(typeof(StockDbContext))]
-    [Migration("20260401010026_InitialCreate")]
+    [Migration("20260401234952_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -146,6 +146,33 @@ namespace ERP.StockService.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("BonSorties", (string)null);
+                });
+
+            modelBuilder.Entity("ERP.StockService.Domain.BonNumber", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Padding")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BonNumbers", (string)null);
                 });
 
             modelBuilder.Entity("ERP.StockService.Domain.Entre.LigneEntre", b =>

@@ -145,6 +145,33 @@ namespace ERP.StockService.Migrations
                     b.ToTable("BonSorties", (string)null);
                 });
 
+            modelBuilder.Entity("ERP.StockService.Domain.BonNumber", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Padding")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BonNumbers", (string)null);
+                });
+
             modelBuilder.Entity("ERP.StockService.Domain.Entre.LigneEntre", b =>
                 {
                     b.Property<Guid>("Id")
