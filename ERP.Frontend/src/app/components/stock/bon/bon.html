@@ -77,21 +77,6 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--blue">
-        <div class="stat-card__body">
-          <div>
-            <p class="stat-card__label">Total</p>
-            <p class="stat-card__value">{{ totalBons }}</p>
-          </div>
-          <div class="stat-card__icon stat-card__icon--blue">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
       <div class="stat-card stat-card--red"
            *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
            (click)="onDeletedCardClick()"
@@ -413,7 +398,7 @@
                 <th>PRICE</th>
                 <th>TOTAL</th>
                 <th *ngIf="activeBonType === 'retour'">REMARQUE</th>
-                <th *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted"
+                <th *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted && isEdit()"
                     class="text-center">ACTIONS</th>
               </tr>
             </thead>
@@ -424,7 +409,7 @@
                 <td class="td--price">{{ l.price | number:'1.2-2' }}</td>
                 <td class="td--price">{{ l.total | number:'1.2-2' }}</td>
                 <td *ngIf="activeBonType === 'retour'">{{ l.remarque ?? '—' }}</td>
-                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted"
+                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted && isEdit()"
                     class="td--actions">
                   <button class="icon-btn icon-btn--edit" title="Edit ligne"
                           (click)="openEditLigne(selectedBon, l)">
@@ -488,19 +473,6 @@
       <form [formGroup]="headerForm" (ngSubmit)="submit()" class="form" id="bon-header-form">
 
         <div class="form__row">
-          <!-- Numéro -->
-          <div class="form__field">
-            <div class="form__label">
-              <label>Numéro *</label>
-              <mat-icon>tag</mat-icon>
-            </div>
-            <input class="form__input" type="text" formControlName="numero" placeholder="e.g. BE-2024-001"
-                   [class.form__input--error]="headerForm.get('numero')?.invalid && headerForm.get('numero')?.touched"/>
-            <span class="form__error" *ngIf="headerForm.get('numero')?.invalid && headerForm.get('numero')?.touched">
-              Numéro is required
-            </span>
-          </div>
-
           <!-- Entre: Fournisseur -->
           <div class="form__field" *ngIf="activeBonType === 'entre'">
             <div class="form__label">
@@ -510,8 +482,8 @@
             <select class="form__input form__select" formControlName="fournisseurId"
                     [class.form__input--error]="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched">
               <option value="" disabled selected>— Select a fournisseur —</option>
-              <option *ngFor="let f of filteredFournisseurs" [value]="f.id">
-                {{ f.name }} — {{ f.phone }}
+              <option *ngFor="let f of filteredFournisseurs" [value]="f.id" [selected]="f.id === headerForm.get('fournisseurId')?.value">
+                {{ f.name }} — {{ f.taxNumber }}
               </option>
             </select>
             <span class="form__error"
@@ -740,7 +712,7 @@
                     (change)="onArticleSelected(ligneForm.get('articleId')!.value)"
                     [class.form__input--error]="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
               <option value="" selected disabled>— Select an article —</option>
-              <option *ngFor="let article of filteredArticles" [value]="article.id">
+              <option *ngFor="let article of articles" [value]="article.id">
                 {{ article.codeRef }} — {{ article.libelle }} ({{ article.prix | number:'1.2-2' }})
               </option>
             </select>
@@ -753,7 +725,7 @@
           <!-- Qty -->
           <div class="form__field">
             <label class="form__label">Quantity *</label>
-            <input class="form__input" formControlName="quantity" type="number" min="0.1" step="0.1"
+            <input class="form__input" formControlName="quantity" type="number" min="1" step="1"
                    [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"/>
             <span class="form__error" *ngIf="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched">
               Quantity must be > 0
@@ -763,7 +735,7 @@
           <!-- Price -->
           <div class="form__field">
             <label class="form__label">Price *</label>
-            <input class="form__input" formControlName="price" type="number" min="0" step="0.1"
+            <input class="form__input" formControlName="price" type="number" readonly
                    [class.form__input--error]="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched"/>
             <span class="form__error" *ngIf="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched">
               Price must be ≥ 0

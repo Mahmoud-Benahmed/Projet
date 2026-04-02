@@ -137,18 +137,8 @@
               </th>
               <th>PHONE</th>
               <th>EMAIL</th>
-              <th (click)="sortBy('isBlocked')" class="th--sortable">
+              <th>
                 STATUS
-                <span class="sort-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                       [style.opacity]="sortColumn === 'isBlocked' && sortDirection === 'asc' ? '1' : '0.25'">
-                    <polyline points="18 15 12 9 6 15"/>
-                  </svg>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                       [style.opacity]="sortColumn === 'isBlocked' && sortDirection === 'desc' ? '1' : '0.25'">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </span>
               </th>
               <th class="text-center">ACTIONS</th>
             </tr>
@@ -195,7 +185,9 @@
                         [ngClass]="f.isBlocked ? 'icon-btn--unblock' : 'icon-btn--block'"
                         (click)="toggleBlock(f)"
                         [title]="f.isBlocked ? 'Unblock' : 'Block'"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) && !f.isDeleted">
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) &&
+                              authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) &&
+                              authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && !f.isDeleted">
                   <svg *ngIf="!f.isBlocked" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>

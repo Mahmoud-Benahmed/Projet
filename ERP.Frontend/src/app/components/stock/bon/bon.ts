@@ -133,7 +133,6 @@ export class BonsComponent implements OnInit {
 
   articles: ArticleResponseDto[] = [];
   articleSearchQuery = '';
-  filteredArticles: ArticleResponseDto[] = [];
 
   fournisseurs: FournisseurResponse[] = [];
   filteredFournisseurs: FournisseurResponse[] = [];
@@ -165,7 +164,6 @@ export class BonsComponent implements OnInit {
   // ── Form builders ──────────────────────────────────────────────────────────
   private buildHeaderForm(): FormGroup {
     return this.fb.group({
-      numero:        ['', Validators.required],
       observation:   [''],
       fournisseurId: [''],
       clientId:      [''],
@@ -389,24 +387,10 @@ export class BonsComponent implements OnInit {
     this.articleService.getAll(1, 1000).subscribe({
       next: (res) => {
         this.articles = res.items.filter(a => !a.isDeleted);
-        this.filteredArticles = this.articles;
         this.cdr.markForCheck();
       },
       error: () => this.flash('error', 'Failed to load articles.')
     });
-  }
-
-  filterArticles(): void {
-    const q = this.articleSearchQuery.toLowerCase();
-    this.filteredArticles = this.articles.filter(a =>
-      a.libelle.toLowerCase().includes(q) ||
-      a.codeRef.toLowerCase().includes(q) ||
-      a.barCode.toLowerCase().includes(q)
-    );
-    if (this.filteredArticles.length > 0) {
-      this.ligneForm.patchValue({ articleId: this.filteredArticles[0].id });
-      this.onArticleSelected(this.filteredArticles[0].id);
-    }
   }
 
   onArticleSelected(articleId: string): void {
@@ -554,7 +538,6 @@ export class BonsComponent implements OnInit {
     if (this.activeBonType === 'sortie') this.loadClients();
     this.loadArticles();
     this.headerForm.patchValue({
-      numero:        bon.numero,
       observation:   bon.observation                           ?? '',
       fournisseurId: (bon as BonEntreResponse).fournisseurId  ?? '',
       clientId:      (bon as BonSortieResponse).clientId      ?? '',
@@ -590,8 +573,8 @@ export class BonsComponent implements OnInit {
     this.inlineLigneLocalId = null;
     this.ligneForm = this.buildLigneForm();
     // auto-select first article if available
-    if (this.filteredArticles.length > 0) {
-      const first = this.filteredArticles[0];
+    if (this.articles.length > 0) {
+      const first = this.articles[0];
       this.ligneForm.patchValue({ articleId: first.id, price: first.prix });
     }
     this.inlineLigneOpen = true;
@@ -713,7 +696,7 @@ export class BonsComponent implements OnInit {
           this.selectedBon.lignes[existingIndex] = {
             ...existing,
             quantity: newQuantity,
-            // price remains as originally set
+            total: newQuantity * existing.price, // ← FIXED: recalculate total
           };
         } else {
           // Create a new ligne with a temporary ID
@@ -723,7 +706,7 @@ export class BonsComponent implements OnInit {
             quantity:  val.quantity,
             price:     val.price,
             remarque:  val.remarque || null,
-            // Other fields (like total) are not stored, they are computed
+            total: val.quantity * val.price
           } as LigneResponseDto;
           this.selectedBon.lignes.push(newLigne);
         }
@@ -786,7 +769,6 @@ export class BonsComponent implements OnInit {
     switch (this.activeBonType) {
       case 'entre':
         return this.stock.createBonEntre({
-          numero:        val.numero,
           fournisseurId: val.fournisseurId,
           observation:   val.observation || null,
           lignes,
@@ -794,7 +776,6 @@ export class BonsComponent implements OnInit {
 
       case 'sortie':
         return this.stock.createBonSortie({
-          numero:      val.numero,
           clientId:    val.clientId,
           observation: val.observation || null,
           lignes,
@@ -802,7 +783,6 @@ export class BonsComponent implements OnInit {
 
       default:
         return this.stock.createBonRetour({
-          numero:      val.numero,
           sourceId:    val.sourceId,
           sourceType:  val.sourceType,
           motif:       val.motif,
@@ -814,25 +794,32 @@ export class BonsComponent implements OnInit {
 
   private buildUpdateRequest$(val: any): Observable<any> {
     const id = this.selectedBon!.id;
+    const lignes = this.selectedBon!.lignes.map((l: LigneResponseDto) => ({
+      articleId: l.articleId,
+      quantity:  l.quantity,
+      price:     l.price,
+      remarque:  l.remarque ?? null,
+    }));
+
     switch (this.activeBonType) {
       case 'entre':
         return this.stock.updateBonEntre(id, {
-          numero: val.numero, observation: val.observation || null,
+          observation: val.observation || null,
           fournisseurId: val.fournisseurId,
-          lignes: val.lignes
+          lignes
         } as UpdateBonEntreRequest);
       case 'sortie':
         return this.stock.updateBonSortie(id, {
-          numero: val.numero, observation: val.observation || null,
+          observation: val.observation || null,
           clientId: val.clientId,
-          lignes: val.lignes
+          lignes
         } as UpdateBonSortieRequest);
       default:
         return this.stock.updateBonRetour(id, {
-          numero: val.numero, motif: val.motif,
+          motif: val.motif,
           observation: val.observation || null,
           sourceId: val.sourceId,
-          lignes: val.lignes
+          lignes
         } as UpdateBonRetourRequest);
     }
   }

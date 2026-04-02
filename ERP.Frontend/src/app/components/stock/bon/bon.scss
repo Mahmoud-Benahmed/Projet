@@ -195,43 +195,6 @@
   }
 }
 
-// Icon buttons styling
-.icon-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
-  svg {
-    width: 15px;
-    height: 15px;
-    stroke: $text-mid;
-    stroke-width: 2;
-    fill: none;
-  }
-
-  &:hover {
-    background: $bg-card-hi;
-
-    svg {
-      stroke: $blue;
-    }
-  }
-
-  &--edit:hover svg {
-    stroke: $blue;
-  }
-
-  &--delete:hover svg {
-    stroke: $red;
-  }
-}
-
 // Button variants (already defined in shared, but adding specific styles)
 .btn-add {
   background: $blue;
