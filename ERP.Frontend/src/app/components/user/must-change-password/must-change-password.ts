@@ -83,7 +83,7 @@ export class MustChangePasswordComponent implements OnInit{
                 iconColor: 'success'
               }
             });
-            this.router.navigate(['/home']);
+            this.router.navigate(['/profile']);
       },
       error: (error) => {
         this.isLoading = false;

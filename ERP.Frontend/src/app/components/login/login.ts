@@ -64,9 +64,9 @@ export class LoginComponent implements OnInit{
       next: (response) => {
         this.authService.getMe().subscribe({
           next: (authUser) => {
+            this.isLoading = false;
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
-
             if (response.mustChangePassword && environment.production) {
               this.stopLoading();
               this.router.navigate(['/must-change-password']);
