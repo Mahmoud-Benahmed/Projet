@@ -14,6 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 import { ModalComponent } from '../modal/modal';
 import { HttpError } from '../../interfaces/ErrorDto';
+import { environment } from '../../environment';
 
 @Component({
   selector: 'app-login',
@@ -66,7 +67,7 @@ export class LoginComponent implements OnInit{
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
 
-            if (response.mustChangePassword) {
+            if (response.mustChangePassword && environment.production) {
               this.stopLoading();
               this.router.navigate(['/must-change-password']);
               return;

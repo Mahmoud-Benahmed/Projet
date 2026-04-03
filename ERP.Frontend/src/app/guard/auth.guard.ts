@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService, PRIVILEGES } from '../services/auth/auth.service';
+import { environment } from '../environment';
 
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const auth   = inject(AuthService);
@@ -13,7 +14,7 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   }
 
   // ── Force password change
-  if (auth.getMustChangePassword() && path !== 'must-change-password') {
+  if (auth.getMustChangePassword() && path !== 'must-change-password' && environment.production) {
     return router.createUrlTree(['/must-change-password']);
   }
 
