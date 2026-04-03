@@ -57,7 +57,7 @@ builder.Services.AddSingleton<MongoDbContext>(sp =>
 // ── Read JWT secret from env
 // ── JWT Settings
 builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("JwtSettings"));
+    builder.Configuration.GetSection("JWT"));
 
 // ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -75,14 +75,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
 
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found"));
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new Exception("JWT:Secret not found"));
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? throw new Exception("JwtSettings:Secret not found"),
+            ValidIssuer = builder.Configuration["JWT:Issuer"] ?? throw new Exception("JWT:Secret not found"),
 
             ValidateAudience = true,
-            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? throw new Exception("JwtSettings:Secret not found"),
+            ValidAudience = builder.Configuration["JWT:Audience"] ?? throw new Exception("JWT:Secret not found"),
 
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(5),
