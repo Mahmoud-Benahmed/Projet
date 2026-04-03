@@ -137,8 +137,18 @@
               </th>
               <th>PHONE</th>
               <th>EMAIL</th>
-              <th>
-                STATUS
+              <th (click)="sortBy('createdAt')" class="th--sortable">
+              PARTNERSHIP DATE
+                <span class="sort-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                       [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                       [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
               </th>
               <th class="text-center">ACTIONS</th>
             </tr>
@@ -152,14 +162,7 @@
                 <span *ngIf="f.email != null">{{ f.email }}</span>
                 <span class="td--empty-value" *ngIf="f.email == null">—</span>
               </td>
-              <td>
-                <span class="badge"
-                      [class.badge--active]="!f.isBlocked && !f.isDeleted"
-                      [class.badge--blocked]="f.isBlocked"
-                      [class.badge--danger]="f.isDeleted">
-                  {{ f.isDeleted ? 'DELETED' : f.isBlocked ? 'BLOCKED' : 'ACTIVE' }}
-                </span>
-              </td>
+              <td class="td--createdAt">{{ f.createdAt | date:'dd-MM-yyyy'}}</td>
 
               <td class="td--actions">
                 <!-- View -->

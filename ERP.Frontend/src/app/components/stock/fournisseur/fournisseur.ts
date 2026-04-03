@@ -423,7 +423,7 @@ export class FournisseurComponent implements OnInit {
 
   restore(id: string): void {
     this.stock.restoreFournisseur(id).subscribe({
-      next: () => { this.flash('success', 'Fournisseur restored.'); this.load(); },
+      next: () => { this.flash('success', 'Fournisseur restored.'); this.reload(); },
       error: (err) => { this.flash('error', err.error?.message ?? 'Restore failed.'); },
     });
   }
