@@ -579,8 +579,9 @@ $bp-xl:  1200px;
   font-size: 0.75rem;
   font-weight: 600;
   &--active   { background: $green-bg;  color: $green; border: 1px solid $green-border; }
-  &--inactive { background: $red-bg;    color: $red;   border: 1px solid $red-border; }
+  &--inactive { background: $orange-bg;    color: $orange;   border: 1px solid $orange-border; }
   &--blocked  { background: $amber-bg;    color: $amber;  border: 1px solid $amber-border;}
+  &--deleted  { background: $red-bg;    color: $red;  border: 1px solid $red-border;}
 }
 
 .role-badge {
