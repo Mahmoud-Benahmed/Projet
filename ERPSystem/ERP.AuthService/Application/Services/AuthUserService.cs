@@ -322,33 +322,14 @@ namespace ERP.AuthService.Application.Services
                        ?? throw new InvalidOperationException("Role not found.");
 
             var privileges = await _privilegeRepository.GetByRoleIdAsync(user.RoleId);
-            
-            Console.WriteLine("=== RAW PRIVILEGES ===");
-            foreach (var p in privileges)
-            {
-                Console.WriteLine($"RoleId={p.RoleId}, ControleId={p.ControleId}, IsGranted={p.IsGranted}");
-            }
 
             var grantedControleIds = privileges
                 .Where(p => p.IsGranted)
                 .Select(p => p.ControleId)
                 .ToList();
 
-            Console.WriteLine("=== GRANTED IDS ===");
-            foreach (var id in grantedControleIds)
-            {
-                Console.WriteLine(id);
-            }
-
-
             var controles = await _controleRepository.GetByIdsAsync(grantedControleIds);
             var privilegeNames = controles.Select(c => c.Libelle).ToList();
-
-            Console.WriteLine("=== CONTROLES ===");
-            foreach (var c in controles)
-            {
-                Console.WriteLine($"Id={c.Id}, Libelle={c.Libelle}");
-            }
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
