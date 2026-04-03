@@ -430,11 +430,6 @@ This project demonstrates mastery of:
 - Database per service pattern
 - API Gateway pattern
 
-## Team
-
-- **Backend Architecture & Auth/Client/Stock Services**: *Your Name*
-- **Frontend Development**: *Colleague Name*
-
 ## License
 
 Academic project – Educational use only. Not intended for production deployment without additional security hardening and testing.
