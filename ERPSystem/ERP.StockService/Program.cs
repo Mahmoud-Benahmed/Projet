@@ -1,7 +1,7 @@
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Application.Services;
+using ERP.StockService.Infrastructure.Messaging;
 using ERP.StockService.Infrastructure.Persistence;
-using ERP.StockService.Infrastructure.Persistence.Messaging;
 using ERP.StockService.Infrastructure.Persistence.Repositories;
 using ERP.StockService.Infrastructure.Persistence.Seeders;
 using ERP.StockService.Middleware;
