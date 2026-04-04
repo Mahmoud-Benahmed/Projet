@@ -31,5 +31,9 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
         public IMongoCollection<Privilege> Privileges =>
             _database.GetCollection<Privilege>("Privileges");
+
+        // MongoDbContext.cs
+        public async Task DropCollectionAsync(string collectionName)
+            => await _database.DropCollectionAsync(collectionName);
     }
 }
