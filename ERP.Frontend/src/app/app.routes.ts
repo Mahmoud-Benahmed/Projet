@@ -21,6 +21,7 @@ import { ClientsComponent } from './components/clients/home/home';
 import { ClientCategoriesComponent } from './components/clients/categories/categories';
 import { FournisseurComponent } from './components/stock/fournisseur/fournisseur';
 import { BonsComponent } from './components/stock/bon/bon';
+import { InvoicesComponent } from './components/Invoices/invoices';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
@@ -55,6 +56,8 @@ export const routes: Routes = [
       { path: 'clients/:id', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','UPDATE_CLIENT','DELETE_CLIENT']) } },
       { path: 'clients', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
 
+
+      { path: 'invoices', component: InvoicesComponent, data: { privileges: pickPrivileges('INVOICES', ['VIEW_INVOICES','CREATE_INVOICE','VALIDATE_INVOICE','DELETE_INVOICE']) } },
 
       { path: 'stock/fournisseurs/:id', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK']) } },
       { path: 'stock/fournisseurs', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK','UPDATE_STOCK','ADD_ENTRY']) } },
