@@ -1,6 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.DTOs.Role;
-using ERP.AuthService.Application.Exceptions.Role;
+using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
@@ -121,9 +121,7 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task DeleteByIdAsync(Guid id, Guid requesterId)
         {
-            var existing = await _controleRepository.GetByIdAsync(id);
-            if (existing is null)
-                throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
+            var existing = await _controleRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
             await _controleRepository.DeleteAsync(id);
 
