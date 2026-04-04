@@ -21,6 +21,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Add environment variables
@@ -36,6 +37,10 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Enum Serializing (0 => "string")
+BsonSerializer.RegisterSerializer(new EnumSerializer<Theme>(BsonType.String));
+BsonSerializer.RegisterSerializer(new EnumSerializer<Language>(BsonType.String));
 
 // ── Mongo GUID Serializer
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
@@ -126,6 +131,7 @@ builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
 
+
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
@@ -135,22 +141,25 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// ── Initialize MongoDB indexes
-var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
-await MongoDbInitializer.InitializeAsync(mongoContext);
-
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-
     var services = scope.ServiceProvider;
+
+    var dbContext = services.GetRequiredService<MongoDbContext>();
+
+    // ── Initialize MongoDB indexes
+    await MongoDbInitializer.InitializeAsync(dbContext);
+
+    // ── Seed data
     await AuthServiceSeeder.SeedAsync(
+        dbContext,
         services.GetRequiredService<IAuditLogRepository>(),
         services.GetRequiredService<IAuthUserRepository>(),
         services.GetRequiredService<IRoleRepository>(),
         services.GetRequiredService<IControleRepository>(),
         services.GetRequiredService<IPrivilegeRepository>(),
-        services.GetRequiredService<IPasswordHasher<AuthUser>>(), // ← generic type
+        services.GetRequiredService<IPasswordHasher<AuthUser>>(),
         services.GetRequiredService<IConfiguration>()
     );
 }
