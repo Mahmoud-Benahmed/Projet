@@ -1,0 +1,247 @@
+@use 'shared' as *;
+
+// ── 3-col form row (used in create view) ─────────
+.form__row--3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.25rem;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+// ── 4-col form row (items inline form) ───────────
+.form__row--4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr;
+  }
+
+  .form__field--span2 {
+    grid-column: span 2;
+
+    @media (max-width: $bp-sm) {
+      grid-column: span 1;
+    }
+  }
+}
+
+// ── Tab count badge ───────────────────────────────
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: $red-bg;
+  border: 1px solid $red-border;
+  color: $red;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+// ── Autocomplete ──────────────────────────────────
+.autocomplete-wrap {
+  position: relative;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: $bg-card;
+  border: 1px solid $border-hi;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  overflow: hidden;
+  animation: fadeIn 0.15s ease;
+}
+
+.autocomplete-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover { background: $bg-card-hi; }
+  & + & { border-top: 1px solid $border; }
+
+  &__name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $text-hi;
+  }
+
+  &__sub {
+    font-size: 0.75rem;
+    color: $text-lo;
+  }
+}
+
+// ── Inline item form ──────────────────────────────
+.inline-item-form {
+  background: $bg-card-hi;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  animation: fadeIn 0.2s ease;
+
+  @media (max-width: $bp-sm) { padding: 1rem; }
+}
+
+// ── Calc preview inside item form ─────────────────
+.calc-preview {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  height: 100%;
+  padding-top: 0.5rem;
+
+  span {
+    font-size: 0.82rem;
+    color: $text-mid;
+
+    strong {
+      color: $text-hi;
+      font-weight: 600;
+    }
+  }
+}
+
+// ── Empty items state ─────────────────────────────
+.empty-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem;
+  color: $text-lo;
+  text-align: center;
+
+  mat-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 0.88rem;
+    margin: 0;
+
+    strong { color: $text-mid; }
+  }
+}
+
+// ── Action bar (view mode) ────────────────────────
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &__btns {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+
+    @media (max-width: $bp-sm) {
+      width: 100%;
+      .btn-warning, .btn-success, .btn-secondary, .btn-danger {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+// ── Large badge (view mode) ───────────────────────
+.badge--lg {
+  font-size: 0.82rem;
+  padding: 5px 14px;
+  letter-spacing: 0.06em;
+}
+
+// ── Detail view two-column layout ─────────────────
+.detail-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: $bp-lg) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Full-width detail item ────────────────────────
+.detail-item--full {
+  grid-column: 1 / -1;
+}
+
+// ── Large total value ─────────────────────────────
+.detail-value--large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $text-hi;
+  letter-spacing: -0.03em;
+}
+
+// ── Table totals footer row ───────────────────────
+.totals-row {
+  background: $bg-card-hi;
+  border-top: 2px solid $border-hi;
+
+  .totals-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: $text-mid;
+    padding: 0.85rem 1.25rem;
+  }
+
+  .totals-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: $text-hi;
+    white-space: nowrap;
+  }
+}
+
+// ── Header actions ────────────────────────────────
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}

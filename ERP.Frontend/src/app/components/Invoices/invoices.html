@@ -1,0 +1,624 @@
+<!-- ══════════════════════════════════════════════
+     INVOICES PAGE  –  4 views: list | deleted | create | view
+     ══════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ── Alerts ─────────────────────────────────── -->
+  <div *ngFor="let e of errors" class="alert alert--error">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+    {{ e }}
+    <button class="alert__close" (click)="dismissError()">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+    </button>
+  </div>
+  <div *ngIf="successMessage" class="alert alert--success">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>
+    {{ successMessage }}
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       LIST VIEW
+       ══════════════════════════════════════════════ -->
+  <ng-container *ngIf="isList() || isDeletedList()">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <p class="breadcrumb">ERP › Invoices</p>
+        <h1 class="page-title">Invoices</h1>
+      </div>
+      <button
+        *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.CREATE_INVOICE) && isList()"
+        class="btn-add"
+        (click)="openCreate()">
+        + New Invoice
+      </button>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stats-grid" *ngIf="isList()">
+
+      <div class="stat-card stat-card--gray stat-card--current stat-card--gray"
+           [class.stat-card--current]="statusFilter === 'ALL'"
+           (click)="setStatusFilter('ALL')">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Total</p>
+            <p class="stat-card__value">{{ stats.total }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--gray">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--amber"
+           [class.stat-card--current]="statusFilter === 'DRAFT'"
+           (click)="setStatusFilter('DRAFT')">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Draft</p>
+            <p class="stat-card__value">{{ stats.draft }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--amber">
+            <mat-icon>edit_note</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--red"
+           [class.stat-card--current]="statusFilter === 'UNPAID'"
+           (click)="setStatusFilter('UNPAID')">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Unpaid</p>
+            <p class="stat-card__value">{{ stats.unpaid }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--red">
+            <mat-icon>schedule</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--green"
+           [class.stat-card--current]="statusFilter === 'PAID'"
+           (click)="setStatusFilter('PAID')">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Paid</p>
+            <p class="stat-card__value">{{ stats.paid }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--green">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--blue"
+           [class.stat-card--current]="statusFilter === 'CANCELLED'"
+           (click)="setStatusFilter('CANCELLED')">
+        <div class="stat-card__body">
+          <div>
+            <p class="stat-card__label">Cancelled</p>
+            <p class="stat-card__value">{{ stats.cancelled }}</p>
+          </div>
+          <div class="stat-card__icon stat-card__icon--blue">
+            <mat-icon>cancel</mat-icon>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Type Tabs -->
+    <div class="type-tabs">
+      <button class="type-tab" [class.type-tab--active]="isList()" (click)="viewMode.set('list'); loadInvoices()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+        Active
+      </button>
+      <button class="type-tab" [class.type-tab--active]="isDeletedList()"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.DELETE_INVOICE)"
+              (click)="viewMode.set('list-deleted'); loadDeletedInvoices()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Deleted
+        <span *ngIf="stats.deleted > 0" class="tab-count">{{ stats.deleted }}</span>
+      </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="Search by number or client…"
+               [(ngModel)]="searchQuery" />
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-scroll-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th--sortable" (click)="sortBy('invoiceNumber')">
+                NUMBER
+                <span class="sort-icon">
+                  <svg width="8" height="5" viewBox="0 0 8 5"><path d="M0 5L4 0L8 5" fill="currentColor" [style.opacity]="sortColumn==='invoiceNumber' && sortDirection==='asc' ? 1 : 0.3"/></svg>
+                  <svg width="8" height="5" viewBox="0 0 8 5"><path d="M0 0L4 5L8 0" fill="currentColor" [style.opacity]="sortColumn==='invoiceNumber' && sortDirection==='desc' ? 1 : 0.3"/></svg>
+                </span>
+              </th>
+              <th class="th--sortable" (click)="sortBy('clientFullName')">
+                CLIENT
+                <span class="sort-icon">
+                  <svg width="8" height="5" viewBox="0 0 8 5"><path d="M0 5L4 0L8 5" fill="currentColor" [style.opacity]="sortColumn==='clientFullName' && sortDirection==='asc' ? 1 : 0.3"/></svg>
+                  <svg width="8" height="5" viewBox="0 0 8 5"><path d="M0 0L4 5L8 0" fill="currentColor" [style.opacity]="sortColumn==='clientFullName' && sortDirection==='desc' ? 1 : 0.3"/></svg>
+                </span>
+              </th>
+              <th class="th--sortable" (click)="sortBy('invoiceDate')">DATE</th>
+              <th class="th--sortable" (click)="sortBy('dueDate')">DUE DATE</th>
+              <th class="th--sortable text-center" (click)="sortBy('totalTTC')">TOTAL TTC</th>
+              <th class="text-center">STATUS</th>
+              <th class="text-center">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="sortedData.length === 0">
+              <td colspan="7" class="td--empty">No invoices found.</td>
+            </tr>
+            <tr class="table__row" *ngFor="let inv of sortedData; trackBy: trackById">
+              <td class="td--code">{{ inv.invoiceNumber }}</td>
+              <td class="td--name">{{ inv.clientFullName }}</td>
+              <td class="date-cell">{{ inv.invoiceDate | date:'dd/MM/yyyy' }}</td>
+              <td class="date-cell">{{ inv.dueDate | date:'dd/MM/yyyy' }}</td>
+              <td class="td--price text-center">{{ inv.totalTTC | number:'1.2-2' }} TND</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="statusClass(inv.status)">{{ inv.status }}</span>
+              </td>
+              <td class="td--actions">
+                <button class="icon-btn icon-btn--view" matTooltip="View details" (click)="openView(inv)">
+                  <mat-icon style="font-size:16px;width:16px;height:16px;">visibility</mat-icon>
+                </button>
+                <button class="icon-btn icon-btn--delete" matTooltip="Delete"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.DELETE_INVOICE) && inv.status === 'DRAFT'"
+                        (click)="delete(inv)">
+                  <mat-icon style="font-size:16px;width:16px;height:16px;">delete_outline</mat-icon>
+                </button>
+                <button class="icon-btn icon-btn--reactivate" matTooltip="Restore"
+                        *ngIf="isDeletedList()"
+                        (click)="restore(inv)">
+                  <mat-icon style="font-size:16px;width:16px;height:16px;">restore</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <app-pagination
+        [pageNumber]="currentPage"
+        [totalPages]="totalPages"
+        [pageSize]="currentSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════
+       CREATE VIEW
+       ══════════════════════════════════════════════ -->
+  <ng-container *ngIf="isCreate()">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <p class="breadcrumb">ERP › Invoices › New Invoice</p>
+        <h1 class="page-title">New Invoice</h1>
+      </div>
+      <button class="btn-back" (click)="cancel()">← Back</button>
+    </div>
+
+    <!-- Invoice Info Panel -->
+    <div class="panel">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>receipt_long</mat-icon></div>
+          <div>
+            <h2 class="panel__title">Invoice Details</h2>
+            <p class="panel__subtitle">Fill in the invoice and client information</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel__body">
+        <form [formGroup]="invoiceForm" class="form">
+
+          <!-- Row 1: Number + Date + Due Date -->
+          <div class="form__row form__row--3">
+            <div class="form__field">
+              <label class="form__label">Invoice Number *</label>
+              <input class="form__input" formControlName="invoiceNumber" placeholder="INV-2024-001"
+                     [class.form__input--error]="invoiceForm.get('invoiceNumber')?.invalid && invoiceForm.get('invoiceNumber')?.touched" />
+              <span class="form__error" *ngIf="invoiceForm.get('invoiceNumber')?.invalid && invoiceForm.get('invoiceNumber')?.touched">Required</span>
+            </div>
+            <div class="form__field">
+              <label class="form__label">Invoice Date *</label>
+              <input class="form__input" type="date" formControlName="invoiceDate"
+                     [class.form__input--error]="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched" />
+              <span class="form__error" *ngIf="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched">Required</span>
+            </div>
+            <div class="form__field">
+              <label class="form__label">Due Date *</label>
+              <input class="form__input" type="date" formControlName="dueDate"
+                     [class.form__input--error]="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched" />
+              <span class="form__error" *ngIf="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched">Required</span>
+            </div>
+          </div>
+
+          <!-- Row 2: Client Search -->
+          <div class="form__field">
+            <label class="form__label">Client *</label>
+            <div class="autocomplete-wrap">
+              <input class="form__input" type="text" placeholder="Search client by name or email…"
+                     [(ngModel)]="clientSearchQuery" [ngModelOptions]="{standalone: true}"
+                     (input)="filterClients(clientSearchQuery)"
+                     [class.form__input--error]="invoiceForm.get('clientId')?.invalid && invoiceForm.get('clientId')?.touched" />
+              <div class="autocomplete-dropdown" *ngIf="filteredClients.length > 0">
+                <button type="button" class="autocomplete-item"
+                        *ngFor="let c of filteredClients"
+                        (click)="selectClient(c)">
+                  <span class="autocomplete-item__name">{{ c.name }}</span>
+                  <span class="autocomplete-item__sub">{{ c.email }}</span>
+                </button>
+              </div>
+            </div>
+            <span class="form__error" *ngIf="invoiceForm.get('clientId')?.invalid && invoiceForm.get('clientId')?.touched">Select a client</span>
+          </div>
+
+          <!-- Row 3: Address + Notes -->
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Client Address *</label>
+              <input class="form__input" formControlName="clientAddress" placeholder="123 Street, City"
+                     [class.form__input--error]="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched" />
+              <span class="form__error" *ngIf="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched">Required</span>
+            </div>
+            <div class="form__field">
+              <label class="form__label">Additional Notes</label>
+              <input class="form__input" formControlName="additionalNotes" placeholder="Optional notes…" />
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- Line Items Panel -->
+    <div class="panel">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>list_alt</mat-icon></div>
+          <div>
+            <h2 class="panel__title">Line Items</h2>
+            <p class="panel__subtitle">{{ pendingItems.length }} item(s) · HT: {{ pendingTotalHT | number:'1.2-2' }} TND · TTC: {{ pendingTotalTTC | number:'1.2-2' }} TND</p>
+          </div>
+        </div>
+        <button class="btn-add" (click)="openInlineItemAdd()" *ngIf="!inlineItemOpen">
+          + Add Item
+        </button>
+      </div>
+
+      <div class="panel__body">
+
+        <!-- Inline add/edit form -->
+        <div class="inline-item-form" *ngIf="inlineItemOpen">
+          <form [formGroup]="itemForm" class="form">
+            <div class="form__row form__row--4">
+              <div class="form__field form__field--span2">
+                <label class="form__label">Article *</label>
+                <select class="form__input form__select" formControlName="articleId"
+                        (change)="onArticleSelectChange($event)">
+                  <option value="">— Select article —</option>
+                  <option *ngFor="let a of articles" [value]="a.id">
+                    {{ a.libelle }} ({{ a.barCode }})
+                  </option>
+                </select>
+              </div>
+              <div class="form__field">
+                <label class="form__label">Quantity *</label>
+                <input class="form__input" type="number" min="1" formControlName="quantity" />
+              </div>
+              <div class="form__field">
+                <label class="form__label">Unit Price HT *</label>
+                <input class="form__input" type="number" min="0" step="0.01" formControlName="uniPriceHT" />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="form__field">
+                <label class="form__label">Tax Rate</label>
+                <select class="form__input form__select" formControlName="taxRate">
+                  <option [value]="0">0%</option>
+                  <option [value]="0.07">7%</option>
+                  <option [value]="0.13">13%</option>
+                  <option [value]="0.19">19%</option>
+                </select>
+              </div>
+              <div class="form__field item-calc-preview" *ngIf="itemForm.get('quantity')?.value && itemForm.get('uniPriceHT')?.value">
+                <label class="form__label">Preview</label>
+                <div class="calc-preview">
+                  <span>HT: <strong>{{ (itemForm.get('quantity')?.value * itemForm.get('uniPriceHT')?.value) | number:'1.2-2' }}</strong></span>
+                  <span>TTC: <strong>{{ (itemForm.get('quantity')?.value * itemForm.get('uniPriceHT')?.value * (1 + itemForm.get('taxRate')?.value)) | number:'1.2-2' }}</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="form__actions">
+              <button type="button" class="btn-secondary" (click)="closeInlineItem()">Cancel</button>
+              <button type="button" class="btn-add" (click)="submitInlineItem()" [disabled]="itemForm.invalid">
+                {{ inlineItemLocalId ? 'Update Item' : 'Add Item' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Items table -->
+        <div class="table-card" *ngIf="pendingItems.length > 0">
+          <div class="table-scroll-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ARTICLE</th>
+                  <th>BAR CODE</th>
+                  <th class="text-center">QTY</th>
+                  <th class="text-center">UNIT HT</th>
+                  <th class="text-center">TAX</th>
+                  <th class="text-center">TOTAL HT</th>
+                  <th class="text-center">TOTAL TTC</th>
+                  <th class="text-center">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table__row" *ngFor="let item of pendingItems; trackBy: trackByLocalId">
+                  <td class="td--name">{{ item.articleName }}</td>
+                  <td class="td--barCode">{{ item.articleBarCode }}</td>
+                  <td class="text-center">{{ item.quantity }}</td>
+                  <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
+                  <td class="text-center">{{ (item.taxRate * 100) | number:'1.0-0' }}%</td>
+                  <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
+                  <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
+                  <td class="td--actions">
+                    <button class="icon-btn icon-btn--edit" matTooltip="Edit" (click)="openInlineItemEdit(item)">
+                      <mat-icon style="font-size:15px;width:15px;height:15px;">edit</mat-icon>
+                    </button>
+                    <button class="icon-btn icon-btn--delete" matTooltip="Remove" (click)="removePendingItem(item._localId)">
+                      <mat-icon style="font-size:15px;width:15px;height:15px;">delete_outline</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="totals-row">
+                  <td colspan="5" class="totals-label">Totals</td>
+                  <td class="td--price text-center totals-value">{{ pendingTotalHT | number:'1.2-2' }} TND</td>
+                  <td class="td--price text-center totals-value">{{ pendingTotalTTC | number:'1.2-2' }} TND</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty items hint -->
+        <div class="empty-items" *ngIf="pendingItems.length === 0 && !inlineItemOpen">
+          <mat-icon>inbox</mat-icon>
+          <p>No items yet. Click <strong>+ Add Item</strong> to begin.</p>
+        </div>
+
+        <!-- Submit -->
+        <div class="panel__actions" *ngIf="!inlineItemOpen">
+          <button class="btn-secondary" (click)="cancel()">Cancel</button>
+          <button class="btn-add"
+                  [disabled]="invoiceForm.invalid || pendingItems.length === 0"
+                  [class.disabled]="invoiceForm.invalid || pendingItems.length === 0"
+                  (click)="submit()">
+            Create Invoice
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════
+       VIEW / DETAIL VIEW
+       ══════════════════════════════════════════════ -->
+  <ng-container *ngIf="isView() && selectedInvoice">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <p class="breadcrumb">ERP › Invoices › {{ selectedInvoice.invoiceNumber }}</p>
+        <h1 class="page-title">{{ selectedInvoice.invoiceNumber }}</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-back" (click)="cancel()">← Back</button>
+      </div>
+    </div>
+
+    <!-- Status + Action Bar -->
+    <div class="action-bar">
+      <span class="badge badge--lg" [ngClass]="statusClass(selectedInvoice.status)">
+        {{ selectedInvoice.status }}
+      </span>
+      <div class="action-bar__btns">
+        <button class="btn-warning"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VALIDATE_INVOICE) && selectedInvoice.status === 'DRAFT'"
+                (click)="finalize(selectedInvoice)">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle">send</mat-icon>
+          Finalize
+        </button>
+        <button class="btn-success"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VALIDATE_INVOICE) && selectedInvoice.status === 'UNPAID'"
+                (click)="markAsPaid(selectedInvoice)">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle">check_circle</mat-icon>
+          Mark as Paid
+        </button>
+        <button class="btn-secondary"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VALIDATE_INVOICE) && (selectedInvoice.status === 'DRAFT' || selectedInvoice.status === 'UNPAID')"
+                (click)="cancelInvoice(selectedInvoice)">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle">cancel</mat-icon>
+          Cancel
+        </button>
+        <button class="btn-danger"
+                *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.DELETE_INVOICE) && selectedInvoice.status === 'DRAFT'"
+                (click)="delete(selectedInvoice)">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle">delete_outline</mat-icon>
+          Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- Two-column detail panels -->
+    <div class="detail-columns">
+
+      <!-- Invoice Info -->
+      <div class="panel">
+        <div class="panel__header">
+          <div class="panel__title-wrap">
+            <div class="panel__icon"><mat-icon>receipt</mat-icon></div>
+            <div>
+              <h2 class="panel__title">Invoice Info</h2>
+            </div>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">INVOICE NUMBER</span>
+              <span class="detail-value detail-value--mono">{{ selectedInvoice.invoiceNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">STATUS</span>
+              <span class="badge" [ngClass]="statusClass(selectedInvoice.status)">{{ selectedInvoice.status }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">INVOICE DATE</span>
+              <span class="detail-value">{{ selectedInvoice.invoiceDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">DUE DATE</span>
+              <span class="detail-value">{{ selectedInvoice.dueDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">TOTAL HT</span>
+              <span class="detail-value">{{ selectedInvoice.totalHT | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">TOTAL TVA</span>
+              <span class="detail-value">{{ selectedInvoice.totalTVA | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item detail-item--full">
+              <span class="detail-label">TOTAL TTC</span>
+              <span class="detail-value detail-value--large">{{ selectedInvoice.totalTTC | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item detail-item--full" *ngIf="selectedInvoice.additionalNotes">
+              <span class="detail-label">NOTES</span>
+              <span class="detail-value">{{ selectedInvoice.additionalNotes }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Client Info -->
+      <div class="panel">
+        <div class="panel__header">
+          <div class="panel__title-wrap">
+            <div class="panel__icon"><mat-icon>person_outline</mat-icon></div>
+            <div>
+              <h2 class="panel__title">Client</h2>
+            </div>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="detail-grid">
+            <div class="detail-item detail-item--full">
+              <span class="detail-label">NAME</span>
+              <span class="detail-value">{{ selectedInvoice.clientFullName }}</span>
+            </div>
+            <div class="detail-item detail-item--full">
+              <span class="detail-label">ADDRESS</span>
+              <span class="detail-value">{{ selectedInvoice.clientAddress }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">CREATED</span>
+              <span class="detail-value date-cell">{{ selectedInvoice.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">UPDATED</span>
+              <span class="detail-value date-cell">{{ selectedInvoice.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items Panel -->
+    <div class="panel">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>list_alt</mat-icon></div>
+          <div>
+            <h2 class="panel__title">Line Items</h2>
+            <p class="panel__subtitle">{{ selectedInvoice.items?.length ?? 0 }} item(s)</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel__body" style="padding:0">
+        <div class="table-scroll-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ARTICLE</th>
+                <th>BAR CODE</th>
+                <th class="text-center">QTY</th>
+                <th class="text-center">UNIT HT</th>
+                <th class="text-center">TAX</th>
+                <th class="text-center">TOTAL HT</th>
+                <th class="text-center">TOTAL TTC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="!selectedInvoice.items || selectedInvoice.items.length === 0">
+                <td colspan="7" class="td--empty">No items on this invoice.</td>
+              </tr>
+              <tr class="table__row" *ngFor="let item of selectedInvoice.items; trackBy: trackById">
+                <td class="td--name">{{ item.articleName }}</td>
+                <td class="td--barCode">{{ item.articleBarCode }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
+                <td class="text-center">{{ (item.taxRate * 100) | number:'1.0-0' }}%</td>
+                <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
+                <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+            <ng-container *ngIf="selectedInvoice.items && selectedInvoice.items.length > 0">
+              <tfoot>
+                <tr class="totals-row">
+                  <td colspan="5" class="totals-label">Totals</td>
+                  <td class="td--price text-center totals-value">{{ selectedInvoice.totalHT | number:'1.2-2' }} TND</td>
+                  <td class="td--price text-center totals-value">{{ selectedInvoice.totalTTC | number:'1.2-2' }} TND</td>
+                </tr>
+              </tfoot>
+            </ng-container>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>
