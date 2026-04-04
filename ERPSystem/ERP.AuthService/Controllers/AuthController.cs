@@ -230,6 +230,17 @@ namespace ERP.AuthService.Controllers
             return Ok(result);
         }
 
+        [HttpPut("update/{id:guid}/settings")]
+        [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateSettings([FromRoute] Guid id, 
+                                                        [FromBody] UserSettingsRequestDto settings)
+        {
+            if (!TryGetRequesterId(out var requesterId) || !requesterId.Equals(id))
+                return Unauthorized();
+            var result = await _authService.UpdateSettings(id, settings);
+            return Ok(result);
+        }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
