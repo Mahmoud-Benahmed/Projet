@@ -5,8 +5,8 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter } from 'rxjs/operators';
-import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 @Component({
   selector: 'app-shell',
@@ -37,13 +37,11 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly PRIVILEGES= PRIVILEGES;
 
 
-  constructor(private router: Router, public authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
+  constructor(private router: Router, public authService: AuthService, private cdr: ChangeDetectorRef, public userSettings: UserSettingsService) {
   }
 
 
   ngOnInit(): void {
-    this.theme.init();
-
     this.subs.add(
       this.router.events.pipe(
         filter(e => e instanceof NavigationEnd)
