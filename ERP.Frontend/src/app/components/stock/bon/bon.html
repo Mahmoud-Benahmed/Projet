@@ -771,7 +771,7 @@
       <div class="form__actions form__actions--panel">
         <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
         <button type="submit" form="bon-header-form" class="btn-add"
-                [disabled]="headerForm.invalid || (isCreate() && pendingLignes.length === 0)">
+                [disabled]="headerForm.invalid || (isEdit() && !ligneForm.valid)|| (isCreate() && pendingLignes.length === 0)">
           {{ isCreate() ? '+ Create Bon' : 'Save Changes' }}
         </button>
       </div>
