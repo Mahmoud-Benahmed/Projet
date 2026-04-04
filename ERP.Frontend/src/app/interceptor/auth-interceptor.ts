@@ -5,17 +5,28 @@ import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
 import { ModalComponent } from "../components/modal/modal";
-
-// Remove: import { routes } from "../app.routes";
+import { TranslateService } from "@ngx-translate/core";
 
 let serverDownDialogOpen = false;
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth   = inject(AuthService);
-  const dialog = inject(MatDialog);
-  const router = inject(Router);
+  const auth      = inject(AuthService);
+  const dialog    = inject(MatDialog);
+  const router    = inject(Router);
+  const translate = inject(TranslateService);
 
-  // ── Never attach token or intercept errors for auth infrastructure calls
+  const t = (code: string, fallback?: string): string => {
+    const key = `ERRORS.${code}`;
+    const msg = translate.instant(key);
+    return msg === key ? (fallback ?? msg) : msg;
+  };
+
+  const td = (key: string, fallback: string): string => {
+    const full = `DIALOG.${key}`;
+    const msg = translate.instant(full);
+    return msg === full ? fallback : msg;
+  };
+
   const isPublicCall = req.url.includes('/auth/refresh')
                     || req.url.includes('/auth/revoke')
                     || req.url.includes('/auth/login');
@@ -25,30 +36,26 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
-  if (isPublicCall) {
-    return next(authReq); // ← bypass all error handling below
-  }
+  if (isPublicCall) return next(authReq);
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
       // ── Server unreachable ─────────────────────────────────────────────
-      if (error.status === 0) {  // ← was missing
+      if (error.status === 0) {
         if (!serverDownDialogOpen) {
           serverDownDialogOpen = true;
           dialog.open(ModalComponent, {
             width: '400px',
             data: {
-              title: 'Server Unreachable',
-              message: 'Unable to connect to the server. Check your connection or try again later.',
-              confirmText: 'OK',
-              showCancel: false,
-              icon: 'cloud_off',
-              iconColor: 'warn'
+              title:       td('SERVER_UNREACHABLE', 'Server Unreachable'),
+              message:     t('SERVER_UNREACHABLE'),
+              confirmText: td('OK', 'OK'),
+              showCancel:  false,
+              icon:        'cloud_off',
+              iconColor:   'warn'
             }
-          }).afterClosed().subscribe(() => {
-            serverDownDialogOpen = false;
-          });
+          }).afterClosed().subscribe(() => serverDownDialogOpen = false);
         }
         auth.logout();
         return throwError(() => error);
@@ -57,22 +64,17 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       // ── Rate limit ─────────────────────────────────────────────────────
       if (error.status === 429) {
         const retryAfter = error.headers.get('Retry-After');
-        const content = error.error?.content
-          ?? `Too many requests. Please wait ${retryAfter ?? 60} seconds before retrying.`;
-
         dialog.open(ModalComponent, {
           width: '400px',
           data: {
-            title: 'Rate Limit Reached',
-            message: content,
-            confirmText: 'OK',
-            showCancel: false,
-            icon: 'timer',
-            iconColor: 'warn'
+            title:       td('RATE_LIMIT', 'Rate Limit Reached'),
+            message:     t('RATE_LIMIT', `Too many requests. Please wait ${retryAfter ?? 60}s.`),
+            confirmText: td('OK', 'OK'),
+            showCancel:  false,
+            icon:        'timer',
+            iconColor:   'warn'
           }
-        }).afterClosed().subscribe(() => {
-            router.navigate(['/home']);
-        });
+        }).afterClosed().subscribe(() => router.navigate(['/home']));
         return throwError(() => error);
       }
 
@@ -80,23 +82,18 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 403) {
         const code = error.error?.code;
         const isInactive = code === 'AUTH_003';
-
         dialog.open(ModalComponent, {
           width: '400px',
           data: {
-            title: isInactive ? 'Account Deactivated' : 'Access Denied',
-            message: error.error?.message ?? 'You do not have permission to perform this action.',
-            confirmText: 'OK',
-            showCancel: false,
-            icon: isInactive ? 'person_off' : 'block',
-            iconColor: 'danger'
+            title:       isInactive ? td('ACCOUNT_DEACTIVATED', 'Account Deactivated') : td('ACCESS_DENIED', 'Access Denied'),
+            message:     t(code, error.error?.message ?? 'You do not have permission.'),
+            confirmText: td('OK', 'OK'),
+            showCancel:  false,
+            icon:        isInactive ? 'person_off' : 'block',
+            iconColor:   'danger'
           }
         }).afterClosed().subscribe(() => {
-          if (isInactive) {
-            auth.logout();
-          } else {
-            router.navigate(['/home']);
-          }
+          isInactive ? auth.logout() : router.navigate(['/home']);
         });
         return throwError(() => error);
       }
@@ -105,53 +102,37 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401) {
         const code = error.error?.code;
 
-        // User deleted or inactive — session invalid
         if (code === 'AUTH_009') {
           dialog.open(ModalComponent, {
             width: '400px',
             data: {
-              title: 'Session Expired',
-              message: 'Your session is no longer valid. You will be logged out.',
-              confirmText: 'OK',
-              showCancel: false,
-              icon: 'person_off',
-              iconColor: 'danger'
+              title:       td('SESSION_EXPIRED', 'Session Expired'),
+              message:     t('AUTH_009'),
+              confirmText: td('OK', 'OK'),
+              showCancel:  false,
+              icon:        'person_off',
+              iconColor:   'danger'
             }
           }).afterClosed().subscribe(() => auth.logout());
           return throwError(() => error);
         }
 
-        // Wrong current password — user is authenticated, just typed wrong
-        if (code === 'AUTH_002') {
-          return throwError(() => error);
-        }
+        if (code === 'AUTH_002') return throwError(() => error);
 
-        // Security violation
         if (code === 'AUTH_008') {
           auth.logout();
           return throwError(() => error);
         }
 
-        // Token expired — attempt refresh
         if (!req.url.includes('revoke') && !req.url.includes('refresh')) {
           const refreshToken = auth.getRefreshToken();
-
-          if (!refreshToken) {
-            auth.logout();
-            return throwError(() => error);
-          }
+          if (!refreshToken) { auth.logout(); return throwError(() => error); }
 
           return auth.refresh({ refreshToken }).pipe(
-            switchMap((response) => {
-              const retryReq = req.clone({
-                setHeaders: { Authorization: `Bearer ${response.accessToken}` }
-              });
-              return next(retryReq);
-            }),
-            catchError((refreshError) => {
-              auth.logout();
-              return throwError(() => refreshError);
-            })
+            switchMap(response => next(req.clone({
+              setHeaders: { Authorization: `Bearer ${response.accessToken}` }
+            }))),
+            catchError(refreshError => { auth.logout(); return throwError(() => refreshError); })
           );
         }
 
@@ -159,23 +140,25 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      if(error.status === 404){
+      // ── Not found ──────────────────────────────────────────────────────
+      if (error.status === 404) {
         router.navigate(['/home']);
+        return throwError(() => error); // ← was missing the return
       }
 
-      // ── Gateway / service unavailable ─────────────────────────────────────
+      // ── Gateway errors ─────────────────────────────────────────────────
       if (error.status === 503 || error.status === 502 || error.status === 504) {
         if (!serverDownDialogOpen) {
           serverDownDialogOpen = true;
           dialog.open(ModalComponent, {
             width: '400px',
             data: {
-              title: 'Service Unavailable',
-              message: 'The requested service is temporarily unavailable. Please try again later.',
-              confirmText: 'OK',
-              showCancel: false,
-              icon: 'cloud_off',
-              iconColor: 'warn'
+              title:       td('SERVICE_UNAVAILABLE', 'Service Unavailable'),
+              message:     t('SERVICE_UNAVAILABLE'),
+              confirmText: td('OK', 'OK'),
+              showCancel:  false,
+              icon:        'cloud_off',
+              iconColor:   'warn'
             }
           }).afterClosed().subscribe(() => {
             serverDownDialogOpen = false;
@@ -184,6 +167,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         }
         return throwError(() => error);
       }
+
       return throwError(() => error);
     })
   );
