@@ -122,15 +122,6 @@
     "DUPLICATE_CLIENT_NAME": "Un client avec ce nom existe déjà",
     "DUPLICATE_CATEGORY_CODE": "Une catégorie avec ce code existe déjà"
   },
-  "DIALOG": {
-    "RATE_LIMIT": "Limite de requêtes atteinte",
-    "SERVER_UNREACHABLE": "Serveur inaccessible",
-    "SERVICE_UNAVAILABLE": "Service indisponible",
-    "SESSION_EXPIRED": "Session expirée",
-    "ACCOUNT_DEACTIVATED": "Compte désactivé",
-    "ACCESS_DENIED": "Accès refusé",
-    "OK": "OK"
-  },
   "SUCCESS": {
     "OPERATION_COMPLETED": "Opération terminée avec succès",
     "RESOURCE_CREATED": "Ressource créée avec succès",
@@ -364,7 +355,7 @@
       "DELAI_RETOUR": "DÉLAI RETOUR",
       "DISCOUNT_RATE": "TAUX DE REMISE",
       "CREDIT_LIMIT_MULTIPLIER": "MULTIPLICATEUR DE CRÉDIT",
-      "BULK_PRICING": "TARIFICATION EN GROS",
+      "BULK_PRICING": "Tarification en gros",
       "CLIENT_COUNT": "NOMBRE DE CLIENTS",
       "STATUS": "STATUT",
       "CREATED_AT": "CRÉÉ LE",
@@ -657,7 +648,7 @@
     }
   },
   "LOGIN": {
-    "TITLE": "Connexion",
+    "TITLE": "Se Connecter",
     "LOGIN": "Identifiant",
     "PASSWORD": "Mot de passe",
     "LOGIN_PLACEHOLDER": "Saisir votre identifiant",
@@ -667,8 +658,15 @@
     "LOGIN_REQUIRED": "Identifiant requis",
     "PASSWORD_REQUIRED": "Mot de passe requis"
   },
-  "MODAL": {
+  "DIALOG": {
+    "RATE_LIMIT": "Limite de requêtes atteinte",
+    "SERVER_UNREACHABLE": "Serveur inaccessible",
+    "SERVICE_UNAVAILABLE": "Service indisponible",
+    "SESSION_EXPIRED": "Session expirée",
+    "ACCOUNT_DEACTIVATED": "Compte désactivé",
+    "ACCESS_DENIED": "Accès refusé",
     "CANCEL": "Annuler",
-    "CONFIRM": "Confirmer"
+    "CONFIRM": "Confirmer",
+    "OK": "OK"
   }
 }

@@ -8,7 +8,6 @@ export class UserSettingsService {
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AuthService);
 
-  // Initialize from JWT — DB is the source of truth
   private _theme = signal<'light' | 'dark'>(
     this.authService.Theme ?? 'light'
   );
@@ -23,17 +22,18 @@ export class UserSettingsService {
   private _initialized = false;
 
   constructor() {
+    // ✅ Load initial language once, then react to changes
+    this.translate.use(this._language()).pipe(take(1)).subscribe();
+
     effect(() => {
-      this.translate.use(this._language());
+      const lang = this._language();
+      this.translate.use(lang).pipe(take(1)).subscribe();
     });
   }
-
   init() {
     if (this._initialized) return;
     this._initialized = true;
-
     document.documentElement.setAttribute('data-theme', this._theme());
-    this.translate.use(this._language());
   }
 
   toggleTheme() {
@@ -49,14 +49,14 @@ export class UserSettingsService {
     this.persistToServer();
   }
 
-  get isDark() { return this._theme() === 'dark'; }
-  get isEn()   { return this._language() === 'en'; }
-
   setLanguage(lang: 'en' | 'fr') {
     if (this._language() === lang) return;
     this._language.set(lang);
-    this.persistToServer();
+    if(this.authService.JwtPayload) this.persistToServer();
   }
+
+  get isDark() { return this._theme() === 'dark'; }
+  get isEn()   { return this._language() === 'en'; }
 
   private persistToServer() {
     const userId = this.authService.UserId;
@@ -66,9 +66,7 @@ export class UserSettingsService {
       theme: this._theme(),
       language: this._language()
     }).pipe(take(1)).subscribe({
-      error: () => {
-        console.error('Failed to persist settings');
-      }
+      error: () => console.error('Failed to persist settings')
     });
   }
 }

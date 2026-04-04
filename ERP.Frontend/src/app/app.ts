@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LoadingOverlayComponent } from "./components/loading-overlay/loading-overlay";
 import { UserSettingsService } from './services/user-settings.service';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -12,11 +13,12 @@ import { UserSettingsService } from './services/user-settings.service';
 })
 export class App {
   protected readonly title = signal('ERP.Frontend');
-
-  private readonly userSettings = inject(UserSettingsService);
-  private readonly translate = inject(TranslateService);
+  protected readonly userSettings = inject(UserSettingsService);
+  protected readonly translate = inject(TranslateService);
 
   constructor() {
-    this.userSettings.init(); // ✅ single init point
+    this.translate.reloadLang('en').pipe(take(1)).subscribe(() => {
+      this.userSettings.init();
+    });
   }
 }

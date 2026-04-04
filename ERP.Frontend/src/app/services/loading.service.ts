@@ -1,25 +1,20 @@
+// loading.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class LoadingService {
+  private _count = 0;
+  private _loading$ = new BehaviorSubject<boolean>(false);
+  readonly loading$ = this._loading$.asObservable();
 
-  private _loading = new BehaviorSubject<boolean>(false);
-  loading$ = this._loading.asObservable();
-
-  private requestCount = 0;
-
-  show(): void {
-    this.requestCount++;
-    this._loading.next(true);
+  show() {
+    this._count++;
+    this._loading$.next(true);
   }
 
-  hide(): void {
-    this.requestCount--;
-
-    if (this.requestCount <= 0) {
-      this.requestCount = 0;
-      this._loading.next(false);
-    }
+  hide() {
+    this._count = Math.max(0, this._count - 1); // never go negative
+    if (this._count === 0) this._loading$.next(false);
   }
 }

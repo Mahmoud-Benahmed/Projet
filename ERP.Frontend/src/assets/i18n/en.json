@@ -122,15 +122,6 @@
     "DUPLICATE_CLIENT_NAME": "A client with this name already exists",
     "DUPLICATE_CATEGORY_CODE": "A category with this code already exists"
   },
-  "DIALOG": {
-    "RATE_LIMIT": "Rate Limit Reached",
-    "SERVER_UNREACHABLE": "Server Unreachable",
-    "SERVICE_UNAVAILABLE": "Service Unavailable",
-    "SESSION_EXPIRED": "Session Expired",
-    "ACCOUNT_DEACTIVATED": "Account Deactivated",
-    "ACCESS_DENIED": "Access Denied",
-    "OK": "OK"
-  },
   "SUCCESS": {
     "OPERATION_COMPLETED": "Operation completed successfully",
     "RESOURCE_CREATED": "Resource created successfully",
@@ -657,7 +648,7 @@
     }
   },
   "LOGIN": {
-    "TITLE": "Connexion",
+    "TITLE": "Login",
     "LOGIN": "Login",
     "PASSWORD": "Password",
     "LOGIN_PLACEHOLDER": "Enter your login",
@@ -667,8 +658,15 @@
     "LOGIN_REQUIRED": "Login required",
     "PASSWORD_REQUIRED": "Password required"
   },
-  "MODAL": {
-    "CANCEL": "Annuler",
-    "CONFIRM": "Confirmer"
+  "DIALOG": {
+    "RATE_LIMIT": "Rate Limit Reached",
+    "SERVER_UNREACHABLE": "Server Unreachable",
+    "SERVICE_UNAVAILABLE": "Service Unavailable",
+    "SESSION_EXPIRED": "Session Expired",
+    "ACCOUNT_DEACTIVATED": "Account Deactivated",
+    "ACCESS_DENIED": "Access Denied",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm",
+    "OK": "OK"
   }
 }

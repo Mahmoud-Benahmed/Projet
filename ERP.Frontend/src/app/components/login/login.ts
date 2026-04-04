@@ -1,5 +1,5 @@
 import { AuthService } from '../../services/auth/auth.service';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { HttpError } from '../../interfaces/ErrorDto';
 import { environment } from '../../environment';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -37,7 +38,9 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
   encapsulation: ViewEncapsulation.None
 })
 export class LoginComponent implements OnInit{
+  private langSub?: Subscription;
 
+  readonly year: number = new Date().getFullYear();
   userProfile: AuthUserGetResponseDto | null = null;
 
   credentials = { login: '', password: '' };
@@ -49,14 +52,21 @@ export class LoginComponent implements OnInit{
     private authService: AuthService,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
-    private userSettings: UserSettingsService,
+    public userSettings: UserSettingsService,
     public translate: TranslateService
   ) {}
 
+
   ngOnInit(): void {
-    if (this.authService.isLoggedIn()!) {
+    if (this.authService.isLoggedIn()) {
       this.router.navigate(['/home']);
     }
+
+    this.langSub = this.translate.onLangChange.subscribe(() => {
+      this.cdr.detectChanges();
+    });
+
+    this.cdr.detectChanges();
   }
 
   togglePasswordVisibility(): void {
@@ -72,9 +82,6 @@ export class LoginComponent implements OnInit{
             this.isLoading = false;
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
-
-            this.userSettings.init();
-            this.userSettings.setLanguage(this.authService.Language ?? 'en');
 
             if (response.mustChangePassword && environment.production) {
               this.stopLoading();
@@ -92,28 +99,32 @@ export class LoginComponent implements OnInit{
       error: (error) => {
         this.stopLoading();
         if ([0, 403, 429].includes(error.status)) return;
-        let err = error.error as HttpError
+        const code = error.error?.code ?? 'UNKNOWN';
+        const key  = `ERRORS.${code}`;
+        const msg  = this.translate.instant(key);
+        const display = msg === key ? (error.error?.message ?? msg) : msg;
+
         this.dialog.open(ModalComponent, {
-              width: '400px',
-              data: {
-                title: this.translate.instant('LOGIN.TITLE'),
-                message: this.translate.instant('ERRORS.AUTH_002'),
-                confirmText: 'Ok',
-                showCancel: false,
-                icon: 'dangerous',
-                iconColor: 'danger'
-              }
-          });
+          width: '400px',
+          data: {
+            title:       this.translate.instant('DIALOG.ACCESS_DENIED'),
+            message:     display,
+            confirmText: this.translate.instant('DIALOG.OK'),
+            showCancel:  false,
+            icon:        'dangerous',
+            iconColor:   'danger'
+          }
+        });
       }
     });
-  }
-
-  goToSignup(): void {
-    this.router.navigate(['/register']);
   }
 
   stopLoading() {
     this.isLoading = false;
     this.cdr.markForCheck();
+  }
+
+  ngOnDestroy(): void {
+    this.langSub?.unsubscribe();
   }
 }
