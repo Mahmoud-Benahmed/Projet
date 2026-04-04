@@ -9,13 +9,13 @@
 
   <!-- Card -->
   <div class="login-card">
-    <h1 class="login-card__title">Connexion</h1>
+    <h1 class="login-card__title">{{ 'LOGIN.TITLE' | translate }}</h1>
 
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
 
       <!-- Login -->
       <div class="field">
-        <label class="field__label" for="login">Login</label>
+        <label class="field__label" for="login">{{ 'LOGIN.LOGIN' | translate }}</label>
         <div class="field__wrapper">
           <span class="field__icon">
             <mat-icon>person_outline</mat-icon>
@@ -24,19 +24,19 @@
             id="login"
             type="text"
             name="login"
-            placeholder="Enter your login"
+            placeholder="{{ 'LOGIN.LOGIN_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.login"
             required
             #loginInput="ngModel" />
         </div>
         <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
-          Login required
+          {{ 'LOGIN.LOGIN_REQUIRED' | translate }}
         </span>
       </div>
 
       <!-- Password -->
       <div class="field">
-        <label class="field__label" for="password">Password</label>
+        <label class="field__label" for="password">{{ 'LOGIN.PASSWORD' | translate }}</label>
         <div class="field__wrapper">
           <span class="field__icon">
             <mat-icon>lock_outline</mat-icon>
@@ -45,7 +45,7 @@
             id="password"
             [type]="showPassword ? 'text' : 'password'"
             name="password"
-            placeholder="Enter your password"
+            placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.password"
             required
             #passwordInput="ngModel" />
@@ -54,7 +54,7 @@
           </button>
         </div>
         <span class="field__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
-          Password required
+          {{ 'LOGIN.PASSWORD_REQUIRED' | translate }}
         </span>
       </div>
 
@@ -67,10 +67,10 @@
         @if (isLoading) {
           <div class="btn-loading">
             <mat-progress-spinner diameter="18" mode="indeterminate" color="accent" />
-            Connexion...
+            {{ 'LOGIN.CONNECTING' | translate }}
           </div>
         } @else {
-          Sign In
+          {{ 'LOGIN.SIGN_IN' | translate }}
         }
 
       </button>

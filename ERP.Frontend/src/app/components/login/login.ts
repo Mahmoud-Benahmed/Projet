@@ -15,6 +15,8 @@ import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 import { ModalComponent } from '../modal/modal';
 import { HttpError } from '../../interfaces/ErrorDto';
 import { environment } from '../../environment';
+import { UserSettingsService } from '../../services/user-settings.service';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
@@ -27,7 +29,8 @@ import { environment } from '../../environment';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDialogModule
+    MatDialogModule,
+    TranslatePipe
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
@@ -45,7 +48,9 @@ export class LoginComponent implements OnInit{
     private router: Router,
     private authService: AuthService,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userSettings: UserSettingsService,
+    public translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -67,6 +72,10 @@ export class LoginComponent implements OnInit{
             this.isLoading = false;
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
+
+            this.userSettings.init();
+            this.userSettings.setLanguage(this.authService.Language ?? 'en');
+
             if (response.mustChangePassword && environment.production) {
               this.stopLoading();
               this.router.navigate(['/must-change-password']);
@@ -75,6 +84,7 @@ export class LoginComponent implements OnInit{
             this.router.navigate(['/home']);
           },
           error: () => {
+            this.stopLoading();
             this.authService.logout();
           }
         });
@@ -86,8 +96,8 @@ export class LoginComponent implements OnInit{
         this.dialog.open(ModalComponent, {
               width: '400px',
               data: {
-                title: "Error",
-                message: err.message,
+                title: this.translate.instant('LOGIN.TITLE'),
+                message: this.translate.instant('ERRORS.AUTH_002'),
                 confirmText: 'Ok',
                 showCancel: false,
                 icon: 'dangerous',
