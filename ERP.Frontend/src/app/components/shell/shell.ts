@@ -28,7 +28,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   openGroups: Record<string, boolean> = {
     auth: false,
     articles: false,
-    clients:  false
+    clients:  false,
+    stock:    false,
+    invoices: false
   };
 
   userName = '';
@@ -53,6 +55,8 @@ export class ShellComponent implements OnInit, OnDestroy {
         if (url.startsWith('/users') || url.startsWith('/permissions')) this.openGroups['auth'] = true;
         if (url.startsWith('/articles')) this.openGroups['articles'] = true;
         if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
+        if (url.startsWith('/stock'))    this.openGroups['stock']    = true;
+        if (url.startsWith('/invoices')) this.openGroups['invoices'] = true;
       })
     );
 
@@ -72,8 +76,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/users') || url.startsWith('/permissions')) this.openGroups['auth'] = true;
     if (url.startsWith('/articles')) this.openGroups['articles'] = true;
     if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
-
-    this.cdr.markForCheck();
+    if (url.startsWith('/stock'))    this.openGroups['stock']    = true;
+    if (url.startsWith('/invoices')) this.openGroups['invoices'] = true;
     window.addEventListener('resize', this.resizeListener);
   }
 
@@ -94,6 +98,8 @@ export class ShellComponent implements OnInit, OnDestroy {
 
     if (url.startsWith('/clients/categories'))  return [{ label: 'Clients', link: '/clients/categories' }, { label: 'Categories' }];
     if (url.startsWith('/clients'))           return [{ label: 'Clients' }];
+
+    if (url.startsWith('/invoices'))          return [{ label: 'Invoices' }];
 
     if (url.startsWith('/permissions'))       return [{ label: 'Permissions' }];
     if (url.startsWith('/audit-log'))         return [{ label: 'Audit Log' }];
