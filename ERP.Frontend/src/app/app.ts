@@ -17,7 +17,7 @@ export class App {
   protected readonly translate = inject(TranslateService);
 
   constructor() {
-    
+
     this.translate.reloadLang('en').pipe(take(1)).subscribe(() => {
       this.userSettings.init();
     });
