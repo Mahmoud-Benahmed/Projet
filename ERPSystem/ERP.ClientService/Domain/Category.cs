@@ -9,6 +9,7 @@ public sealed class Category
 
     // ── Business rules ────────────────────────────────────────────────────────
     public int DelaiRetour { get; private set; }
+    public int DuePaymentPeriod { get; private set; }
     public decimal? DiscountRate { get; private set; }  // 0.00 – 1.00
     public decimal? CreditLimitMultiplier { get; private set; }  // e.g. 1.5 = 150%
     public bool UseBulkPricing { get; private set; }
@@ -35,6 +36,7 @@ public sealed class Category
         string name,
         string code,
         int delaiRetour,
+        int duePaymentPeriod,          // <-- was the broken `int )` — fixed
         bool useBulkPricing = false,
         decimal? discountRate = null,
         decimal? creditLimitMultiplier = null)
@@ -44,6 +46,7 @@ public sealed class Category
         ValidateDelaiRetour(delaiRetour);
         ValidateDiscountRate(discountRate);
         ValidateCreditLimitMultiplier(creditLimitMultiplier);
+        ValidateDuePaymentPeriod(duePaymentPeriod);            // <-- add this
 
         return new Category
         {
@@ -54,29 +57,34 @@ public sealed class Category
             UseBulkPricing = useBulkPricing,
             DiscountRate = discountRate,
             CreditLimitMultiplier = creditLimitMultiplier,
+            DuePaymentPeriod = duePaymentPeriod,               // <-- add this
             CreatedAt = DateTime.UtcNow,
         };
     }
 
+
     // ── Update ────────────────────────────────────────────────────────────────
     public void Update(
-        string name,
-        string code,
-        int delaiRetour,
-        bool useBulkPricing = false,
-        decimal? discountRate = null,
-        decimal? creditLimitMultiplier = null)
+    string name,
+    string code,
+    int delaiRetour,
+    int duePaymentPeriod,          // ← int, not int?
+    bool useBulkPricing = false,
+    decimal? discountRate = null,
+    decimal? creditLimitMultiplier = null)
     {
         GuardNotDeleted();
         ValidateName(name);
         ValidateCode(code);
         ValidateDelaiRetour(delaiRetour);
+        ValidateDuePaymentPeriod(duePaymentPeriod);
         ValidateDiscountRate(discountRate);
         ValidateCreditLimitMultiplier(creditLimitMultiplier);
 
         Name = name.Trim();
         Code = code.Trim().ToUpperInvariant();
         DelaiRetour = delaiRetour;
+        DuePaymentPeriod = duePaymentPeriod;
         UseBulkPricing = useBulkPricing;
         DiscountRate = discountRate;
         CreditLimitMultiplier = creditLimitMultiplier;
@@ -195,5 +203,12 @@ public sealed class Category
             throw new ArgumentException(
                 "Credit limit multiplier must be positive.",
                 nameof(multiplier));
+    }
+
+    private static void ValidateDuePaymentPeriod(int days)
+    {
+        if (days <= 0)
+            throw new ArgumentException(
+                "Due payment period must be at least 1 day.", nameof(days));
     }
 }

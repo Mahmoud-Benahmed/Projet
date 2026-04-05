@@ -47,6 +47,9 @@ namespace ERP.ClientService.Migrations
                         .HasPrecision(5, 4)
                         .HasColumnType("decimal(5,4)");
 
+                    b.Property<int>("DuePaymentPeriod")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -94,6 +97,9 @@ namespace ERP.ClientService.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<int?>("DelaiRetour")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DuePaymentPeriod")
                         .HasColumnType("int");
 
                     b.Property<string>("Email")

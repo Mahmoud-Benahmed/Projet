@@ -2,6 +2,7 @@
 using ERP.ClientService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Runtime.Intrinsics.Arm;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
 
@@ -50,6 +51,9 @@ public class ClientSeeder
 
     private static List<Client> BuildClients(Dictionary<string, Category> byCode)
     {
+        Random rnd = new Random();
+        int[] periods = [30, 45, 60, 90, 120];
+
         var clients = new List<Client>();
 
         // ── 1. Standard retail client ──────────────────────────────────────────
@@ -57,10 +61,11 @@ public class ClientSeeder
             name: "Alice Martin",
             email: "alice.martin@example.com",
             address: "12 Rue de la Paix, Tunis 1001",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 001",
             taxNumber: null,
             creditLimit: 5_000m,
-            DelaiRetour: null);   // falls back to category DelaiRetour
+            delaiRetour: null);   // falls back to category DelaiRetour
 
         AssignCategory(alice, byCode, "STD");
         clients.Add(alice);
@@ -71,9 +76,10 @@ public class ClientSeeder
             email: "omar.bensalah@acmecorp.tn",
             address: "45 Avenue Habib Bourguiba, Sfax 3000",
             phone: "+216 74 000 002",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             taxNumber: "TN12345678",
             creditLimit: 50_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(omar, byCode, "VIP");
         clients.Add(omar);
@@ -83,10 +89,11 @@ public class ClientSeeder
             name: "Global Trade SARL",
             email: "contact@globaltrade.tn",
             address: "Zone Industrielle, Monastir 5000",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 73 000 003",
             taxNumber: "TN98765432",
             creditLimit: 200_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(globalTrade, byCode, "WHL");
         clients.Add(globalTrade);
@@ -96,10 +103,11 @@ public class ClientSeeder
             name: "Ministère de l'Éducation",
             email: "achats@education.gov.tn",
             address: "Boulevard Bab Benat, Tunis 1008",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 004",
             taxNumber: "TN00000001",
             creditLimit: 500_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(ministry, byCode, "PUB");
         clients.Add(ministry);
@@ -109,10 +117,11 @@ public class ClientSeeder
             name: "TechResell Pro",
             email: "info@techresell.tn",
             address: "Centre Urbain Nord, Tunis 1082",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 005",
             taxNumber: "TN11223344",
             creditLimit: 80_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(techResell, byCode, "RSL");
         AssignCategory(techResell, byCode, "WHL");   // also qualifies for wholesale
@@ -123,10 +132,11 @@ public class ClientSeeder
             name: "Yasmine Trabelsi",
             email: "yasmine.trabelsi@gmail.com",
             address: "Cité El Khadra, Tunis 1003",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: null,
             taxNumber: null,
             creditLimit: 1_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(newbie, byCode, "NEW");
         clients.Add(newbie);
@@ -136,10 +146,11 @@ public class ClientSeeder
             name: "Karim Jebali",
             email: "karim.jebali@premium.tn",
             address: "Les Berges du Lac, Tunis 1053",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 007",
             taxNumber: null,
             creditLimit: 30_000m,
-            DelaiRetour: 90);   // personal 90-day override — wins over any category
+            delaiRetour: 90);   // personal 90-day override — wins over any category
 
         AssignCategory(premiumLoyalty, byCode, "VIP");
         clients.Add(premiumLoyalty);
@@ -149,10 +160,11 @@ public class ClientSeeder
             name: "Riadh Mansouri",
             email: "riadh.mansouri@blocked.tn",
             address: "Bardo, Tunis 2000",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 008",
             taxNumber: null,
             creditLimit: 10_000m,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         AssignCategory(blocked, byCode, "STD");
         blocked.Block();   // simulate a client blocked for payment issues
@@ -163,10 +175,11 @@ public class ClientSeeder
             name: "Société Fantôme",
             email: "contact@fantome.tn",
             address: "Adresse inconnue",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: null,
             taxNumber: null,
             creditLimit: null,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         deleted.Delete();
         clients.Add(deleted);
@@ -176,10 +189,11 @@ public class ClientSeeder
             name: "Slim Bouaziz",
             email: "slim.bouaziz@nocategory.tn",
             address: "Ariana 2080",
+            duePaymentPeriod: periods[rnd.Next(periods.Length)],
             phone: "+216 71 000 010",
             taxNumber: null,
             creditLimit: null,
-            DelaiRetour: null);
+            delaiRetour: null);
 
         clients.Add(noCat);
 
