@@ -33,11 +33,7 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.authService.logout();
-      return;
-    }
-
+    
     this.updateLastLogin();
 
     if (this.authService.UserProfile) {
