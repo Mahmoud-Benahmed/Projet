@@ -2,9 +2,8 @@
 
   <div class="page-header">
     <div>
-      <p class="breadcrumb">CLIENT MANAGEMENT</p>
-      <!-- ✅ Fixed: dynamic title -->
-      <h1 class="page-title">{{ pageTitle }}</h1>
+      <p class="breadcrumb">{{ 'CLIENT_CATEGORIES.BREADCRUMB' | translate }}</p>
+      <h1 class="page-title">{{ pageTitle | translate }}</h1>
     </div>
   </div>
 
@@ -28,14 +27,13 @@
     <span>{{ successMessage }}</span>
   </div>
 
-  <!-- ✅ Fixed: use signal isList() instead of viewMode === 'list' -->
   <ng-container *ngIf="isList() || isListDeleted() || isInactiveList()">
     <div class="stats-grid">
 
       <div class="stat-card stat-card--green" [class.stat-card--current]="isList()" (click)="onActiveCardClick()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Active</p>
+            <p class="stat-card__label">{{ 'CLIENT_CATEGORIES.STATS.ACTIVE' | translate }}</p>
             <p class="stat-card__value">{{ activeCategories }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--green">
@@ -48,11 +46,10 @@
         </div>
       </div>
 
-      <!-- ✅ Fixed: typo stat-card--amvber → stat-card--amber -->
       <div class="stat-card stat-card--amber" [class.stat-card--current]="isInactiveList()" (click)="onInactiveCardClick()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Inactive</p>
+            <p class="stat-card__label">{{ 'CLIENT_CATEGORIES.STATS.INACTIVE' | translate }}</p>
             <p class="stat-card__value">{{ inactiveCategories }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--amber">
@@ -65,10 +62,10 @@
         </div>
       </div>
 
-      <div class="stat-card stat-card--red"  [class.stat-card--current]="isListDeleted()" (click)="onDeletedCardClick()">
+      <div class="stat-card stat-card--red" [class.stat-card--current]="isListDeleted()" (click)="onDeletedCardClick()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Deleted</p>
+            <p class="stat-card__label">{{ 'CLIENT_CATEGORIES.STATS.DELETED' | translate }}</p>
             <p class="stat-card__value">{{ deletedCategories }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--red">
@@ -93,15 +90,14 @@
         <input
           class="search-input"
           type="text"
-          placeholder="Search by name or code..."
+          [placeholder]="'CLIENT_CATEGORIES.SEARCH_PLACEHOLDER' | translate"
           [(ngModel)]="searchQuery"
           (ngModelChange)="applyFilter()"
         />
       </div>
-      <!-- ✅ Fixed: added privilege guard -->
       <button class="btn-add" (click)="openCreate()"
               *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES) && isList()">
-        + Add Category
+        + {{ 'CLIENT_CATEGORIES.ADD_BUTTON' | translate }}
       </button>
     </div>
 
@@ -111,7 +107,7 @@
           <thead>
             <tr>
               <th (click)="sortBy('code')" class="th--sortable">
-                CODE
+                {{ 'CLIENT_CATEGORIES.TABLE.CODE' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'code' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -124,7 +120,7 @@
                 </span>
               </th>
               <th (click)="sortBy('name')" class="th--sortable">
-                NAME
+                {{ 'CLIENT_CATEGORIES.TABLE.NAME' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'name' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -137,7 +133,7 @@
                 </span>
               </th>
               <th (click)="sortBy('delaiRetour')" class="th--sortable">
-                DÉLAI RETOUR
+                {{ 'CLIENT_CATEGORIES.TABLE.DELAI_RETOUR' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'delaiRetour' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -150,7 +146,7 @@
                 </span>
               </th>
               <th (click)="sortBy('discountRate')" class="th--sortable">
-                DISCOUNT
+                {{ 'CLIENT_CATEGORIES.TABLE.DISCOUNT' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'discountRate' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -163,7 +159,7 @@
                 </span>
               </th>
               <th (click)="sortBy('isActive')" class="th--sortable">
-                STATUS
+                {{ 'CLIENT_CATEGORIES.TABLE.STATUS' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'isActive' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -175,46 +171,43 @@
                   </svg>
                 </span>
               </th>
-              <th>ACTIONS</th>
+              <th>{{ 'CLIENT_CATEGORIES.TABLE.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let cat of sortedData; trackBy: trackById" class="table__row">
               <td class="td--code">{{ cat.code }}</td>
               <td class="td--name">{{ cat.name }}</td>
-              <td class="td--days">{{ cat.delaiRetour }} days</td>
+              <td class="td--days">{{ cat.delaiRetour }} {{ 'COMMON.DAYS' | translate }}</td>
               <td class="td--discount">
                 <span *ngIf="cat.discountRate != null">{{ cat.discountRate }}%</span>
                 <span class="td--empty-value" *ngIf="cat.discountRate == null">—</span>
               </td>
               <td>
                 <span class="badge" [ngClass]="cat.isActive ? 'badge--active' : 'badge--blocked'">
-                  {{ cat.isActive ? 'ACTIVE' : 'INACTIVE' }}
+                  {{ cat.isActive ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}
                 </span>
               </td>
               <td class="td--actions">
-                <!-- ✅ Fixed: added privilege guard -->
-                <button class="icon-btn icon-btn--view" (click)="openView(cat)" title="View"
+                <button class="icon-btn icon-btn--view" (click)="openView(cat)" [title]="'COMMON.VIEW' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.VIEW_CLIENTS)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
-                <!-- ✅ Fixed: added privilege guard -->
-                <button class="icon-btn icon-btn--edit" (click)="openEdit(cat)" title="Edit"
+                <button class="icon-btn icon-btn--edit" (click)="openEdit(cat)" [title]="'COMMON.EDIT' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !cat.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                <!-- ✅ Fixed: added privilege guard -->
                 <button
                   class="icon-btn"
                   [ngClass]="cat.isActive ? 'icon-btn--block' : 'icon-btn--unblock'"
                   (click)="toggleActive(cat)"
-                  [title]="cat.isActive ? 'Deactivate' : 'Activate'"
+                  [title]="cat.isActive ? ('COMMON.DEACTIVATE' | translate) : ('COMMON.ACTIVATE' | translate)"
                   *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !cat.isDeleted">
                   <svg *ngIf="cat.isActive" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -226,14 +219,14 @@
                     <polyline points="9 11 12 14 22 4"/>
                   </svg>
                 </button>
-                <button class="icon-btn icon-btn--reactivate" (click)="restore(cat)" title="Restore"
+                <button class="icon-btn icon-btn--reactivate" (click)="restore(cat)" [title]="'COMMON.RESTORE' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.RESTORE_CLIENT_CATEGORIES) && cat.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
                   </svg>
                 </button>
-                <button class="icon-btn icon-btn--delete" (click)="delete(cat)" title="Delete"
+                <button class="icon-btn icon-btn--delete" (click)="delete(cat)" [title]="'COMMON.DELETE' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && !cat.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
@@ -243,12 +236,12 @@
                   </svg>
                 </button>
               </td>
-            </tr>
+             </tr>
             <tr *ngIf="sortedData.length === 0">
               <td colspan="6" class="td--empty">
-                No categories found{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
-              </td>
-            </tr>
+                {{ 'COMMON.NO_RESULTS' | translate }}{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
+               </td>
+             </tr>
           </tbody>
         </table>
       </div>
@@ -265,95 +258,94 @@
   </ng-container>
 
   <!-- ===================== VIEW PANEL ===================== -->
-  <!-- ✅ Fixed: use signal isView() instead of viewMode === 'view' -->
   <div class="panel" *ngIf="isView() && selectedCategory">
     <div class="panel__header">
-      <h2 class="panel__title">Category Details</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ 'CLIENT_CATEGORIES.TITLE_DETAILS' | translate }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <div class="detail-grid">
         <div class="detail-item">
-          <span class="detail-label">CODE</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.CODE' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedCategory.code }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">NAME</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.NAME' | translate }}</span>
           <span class="detail-value">{{ selectedCategory.name }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">DÉLAI RETOUR</span>
-          <span class="detail-value">{{ selectedCategory.delaiRetour }} days</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.DUE_PAYMENT_PERIOD' | translate }}</span>
+          <span class="detail-value">{{ selectedCategory.duePaymentPeriod }} {{ 'COMMON.DAYS' | translate }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">DISCOUNT RATE</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.DELAI_RETOUR' | translate }}</span>
+          <span class="detail-value">{{ selectedCategory.delaiRetour }} {{ 'COMMON.DAYS' | translate }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.DISCOUNT_RATE' | translate }}</span>
           <span class="detail-value">
             {{ selectedCategory.discountRate != null ? selectedCategory.discountRate + '%' : '—' }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CREDIT LIMIT MULTIPLIER</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.CREDIT_LIMIT_MULTIPLIER' | translate }}</span>
           <span class="detail-value">
             {{ selectedCategory.creditLimitMultiplier != null ? ('×' + selectedCategory.creditLimitMultiplier) : '—' }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">BULK PRICING</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.BULK_PRICING' | translate }}</span>
           <span class="badge" [ngClass]="selectedCategory.useBulkPricing ? 'badge--active' : 'badge--inactive'">
-            {{ selectedCategory.useBulkPricing ? 'ENABLED' : 'DISABLED' }}
+            {{ selectedCategory.useBulkPricing ? ('COMMON.ENABLED' | translate) : ('COMMON.DISABLED' | translate) }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CLIENT COUNT</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.CLIENT_COUNT' | translate }}</span>
           <span class="detail-value">{{ selectedCategory.clientCount }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">STATUS</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.STATUS' | translate }}</span>
           <span class="badge" [ngClass]="selectedCategory.isActive ? 'badge--active' : 'badge--blocked'">
-            {{ selectedCategory.isActive ? 'ACTIVE' : 'INACTIVE' }}
+            {{ selectedCategory.isActive ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CREATED AT</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.CREATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedCategory.createdAt | date:'medium' }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">UPDATED AT</span>
+          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.UPDATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedCategory.updatedAt ? (selectedCategory.updatedAt | date:'medium') : '—' }}</span>
         </div>
       </div>
 
       <div class="panel__actions">
-        <!-- ✅ Fixed: added privilege guard -->
         <button class="btn-secondary" (click)="openEdit(selectedCategory)"
                 *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
-          Edit Category
+          {{ 'COMMON.EDIT' | translate }}
         </button>
-        <!-- ✅ Fixed: added privilege guard -->
         <button class="btn-warning" (click)="toggleActive(selectedCategory)"
                 *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
-          {{ selectedCategory.isActive ? 'Deactivate' : 'Activate' }}
+          {{ selectedCategory.isActive ? ('COMMON.DEACTIVATE' | translate) : ('COMMON.ACTIVATE' | translate) }}
         </button>
         <button class="btn-danger" (click)="delete(selectedCategory)"
                 *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && !selectedCategory.isDeleted">
-          Delete
+          {{ 'COMMON.DELETE' | translate }}
         </button>
-
         <button class="btn-success" (click)="restore(selectedCategory)"
                 *ngIf="authService.hasPrivilege(PRIVILEGES.CLIENTS.DELETE_CLIENT_CATEGORIES) && selectedCategory.isDeleted">
-          Restore
+          {{ 'COMMON.RESTORE' | translate }}
         </button>
       </div>
     </div>
   </div>
 
   <!-- ===================== FORM PANEL ===================== -->
-  <!-- ✅ Fixed: use signal isCreate()/isEdit() + privilege guards -->
   <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.CLIENTS.CREATE_CLIENT_CATEGORIES))
                          || (isEdit()   && authService.hasPrivilege(PRIVILEGES.CLIENTS.UPDATE_CLIENT_CATEGORIES))">
     <div class="panel__header">
-      <h2 class="panel__title">{{ isCreate() ? 'Add New Category' : 'Edit Category' }}</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ isCreate() ? ('CLIENT_CATEGORIES.FORM.ADD_TITLE' | translate) : ('CLIENT_CATEGORIES.FORM.EDIT_TITLE' | translate) }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <form [formGroup]="categoryForm" (ngSubmit)="submit()" class="form">
@@ -361,25 +353,25 @@
         <div class="form__row">
           <div class="form__field">
             <div class="form__label">
-              <label>Category Name</label>
+              <label>{{ 'CLIENT_CATEGORIES.FORM.NAME' | translate }}</label>
               <mat-icon>label</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="name" placeholder="Enter category name"
+            <input class="form__input" type="text" formControlName="name" [placeholder]="'CLIENT_CATEGORIES.FORM.NAME_PLACEHOLDER' | translate"
               [class.form__input--error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
-              Name is required (min 2, max 100 characters)
+              {{ 'VALIDATION.NAME_REQUIRED' | translate }}
             </span>
           </div>
 
           <div class="form__field">
             <div class="form__label">
-              <label>Code</label>
+              <label>{{ 'CLIENT_CATEGORIES.FORM.CODE' | translate }}</label>
               <mat-icon>tag</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="code" placeholder="e.g. CAT-A"
+            <input class="form__input" type="text" formControlName="code" [placeholder]="'CLIENT_CATEGORIES.FORM.CODE_PLACEHOLDER' | translate"
               [class.form__input--error]="categoryForm.get('code')?.invalid && categoryForm.get('code')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('code')?.invalid && categoryForm.get('code')?.touched">
-              Code is required (min 2, max 20 characters)
+              {{ 'VALIDATION.CODE_REQUIRED' | translate }}
             </span>
           </div>
         </div>
@@ -387,56 +379,67 @@
         <div class="form__row">
           <div class="form__field">
             <div class="form__label">
-              <label>Délai Retour (days)</label>
+              <label>{{ 'CLIENT_CATEGORIES.FORM.DELAI_RETOUR' | translate }}</label>
               <mat-icon>assignment_return</mat-icon>
             </div>
-            <input class="form__input" type="number" formControlName="delaiRetour" placeholder="e.g. 30" min="0"
+            <input class="form__input" type="number" formControlName="delaiRetour" [placeholder]="'CLIENT_CATEGORIES.FORM.DELAI_RETOUR_PLACEHOLDER' | translate" min="0"
               [class.form__input--error]="categoryForm.get('delaiRetour')?.invalid && categoryForm.get('delaiRetour')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('delaiRetour')?.invalid && categoryForm.get('delaiRetour')?.touched">
-              Délai retour is required and must be ≥ 0
+              {{ 'VALIDATION.DELAI_RETOUR_REQUIRED' | translate }}
             </span>
           </div>
 
           <div class="form__field">
             <div class="form__label">
-              <label>Discount Rate (%) <span class="form__optional">(optional)</span></label>
+              <label>{{ 'CLIENT_CATEGORIES.FORM.DUE_PAYMENT_PERIOD' | translate }}</label>
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <input class="form__input" type="number" formControlName="duePaymentPeriod"
+              [placeholder]="'CLIENT_CATEGORIES.FORM.DUE_PAYMENT_PERIOD_PLACEHOLDER' | translate" min="1"
+              [class.form__input--error]="categoryForm.get('duePaymentPeriod')?.invalid && categoryForm.get('duePaymentPeriod')?.touched"/>
+            <span class="form__error" *ngIf="categoryForm.get('duePaymentPeriod')?.invalid && categoryForm.get('duePaymentPeriod')?.touched">
+              {{ 'VALIDATION.DUE_PAYMENT_PERIOD_REQUIRED' | translate }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form__row">
+          <div class="form__field">
+            <div class="form__label">
+              <label>{{ 'CLIENT_CATEGORIES.FORM.DISCOUNT_RATE' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>percent</mat-icon>
             </div>
             <input class="form__input" type="number" formControlName="discountRate"
-              placeholder="e.g. 10" step="0.01" min="0" max="100"
+              [placeholder]="'CLIENT_CATEGORIES.FORM.DISCOUNT_RATE_PLACEHOLDER' | translate" step="0.01" min="0" max="100"
               [class.form__input--error]="categoryForm.get('discountRate')?.invalid && categoryForm.get('discountRate')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('discountRate')?.invalid && categoryForm.get('discountRate')?.touched">
-              Discount rate must be between 0 and 100
+              {{ 'VALIDATION.DISCOUNT_RATE_INVALID' | translate }}
             </span>
           </div>
-        </div>
-
-        <div class="form__row">
           <div class="form__field">
             <div class="form__label">
-              <label>Credit Limit Multiplier <span class="form__optional">(optional)</span></label>
+              <label>{{ 'CLIENT_CATEGORIES.FORM.CREDIT_LIMIT_MULTIPLIER' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>account_balance_wallet</mat-icon>
             </div>
             <input class="form__input" type="number" formControlName="creditLimitMultiplier"
-              placeholder="e.g. 1.5" step="0.01" min="0"
+              [placeholder]="'CLIENT_CATEGORIES.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" step="0.01" min="0"
               [class.form__input--error]="categoryForm.get('creditLimitMultiplier')?.invalid && categoryForm.get('creditLimitMultiplier')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('creditLimitMultiplier')?.invalid && categoryForm.get('creditLimitMultiplier')?.touched">
-              Multiplier must be ≥ 0
+              {{ 'VALIDATION.MULTIPLIER_INVALID' | translate }}
             </span>
           </div>
-
           <div class="form__field">
             <app-toggle-slider
               formControlName="useBulkPricing"
-              label="Enable Bulk Pricing: {{ categoryForm.get('useBulkPricing')?.value ? 'Enabled' : 'Disabled' }}">
+              [label]="('CLIENT_CATEGORIES.FORM.BULK_PRICING' | translate: { value: categoryForm.get('useBulkPricing')?.value ? ('COMMON.ENABLED' | translate) : ('COMMON.DISABLED' | translate) })">
             </app-toggle-slider>
           </div>
         </div>
 
         <div class="form__actions">
-          <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
+          <button type="button" class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="submit" class="btn-add" [disabled]="categoryForm.invalid">
-            {{ isCreate() ? '+ Add Category' : 'Save Changes' }}
+            {{ isCreate() ? ('COMMON.ADD' | translate) : ('COMMON.SAVE' | translate) }}
           </button>
         </div>
 

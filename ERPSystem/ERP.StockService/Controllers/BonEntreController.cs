@@ -31,15 +31,6 @@ public class BonEntreController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet(ApiRoutes.BonEntres.GetDeleted)]
-    public async Task<IActionResult> GetDeleted(
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 10)
-    {
-        var result = await _service.GetPagedDeletedAsync(page, size);
-        return Ok(result);
-    }
-
     [HttpGet(ApiRoutes.BonEntres.GetByFournisseur)]
     public async Task<IActionResult> GetByFournisseur(
         [FromRoute] Guid fournisseurId,

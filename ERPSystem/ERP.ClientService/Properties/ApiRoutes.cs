@@ -23,10 +23,6 @@ public static class ApiRoutes
         public const string Block = $"{Root}/block/{{id:guid}}";
         public const string Unblock = $"{Root}/unblock/{{id:guid}}";
 
-        public const string SetCreditLimit = $"{Root}/{{id:guid}}/credit-limit";
-        public const string RemoveCreditLimit = $"{Root}/{{id:guid}}/credit-limit";
-        public const string SetDelaiRetour = $"{Root}/{{id:guid}}/return-window";
-        public const string ClearDelaiRetour = $"{Root}/{{id:guid}}/return-window";
         public const string EffectiveDelaiRetour = $"{Root}/{{id:guid}}/return-window/effective";
         public const string CanPlaceOrder = $"{Root}/{{id:guid}}/can-place-order";
 

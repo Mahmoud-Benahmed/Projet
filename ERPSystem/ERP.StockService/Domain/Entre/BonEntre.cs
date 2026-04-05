@@ -32,14 +32,11 @@ public sealed class BonEntre : PieceStock
 
     public void ClearLignes()
     {
-        GuardNotDeleted();
         _lignes.Clear();
     }
 
     public LigneEntre AddLigne(Guid articleId, decimal qty, decimal price)
     {
-        GuardNotDeleted();
-
         if (articleId == Guid.Empty)
             throw new ArgumentException("ArticleId is required.");
 
@@ -66,8 +63,6 @@ public sealed class BonEntre : PieceStock
 
     public void RemoveLigne(Guid ligneId)
     {
-        GuardNotDeleted();
-
         if (ligneId == Guid.Empty)
             throw new ArgumentException("LigneId is required.");
 
@@ -87,8 +82,6 @@ public sealed class BonEntre : PieceStock
 
     public void UpdateLigne(Guid ligneId, decimal qty, decimal price)
     {
-        GuardNotDeleted();
-
         if (ligneId == Guid.Empty)
             throw new ArgumentException("LigneId is required.");
 
@@ -115,10 +108,4 @@ public sealed class BonEntre : PieceStock
     }
 
     public decimal CalculateTotal() => _lignes.Sum(l => l.CalculateTotalLigne());
-
-    private void GuardNotDeleted()
-    {
-        if (IsDeleted)
-            throw new InvalidOperationException("Cannot modify a deleted BonEntre.");
-    }
 }

@@ -16,7 +16,7 @@ namespace ERP.AuthService.Middleware
         {
             if (context.User.Identity?.IsAuthenticated == true)
             {
-                var sub= context.Request.Headers["X-User-Id"].FirstOrDefault();
+                var sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
 
                 if (Guid.TryParse(sub, out var userId))
                 {
@@ -24,33 +24,26 @@ namespace ERP.AuthService.Middleware
 
                     if (user is null)
                     {
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-                        await context.Response.WriteAsJsonAsync(new
-                        {
-                            statusCode = 401,
-                            code = "AUTH_009",
-                            content = "Your session is no longer valid. Please log in again."
-                        });
-                        return;
+                        await WriteErrorAsync(context, 401, "AUTH_019");
+                        return; // ✅ stop pipeline
                     }
 
-                    if (!user.IsActive)
+                    if (!user.CanLogin()) // ✅ covers IsActive + IsDeleted
                     {
-                        context.Response.StatusCode = 403;
-                        context.Response.ContentType = "application/json";
-                        await context.Response.WriteAsJsonAsync(new
-                        {
-                            statusCode = 403,
-                            code = "AUTH_003",
-                            content = "Your account has been deactivated. Please contact an administrator."
-                        });
+                        await WriteErrorAsync(context, 403, "AUTH_003");
                         return;
                     }
                 }
             }
 
             await _next(context);
+        }
+
+        private static Task WriteErrorAsync(HttpContext context, int statusCode, string code)
+        {
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsJsonAsync(new { statusCode, code, message = code });
         }
     }
 }

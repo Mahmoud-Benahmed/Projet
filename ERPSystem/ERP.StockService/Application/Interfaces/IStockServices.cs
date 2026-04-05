@@ -33,7 +33,6 @@ public interface IBonEntreService
     // ── Read ──────────────────────────────────────────────────────────────────
     Task<BonEntreResponseDto> GetByIdAsync(Guid id);
     Task<PagedResultDto<BonEntreResponseDto>> GetAllAsync(int page, int size);
-    Task<PagedResultDto<BonEntreResponseDto>> GetPagedDeletedAsync(int page, int size);
     Task<PagedResultDto<BonEntreResponseDto>> GetPagedByFournisseurAsync(Guid fournisseurId, int page, int size);
     Task<PagedResultDto<BonEntreResponseDto>> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
@@ -50,7 +49,6 @@ public interface IBonSortieService
     // ── Read ──────────────────────────────────────────────────────────────────
     Task<BonSortieResponseDto> GetByIdAsync(Guid id);
     Task<PagedResultDto<BonSortieResponseDto>> GetAllAsync(int page, int size);
-    Task<PagedResultDto<BonSortieResponseDto>> GetPagedDeletedAsync(int page, int size);
     Task<PagedResultDto<BonSortieResponseDto>> GetPagedByClientAsync(Guid clientId, int page, int size);
     Task<PagedResultDto<BonSortieResponseDto>> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
@@ -66,7 +64,6 @@ public interface IBonRetourService
     // ── Read ──────────────────────────────────────────────────────────────────
     Task<BonRetourResponseDto> GetByIdAsync(Guid id);
     Task<PagedResultDto<BonRetourResponseDto>> GetAllAsync(int page, int size);
-    Task<PagedResultDto<BonRetourResponseDto>> GetPagedDeletedAsync(int page, int size);
     Task<PagedResultDto<BonRetourResponseDto>> GetPagedBySourceAsync(Guid sourceId, int page, int size);
     Task<PagedResultDto<BonRetourResponseDto>> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();

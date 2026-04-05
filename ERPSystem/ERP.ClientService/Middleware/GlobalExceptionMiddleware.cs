@@ -43,21 +43,21 @@ public class GlobalExceptionMiddleware
             ClientNotFoundException ex => new ErrorResponse
             {
                 Code = "CLIENT_NOT_FOUND",
-                Message = ex.Message,
+                Message = "CLIENT_NOT_FOUND",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.NotFound
             },
 
             CategoryAssignedToUsersException ex => new ErrorResponse
             {
                 Code = "CLIENT_CATEGORY_DELETE_FAIL",
-                Message = ex.Message,
+                Message = "CLIENT_CATEGORY_DELETE_FAIL",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.Conflict
             },
 
             CategoryNotFoundException ex => new ErrorResponse
             {
                 Code = "CATEGORY_NOT_FOUND",
-                Message = ex.Message,
+                Message = "CATEGORY_NOT_FOUND",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.NotFound
             },
 
@@ -65,7 +65,7 @@ public class GlobalExceptionMiddleware
             KeyNotFoundException ex => new ErrorResponse
             {
                 Code = "NOT_FOUND",
-                Message = ex.Message,
+                Message = "NOT_FOUND",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.NotFound
             },
 
@@ -73,7 +73,7 @@ public class GlobalExceptionMiddleware
             InvalidOperationException ex => new ErrorResponse
             {
                 Code = "BUSINESS_RULE_VIOLATION",
-                Message = ex.Message,
+                Message = "BUSINESS_RULE_VIOLATION",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.Conflict
             },
 
@@ -81,14 +81,14 @@ public class GlobalExceptionMiddleware
             ArgumentOutOfRangeException ex => new ErrorResponse
             {
                 Code = "INVALID_RANGE",
-                Message = ex.Message,
+                Message = "INVALID_RANGE",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.BadRequest
             },
 
             ArgumentException ex => new ErrorResponse
             {
                 Code = "VALIDATION_ERROR",
-                Message = ex.Message,
+                Message = "VALIDATION_ERROR",  // ✅ Changed from ex.Message
                 StatusCode = (int)HttpStatusCode.BadRequest
             },
 
@@ -103,7 +103,7 @@ public class GlobalExceptionMiddleware
             DbUpdateException => new ErrorResponse
             {
                 Code = "DATABASE_ERROR",
-                Message = "A database error occurred.",
+                Message = "DATABASE_ERROR",  // ✅ Changed from English sentence
                 StatusCode = (int)HttpStatusCode.InternalServerError
             },
 
@@ -111,7 +111,7 @@ public class GlobalExceptionMiddleware
             _ => new ErrorResponse
             {
                 Code = "INTERNAL_SERVER_ERROR",
-                Message = "An unexpected error occurred.",
+                Message = "INTERNAL_SERVER_ERROR",  // ✅ Changed from English sentence
                 StatusCode = (int)HttpStatusCode.InternalServerError
             }
         };
@@ -136,14 +136,14 @@ public class GlobalExceptionMiddleware
     private static string ExtractDuplicateField(string message)
     {
         if (message.Contains("IX_Clients_Email", StringComparison.OrdinalIgnoreCase))
-            return "A client with this email already exists.";
+            return "DUPLICATE_CLIENT_EMAIL";  // ✅ Changed from English sentence
 
         if (message.Contains("IX_Clients_Name", StringComparison.OrdinalIgnoreCase))
-            return "A client with this name already exists.";
+            return "DUPLICATE_CLIENT_NAME";  // ✅ Changed from English sentence
 
         if (message.Contains("IX_Categories_Code", StringComparison.OrdinalIgnoreCase))
-            return "A category with this code already exists.";
+            return "DUPLICATE_CATEGORY_CODE";  // ✅ Changed from English sentence
 
-        return "A record with this value already exists.";
+        return "DUPLICATE_ENTRY";  // ✅ Changed from English sentence
     }
 }

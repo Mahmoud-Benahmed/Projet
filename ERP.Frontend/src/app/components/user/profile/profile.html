@@ -3,7 +3,7 @@
   <!-- ── LOADING ── -->
   <div class="loading-state" *ngIf="isLoading">
     <mat-spinner diameter="48"></mat-spinner>
-    <p>Loading profile…</p>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
   </div>
 
   <ng-container *ngIf="!isLoading && userProfile">
@@ -20,7 +20,7 @@
             <span class="hero-avatar__status"
                   [class.hero-avatar__status--active]="userProfile.isActive"
                   [class.hero-avatar__status--inactive]="!userProfile.isActive"
-                  [matTooltip]="userProfile.isActive ? 'Active' : 'Inactive'">
+                  [matTooltip]="userProfile.isActive ? ('USERS.PROFILE.ACTIVE' | translate) : ('USERS.PROFILE.INACTIVE' | translate)">
             </span>
           </div>
 
@@ -46,7 +46,7 @@
                     (click)="startEditing()"
                     *ngIf="!isEditing && canEditProfile">
               <mat-icon>edit</mat-icon>
-              Edit Profile
+              {{ 'USERS.PROFILE.EDIT_PROFILE' | translate }}
             </button>
 
             <a mat-stroked-button
@@ -54,16 +54,15 @@
                     *ngIf="isOwnProfile"
                     routerLink="/change-password">
               <mat-icon>lock_reset</mat-icon>
-              Change Password
+              {{ 'USERS.PROFILE.CHANGE_PASSWORD' | translate }}
             </a>
             <a mat-stroked-button
                     class="password-btn"
                     *ngIf="hasPrivilege"
                     [routerLink]="['/change-password', selectedUserId]">
               <mat-icon>lock_reset</mat-icon>
-              Change Password
+              {{ 'USERS.PROFILE.CHANGE_PASSWORD' | translate }}
             </a>
-
 
           </div>
         </div>
@@ -77,7 +76,7 @@
           <mat-card-header>
             <mat-card-title class="card-title">
               <mat-icon>person</mat-icon>
-              Personal Information
+              {{ 'USERS.PROFILE.PERSONAL_INFO' | translate }}
             </mat-card-title>
             <button class="card-collapse-btn" (click)="infoCollapsed = !infoCollapsed" type="button">
               <mat-icon [class.rotated]="infoCollapsed">expand_more</mat-icon>
@@ -95,7 +94,7 @@
 
                       <div class="info-row" *ngIf="userProfile.fullName">
                         <span class="info-row__label">
-                          <mat-icon>person</mat-icon> Full Name
+                          <mat-icon>person</mat-icon> {{ 'USERS.PROFILE.FULL_NAME' | translate }}
                         </span>
                         <span class="info-row__value">{{ userProfile.fullName }}</span>
                       </div>
@@ -104,29 +103,25 @@
 
                       <div class="info-row" *ngIf="userProfile.login">
                         <span class="info-row__label">
-                          <mat-icon>badge</mat-icon> Login
+                          <mat-icon>badge</mat-icon> {{ 'USERS.REGISTER.LOGIN' | translate }}
                         </span>
                         <span class="info-row__value mono">{{ userProfile.login }}</span>
                       </div>
-
-
 
                       <mat-divider></mat-divider>
 
                       <div class="info-row" *ngIf="userProfile.email">
                         <span class="info-row__label">
-                          <mat-icon>email</mat-icon> Email
+                          <mat-icon>email</mat-icon> {{ 'USERS.PROFILE.EMAIL' | translate }}
                         </span>
                         <span class="info-row__value mono">{{ userProfile.email }}</span>
                       </div>
 
                       <mat-divider></mat-divider>
 
-                      <mat-divider></mat-divider>
-
                       <div class="info-row" *ngIf="memberSince">
                         <span class="info-row__label">
-                          <mat-icon>calendar_today</mat-icon> Member Since
+                          <mat-icon>calendar_today</mat-icon> {{ 'USERS.PROFILE.MEMBER_SINCE' | translate }}
                         </span>
                         <span class="info-row__value">{{ memberSince }}</span>
                       </div>
@@ -135,7 +130,7 @@
 
                       <div class="info-row" *ngIf="userProfile.updatedAt">
                         <span class="info-row__label">
-                          <mat-icon>update</mat-icon> Last Updated
+                          <mat-icon>update</mat-icon> {{ 'USERS.PROFILE.LAST_UPDATED' | translate }}
                         </span>
                         <span class="info-row__value">
                           {{ userProfile.updatedAt | date:'dd MMM yyyy, HH:mm' }}
@@ -149,7 +144,7 @@
                 <form class="edit-form" *ngIf="isEditing"  #editFormRef="ngForm">
 
                 <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Full Name</mat-label>
+                  <mat-label>{{ 'USERS.PROFILE.FULL_NAME' | translate }}</mat-label>
                   <input matInput
                         [(ngModel)]="editForm.fullName"
                         name="fullName"
@@ -158,15 +153,15 @@
                         #fullNameInput="ngModel"
                         (ngModelChange)="checkChanges()"/>
                   <mat-icon matPrefix>badge</mat-icon>
-                  <mat-error *ngIf="fullNameInput.errors?.['required']">Full name requis</mat-error>
-                  <mat-error *ngIf="fullNameInput.errors?.['pattern']">Lettres uniquement (ex: Jean Dupont)</mat-error>
+                  <mat-error *ngIf="fullNameInput.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
+                  <mat-error *ngIf="fullNameInput.errors?.['pattern']">{{ 'VALIDATION.NAME_REQUIRED' | translate }}</mat-error>
                   <mat-hint *ngIf="noDataChange" class="warning-hint">
-                    <mat-icon>warning</mat-icon> Crendentials hasn't been changed
+                    <mat-icon>warning</mat-icon> {{ 'USERS.PROFILE.NO_CHANGES' | translate }}
                   </mat-hint>
                 </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Email</mat-label>
+                    <mat-label>{{ 'USERS.PROFILE.EMAIL' | translate }}</mat-label>
                     <input matInput
                           type="email"
                           name="email"
@@ -177,17 +172,17 @@
                           #emailInput="ngModel"
                           (ngModelChange)="checkChanges()"/>
                     <mat-icon matPrefix>email</mat-icon>
-                    <mat-error *ngIf="emailInput.errors?.['required']">Email requis</mat-error>
-                    <mat-error *ngIf="emailInput.errors?.['pattern']">Email invalide</mat-error>
+                    <mat-error *ngIf="emailInput.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
+                    <mat-error *ngIf="emailInput.errors?.['pattern']">{{ 'VALIDATION.INVALID_EMAIL' | translate }}</mat-error>
                   </mat-form-field>
 
                   <div class="edit-form__actions">
                     <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
-                      Cancel
+                      {{ 'COMMON.CANCEL' | translate }}
                     </button>
                     <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving || editFormRef.invalid || noDataChange">
                         <mat-spinner diameter="16" *ngIf="isSaving"/>
-                      {{ isSaving ? 'Saving…' : 'Save Changes' }}
+                      {{ isSaving ? ('COMMON.SAVING' | translate) : ('COMMON.SAVE' | translate) }}
                     </button>
                   </div>
 
@@ -202,7 +197,7 @@
           <mat-card-header>
             <mat-card-title class="card-title">
               <mat-icon>manage_accounts</mat-icon>
-              Account Details
+              {{ 'USERS.PROFILE.ACCOUNT_DETAILS' | translate }}
             </mat-card-title>
             <button class="card-collapse-btn" (click)="accountCollapsed = !accountCollapsed" type="button">
               <mat-icon [class.rotated]="accountCollapsed">expand_more</mat-icon>
@@ -215,20 +210,20 @@
             <mat-card-content>
               <div class="info-list">
                 <div class="info-row">
-                  <span class="info-row__label"><mat-icon>key</mat-icon> Auth ID</span>
+                  <span class="info-row__label"><mat-icon>key</mat-icon> {{ 'USERS.PROFILE.AUTH_ID' | translate }}</span>
                   <span class="info-row__value mono small">{{ userProfile.id }}</span>
                 </div>
                 <mat-divider></mat-divider>
                 <div class="info-row">
-                  <span class="info-row__label"><mat-icon>toggle_on</mat-icon> Status</span>
+                  <span class="info-row__label"><mat-icon>toggle_on</mat-icon> {{ 'USERS.PROFILE.STATUS' | translate }}</span>
                   <span class="info-row__value">
                     <span class="status-dot" [class.status-dot--active]="userProfile.isActive" [class.status-dot--inactive]="!userProfile.isActive"></span>
-                    {{ userProfile.isActive ? 'Active' : 'Inactive' }}
+                    {{ userProfile.isActive ? ('USERS.PROFILE.ACTIVE' | translate) : ('USERS.PROFILE.INACTIVE' | translate) }}
                   </span>
                 </div>
                 <mat-divider></mat-divider>
                 <div class="info-row">
-                  <span class="info-row__label"><mat-icon>login</mat-icon> Last Login</span>
+                  <span class="info-row__label"><mat-icon>login</mat-icon> {{ 'USERS.PROFILE.LAST_LOGIN' | translate }}</span>
                   <span class="info-row__value">
                     {{ (userProfile.lastLoginAt | date:'dd MMM yyyy, HH:mm') ?? '—' }}
                   </span>

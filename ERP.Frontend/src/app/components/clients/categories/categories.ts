@@ -13,13 +13,14 @@ import { CategoriesService, CategoryStatsDto, CreateCategoryRequestDto, UpdateCa
 import { ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CustomToggleComponent } from '../../toggle-slider/toggle-slider';
 import { ArticleCategoryResponseDto } from '../../../services/articles/categories.service';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted' | 'list-inactive';
 
 @Component({
   selector: 'app-client-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, CustomToggleComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, CustomToggleComponent, TranslatePipe],
   templateUrl: './categories.html',
   styleUrls: ['./categories.scss'],
 })
@@ -68,11 +69,12 @@ export class ClientCategoriesComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {
     this.categoryForm = this.fb.group({
-      name:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      code:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(20)]],
-      delaiRetour:           [null, [Validators.required, Validators.min(0)]],
-      discountRate:          [null, [Validators.min(0), Validators.max(100)]],
-      creditLimitMultiplier: [null, [Validators.min(0)]],
+      name:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
+      code:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      delaiRetour:           [null, [Validators.required, Validators.min(1)]],
+      duePaymentPeriod:      [null, [Validators.required, Validators.min(1)]],  // ← added
+      discountRate:          [null, [Validators.min(0), Validators.max(1)]],    // ← fix: max 1 not 100
+      creditLimitMultiplier: [null, [Validators.min(0.01)]],
       useBulkPricing:        [false],
     });
   }
@@ -200,7 +202,7 @@ export class ClientCategoriesComponent implements OnInit {
     this.setViewMode('create');
     this.selectedCategory = null;
     this.categoryForm.reset({
-      name: '', code: '', delaiRetour: null,
+      name: '', code: '', delaiRetour: null, duePaymentPeriod: null,
       useBulkPricing: false, discountRate: null, creditLimitMultiplier: null,
     });
   }
@@ -214,6 +216,7 @@ export class ClientCategoriesComponent implements OnInit {
       name:                  category.name,
       code:                  category.code,
       delaiRetour:           category.delaiRetour,
+      duePaymentPeriod:      category.duePaymentPeriod,    // ← added
       useBulkPricing:        category.useBulkPricing,
       discountRate:          category.discountRate ?? null,
       creditLimitMultiplier: category.creditLimitMultiplier ?? null,
@@ -289,10 +292,11 @@ export class ClientCategoriesComponent implements OnInit {
     const val = this.categoryForm.value;
 
     if (this.isCreate()) {
-      const dto: CreateCategoryRequestDto = {
+      const dto: CreateCategoryRequestDto = {   // same shape for UpdateCategoryRequestDto
         name:                  val.name,
         code:                  val.code,
         delaiRetour:           val.delaiRetour,
+        duePaymentPeriod:      val.duePaymentPeriod,          // ← added
         useBulkPricing:        val.useBulkPricing ?? false,
         discountRate:          val.discountRate ?? null,
         creditLimitMultiplier: val.creditLimitMultiplier ?? null,
@@ -302,10 +306,11 @@ export class ClientCategoriesComponent implements OnInit {
         error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
       });
     } else if (this.isEdit() && this.selectedCategory) {
-      const dto: UpdateCategoryRequestDto = {
+      const dto: UpdateCategoryRequestDto = {   // same shape for UpdateCategoryRequestDto
         name:                  val.name,
         code:                  val.code,
         delaiRetour:           val.delaiRetour,
+        duePaymentPeriod:      val.duePaymentPeriod,          // ← added
         useBulkPricing:        val.useBulkPricing ?? false,
         discountRate:          val.discountRate ?? null,
         creditLimitMultiplier: val.creditLimitMultiplier ?? null,

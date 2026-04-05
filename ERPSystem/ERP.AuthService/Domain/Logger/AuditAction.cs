@@ -33,6 +33,10 @@
         // Controle
         ControleCreated, 
         ControleUpdated, 
-        ControleDeleted
+        ControleDeleted,
+
+        Unauthorized,
+        UserNotFound,
+        UnhandledError
     }
 }

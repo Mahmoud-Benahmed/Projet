@@ -31,17 +31,17 @@ import { Observable, switchMap, EMPTY, forkJoin, map, catchError, of } from 'rxj
 import { RouterLink } from "@angular/router";
 import { ClientResponseDto, ClientsService } from '../../../services/clients/clients.service';
 import { ArticleResponseDto, ArticleService } from '../../../services/articles/articles.service';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 export type BonType = 'entre' | 'sortie' | 'retour';
 
 type BonApi = {
   list:         (p: number, s: number) => Observable<PagedResult<BonRecord>>;
-  listDeleted:  (p: number, s: number) => Observable<PagedResult<BonRecord>>;
   stats:        () => Observable<BonStatsDto>;
   delete:       (id: string) => Observable<any>;
 };
 
-type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
+type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 /** A ligne that exists only in memory during create mode (no id yet). */
 export interface PendingLigne {
@@ -61,7 +61,8 @@ export interface PendingLigne {
     CommonModule, FormsModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
     PaginationComponent,
-    RouterLink
+    RouterLink,
+    TranslatePipe
   ],
   templateUrl: './bon.html',
   styleUrl: './bon.scss',
@@ -69,6 +70,7 @@ export interface PendingLigne {
 })
 export class BonsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
   readonly PRIVILEGES   = PRIVILEGES;
   readonly RetourSource = RetourSourceType;
 
@@ -93,7 +95,6 @@ export class BonsComponent implements OnInit {
   viewMode = signal<ViewMode>('list');
 
   isList        = computed(() => this.viewMode() === 'list');
-  isDeletedList = computed(() => this.viewMode() === 'list-deleted');
   isCreate      = computed(() => this.viewMode() === 'create');
   isEdit        = computed(() => this.viewMode() === 'edit');
   isView        = computed(() => this.viewMode() === 'view');
@@ -149,7 +150,7 @@ export class BonsComponent implements OnInit {
     private articleService: ArticleService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
   ) {
     this.headerForm = this.buildHeaderForm();
     this.ligneForm  = this.buildLigneForm();
@@ -258,7 +259,7 @@ export class BonsComponent implements OnInit {
           this.pageNumber.set(1);
           this.cdr.markForCheck();
         },
-        error: () => this.flash('error', 'Date filter failed')
+        error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.DATE_FILTER_FAILED'))
       });
   }
 
@@ -280,12 +281,6 @@ export class BonsComponent implements OnInit {
     if (this.isList()) return;
     this.setViewMode('list');
     this.load();
-  }
-
-  onDeletedCardClick(): void {
-    if (this.isDeletedList() || this.deletedCount < 1) return;
-    this.setViewMode('list-deleted');
-    this.loadDeleted();
   }
 
   // ── Pagination handler ─────────────────────────────────────────────────────
@@ -311,21 +306,7 @@ export class BonsComponent implements OnInit {
           this.totalCount      = res.totalCount;
           this.cdr.markForCheck();
         },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to load.'),
-      });
-  }
-
-  loadDeleted(): void {
-    this.bonApi[this.activeBonType]
-      .listDeleted(this.pageNumber(), this.pageSize())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res: PagedResult<BonRecord>) => {
-          this.dataSource.data = res.items;
-          this.totalCount      = res.totalCount;
-          this.cdr.markForCheck();
-        },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to load deleted bons.'),
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_FAILED')),
       });
   }
 
@@ -335,13 +316,12 @@ export class BonsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => { this.stats = res; this.cdr.markForCheck(); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to load stats.'),
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_STATS_FAILED')),
       });
   }
 
   reload(): void {
-    if (this.isDeletedList()) this.loadDeleted();
-    else this.load();
+    this.load();
     this.loadStats();
   }
 
@@ -349,9 +329,7 @@ export class BonsComponent implements OnInit {
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
 
   // ── Stats getters ──────────────────────────────────────────────────────────
-  get activeCount():  number { return this.stats?.activeCount  ?? 0; }
-  get deletedCount(): number { return this.stats?.deletedCount ?? 0; }
-  get totalBons():    number { return this.stats?.totalCount   ?? 0; }
+  get activeCount():  number { return this.stats?.totalCount  ?? 0; }
 
   /** Computed total of pending lignes during create mode. */
   get pendingTotal(): number {
@@ -379,7 +357,7 @@ export class BonsComponent implements OnInit {
           }
           this.cdr.markForCheck();
         },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to load source bons.'),
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_SOURCE_BONS_FAILED')),
       });
   }
 
@@ -389,7 +367,7 @@ export class BonsComponent implements OnInit {
         this.articles = res.items.filter(a => !a.isDeleted);
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load articles.')
+      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
     });
   }
 
@@ -410,7 +388,7 @@ export class BonsComponent implements OnInit {
         }
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load fournisseurs.')
+      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_FOURNISSEURS_FAILED'))
     });
   }
 
@@ -435,7 +413,7 @@ export class BonsComponent implements OnInit {
         }
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load clients.')
+      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_CLIENTS_FAILED'))
     });
   }
 
@@ -471,7 +449,7 @@ export class BonsComponent implements OnInit {
               if (existing) {
                 // Sum quantities and recalculate total
                 existing.quantity += l.quantity;
-                existing.total = existing.quantity * existing.price; // ← FIXED: recalculate total after quantity update
+                existing.total = existing.quantity * existing.price;
               } else {
                 aggregated.set(l.articleId, {
                   _localId: crypto.randomUUID(),
@@ -491,7 +469,7 @@ export class BonsComponent implements OnInit {
           },
           error: (err) => {
             const error = err.error as HttpError;
-            this.flash('error', error.message ?? 'Failed to load source bon lignes.');
+            this.flash('error', error.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_SOURCE_BON_LIGNES_FAILED'));
           }
         });
       }
@@ -521,16 +499,27 @@ export class BonsComponent implements OnInit {
   openView(bon: BonRecord): void {
     if (this.isView()) return;
     this.previousMode = this.viewMode();
-    this.selectedBon  = bon;
+
+    // ← shallow clone sufficient for view-only, prevents accidental mutation
+    this.selectedBon = { ...bon, lignes: bon.lignes.map(l => ({ ...l })) };
     this.setViewMode('view');
   }
 
   openEdit(bon: BonRecord): void {
     if (this.isEdit()) return;
     this.previousMode = this.viewMode();
-    this.selectedBon  = bon;
-    this.pendingLignes = [];         // not used in edit mode
-    this.inlineLigneOpen = false;
+
+    // ← always source from dataSource.data to get the pristine server copy,
+    //   never from selectedBon which may already be mutated
+    const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
+
+    this.selectedBon = {
+      ...pristine,
+      lignes: pristine.lignes.map(l => ({ ...l })),
+    };
+
+    this.pendingLignes      = [];
+    this.inlineLigneOpen    = false;
     this.inlineLigneLocalId = null;
     this.applyTypeValidators();
     if (this.activeBonType === 'retour') this.loadSourceBons();
@@ -538,30 +527,43 @@ export class BonsComponent implements OnInit {
     if (this.activeBonType === 'sortie') this.loadClients();
     this.loadArticles();
     this.headerForm.patchValue({
-      observation:   bon.observation                           ?? '',
-      fournisseurId: (bon as BonEntreResponse).fournisseurId  ?? '',
-      clientId:      (bon as BonSortieResponse).clientId      ?? '',
-      sourceId:      (bon as BonRetourResponse).sourceId      ?? '',
-      sourceType:    (bon as BonRetourResponse).sourceType    ?? RetourSourceType.BonEntre,
-      motif:         (bon as BonRetourResponse).motif         ?? '',
+      observation:   pristine.observation                           ?? '',
+      fournisseurId: (pristine as BonEntreResponse).fournisseurId  ?? '',
+      clientId:      (pristine as BonSortieResponse).clientId      ?? '',
+      sourceId:      (pristine as BonRetourResponse).sourceId      ?? '',
+      sourceType:    (pristine as BonRetourResponse).sourceType    ?? RetourSourceType.BonEntre,
+      motif:         (pristine as BonRetourResponse).motif         ?? '',
     });
     this.setViewMode('edit');
   }
 
   cancel(): void {
-    this.inlineLigneOpen = false;
+    this.inlineLigneOpen    = false;
     this.inlineLigneLocalId = null;
-    this.pendingLignes = [];
+    this.pendingLignes      = [];
+
     const target = this.resolveCancel();
     this.setViewMode(target);
-    if (!['view', 'edit'].includes(target)) this.selectedBon = null;
-    if (target !== 'edit') this.headerForm.reset();
+
+    if (target === 'view' && this.selectedBon) {
+      // ← restore selectedBon to the pristine server copy so view panel is clean
+      const pristine = this.dataSource.data.find(b => b.id === this.selectedBon!.id);
+      if (pristine) {
+        this.selectedBon = { ...pristine, lignes: pristine.lignes.map(l => ({ ...l })) };
+      }
+    } else if (!['view', 'edit'].includes(target)) {
+      this.selectedBon = null;
+    }
+
+    if (target !== 'edit') {
+      this.headerForm.reset();
+    }
   }
 
   private resolveCancel(): ViewMode {
     const cur = this.viewMode();
     if (cur === 'edit' && this.previousMode === 'view' && this.selectedBon) return 'view';
-    if (cur === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted'))
+    if (cur === 'view' && (this.previousMode === 'list'))
       return this.previousMode;
     if (cur === 'create') return this.previousMode ?? 'list';
     return 'list';
@@ -648,7 +650,7 @@ export class BonsComponent implements OnInit {
           this.pendingLignes[existingIndex] = {
             ...existing,
             quantity: newQuantity,
-            total: newQuantity * existing.price, // ← FIXED: recalculate total
+            total: newQuantity * existing.price,
           };
         } else {
           this.pendingLignes.push({
@@ -696,12 +698,12 @@ export class BonsComponent implements OnInit {
           this.selectedBon.lignes[existingIndex] = {
             ...existing,
             quantity: newQuantity,
-            total: newQuantity * existing.price, // ← FIXED: recalculate total
+            total: newQuantity * existing.price,
           };
         } else {
           // Create a new ligne with a temporary ID
           const newLigne: LigneResponseDto = {
-            id:        `temp_${crypto.randomUUID()}`,   // temporary identifier
+            id:        `temp_${crypto.randomUUID()}`,
             articleId: val.articleId,
             quantity:  val.quantity,
             price:     val.price,
@@ -727,8 +729,14 @@ export class BonsComponent implements OnInit {
   // ── Submit ─────────────────────────────────────────────────────────────────
   submit(): void {
     if (this.headerForm.invalid) return;
+
     if (this.isCreate() && this.pendingLignes.length === 0) {
-      this.flash('error', 'Please add at least one ligne before creating the bon.');
+      this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.NO_LIGNES'));
+      return;
+    }
+
+    if (this.isEdit() && this.editLignes.length === 0) {
+      this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.NO_LIGNES'));
       return;
     }
 
@@ -741,15 +749,15 @@ export class BonsComponent implements OnInit {
 
     req$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.flash('success', creating ? 'Bon created.' : 'Bon updated.');
+        this.flash('success', creating
+          ? this.translate.instant('STOCK.BONS.SUCCESS.CREATED')
+          : this.translate.instant('STOCK.BONS.SUCCESS.UPDATED'));
         this.cancel();
         this.reload();
       },
-      error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Operation failed.'),
+      error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.OPERATION_FAILED')),
     });
   }
-
-
 
   getClientName(clientId: string): Observable<string> {
     return this.clientService.getById(clientId).pipe(
@@ -794,32 +802,36 @@ export class BonsComponent implements OnInit {
 
   private buildUpdateRequest$(val: any): Observable<any> {
     const id = this.selectedBon!.id;
-    const lignes = this.selectedBon!.lignes.map((l: LigneResponseDto) => ({
-      articleId: l.articleId,
-      quantity:  l.quantity,
-      price:     l.price,
-      remarque:  l.remarque ?? null,
-    }));
+
+    const lignes = this.selectedBon!.lignes
+      .map((l: LigneResponseDto) => ({
+        articleId: l.articleId,
+        quantity:  l.quantity,
+        price:     l.price,
+        remarque:  l.remarque ?? null,
+      }));                             // ← no id sent, backend treats all as the new set
 
     switch (this.activeBonType) {
       case 'entre':
         return this.stock.updateBonEntre(id, {
-          observation: val.observation || null,
+          observation:   val.observation || null,
           fournisseurId: val.fournisseurId,
-          lignes
+          lignes,
         } as UpdateBonEntreRequest);
+
       case 'sortie':
         return this.stock.updateBonSortie(id, {
           observation: val.observation || null,
-          clientId: val.clientId,
-          lignes
+          clientId:    val.clientId,
+          lignes,
         } as UpdateBonSortieRequest);
+
       default:
         return this.stock.updateBonRetour(id, {
-          motif: val.motif,
+          motif:       val.motif,
           observation: val.observation || null,
-          sourceId: val.sourceId,
-          lignes
+          sourceId:    val.sourceId,
+          lignes,
         } as UpdateBonRetourRequest);
     }
   }
@@ -830,9 +842,9 @@ export class BonsComponent implements OnInit {
       .open(ModalComponent, {
         width: '400px',
         data: {
-          title:       'Delete Bon',
-          message:     `Bon "${bon.numero}" will be soft-deleted. Proceed?`,
-          confirmText: 'Delete',
+          title:       this.translate.instant('CONFIRMATION.DELETE_BON_TITLE'),
+          message:     this.translate.instant('CONFIRMATION.DELETE_BON', { numero: bon.numero }),
+          confirmText: this.translate.instant('COMMON.DELETE'),
           showCancel:  true,
           icon:        'auto_delete',
           iconColor:   'danger',
@@ -850,9 +862,9 @@ export class BonsComponent implements OnInit {
         next: () => {
           if (this.isView()) this.cancel();
           this.reload();
-          this.flash('success', `Bon "${bon.numero}" deleted.`);
+          this.flash('success', this.translate.instant('STOCK.BONS.SUCCESS.DELETED', { numero: bon.numero }));
         },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Delete failed.'),
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.DELETE_FAILED')),
       });
   }
 
@@ -924,8 +936,8 @@ export class BonsComponent implements OnInit {
   }
 
   removeLigne(selectedBon: BonRecord, ligneId: string): void {
-    selectedBon.lignes = (selectedBon.lignes as LigneResponseDto[]).filter(l => l.id !== ligneId);
-    this.getTotal(selectedBon);
+    selectedBon.lignes = (selectedBon.lignes as LigneResponseDto[])
+    .filter(l => l.id !== ligneId);
     this.cdr.markForCheck();
   }
 
@@ -933,19 +945,16 @@ export class BonsComponent implements OnInit {
   private readonly bonApi: Record<BonType, BonApi> = {
     entre: {
       list:        (p, s) => this.stock.getBonEntres(p, s) as any,
-      listDeleted: (p, s) => this.stock.getDeletedBonEntres(p, s) as any,
       stats:       ()     => this.stock.getBonEntreStats(),
       delete:      id     => this.stock.deleteBonEntre(id)
     },
     sortie: {
       list:        (p, s) => this.stock.getBonSorties(p, s) as any,
-      listDeleted: (p, s) => this.stock.getDeletedBonSorties(p, s) as any,
       stats:       ()     => this.stock.getBonSortieStats(),
       delete:      id     => this.stock.deleteBonSortie(id)
     },
     retour: {
       list:        (p, s) => this.stock.getBonRetours(p, s) as any,
-      listDeleted: (p, s) => this.stock.getDeletedBonRetours(p, s) as any,
       stats:       ()     => this.stock.getBonRetourStats(),
       delete:      id     => this.stock.deleteBonRetour(id)
     },

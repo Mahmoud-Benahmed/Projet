@@ -18,6 +18,7 @@ export interface ClientResponseDto {
   name: string;
   email: string;
   address: string;
+  duePaymentPeriod: number;
   phone?: string;
   taxNumber?: string;
   creditLimit?: number;
@@ -32,7 +33,7 @@ export interface ClientResponseDto {
 export interface CategoryClientCountDto {
   categoryId: string;
   categoryName: string;
-  count: number;
+  clientCount: number;
 }
 
 export interface ClientStatsDto {
@@ -47,6 +48,7 @@ export interface CreateClientRequestDto {
   name: string;
   email: string;
   address: string;
+  duePaymentPeriod?: number;
   phone?: string;
   taxNumber?: string;
   creditLimit?: number;

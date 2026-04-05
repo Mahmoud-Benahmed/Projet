@@ -120,42 +120,6 @@ public class ClientController : ControllerBase
         return Ok(client);
     }
 
-    [HttpPut(ApiRoutes.Clients.SetCreditLimit)]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult> SetCreditLimit(
-        [FromRoute] Guid id,
-        [FromBody] SetCreditLimitRequestDto request)
-    {
-        var client = await _clientService.SetCreditLimitAsync(id, request.Limit);
-        return Ok(client);
-    }
-
-    [HttpDelete(ApiRoutes.Clients.RemoveCreditLimit)]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult> RemoveCreditLimit([FromRoute] Guid id)
-    {
-        var client = await _clientService.RemoveCreditLimitAsync(id);
-        return Ok(client);
-    }
-
-    [HttpPut(ApiRoutes.Clients.SetDelaiRetour)]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult> SetDelaiRetour(
-        [FromRoute] Guid id,
-        [FromBody] SetDelaiRetourRequestDto request)
-    {
-        var client = await _clientService.SetDelaiRetourAsync(id, request.Days);
-        return Ok(client);
-    }
-
-    [HttpDelete(ApiRoutes.Clients.ClearDelaiRetour)]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult> ClearDelaiRetour([FromRoute] Guid id)
-    {
-        var client = await _clientService.ClearDelaiRetourAsync(id);
-        return Ok(client);
-    }
-
     [HttpGet(ApiRoutes.Clients.EffectiveDelaiRetour)]
     public async Task<ActionResult> GetEffectiveDelaiRetour([FromRoute] Guid id)
     {

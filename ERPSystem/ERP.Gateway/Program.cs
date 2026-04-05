@@ -37,7 +37,8 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = config["JWT:Issuer"],
         ValidAudience = config["JWT:Audience"],
         IssuerSigningKey = signingKey,
-        RoleClaimType = "role"
+        RoleClaimType = "role",
+        ClockSkew = TimeSpan.FromMinutes(5),
     };
 
     options.Events = new JwtBearerEvents
@@ -59,7 +60,7 @@ builder.Services.AddAuthentication(options =>
             context.Response.StatusCode = 401;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(
-                """{"statusCode":401,"code":"AUTH_001","message":"Authentication required. Please log in."}""");
+               """{"statusCode":401,"code":"AUTH_006","message":"Authentication required. Please log in."}""");
         },
         OnForbidden = async context =>
         {
@@ -280,8 +281,7 @@ builder.Services.AddRateLimiter(options =>
         };
 
         await context.HttpContext.Response.WriteAsync(
-            $$"""{"statusCode":429,"code":"RATE_LIMIT","content":"{{message}}","retryAfterSeconds":{{retrySeconds}}}""",
-            token);
+            $$"""{"statusCode":429,"code":"RATE_LIMIT","message":"{{message}}","retryAfterSeconds":{{retrySeconds}}}""");
     };
 });
 

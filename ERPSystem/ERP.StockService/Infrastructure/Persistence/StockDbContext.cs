@@ -88,7 +88,6 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
         b.HasKey(x => x.Id);
         b.Property(x => x.Numero).IsRequired().HasMaxLength(50);
         b.Property(x => x.Observation).HasMaxLength(1000);
-        b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
          .IsConcurrencyToken(false)
@@ -96,8 +95,7 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
-         .HasDatabaseName("IX_BonEntres_Numero")
-         .HasFilter("[IsDeleted] = 0");
+         .HasDatabaseName("IX_BonEntres_Numero");
 
         b.HasOne(x => x.Fournisseur)
          .WithMany()
@@ -112,8 +110,6 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
         b.Navigation(x => x.Lignes)
          .HasField("_lignes")                          // ← tell EF the backing field
          .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
 
@@ -141,7 +137,6 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
         b.HasKey(x => x.Id);
         b.Property(x => x.Numero).IsRequired().HasMaxLength(50);
         b.Property(x => x.Observation).HasMaxLength(1000);
-        b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
                  .IsConcurrencyToken(false)
@@ -150,8 +145,7 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
-         .HasDatabaseName("IX_BonSorties_Numero")
-         .HasFilter("[IsDeleted] = 0");
+         .HasDatabaseName("IX_BonSorties_Numero");
 
         b.HasMany(x => x.Lignes)
          .WithOne(l => l.BonSortie)
@@ -162,7 +156,6 @@ internal sealed class BonSortieConfiguration : IEntityTypeConfiguration<BonSorti
          .HasField("_lignes")                          // ← tell EF the backing field
          .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
 
@@ -191,7 +184,6 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
         b.Property(x => x.Numero).IsRequired().HasMaxLength(50);
         b.Property(x => x.Motif).IsRequired().HasMaxLength(500);
         b.Property(x => x.Observation).HasMaxLength(1000);
-        b.Property(x => x.IsDeleted).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt)
                  .IsConcurrencyToken(false)
@@ -205,8 +197,7 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
 
         b.HasIndex(x => x.Numero)
          .IsUnique()
-         .HasDatabaseName("IX_BonRetours_Numero")
-         .HasFilter("[IsDeleted] = 0");
+         .HasDatabaseName("IX_BonRetours_Numero");
 
         b.HasMany(x => x.Lignes)
          .WithOne(l => l.BonRetour)
@@ -217,7 +208,6 @@ internal sealed class BonRetourConfiguration : IEntityTypeConfiguration<BonRetou
          .HasField("_lignes")                          // ← tell EF the backing field
          .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        b.HasQueryFilter(x => !x.IsDeleted);
     }
 }
 

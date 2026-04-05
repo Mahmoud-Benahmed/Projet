@@ -36,7 +36,6 @@ namespace ERP.StockService.Migrations
                     Motif = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -53,7 +52,6 @@ namespace ERP.StockService.Migrations
                     ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -134,7 +132,6 @@ namespace ERP.StockService.Migrations
                     FournisseurId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Observation = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -179,22 +176,19 @@ namespace ERP.StockService.Migrations
                 name: "IX_BonEntres_Numero",
                 table: "BonEntres",
                 column: "Numero",
-                unique: true,
-                filter: "[IsDeleted] = 0");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BonRetours_Numero",
                 table: "BonRetours",
                 column: "Numero",
-                unique: true,
-                filter: "[IsDeleted] = 0");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BonSorties_Numero",
                 table: "BonSorties",
                 column: "Numero",
-                unique: true,
-                filter: "[IsDeleted] = 0");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Fournisseurs_TaxNumber",

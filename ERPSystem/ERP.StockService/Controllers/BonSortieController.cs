@@ -30,15 +30,6 @@ public class BonSortieController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet(ApiRoutes.BonSorties.GetDeleted)]
-    public async Task<IActionResult> GetDeleted(
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 10)
-    {
-        var result = await _service.GetPagedDeletedAsync(page, size);
-        return Ok(result);
-    }
-
     [HttpGet(ApiRoutes.BonSorties.GetByClient)]
     public async Task<IActionResult> GetByClient(
         [FromRoute] Guid clientId,

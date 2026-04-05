@@ -26,7 +26,8 @@ namespace ERP.AuthService.Infrastructure.Security
                 Guid userId,
                 string login,
                 string role,
-                IEnumerable<string> privileges)
+                IEnumerable<string> privileges,
+                UserSettings settings)
         {
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Secret));
@@ -39,17 +40,16 @@ namespace ERP.AuthService.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(CLAIM_LOGIN, login),
                 new Claim(CLAIM_ROLE, role),
+                new Claim("theme", settings.Theme.ToString()),
+                new Claim("language", settings.Language.ToString())
             }
             .Concat(privileges.Select(p => new Claim(CLAIM_PRIVILEGE, p)))
             .ToList();
 
-            foreach (var claim in claims)
-            {
-                Console.WriteLine($">>> Claim: {claim.Type} = {claim.Value}");
-            }
-
             var expires = DateTime.UtcNow
                 .AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
+
+
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,

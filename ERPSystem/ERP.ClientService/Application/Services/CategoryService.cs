@@ -25,7 +25,7 @@ public class CategoryService : ICategoryService
             throw new CategoryAlreadyExistsException(request.Code);
 
         var category = Category.Create(
-            request.Name, request.Code, request.DelaiRetour,
+            request.Name, request.Code, request.DelaiRetour, request.DuePaymentPeriod,
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
 
         await _categoryRepository.AddAsync(category);
@@ -62,7 +62,7 @@ public class CategoryService : ICategoryService
         }
 
         category.Update(
-            request.Name, request.Code, request.DelaiRetour,
+            request.Name, request.Code, request.DelaiRetour, request.DuePaymentPeriod,
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
 
         await _categoryRepository.SaveChangesAsync();
@@ -187,6 +187,7 @@ public class CategoryService : ICategoryService
             Name: category.Name,
             Code: category.Code,
             DelaiRetour: category.DelaiRetour,
+            DuePaymentPeriod: category.DuePaymentPeriod,
             DiscountRate: category.DiscountRate,
             CreditLimitMultiplier: category.CreditLimitMultiplier,
             UseBulkPricing: category.UseBulkPricing,
