@@ -28,7 +28,6 @@ export class UserSettingsService {
     });
 
     this.authService.onLogout$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.persistToServer();
       localStorage.removeItem(this.SETTINGS_KEY);  // ← clear on logout
     });
   }

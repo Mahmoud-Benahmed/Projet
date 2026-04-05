@@ -4,7 +4,7 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../../environment";
 import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../../interfaces/AuthDto";
-import { BehaviorSubject, Observable, Subject, take, tap } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, Subject, take, tap, throwError } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
@@ -102,6 +102,10 @@ export class AuthService {
   private readonly PROFILE_KEY = 'userProfile';
   private _cachedPayload: JwtPayload | null = null;
   private _cachedToken: string | null = null;
+  private _isRefreshing = false;
+
+  get isRefreshing(): boolean { return this._isRefreshing; }
+
   private _userProfile$ = new BehaviorSubject<AuthUserGetResponseDto | null>(
     this.loadProfileFromStorage()  // rehydrate immediately on construction
   );
@@ -156,6 +160,7 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
+    if (this._isRefreshing) return true;  // ← treat as logged in during refresh
     const token = this.getAccessToken();
     if (!token) return false;
     try {
@@ -165,6 +170,7 @@ export class AuthService {
       return false;
     }
   }
+
 
   // =========================
   // CLAIM GETTERS
@@ -400,20 +406,31 @@ export class AuthService {
   // REFRESH TOKEN
   // =========================
   refresh(request: RefreshTokenRequestDto): Observable<AuthResponseDto> {
+    this._isRefreshing = true;
     return this.http.post<AuthResponseDto>(`${this.baseUrl}/refresh`, request).pipe(
-      tap(response => this.storeTokens(response))
+      tap(response => {
+        this.storeTokens(response);
+        this._isRefreshing = false;
+      }),
+      catchError(err => {
+        this._isRefreshing = false;
+        return throwError(() => err);
+      })
     );
   }
+
 
   // =========================
   // REVOKE + LOGOUT
   // =========================
   revoke(request: RefreshTokenRequestDto): Observable<void> {
+    console.trace('revoke() called from:');  // ← same
     return this.http.post<void>(`${this.baseUrl}/revoke`, request);
   }
 
   logout(): void {
-    if (this._loggingOut) return;
+  console.trace('logout() called from:');
+  if (this._loggingOut || this._isRefreshing) return;
     this._loggingOut = true;
 
     const refreshToken = this.getRefreshToken();
@@ -430,7 +447,8 @@ export class AuthService {
     }
   }
 
-  private endSession(): void {
+  public endSession(): void {
+    console.trace('endSession() called from:');  // ← same
     this.clearSession();
     this.clearUserProfile();
     this._loggingOut = false;
