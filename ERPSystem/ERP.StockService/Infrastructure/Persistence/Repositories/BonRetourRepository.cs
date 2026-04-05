@@ -18,24 +18,28 @@ public class BonRetourRepository : IBonRetourRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteByIdAsync(Guid id)
+    {
+        var bon = await _context.BonRetours.FindAsync(id);
+        if (bon != null)
+        {
+            _context.Remove(bon);
+            await _context.SaveChangesAsync();
+        }
+    }
+
     // =========================
     // READ
     // =========================
     public async Task<BonRetour?> GetByIdAsync(Guid id) =>
         await _context.BonRetours
             .Include(b => b.Lignes)
-            .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
-
-    public async Task<BonRetour?> GetByIdDeletedAsync(Guid id) =>
-        await _context.BonRetours.IgnoreQueryFilters()
-            .Include(b => b.Lignes)
-            .FirstOrDefaultAsync(b => b.Id == id && b.IsDeleted);
+            .FirstOrDefaultAsync(b => b.Id == id);
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetAllAsync(int page, int size)
     {
         var query = _context.BonRetours
-            .Include(b => b.Lignes)
-            .Where(b => !b.IsDeleted);
+            .Include(b => b.Lignes);
 
         var total = await query.CountAsync();
         var items = await query
@@ -51,7 +55,7 @@ public class BonRetourRepository : IBonRetourRepository
     {
         var query = _context.BonRetours
             .Include(b => b.Lignes)
-            .Where(b => b.SourceId == sourceId && !b.IsDeleted);
+            .Where(b => b.SourceId == sourceId);
 
         var total = await query.CountAsync();
         var items = await query
@@ -67,27 +71,11 @@ public class BonRetourRepository : IBonRetourRepository
     {
         var query = _context.BonRetours
             .Include(b => b.Lignes)
-            .Where(b => b.SourceType == sourceType && !b.IsDeleted);
+            .Where(b => b.SourceType == sourceType);
 
         var total = await query.CountAsync();
         var items = await query
             .OrderByDescending(b => b.CreatedAt)
-            .Skip((page - 1) * size)
-            .Take(size)
-            .ToListAsync();
-
-        return (items, total);
-    }
-
-    public async Task<(List<BonRetour> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size)
-    {
-        var query = _context.BonRetours.IgnoreQueryFilters()
-            .Include(b => b.Lignes)
-            .Where(b => b.IsDeleted);
-
-        var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(b => b.UpdatedAt)
             .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync();
@@ -118,19 +106,10 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var counts = await _context.BonRetours.IgnoreQueryFilters()
-            .GroupBy(_ => 1)
-            .Select(g => new
-            {
-                Total = g.Count(),
-                Deleted = g.Count(b => b.IsDeleted),
-            })
-            .FirstOrDefaultAsync();
+        var count = await _context.BonRetours.CountAsync();
 
         return new BonStatsDto(
-            TotalCount: counts?.Total ?? 0,
-            ActiveCount: (counts?.Total ?? 0) - (counts?.Deleted ?? 0),
-            DeletedCount: counts?.Deleted ?? 0
+            TotalCount: count
         );
     }
 }

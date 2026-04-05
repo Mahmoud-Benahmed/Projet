@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.StockService.Migrations
 {
     [DbContext(typeof(StockDbContext))]
-    [Migration("20260401234952_InitialCreate")]
+    [Migration("20260405062603_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -37,9 +37,6 @@ namespace ERP.StockService.Migrations
                     b.Property<Guid>("FournisseurId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Numero")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -58,8 +55,7 @@ namespace ERP.StockService.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonEntres_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonEntres_Numero");
 
                     b.ToTable("BonEntres", (string)null);
                 });
@@ -72,9 +68,6 @@ namespace ERP.StockService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Motif")
                         .IsRequired()
@@ -105,8 +98,7 @@ namespace ERP.StockService.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonRetours_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonRetours_Numero");
 
                     b.ToTable("BonRetours", (string)null);
                 });
@@ -122,9 +114,6 @@ namespace ERP.StockService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Numero")
                         .IsRequired()
@@ -142,8 +131,7 @@ namespace ERP.StockService.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonSorties_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonSorties_Numero");
 
                     b.ToTable("BonSorties", (string)null);
                 });
