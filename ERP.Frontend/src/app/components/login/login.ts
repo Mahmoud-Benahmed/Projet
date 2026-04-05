@@ -37,7 +37,7 @@ import { Subscription } from 'rxjs';
   styleUrl: './login.scss',
   encapsulation: ViewEncapsulation.None
 })
-export class LoginComponent implements OnInit{
+export class LoginComponent implements OnInit, OnDestroy {
   private langSub?: Subscription;
 
   readonly year: number = new Date().getFullYear();
@@ -46,6 +46,7 @@ export class LoginComponent implements OnInit{
   credentials = { login: '', password: '' };
   showPassword = false;
   isLoading = false;
+  errorMessage: string | null = null;
 
   constructor(
     private router: Router,
@@ -55,7 +56,6 @@ export class LoginComponent implements OnInit{
     public userSettings: UserSettingsService,
     public translate: TranslateService
   ) {}
-
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {
@@ -73,8 +73,14 @@ export class LoginComponent implements OnInit{
     this.showPassword = !this.showPassword;
   }
 
+  dismissError(): void {
+    this.errorMessage = null;
+  }
+
   onSubmit(): void {
     this.isLoading = true;
+    this.errorMessage = null;
+
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
         this.authService.getMe().subscribe({
@@ -82,6 +88,7 @@ export class LoginComponent implements OnInit{
             this.isLoading = false;
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
+            this.userSettings.persistToServer();
 
             if (response.mustChangePassword && environment.production) {
               this.stopLoading();
@@ -98,28 +105,57 @@ export class LoginComponent implements OnInit{
       },
       error: (error) => {
         this.stopLoading();
-        if ([0, 403, 429].includes(error.status)) return;
-        const code = error.error?.code ?? 'UNKNOWN';
-        const key  = `ERRORS.${code}`;
-        const msg  = this.translate.instant(key);
-        const display = msg === key ? (error.error?.message ?? msg) : msg;
 
-        this.dialog.open(ModalComponent, {
-          width: '400px',
-          data: {
-            title:       this.translate.instant('DIALOG.ACCESS_DENIED'),
-            message:     display,
-            confirmText: this.translate.instant('DIALOG.OK'),
-            showCancel:  false,
-            icon:        'dangerous',
-            iconColor:   'danger'
-          }
-        });
+        // Handle specific status codes
+        if (error.status === 0) {
+          this.showErrorDialog('SERVER_UNREACHABLE', error);
+          return;
+        }
+        if (error.status === 403) {
+          this.showErrorDialog('ACCESS_DENIED', error);
+          return;
+        }
+        if (error.status === 429) {
+          this.showErrorDialog('RATE_LIMIT', error);
+          return;
+        }
+
+        const code = error.error?.code ?? 'UNKNOWN';
+        this.showErrorDialog(code, error);
       }
     });
   }
 
-  stopLoading() {
+  private showErrorDialog(code: string, error: any): void {
+    const key = `ERRORS.${code}`;
+    const translatedMsg = this.translate.instant(key);
+
+    // If translation key doesn't exist, fall back to error message from server
+    const displayMessage = translatedMsg === key
+      ? (error.error?.message ?? translatedMsg)
+      : translatedMsg;
+
+    // Determine dialog title based on error type
+    let titleKey = 'DIALOG.ACCESS_DENIED';
+    if (code === 'SERVER_UNREACHABLE') titleKey = 'DIALOG.SERVER_UNREACHABLE';
+    if (code === 'RATE_LIMIT') titleKey = 'DIALOG.RATE_LIMIT';
+    if (code === 'AUTH_003') titleKey = 'DIALOG.ACCOUNT_DEACTIVATED';
+    if (code === 'AUTH_019') titleKey = 'DIALOG.SESSION_EXPIRED';
+
+    this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       this.translate.instant(titleKey),
+        message:     displayMessage,
+        confirmText: this.translate.instant('DIALOG.OK'),
+        showCancel:  false,
+        icon:        'dangerous',
+        iconColor:   'danger'
+      }
+    });
+  }
+
+  stopLoading(): void {
     this.isLoading = false;
     this.cdr.markForCheck();
   }

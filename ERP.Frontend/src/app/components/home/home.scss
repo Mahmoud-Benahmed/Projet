@@ -2,7 +2,6 @@
 
 .home {
   animation: fadeUp .3s ease both;
-
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -15,7 +14,7 @@
   border: 1px solid $border;
   border-radius: 12px;
   padding: 24px 28px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .home__welcome {
@@ -50,18 +49,22 @@
 // Quick Grid
 .home__quick-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 768px)  { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px)  { grid-template-columns: 1fr; }
 }
 
 .home__quick-card {
   background: $bg-card;
   border: 1px solid $border;
   border-radius: 12px;
-  padding: 20px 24px;
-  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   color: $text-hi;
   transition: border-color .18s, background .18s, transform .15s;
@@ -79,40 +82,41 @@
   width: 38px;
   height: 38px;
   border-radius: 9px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex-shrink: 0;
 
   mat-icon {
     font-size: 19px;
     width: 19px;
     height: 19px;
-    line-height: 19px; // 🔥 important
+    line-height: 19px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  &--blue  { background: $blue-bg;  color: $blue; }
-  &--green { background: $green-bg; color: $green; }
-  &--red   { background: $red-bg;   color: $red; }
-  &--amber { background: $amber-bg; color: $amber; }
-  &--purple{ background: $purple-bg;color: $purple; }
+  // ── Color variants ────────────────────────────────────────
+  &--blue   { background: $blue-bg;   color: $blue;   }
+  &--green  { background: $green-bg;  color: $green;  }
+  &--red    { background: $red-bg;    color: $red;    }
+  &--amber  { background: $amber-bg;  color: $amber;  }
+  &--purple { background: $purple-bg; color: $purple; }
 }
 
 .home__quick-label {
   flex: 1;
   font-size: 14px;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .home__quick-arrow {
   font-size: 18px;
   color: $text-lo;
-  opacity: 0.5;
+  opacity: 0.3;
   transition: opacity .18s;
   margin-left: auto;
+  flex-shrink: 0;
 }

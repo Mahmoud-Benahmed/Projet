@@ -4,21 +4,20 @@
       {{ data.icon }}
     </mat-icon>
   }
-  <h2 mat-dialog-title>{{ data.title }}</h2>
+  <h2 mat-dialog-title>{{ data.title | translate }}</h2>
 </div>
 
 <mat-dialog-content>
-  <p>{{ data.message }}</p>
+  <p>{{ data.message | translate }}</p>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   @if(data.showCancel !== false) {
-    <!-- FIX: was mat-button with no styling — invisible in dark mode -->
     <button mat-button class="btn-secondary" (click)="cancel()">
-      {{ data.cancelText || 'Annuler' }}
+      {{ data.cancelText ? (data.cancelText | translate) : ('COMMON.CANCEL' | translate) }}
     </button>
   }
   <button mat-raised-button color="primary" (click)="confirm()">
-    {{ data.confirmText || 'Confirmer' }}
+    {{ data.confirmText ? (data.confirmText | translate) : ('COMMON.CONFIRM' | translate) }}
   </button>
 </mat-dialog-actions>

@@ -6,14 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 import { HttpError } from '../../interfaces/ErrorDto';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, RouterModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, RouterModule, TranslatePipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   encapsulation: ViewEncapsulation.None,
@@ -28,7 +28,8 @@ export class HomeComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -37,7 +38,7 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    this.lastLogin = this.getLastLogin();
+    this.updateLastLogin();
 
     if (this.authService.UserProfile) {
       this.userProfile = this.authService.UserProfile;
@@ -48,35 +49,51 @@ export class HomeComponent implements OnInit {
           this.authService.setUserProfile(this.userProfile);
         },
         error: (error) => {
-          const err= error.error as HttpError;
-          this.flash('error', err.message);
+          const err = error.error as HttpError;
+          this.flash('error', err.message || this.translate.instant('ERRORS.INTERNAL_ERROR'));
         }
       });
     }
   }
 
+  get userName(): string {
+    return this.userProfile?.fullName || this.userProfile?.login || this.translate.instant('HOME.GUEST');
+  }
+
+  get welcomeMessage(): string {
+    return this.translate.instant('HOME.WELCOME', { name: this.userName });
+  }
+
+  get roleName():string{
+    return this.authService.Role || '-';
+  }
+  get lastLoginMessage(): string {
+    return this.translate.instant('HOME.LAST_LOGIN', { time: this.lastLogin });
+  }
 
   dismissError(): void { this.error = null; }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
+    } else {
       this.error = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.error = null), 3000);
     }
   }
 
-
-  private getLastLogin(): string {
+  private updateLastLogin(): void {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
-    return `Today at ${hours}:${minutes}`;
+    this.lastLogin = `${hours}:${minutes}`;
+  }
+
+  private getLastLogin(): string {
+    return this.lastLogin;
   }
 
   logout(): void {
