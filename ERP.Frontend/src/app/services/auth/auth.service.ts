@@ -4,7 +4,7 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../../environment";
 import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../../interfaces/AuthDto";
-import { BehaviorSubject, Observable, take, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, take, tap } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
@@ -107,6 +107,10 @@ export class AuthService {
   );
   readonly userProfile$ = this._userProfile$.asObservable();
   private _loggingOut = false;
+
+  private _onLogout$ = new Subject<void>();
+  readonly onLogout$ = this._onLogout$.asObservable();
+
 
 
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
@@ -413,7 +417,7 @@ export class AuthService {
     this._loggingOut = true;
 
     const refreshToken = this.getRefreshToken();
-
+    this._onLogout$.next();
     if (refreshToken) {
       this.revoke({ refreshToken })
         .pipe(take(1))

@@ -36,7 +36,11 @@ export type AuditAction =
   // Controle
   | 'ControleCreated'
   | 'ControleUpdated'
-  | 'ControleDeleted';
+  | 'ControleDeleted'
+
+  | 'Unauthorized'
+  | 'UserNotFound'
+  | 'UnhandledError';
 
 export interface AuditLogResponseDto {
   id: string;
