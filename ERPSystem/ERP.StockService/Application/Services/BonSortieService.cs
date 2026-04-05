@@ -75,8 +75,7 @@ public class BonSortieService : IBonSortieService
     public async Task DeleteAsync(Guid id)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        bon.Delete();
-        await _repo.SaveChangesAsync();
+        await _repo.DeleteByIdAsync(id);
     }
 
     // =========================
@@ -92,14 +91,6 @@ public class BonSortieService : IBonSortieService
     {
         ValidatePaging(page, size);
         var (items, total) = await _repo.GetAllAsync(page, size);
-        return new PagedResultDto<BonSortieResponseDto>(
-            items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
-    }
-
-    public async Task<PagedResultDto<BonSortieResponseDto>> GetPagedDeletedAsync(int page, int size)
-    {
-        ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedDeletedAsync(page, size);
         return new PagedResultDto<BonSortieResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }

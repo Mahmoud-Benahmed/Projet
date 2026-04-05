@@ -9,7 +9,6 @@ public static class ApiRoutes
 
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
-        public const string GetDeleted = $"{Root}/deleted";
         public const string GetByFournisseur = $"{Root}/by-fournisseur/{{fournisseurId:guid}}";
         public const string GetByDateRange = $"{Root}/by-date-range";
         public const string GetStats = $"{Root}/stats";
@@ -25,7 +24,6 @@ public static class ApiRoutes
 
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
-        public const string GetDeleted = $"{Root}/deleted";
         public const string GetByClient = $"{Root}/by-client/{{clientId:guid}}";
         public const string GetByDateRange = $"{Root}/by-date-range";
         public const string GetStats = $"{Root}/stats";
@@ -41,7 +39,6 @@ public static class ApiRoutes
 
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
-        public const string GetDeleted = $"{Root}/deleted";
         public const string GetBySource = $"{Root}/by-source/{{sourceId:guid}}";
         public const string GetByDateRange = $"{Root}/by-date-range";
         public const string GetStats = $"{Root}/stats";
