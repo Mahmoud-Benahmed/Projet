@@ -37,7 +37,8 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = config["JWT:Issuer"],
         ValidAudience = config["JWT:Audience"],
         IssuerSigningKey = signingKey,
-        RoleClaimType = "role"
+        RoleClaimType = "role",
+        ClockSkew = TimeSpan.FromMinutes(5),
     };
 
     options.Events = new JwtBearerEvents
