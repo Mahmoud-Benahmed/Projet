@@ -424,12 +424,10 @@ export class AuthService {
   // REVOKE + LOGOUT
   // =========================
   revoke(request: RefreshTokenRequestDto): Observable<void> {
-    console.trace('revoke() called from:');  // ← same
     return this.http.post<void>(`${this.baseUrl}/revoke`, request);
   }
 
   logout(): void {
-  console.trace('logout() called from:');
   if (this._loggingOut || this._isRefreshing) return;
     this._loggingOut = true;
 
@@ -448,7 +446,6 @@ export class AuthService {
   }
 
   public endSession(): void {
-    console.trace('endSession() called from:');  // ← same
     this.clearSession();
     this.clearUserProfile();
     this._loggingOut = false;

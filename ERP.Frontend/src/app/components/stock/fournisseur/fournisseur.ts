@@ -336,15 +336,7 @@ export class FournisseurComponent implements OnInit {
   onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
   submit(): void {
-    if (this.fournisseurForm.invalid) {
-      // shows exactly which controls are failing and why
-      console.log(
-        Object.entries(this.fournisseurForm.controls)
-          .filter(([, ctrl]) => ctrl.invalid)
-          .map(([name, ctrl]) => ({ name, errors: ctrl.errors }))
-      );
-      return;
-    }
+    if (this.fournisseurForm.invalid) return
     if (this.fournisseurForm.invalid) return;
     const val = this.fournisseurForm.value;
 
