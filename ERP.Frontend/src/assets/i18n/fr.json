@@ -5,7 +5,7 @@
     "USERS": "Utilisateurs",
     "DEACTIVATED": "Désactivés",
     "DELETED": "Supprimés",
-    "REGISTER": "Créer un compte",
+    "REGISTER": "S'inscrire",
     "CONTROLES": "Contrôles",
     "ROLES": "Rôles",
     "PERMISSIONS": "Permissions",
@@ -28,8 +28,10 @@
     "RESTORE": "Restaurer",
     "ACTIVATE": "Activer",
     "DEACTIVATE": "Désactiver",
+    "ACTIVE": "Actif",
     "BLOCK": "Bloquer",
     "UNBLOCK": "Débloquer",
+    "BLOCKED": "Bloqué",
     "SEARCH": "Rechercher",
     "LOADING": "Chargement...",
     "NO_RESULTS": "Aucun résultat trouvé",
@@ -39,7 +41,18 @@
     "NEXT": "Suivant ›",
     "OK": "OK",
     "CONFIRM": "Confirmer",
-    "CLOSE": "Fermer"
+    "CLOSE": "Fermer",
+    "LOGOUT": "Déconnexion",
+    "SAVING": "Enregistrement...",
+    "UPDATE": "Modifier",
+    "OPTIONAL": "optionnel",
+    "CLEAR": "Effacer",
+    "DAYS": "jours",
+    "ENABLED": "Activé",
+    "DISABLED": "Désactivé",
+    "DAYS_COUNT": "{{count}} jour",
+    "DAYS_COUNT_plural": "{{count}} jours",
+    "REMOVE": "Supprimer"
   },
   "VALIDATION": {
     "REQUIRED": "Ce champ est requis",
@@ -66,10 +79,11 @@
     "CREDIT_LIMIT_INVALID": "La limite de crédit doit être ≥ 0",
     "MULTIPLIER_INVALID": "Le multiplicateur doit être ≥ 0",
     "PASSWORD_REQUIRED": "Le mot de passe est requis",
-    "PASSWORD_WEAK": "Le mot de passe est trop faible",
-    "PASSWORD_FAIR": "Le mot de passe pourrait être plus fort",
-    "PASSWORD_GOOD": "Le mot de passe est bon",
-    "PASSWORD_STRONG": "Le mot de passe est très fort"
+    "PASSWORD_WEAK": "Faible",
+    "PASSWORD_FAIR": "Moyen",
+    "PASSWORD_GOOD": "Bon",
+    "PASSWORD_STRONG": "Très fort",
+    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être supérieur à 0"
   },
   "ERRORS": {
     "AUTH_001": "Cet email est déjà utilisé.",
@@ -172,27 +186,45 @@
     "AUDIT_LOG_CLEARED": "Journaux d'audit effacés avec succès"
   },
   "CONFIRMATION": {
+    "DELETE_CATEGORY_TITLE": "Supprimer la catégorie",
     "DELETE_CATEGORY": "La catégorie \"{{name}}\" sera définitivement supprimée. Voulez-vous continuer ?",
     "DELETE_CATEGORY_SOFT": "La catégorie \"{{name}}\" sera supprimée (soft-delete). Les clients qui y sont assignés ne seront pas affectés. Continuer ?",
-    "DELETE_ARTICLE": "L'article \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
-    "DELETE_CLIENT": "Le client \"{{name}}\" sera supprimé (soft-delete). Voulez-vous continuer ?",
-    "DELETE_FOURNISSEUR": "Le fournisseur \"{{name}}\" sera supprimé (soft-delete). Voulez-vous continuer ?",
-    "DELETE_BON": "Le bon \"{{numero}}\" sera supprimé (soft-delete). Continuer ?",
-    "DELETE_ROLE": "Le rôle \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
-    "DELETE_CONTROLE": "Le contrôle \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
-    "DELETE_USER": "{{name}} sera supprimé. Voulez-vous continuer ?",
-    "RESTORE_CLIENT": "Restaurer le client \"{{name}}\" ? Il réapparaîtra dans la liste des clients actifs",
-    "RESTORE_USER": "Restaurer \"{{name}}\" ? Il pourra à nouveau accéder au système",
-    "DEACTIVATE_USER": "Êtes-vous sûr de vouloir désactiver \"{{name}}\" ?",
+    "ACTIVATE_CATEGORY_TITLE": "Activer la catégorie",
     "ACTIVATE_CATEGORY": "Êtes-vous sûr de vouloir activer \"{{name}}\" ?",
+    "DEACTIVATE_CATEGORY_TITLE": "Désactiver la catégorie",
     "DEACTIVATE_CATEGORY": "Êtes-vous sûr de vouloir désactiver \"{{name}}\" ?",
+    "DELETE_ARTICLE_TITLE": "Supprimer l'article",
+    "DELETE_ARTICLE": "L'article \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
+    "RESTORE_CLIENT_TITLE": "Restaurer le client",
+    "RESTORE_CLIENT": "Restaurer le client \"{{name}}\" ? Il réapparaîtra dans la liste des clients actifs",
+    "DELETE_CLIENT_TITLE": "Supprimer le client",
+    "DELETE_CLIENT": "Le client \"{{name}}\" sera supprimé (soft-delete). Voulez-vous continuer ?",
+    "BLOCK_CLIENT_TITLE": "Bloquer le client",
     "BLOCK_CLIENT": "Êtes-vous sûr de vouloir bloquer \"{{name}}\" ?",
+    "UNBLOCK_CLIENT_TITLE": "Débloquer le client",
     "UNBLOCK_CLIENT": "Êtes-vous sûr de vouloir débloquer \"{{name}}\" ?",
-    "BLOCK_FOURNISSEUR": "Êtes-vous sûr de vouloir bloquer \"{{name}}\" ?",
-    "UNBLOCK_FOURNISSEUR": "Êtes-vous sûr de vouloir débloquer \"{{name}}\" ?",
+    "DELETE_BON_TITLE": "Supprimer le bon",
+    "DELETE_BON": "Le bon \"{{numero}}\" sera supprimé (soft-delete). Continuer ?",
+    "REMOVE_CATEGORY_TITLE": "Retirer la catégorie",
     "REMOVE_CATEGORY": "Retirer la catégorie \"{{name}}\" de ce client ?",
-    "CLEAR_AUDIT_LOGS": "Êtes-vous sûr de vouloir effacer les journaux d'audit ?",
-    "LOGIN_CHANGE_WARNING": "Le nom d'utilisateur sera changé en {{login}}, car le nom d'utilisateur ne peut pas contenir d'espaces ni de lettres majuscules. Voulez-vous continuer avec ce nom d'utilisateur ?"
+    "DELETE_FOURNISSEUR_TITLE": "Supprimer le fournisseur",
+    "DELETE_FOURNISSEUR": "Le fournisseur \"{{name}}\" sera supprimé (soft-delete). Voulez-vous continuer ?",
+    "BLOCK_FOURNISSEUR_TITLE": "Bloquer le fournisseur",
+    "BLOCK_FOURNISSEUR": "Êtes-vous sûr de vouloir bloquer \"{{name}}\" ?",
+    "UNBLOCK_FOURNISSEUR_TITLE": "Débloquer le fournisseur",
+    "UNBLOCK_FOURNISSEUR": "Êtes-vous sûr de vouloir débloquer \"{{name}}\" ?",
+    "DELETE_CONTROLE_TITLE": "Supprimer le contrôle",
+    "DELETE_CONTROLE": "Le contrôle \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
+    "DELETE_ROLE_TITLE": "Supprimer le rôle",
+    "DELETE_ROLE": "Le rôle \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
+    "DELETE_USER_TITLE": "Supprimer l'utilisateur",
+    "DELETE_USER": "{{name}} sera supprimé. Voulez-vous continuer ?",
+    "RESTORE_USER": "Restaurer \"{{name}}\" ? Il pourra à nouveau accéder au système",
+    "DEACTIVATE_USER_TITLE": "Désactiver l'utilisateur",
+    "DEACTIVATE_USER": "Êtes-vous sûr de vouloir désactiver \"{{name}}\" ?",
+    "LOGIN_CHANGE_WARNING_TITLE": "L'identifiant sera modifié",
+    "LOGIN_CHANGE_WARNING": "L'identifiant sera changé en {{login}}, car l'identifiant ne peut pas contenir d'espaces ni de lettres majuscules. Voulez-vous continuer avec ce nom d'utilisateur ?",
+    "CLEAR_AUDIT_LOGS": "Êtes-vous sûr de vouloir effacer les journaux d'audit ?"
   },
   "ARTICLES": {
     "BREADCRUMB": "GESTION DES ARTICLES",
@@ -272,6 +304,8 @@
     }
   },
   "CLIENTS": {
+    "KEYWORD": "Client",
+    "KEYWORD_PLURAL": "Clients",
     "BREADCRUMB": "GESTION DES CLIENTS",
     "TITLE_LIST": "Liste des clients",
     "TITLE_DELETED": "Clients supprimés",
@@ -300,6 +334,7 @@
       "TAX_NUMBER": "NUMÉRO DE TVA",
       "CREDIT_LIMIT": "LIMITE DE CRÉDIT",
       "DELAI_RETOUR": "DÉLAI RETOUR",
+      "DUE_PAYMENT_PERIOD": "Délai de paiement",
       "STATUS": "STATUT",
       "CREATED_AT": "CRÉÉ LE",
       "UPDATED_AT": "MODIFIÉ LE",
@@ -322,11 +357,15 @@
       "TAX_NUMBER_PLACEHOLDER": "ex: TN12345678",
       "CREDIT_LIMIT": "Limite de crédit",
       "CREDIT_LIMIT_PLACEHOLDER": "0.00",
-      "DELAI_RETOUR": "Délai Retour (jours)",
-      "DELAI_RETOUR_PLACEHOLDER": "ex: 30"
+      "DELAI_RETOUR": "Délai de retour (jours)",
+      "DELAI_RETOUR_PLACEHOLDER": "ex: 30",
+      "DUE_PAYMENT_PERIOD": "Délai de paiement",
+      "DUE_PAYMENT_PERIOD_PLACEHOLDER": "ex: 30"
     }
   },
   "CLIENT_CATEGORIES": {
+    "KEYWORD": "Catégorie client",
+    "KEYWORD_PLURAL": "Catégories clients",
     "BREADCRUMB": "GESTION DES CLIENTS",
     "TITLE_LIST": "Catégories clients",
     "TITLE_DELETED": "Catégories supprimées",
@@ -354,8 +393,9 @@
       "NAME": "NOM",
       "DELAI_RETOUR": "DÉLAI RETOUR",
       "DISCOUNT_RATE": "TAUX DE REMISE",
+      "DUE_PAYMENT_PERIOD": "Délai de paiement",
       "CREDIT_LIMIT_MULTIPLIER": "MULTIPLICATEUR DE CRÉDIT",
-      "BULK_PRICING": "Tarification en gros",
+      "BULK_PRICING": "TARIFICATION EN GROS",
       "CLIENT_COUNT": "NOMBRE DE CLIENTS",
       "STATUS": "STATUT",
       "CREATED_AT": "CRÉÉ LE",
@@ -368,16 +408,20 @@
       "NAME_PLACEHOLDER": "Saisir le nom de la catégorie",
       "CODE": "Code",
       "CODE_PLACEHOLDER": "ex: CAT-A",
-      "DELAI_RETOUR": "Délai Retour (jours)",
+      "DELAI_RETOUR": "Délai de retour (jours)",
       "DELAI_RETOUR_PLACEHOLDER": "ex: 30",
       "DISCOUNT_RATE": "Taux de remise (%)",
       "DISCOUNT_RATE_PLACEHOLDER": "ex: 10",
       "CREDIT_LIMIT_MULTIPLIER": "Multiplicateur de crédit",
       "CREDIT_LIMIT_PLACEHOLDER": "ex: 1.5",
-      "BULK_PRICING": "Activer la tarification en gros : {{value}}"
+      "BULK_PRICING": "Activer la tarification en gros : {{value}}",
+      "DUE_PAYMENT_PERIOD": "Délai de paiement",
+      "DUE_PAYMENT_PERIOD_PLACEHOLDER": "ex: 30"
     }
   },
   "STOCK": {
+    "KEYWORD": "Stock",
+    "KEYWORD_PLURAL": "Stocks",
     "BREADCRUMB": "GESTION DU STOCK",
     "FOURNISSEURS": {
       "TITLE": "Fournisseurs",
@@ -388,6 +432,7 @@
       "TITLE_EDIT": "Modifier le fournisseur",
       "TITLE_DETAILS": "Détails du fournisseur",
       "ADD_BUTTON": "Ajouter un fournisseur",
+      "EDIT_BUTTON": "Modifier le fournisseur",
       "SEARCH_PLACEHOLDER": "Rechercher par nom, email, téléphone...",
       "STATS": {
         "ACTIVE": "Actifs",
@@ -412,6 +457,11 @@
         "CREATED_AT": "CRÉÉ LE",
         "UPDATED_AT": "MODIFIÉ LE"
       },
+      "STATUS": {
+        "ACTIVE": "ACTIF",
+        "BLOCKED": "BLOQUÉ",
+        "DELETED": "SUPPRIMÉ"
+      },
       "FORM": {
         "ADD_TITLE": "Ajouter un nouveau fournisseur",
         "EDIT_TITLE": "Modifier le fournisseur",
@@ -427,25 +477,59 @@
         "RIB_PLACEHOLDER": "10–34 caractères alphanumériques",
         "EMAIL": "Email",
         "EMAIL_PLACEHOLDER": "fournisseur@exemple.com"
+      },
+      "ERRORS": {
+        "LOAD_FAILED": "Échec du chargement des fournisseurs.",
+        "LOAD_DELETED_FAILED": "Échec du chargement des fournisseurs supprimés.",
+        "LOAD_BLOCKED_FAILED": "Échec du chargement des fournisseurs bloqués.",
+        "LOAD_STATS_FAILED": "Échec du chargement des statistiques.",
+        "CREATE_FAILED": "Échec de la création du fournisseur.",
+        "UPDATE_FAILED": "Échec de la mise à jour du fournisseur.",
+        "DELETE_FAILED": "Échec de la suppression du fournisseur \"{{name}}\".",
+        "RESTORE_FAILED": "Échec de la restauration du fournisseur.",
+        "BLOCK_FAILED": "Échec du blocage du fournisseur \"{{name}}\".",
+        "UNBLOCK_FAILED": "Échec du déblocage du fournisseur \"{{name}}\"."
       }
     },
     "BONS": {
-      "TITLE_ENTRE": "Bons d'Entrée",
-      "TITLE_SORTIE": "Bons de Sortie",
-      "TITLE_RETOUR": "Bons de Retour",
-      "TAB_ENTRE": "Bons d'Entrée",
-      "TAB_SORTIE": "Bons de Sortie",
-      "TAB_RETOUR": "Bons de Retour",
-      "NEW_BON": "Nouveau Bon",
-      "EDIT_BON": "Modifier le Bon",
-      "CREATE_BON": "Créer le Bon",
+      "SUCCESS": {
+        "CREATED": "Bon créé avec succès.",
+        "UPDATED": "Bon mis à jour avec succès.",
+        "DELETED": "Bon \"{{numero}}\" supprimé avec succès."
+      },
+      "ERRORS": {
+        "DATE_FILTER_FAILED": "Le filtre de date a échoué",
+        "LOAD_FAILED": "Échec du chargement des bons.",
+        "LOAD_DELETED_FAILED": "Échec du chargement des bons supprimés.",
+        "LOAD_STATS_FAILED": "Échec du chargement des statistiques.",
+        "LOAD_SOURCE_BONS_FAILED": "Échec du chargement des bons sources.",
+        "LOAD_ARTICLES_FAILED": "Échec du chargement des articles.",
+        "LOAD_FOURNISSEURS_FAILED": "Échec du chargement des fournisseurs.",
+        "LOAD_CLIENTS_FAILED": "Échec du chargement des clients.",
+        "LOAD_SOURCE_BON_LIGNES_FAILED": "Échec du chargement des lignes du bon source.",
+        "NO_LIGNES": "Veuillez ajouter au moins une ligne avant de créer le bon.",
+        "OPERATION_FAILED": "L'opération a échoué.",
+        "DELETE_FAILED": "La suppression a échoué."
+      },
+      "TITLE_ENTRE": "Bons d'entrée",
+      "TITLE_SORTIE": "Bons de sortie",
+      "TITLE_RETOUR": "Bons de retour",
+      "TAB_ENTRE": "Entrée",
+      "TAB_SORTIE": "Sortie",
+      "TAB_RETOUR": "Retour",
+      "NEW_BON": "Nouveau bon",
+      "EDIT_BON": "Modifier le bon",
+      "CREATE_BON": "Créer le bon",
       "SAVE_CHANGES": "Enregistrer les modifications",
       "ADD_LIGNE": "Ajouter une ligne",
       "EDIT_LIGNE": "Modifier la ligne",
+      "REMOVE_LIGNE": "Supprimer la ligne",
       "LIGNES": "LIGNES",
       "NO_LIGNES": "Aucune ligne ajoutée. Ajoutez au moins une ligne pour créer le bon.",
       "LIGNE_COUNT": "{{count}} ligne(s) ajoutée(s)",
       "LIGNE_REQUIRED": " — au moins une requise",
+      "SEARCH_PLACEHOLDER": "Rechercher par numéro, observation...",
+      "CLOSE_LIGNE_FORM_FIRST": "Fermez  l'ajout des lignes d'abords.",
       "STATS": {
         "ACTIVE": "Actifs",
         "DELETED": "Supprimés"
@@ -483,7 +567,9 @@
         "CLIENT": "Client *",
         "SOURCE_BON": "Bon source *",
         "MOTIF": "Motif *",
+        "MOTIF_PLACEHOLDER": "Raison du retour",
         "OBSERVATION": "Observation",
+        "OBSERVATION_PLACEHOLDER": "Note optionnelle",
         "SELECT_FOURNISSEUR": "— Sélectionner un fournisseur —",
         "SELECT_CLIENT": "— Sélectionner un client —",
         "SELECT_SOURCE": "— Sélectionner un bon source —",
@@ -491,7 +577,8 @@
         "ARTICLE": "Article *",
         "QUANTITY": "Quantité *",
         "PRICE": "Prix *",
-        "REMARQUE": "Remarque"
+        "REMARQUE": "Remarque",
+        "REMARQUE_PLACEHOLDER": "Remarque optionnelle"
       }
     }
   },
@@ -514,6 +601,29 @@
       "METADATA": "Métadonnées",
       "USER_AGENT": "Agent utilisateur",
       "CLOSE": "Fermer"
+    },
+    "ACTIONS": {
+      "Login": "Connexion",
+      "Logout": "Déconnexion",
+      "TokenRefreshed": "Token rafraîchi",
+      "TokenRevoked": "Token révoqué",
+      "UserRegistered": "Utilisateur inscrit",
+      "PasswordChanged": "Mot de passe modifié",
+      "PasswordChangedByAdmin": "Mot de passe modifié par admin",
+      "ProfileUpdated": "Profil mis à jour",
+      "UserActivated": "Utilisateur activé",
+      "UserDeactivated": "Utilisateur désactivé",
+      "UserDeleted": "Utilisateur supprimé",
+      "UserRestored": "Utilisateur restauré",
+      "RoleCreated": "Rôle créé",
+      "RoleUpdated": "Rôle modifié",
+      "RoleDeleted": "Rôle supprimé",
+      "ControleCreated": "Contrôle créé",
+      "ControleUpdated": "Contrôle modifié",
+      "ControleDeleted": "Contrôle supprimé",
+      "Unauthorized": "Tentative d'accès non autorisé",
+      "UserNotFound": "Utilisateur non trouvé",
+      "UnhandledError": "Erreur non gérée"
     }
   },
   "CONTROLES": {
@@ -537,6 +647,12 @@
       "LIBELLE_PLACEHOLDER": "Saisir le nom du contrôle",
       "DESCRIPTION": "Description",
       "DESCRIPTION_PLACEHOLDER": "Décrire le contrôle..."
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Échec du chargement des contrôles.",
+      "CREATE_FAILED": "Échec de la création du contrôle.",
+      "UPDATE_FAILED": "Échec de la mise à jour du contrôle.",
+      "DELETE_FAILED": "Échec de la suppression du contrôle \"{{name}}\"."
     }
   },
   "ROLES": {
@@ -555,14 +671,30 @@
     "FORM": {
       "LIBELLE": "Libellé",
       "LIBELLE_PLACEHOLDER": "ex: ADMIN, MANAGER..."
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Échec du chargement des rôles.",
+      "CREATE_FAILED": "Échec de la création du rôle.",
+      "UPDATE_FAILED": "Échec de la mise à jour du rôle.",
+      "DELETE_FAILED": "Échec de la suppression du rôle \"{{name}}\"."
     }
   },
   "PERMISSIONS": {
+    "BREADCRUMB": "GESTION DES PERMISSIONS",
+    "TITLE_LIST": "Attribuer/Supprimer des permissions.",
     "ROLES": "Rôles",
     "CONTROLS": "Contrôles",
-    "SERVICES": "Services"
+    "SERVICES": "Services",
+    "GRANT_TOOLTIP": "Accorder {{controle}} à {{role}}",
+    "REVOKE_TOOLTIP": "Révoquer {{controle}} de {{role}}",
+    "ERRORS": {
+      "LOAD_MATRIX_FAILED": "Échec du chargement de la matrice des permissions.",
+      "LOAD_PRIVILEGES_FAILED": "Échec du chargement des privilèges.",
+      "OPERATION_FAILED": "L'opération a échoué, veuillez réessayer plus tard."
+    }
   },
   "PASSWORD": {
+    "BREADCRUMB": "SÉCURITÉ DU COMPTE",
     "TITLE": "Réinitialiser le mot de passe",
     "SUBTITLE": "Définir un nouveau mot de passe pour cet utilisateur. Il devra le modifier lors de sa prochaine connexion.",
     "NEW_PASSWORD": "Nouveau mot de passe",
@@ -570,8 +702,14 @@
     "GENERATE": "Générer",
     "RESET": "Réinitialiser",
     "BACK": "Retour",
-    "SAVING": "Enregistrement...",
-    "ADMIN_NOTICE": "L'utilisateur devra modifier ce mot de passe immédiatement lors de sa prochaine connexion."
+    "SAVING": "Enregistrement…",
+    "ADMIN_NOTICE": "L'utilisateur devra modifier ce mot de passe immédiatement lors de sa prochaine connexion.",
+    "RESET_SUCCESS_TITLE": "Mot de passe réinitialisé",
+    "RESET_SUCCESS_MESSAGE": "Le mot de passe a été réinitialisé. L'utilisateur devra le changer lors de sa prochaine connexion.",
+    "GOT_IT": "Compris",
+    "ERRORS": {
+      "RESET_FAILED": "Échec de la réinitialisation du mot de passe."
+    }
   },
   "USERS": {
     "BREADCRUMB": "GESTION DES UTILISATEURS",
@@ -592,7 +730,8 @@
       "ROLE": "RÔLE",
       "LAST_LOGIN": "DERNIÈRE CONNEXION",
       "ACTIONS": "ACTIONS",
-      "NO_LOGIN": "Jamais connecté"
+      "NO_LOGIN": "Jamais connecté",
+      "JOINED": "INSCRIT LE"
     },
     "REGISTER": {
       "TITLE": "Créer un nouvel utilisateur",
@@ -620,14 +759,53 @@
       "MEMBER_SINCE": "Membre depuis",
       "EDIT_PROFILE": "Modifier le profil",
       "CHANGE_PASSWORD": "Changer le mot de passe",
+      "PASSWORD_REQUIRED_TITLE": "Changement de mot de passe requis",
+      "PASSWORD_REQUIRED_SUBTITLE": "Pour votre sécurité, vous devez définir un nouveau mot de passe avant de continuer.",
+      "PASSWORD_SUBTITLE": "Nous vous recommandons que votre nouveau mot de passe soit plus complexe que votre mot de passe actuel.",
       "CURRENT_PASSWORD": "Mot de passe actuel",
+      "CURRENT_PASSWORD_PLACEHOLDER": "Saisir le mot de passe actuel",
       "NEW_PASSWORD": "Nouveau mot de passe",
-      "CONFIRM_PASSWORD": "Confirmer le mot de passe"
+      "NEW_PASSWORD_PLACEHOLDER": "Saisir le nouveau mot de passe",
+      "CONFIRM_PASSWORD": "Confirmer le mot de passe",
+      "PERSONAL_INFO": "Informations personnelles",
+      "ACCOUNT_DETAILS": "Détails du compte",
+      "AUTH_ID": "ID d'authentification",
+      "STATUS": "Statut",
+      "ACTIVE": "Actif",
+      "INACTIVE": "Inactif",
+      "LAST_UPDATED": "Dernière mise à jour",
+      "NO_CHANGES": "Aucune modification n'a été apportée",
+      "LOAD_ERROR_TITLE": "Erreur de chargement",
+      "LOAD_ERROR_MESSAGE": "Échec du chargement du profil.",
+      "UPDATE_ERROR_TITLE": "Erreur de mise à jour",
+      "SUCCESS_TITLE": "Opération réussie",
+      "PASSWORD_CHANGE_SUCCESS_TITLE": "Mot de passe changé",
+      "PASSWORD_CHANGE_SUCCESS_MESSAGE": "Le mot de passe a été changé avec succès. Vous l'utiliserez lors de votre prochaine connexion.",
+      "PASSWORD_CHANGE_FAILED": "Échec du changement de mot de passe.",
+      "UNDERSTOOD": "Compris"
+    },
+    "ERRORS": {
+      "LOAD_DEACTIVATED_FAILED": "Échec du chargement des utilisateurs désactivés.",
+      "LOAD_STATS_FAILED": "Échec du chargement des statistiques utilisateurs.",
+      "ACTIVATE_FAILED": "Échec de la réactivation de l'utilisateur \"{{name}}\".",
+      "DELETE_FAILED": "Échec de la suppression de l'utilisateur.",
+      "LOAD_DELETED_FAILED": "Échec du chargement des utilisateurs supprimés.",
+      "RESTORE_FAILED": "Échec de la restauration de l'utilisateur.",
+      "LOAD_ACTIVE_FAILED": "Échec du chargement des utilisateurs actifs.",
+      "DEACTIVATE_FAILED": "Échec de la désactivation de l'utilisateur.",
+      "LOAD_ROLES_FAILED": "Échec du chargement des rôles.",
+      "LOGIN_EXISTS_TITLE": "Identifiant invalide",
+      "LOGIN_EXISTS": "Veuillez choisir un identifiant autre que {{login}}.",
+      "EMAIL_EXISTS_TITLE": "Email invalide",
+      "EMAIL_EXISTS": "Veuillez choisir un email autre que {{email}}.",
+      "CHECK_FAILED": "Échec de la validation des informations utilisateur.",
+      "REGISTER_FAILED": "Échec de l'inscription de l'utilisateur."
     }
   },
   "HOME": {
     "WELCOME": "Bon retour, {{name}} 👋",
     "LAST_LOGIN": "Dernière connexion : {{time}}",
+    "QUICK_ACCESS_TITLE": "Accès rapide",
     "QUICK_ACCESS": {
       "MY_PROFILE": "Mon profil",
       "MANAGE_USERS": "Gérer les utilisateurs",
@@ -648,7 +826,7 @@
     }
   },
   "LOGIN": {
-    "TITLE": "Se Connecter",
+    "TITLE": "Connexion",
     "LOGIN": "Identifiant",
     "PASSWORD": "Mot de passe",
     "LOGIN_PLACEHOLDER": "Saisir votre identifiant",
@@ -668,5 +846,14 @@
     "CANCEL": "Annuler",
     "CONFIRM": "Confirmer",
     "OK": "OK"
+  },
+  "CHANGE_LANGUAGE": {
+    "PREFIX": "Changer la langue en",
+    "ENGLISH": "Anglais",
+    "FRENCH": "Français"
+  },
+  "TOGGLE_THEME": {
+    "LIGHT": "Changer le thème en clair",
+    "DARK": "Changer le thème en sombre"
   }
 }
