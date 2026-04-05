@@ -5,6 +5,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslateService } from '@ngx-translate/core';
 
 import { ArticleService, ArticleResponseDto, ArticleStatsDto, CreateArticleRequestDto, UpdateArticleRequestDto } from './../../../services/articles/articles.service';
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
@@ -14,18 +15,20 @@ import { PaginationComponent } from '../../pagination/pagination';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { ArticleCategoryResponseDto, CategoryService } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, RouterLink, RouterLinkActive, PaginationComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, RouterLink, RouterLinkActive, PaginationComponent, TranslatePipe],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
 export class ArticleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
   dataSource = new MatTableDataSource<ArticleResponseDto>([]);
 
@@ -44,24 +47,19 @@ export class ArticleComponent implements OnInit {
   searchQuery = '';
 
   readonly barCodePattern = /^\d{8,13}$/.source;
-  readonly PRIVILEGES= PRIVILEGES;
+  readonly PRIVILEGES = PRIVILEGES;
   articleForm: FormGroup;
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-
   viewMode = signal<ViewMode>('list');
   isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
 
-  isList = this.isMode('list')
-
+  isList = this.isMode('list');
   isDeletedList = this.isMode('list-deleted');
-
   isCreate = this.isMode('create');
-
   isEdit = this.isMode('edit');
-
   isView = this.isMode('view');
   private previousMode: ViewMode = 'list';
 
@@ -90,6 +88,15 @@ export class ArticleComponent implements OnInit {
     this.reload();
   }
 
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    if (this.isCreate())      return 'ARTICLES.TITLE_ADD';
+    if (this.isEdit())        return 'ARTICLES.TITLE_EDIT';
+    if (this.isView())        return 'ARTICLES.TITLE_DETAILS';
+    if (this.isDeletedList()) return 'ARTICLES.TITLE_DELETED';
+    return 'ARTICLES.TITLE_LIST';
+  }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
 
@@ -154,7 +161,7 @@ export class ArticleComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        this.flash('error', 'Failed to load articles.');
+        this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR'));
         this.loading = false;
       },
     });
@@ -167,14 +174,14 @@ export class ArticleComponent implements OnInit {
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load deleted articles.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
   loadCategories(): void {
     this.categoryService.getAll().subscribe({
       next: (cats) => { this.categories = cats; this.cdr.markForCheck(); },
-      error: () => this.flash('error', 'Failed to load categories.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
@@ -188,7 +195,7 @@ export class ArticleComponent implements OnInit {
         }
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load stats.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
@@ -217,7 +224,7 @@ export class ArticleComponent implements OnInit {
   }
 
   openCreate(): void {
-    if(this.isCreate()) return;
+    if (this.isCreate()) return;
     this.setViewMode('create');
     this.selectedArticle = null;
     this.articleForm.reset({ libelle: '', prix: null, categoryId: '', barCode: '', tva: null });
@@ -283,7 +290,6 @@ export class ArticleComponent implements OnInit {
     return 'list';
   }
 
-
   submit(): void {
     if (this.articleForm.invalid) return;
     const val = this.articleForm.value;
@@ -297,8 +303,12 @@ export class ArticleComponent implements OnInit {
         tva:        val.tva ?? undefined,
       };
       this.articleService.create(dto).subscribe({
-        next: () => { this.reload(); this.cancel(); this.flash('success', `Article "${val.libelle}" created successfully.`); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create article.'),
+        next: () => {
+          this.reload();
+          this.cancel();
+          this.flash('success', this.translate.instant('SUCCESS.ARTICLE_CREATED', { name: val.libelle }));
+        },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR')),
       });
 
     } else if (this.isEdit() && this.selectedArticle) {
@@ -310,8 +320,12 @@ export class ArticleComponent implements OnInit {
         tva:        val.tva ?? undefined,
       };
       this.articleService.update(this.selectedArticle.id, dto).subscribe({
-        next: () => { this.cancel(); this.reload(); this.flash('success', `Article "${val.libelle}" updated successfully.`); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update article.'),
+        next: () => {
+          this.cancel();
+          this.reload();
+          this.flash('success', this.translate.instant('SUCCESS.ARTICLE_UPDATED', { name: val.libelle }));
+        },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR')),
       });
     }
   }
@@ -320,9 +334,9 @@ export class ArticleComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Delete Article',
-        message:     `Article "${article.libelle}" will be permanently deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
+        title:       this.translate.instant('CONFIRMATION.DELETE_ARTICLE_TITLE'),
+        message:     this.translate.instant('CONFIRMATION.DELETE_ARTICLE', { name: article.libelle }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
         showCancel:  true,
         icon:        'auto_delete',
         iconColor:   'danger',
@@ -336,26 +350,26 @@ export class ArticleComponent implements OnInit {
         this.articleService.delete(article.id).subscribe({
           next: () => {
             if (this.isView()) this.cancel();
-            this.flash('success', `Article "${article.libelle}" deleted successfully.`);
+            this.flash('success', this.translate.instant('SUCCESS.ARTICLE_DELETED', { name: article.libelle }));
             this.reload();
           },
-          error: () => this.flash('error', `Failed to delete article "${article.libelle}".`),
+          error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
         });
       });
   }
 
-  restore(ArticleResponseDto: ArticleResponseDto): void {
-      this.articleService.restore(ArticleResponseDto.id).subscribe({
-        next: () => {
-          this.flash('success', `ArticleResponseDto "${ArticleResponseDto.libelle}" has been restored. You can find it in the Articles page.`);
-          this.reload();
-          if(this.isView())this.cancel();
-        },
-        error: (error) =>{
-          const err= error.error as HttpError;
-          this.flash('error', error.message);
-        }
-      });
+  restore(article: ArticleResponseDto): void {
+    this.articleService.restore(article.id).subscribe({
+      next: () => {
+        this.flash('success', this.translate.instant('SUCCESS.ARTICLE_RESTORED', { name: article.libelle }));
+        this.reload();
+        if (this.isView()) this.cancel();
+      },
+      error: (error) => {
+        const err = error.error as HttpError;
+        this.flash('error', err?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR'));
+      }
+    });
   }
 
   // ── Feedback ──────────────────────────────────────────────────────────────
@@ -376,6 +390,7 @@ export class ArticleComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   trackById(_: number, a: ArticleResponseDto): string { return a.id; }
+
   private flattenObject(obj: any): string {
     return Object.keys(obj)
       .map(key => {
@@ -392,7 +407,6 @@ export class ArticleComponent implements OnInit {
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
   }
-
 
   setViewMode(mode: ViewMode) {
     this.viewMode.set(mode);
