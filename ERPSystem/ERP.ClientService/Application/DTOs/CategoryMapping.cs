@@ -10,6 +10,7 @@ public static class CategoryMappings
             Name: category.Name,
             Code: category.Code,
             DelaiRetour: category.DelaiRetour,
+            DuePaymentPeriod: category.DuePaymentPeriod,
             DiscountRate: category.DiscountRate,
             CreditLimitMultiplier: category.CreditLimitMultiplier,
             UseBulkPricing: category.UseBulkPricing,

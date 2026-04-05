@@ -25,8 +25,11 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+        [Range(1, 720, ErrorMessage = "Return delay must be at least 1 day.")]
         int DelaiRetour,
+
+        [Range(1, 120, ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+        int DuePaymentPeriod,                   // ← added
 
         bool UseBulkPricing = false,
 
@@ -48,8 +51,11 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
+        [Range(1, 720, ErrorMessage = "Return delay must be at least 1 day.")]
         int DelaiRetour,
+
+        [Range(1, 120, ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+        int DuePaymentPeriod,
 
         bool UseBulkPricing = false,
 
@@ -59,12 +65,12 @@ namespace ERP.ClientService.Application.DTOs
         [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
         decimal? CreditLimitMultiplier = null
     );
-
     public sealed record CategoryResponseDto(
         Guid Id,
         string Name,
         string Code,
         int DelaiRetour,
+        int DuePaymentPeriod,                   // ← added
         decimal? DiscountRate,
         decimal? CreditLimitMultiplier,
         bool UseBulkPricing,
@@ -72,6 +78,6 @@ namespace ERP.ClientService.Application.DTOs
         bool IsDeleted,
         DateTime CreatedAt,
         DateTime? UpdatedAt,
-        int ClientCount   // ← just the count, no full client objects
+        int ClientCount
     );
 }
