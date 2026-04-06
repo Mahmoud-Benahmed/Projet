@@ -81,7 +81,6 @@ export interface BonEntreResponse {
   fournisseurName: string;
   numero:          string;
   observation:     string | null;
-  isDeleted:       boolean;
   createdAt:       string;
   updatedAt:       string | null;
   lignes:          LigneResponseDto[];
@@ -107,7 +106,6 @@ export interface BonSortieResponse {
   clientId:    string;
   numero:      string;
   observation: string | null;
-  isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string | null;
   lignes:      LigneResponseDto[];
@@ -133,7 +131,6 @@ export interface BonRetourResponse {
   motif:       string;
   numero:      string;
   observation: string | null;
-  isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string | null;
   lignes:      LigneResponseDto[];
@@ -142,8 +139,6 @@ export interface BonRetourResponse {
 
 export interface BonStatsDto {
   totalCount:  number;
-  activeCount: number;
-  deletedCount: number;
 }
 
 export interface CreateBonRetourRequest {
@@ -264,13 +259,6 @@ export class StockService {
     return this.http.get<BonEntreResponse>(`${this.base}/bon-entres/${id}`);
   }
 
-  getDeletedBonEntres(page = 1, size = 10): Observable<PagedResult<BonEntreResponse>> {
-    return this.http.get<PagedResult<BonEntreResponse>>(
-      `${this.base}/bon-entres/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
-  }
-
   getBonEntresByFournisseur(fournisseurId: string, page = 1, size = 10): Observable<PagedResult<BonEntreResponse>> {
     return this.http.get<PagedResult<BonEntreResponse>>(
       `${this.base}/bon-entres/by-fournisseur/${fournisseurId}`,
@@ -321,13 +309,6 @@ export class StockService {
     return this.http.get<BonSortieResponse>(`${this.base}/bon-sorties/${id}`);
   }
 
-  getDeletedBonSorties(page = 1, size = 10): Observable<PagedResult<BonSortieResponse>> {
-    return this.http.get<PagedResult<BonSortieResponse>>(
-      `${this.base}/bon-sorties/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
-  }
-
   getBonSortiesByClient(clientId: string, page = 1, size = 10): Observable<PagedResult<BonSortieResponse>> {
     return this.http.get<PagedResult<BonSortieResponse>>(
       `${this.base}/bon-sorties/by-client/${clientId}`,
@@ -370,13 +351,6 @@ export class StockService {
 
   getBonRetourById(id: string): Observable<BonRetourResponse> {
     return this.http.get<BonRetourResponse>(`${this.base}/bon-retours/${id}`);
-  }
-
-  getDeletedBonRetours(page = 1, size = 10): Observable<PagedResult<BonRetourResponse>> {
-    return this.http.get<PagedResult<BonRetourResponse>>(
-      `${this.base}/bon-retours/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
   }
 
   getBonRetoursBySource(sourceId: string, page = 1, size = 10): Observable<PagedResult<BonRetourResponse>> {

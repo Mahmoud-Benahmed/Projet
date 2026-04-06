@@ -3,9 +3,9 @@
   <!-- ===================== PAGE HEADER ===================== -->
   <div class="page-header">
     <div>
-      <p class="breadcrumb">ARTICLE MANAGEMENT</p>
+      <p class="breadcrumb">{{ 'ARTICLES.BREADCRUMB' | translate }}</p>
       <h1 class="page-title">
-        {{ isList() ? 'List Articles' : isDeletedList() ? 'Deleted Articles' : isCreate() ? 'Add Article' : isEdit() ? 'Edit Article' : 'Article Details' }}
+        {{ isList() ? ('ARTICLES.TITLE_LIST' | translate) : isDeletedList() ? ('ARTICLES.TITLE_DELETED' | translate) : isCreate() ? ('ARTICLES.TITLE_ADD' | translate) : isEdit() ? ('ARTICLES.TITLE_EDIT' | translate) : ('ARTICLES.TITLE_DETAILS' | translate) }}
       </h1>
     </div>
   </div>
@@ -37,7 +37,7 @@
       <div class="stat-card stat-card--green" (click)="onActiveCardClick()" [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Articles</p>
+            <p class="stat-card__label">{{ 'ARTICLES.STATS.ARTICLES' | translate }}</p>
             <p class="stat-card__value">{{ activeCount }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--green">
@@ -54,7 +54,7 @@
       >
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Deleted</p>
+            <p class="stat-card__label">{{ 'ARTICLES.STATS.DELETED' | translate }}</p>
             <p class="stat-card__value">{{ deletedCount }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--red">
@@ -77,7 +77,7 @@
       >
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Categories</p>
+            <p class="stat-card__label">{{ 'ARTICLES.STATS.CATEGORIES' | translate }}</p>
             <p class="stat-card__value">{{ categoriesCount }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--blue">
@@ -100,13 +100,13 @@
         <input
         class="search-input"
         type="text"
-        placeholder="Search by name, code, barcode or category..."
+        [placeholder]="'ARTICLES.SEARCH_PLACEHOLDER' | translate"
         [(ngModel)]="searchQuery"
         (ngModelChange)="applyFilter()"
         />
       </div>
       <button class="btn-add" (click)="openCreate()" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE) && isList()">
-        + Add Article
+        + {{ 'ARTICLES.ADD_BUTTON' | translate }}
       </button>
     </div>
 
@@ -117,7 +117,7 @@
           <thead>
             <tr>
               <th (click)="sortBy('codeRef')" class="th--sortable">
-                CODE REF
+                {{ 'ARTICLES.TABLE.CODE_REF' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                       [style.opacity]="sortColumn === 'codeRef' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -130,7 +130,7 @@
                 </span>
               </th>
               <th (click)="sortBy('libelle')" class="th--sortable">
-                LIBELLE
+                {{ 'ARTICLES.TABLE.NAME' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                       [style.opacity]="sortColumn === 'libelle' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -143,7 +143,7 @@
                 </span>
               </th>
               <th (click)="sortBy('category.name')" class="th--sortable">
-                CATEGORY
+                {{ 'ARTICLES.TABLE.CATEGORY' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                       [style.opacity]="sortColumn === 'category.name' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -156,7 +156,7 @@
                 </span>
               </th>
               <th (click)="sortBy('prix')" class="th--sortable">
-                PRIX
+                {{ 'ARTICLES.TABLE.PRICE' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                       [style.opacity]="sortColumn === 'prix' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -168,7 +168,7 @@
                   </svg>
                 </span>
               </th>
-              <th>ACTIONS</th>
+              <th>{{ 'ARTICLES.TABLE.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -182,21 +182,21 @@
                 {{ article.prix | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale }}
               </td>
               <td class="td--actions">
-                <button class="icon-btn icon-btn--view" (click)="openView(article)" title="View"
+                <button class="icon-btn icon-btn--view" (click)="openView(article)" [title]="'COMMON.VIEW' | translate"
                         *ngIf="isList()||isDeletedList()">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
-                <button class="icon-btn icon-btn--edit" (click)="openEdit(article)" title="Edit"
+                <button class="icon-btn icon-btn--edit" (click)="openEdit(article)" [title]="'COMMON.EDIT' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE) && !article.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                <button class="icon-btn icon-btn--delete" (click)="delete(article)" title="Delete"
+                <button class="icon-btn icon-btn--delete" (click)="delete(article)" [title]="'COMMON.DELETE' | translate"
                         *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE) &&  !article.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
@@ -206,7 +206,7 @@
                   </svg>
                 </button>
 
-                <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE) && article.isDeleted">
+                <button class="icon-btn icon-btn--reactivate" (click)="restore(article)" [title]="'COMMON.RESTORE' | translate" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE) && article.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
@@ -216,7 +216,7 @@
             </tr>
             <tr *ngIf="sortedData.length === 0">
               <td colspan="7" class="td--empty">
-                No users found{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
+                {{ 'COMMON.NO_RESULTS' | translate }}{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
               </td>
             </tr>
           </tbody>
@@ -238,55 +238,55 @@
   <!-- ===================== VIEW PANEL ===================== -->
   <div class="panel" *ngIf="isView() && selectedArticle">
     <div class="panel__header">
-      <h2 class="panel__title">Article Details</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ 'ARTICLES.TITLE_DETAILS' | translate }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <div class="detail-grid">
         <div class="detail-item">
-          <span class="detail-label">CODE</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.CODE' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedArticle.codeRef }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">NAME</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.NAME' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.libelle }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CATEGORY</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.CATEGORY' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.category.name }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">UNIT PRICE</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.UNIT_PRICE' | translate }}</span>
           <span class="detail-value">
             {{ selectedArticle.prix | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">TVA</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.TVA' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.tva }}%</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">BAR CODE</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.BAR_CODE' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedArticle.barCode }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CREATED AT</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.CREATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.createdAt | date: 'medium' }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">UPDATED AT</span>
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.UPDATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.updatedAt ? (selectedArticle.updatedAt | date: 'medium') : '—' }}</span>
         </div>
       </div>
       <div class="panel__actions">
         <button class="btn-secondary" (click)="openEdit(selectedArticle)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE) && !selectedArticle.isDeleted">
-          Edit
+          {{ 'COMMON.EDIT' | translate }}
         </button>
         <button class="btn-danger" (click)="delete(selectedArticle)" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.DELETE_ARTICLE) && !selectedArticle.isDeleted">
-          Delete
+          {{ 'COMMON.DELETE' | translate }}
         </button>
-        <button class="btn-success" (click)="restore(selectedArticle)" title="Restore" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE) && selectedArticle.isDeleted">
-          Restore
+        <button class="btn-success" (click)="restore(selectedArticle)" [title]="'COMMON.RESTORE' | translate" *ngIf="authService.hasPrivilege(PRIVILEGES.ARTICLES.RESTORE_ARTICLE) && selectedArticle.isDeleted">
+          {{ 'COMMON.RESTORE' | translate }}
         </button>
       </div>
     </div>
@@ -296,8 +296,8 @@
   <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.ARTICLES.CREATE_ARTICLE))
                         || ( isEdit()  && authService.hasPrivilege(PRIVILEGES.ARTICLES.UPDATE_ARTICLE))">
     <div class="panel__header">
-      <h2 class="panel__title">{{ isCreate() ? 'Add New Article' : 'Edit Article' }}</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ isCreate() ? ('ARTICLES.FORM.ADD_TITLE' | translate) : ('ARTICLES.FORM.EDIT_TITLE' | translate) }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <form [formGroup]="articleForm" (ngSubmit)="submit()" class="form">
@@ -305,19 +305,19 @@
         <!-- Name -->
         <div class="form__field">
           <div class="form__label">
-            <label>Article Name</label>
+            <label>{{ 'ARTICLES.FORM.ARTICLE_NAME' | translate }}</label>
             <mat-icon>new_label</mat-icon>
           </div>
           <input
             class="form__input"
             type="text"
             formControlName="libelle"
-            placeholder="Enter article name"
+            [placeholder]="'ARTICLES.FORM.NAME_PLACEHOLDER' | translate"
             [class.form__input--error]="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched"
           />
           <span class="form__error"
                 *ngIf="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched">
-            Name is required (min 2, max 200 characters)
+            {{ 'VALIDATION.NAME_REQUIRED' | translate }}
           </span>
         </div>
 
@@ -326,35 +326,35 @@
           <!-- Price -->
           <div class="form__field">
             <div class="form__label">
-              <label>Unit Price</label>
+              <label>{{ 'ARTICLES.FORM.UNIT_PRICE' | translate }}</label>
               <mat-icon>euro_symbol</mat-icon>
             </div>
             <input
               class="form__input"
               type="number"
               formControlName="prix"
-              placeholder="0.00"
+              [placeholder]="'ARTICLES.FORM.UNIT_PRICE_PLACEHOLDER' | translate"
               step="0.01"
               min="0.01"
               [class.form__input--error]="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched"
             />
             <span class="form__error"
                   *ngIf="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched">
-              Price must be greater than 0
+              {{ 'VALIDATION.PRICE_REQUIRED' | translate }}
             </span>
           </div>
 
           <!-- TVA -->
           <div class="form__field">
             <div class="form__label">
-              <label>TVA (%)</label>
+              <label>{{ 'ARTICLES.FORM.TVA' | translate }}</label>
               <mat-icon>percent</mat-icon>
             </div>
             <input
               class="form__input"
               type="number"
               formControlName="tva"
-              placeholder="e.g. 19"
+              [placeholder]="'ARTICLES.FORM.TVA_PLACEHOLDER' | translate"
               step="0.01"
               min="0.01"
               max="100"
@@ -362,7 +362,7 @@
             />
             <span class="form__error"
                   *ngIf="articleForm.get('tva')?.invalid && articleForm.get('tva')?.touched">
-              TVA must be between 0.01 and 100
+              {{ 'VALIDATION.TVA_REQUIRED' | translate }}
             </span>
           </div>
 
@@ -373,20 +373,20 @@
           <!-- Bar Code -->
           <div class="form__field">
             <div class="form__label">
-              <label>Bar Code</label>
+              <label>{{ 'ARTICLES.FORM.BAR_CODE' | translate }}</label>
               <span class="material-symbols-outlined">barcode</span>
             </div>
             <input
               class="form__input"
               type="text"
               formControlName="barCode"
-              placeholder="8–13 digit barcode"
+              [placeholder]="'ARTICLES.FORM.BARCODE_PLACEHOLDER' | translate"
               [pattern]="barCodePattern"
               [class.form__input--error]="articleForm.get('barCode')?.invalid && articleForm.get('barCode')?.touched"
             />
             <span class="form__error"
                   *ngIf="articleForm.get('barCode')?.invalid && articleForm.get('barCode')?.touched">
-              Bar code must be 8–13 digits
+              {{ 'VALIDATION.BARCODE_REQUIRED' | translate }}
             </span>
             <span class="form__info"
                   *ngIf="articleForm.get('barCode')?.value?.length > 0"
@@ -398,7 +398,7 @@
           <!-- Category -->
           <div class="form__field">
             <div class="form__label">
-              <label>Category</label>
+              <label>{{ 'ARTICLES.FORM.CATEGORY' | translate }}</label>
               <mat-icon>category</mat-icon>
             </div>
             <select
@@ -406,21 +406,21 @@
               formControlName="categoryId"
               [class.form__input--error]="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched"
             >
-              <option value="">Select a category</option>
+              <option value="">{{ 'ARTICLES.FORM.SELECT_CATEGORY' | translate }}</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
             </select>
             <span class="form__error"
                   *ngIf="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched">
-              Category is required
+              {{ 'VALIDATION.CATEGORY_REQUIRED' | translate }}
             </span>
           </div>
 
         </div>
 
         <div class="form__actions">
-          <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
+          <button type="button" class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="submit" class="btn-add" [disabled]="articleForm.invalid">
-            {{ isCreate() ? '+ Add Article' : 'Save Changes' }}
+            {{ isCreate() ? ('COMMON.ADD' | translate) : ('COMMON.SAVE' | translate) }}
           </button>
         </div>
 

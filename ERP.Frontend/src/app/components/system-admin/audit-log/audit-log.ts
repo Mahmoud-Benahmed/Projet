@@ -21,6 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { ModalComponent } from '../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 interface ActionMeta {
   icon: string;
@@ -36,13 +37,16 @@ interface ActionMeta {
     MatButtonModule, MatIconModule, MatFormFieldModule,
     MatSelectModule, MatButtonToggleModule, MatProgressSpinnerModule,
     MatTooltipModule, MatDividerModule, MatSnackBarModule,
-    MatDialogModule, MatChipsModule,MatInputModule, MatSelectModule, MatFormFieldModule
+    MatDialogModule, MatChipsModule, MatInputModule, MatSelectModule, MatFormFieldModule,
+    TranslatePipe
   ],
   templateUrl: './audit-log.html',
   styleUrl: './audit-log.scss',
 })
 export class AuditLogComponent implements OnInit {
-  private destroyRef= inject(DestroyRef);
+  private destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+
   @ViewChild('detailDialog') detailDialog!: TemplateRef<any>;
 
   displayedColumns = ['status', 'action', 'performedBy', 'targetUserId', 'ipAddress', 'timestamp', 'details'];
@@ -83,14 +87,19 @@ export class AuditLogComponent implements OnInit {
     UserRestored:             { icon: 'restore_from_trash', category: 'user' },
 
     // Role
-    RoleCreated:              { icon: 'person_add',           category: 'admin' },
-    RoleUpdated:              { icon: 'person_edit',          category: 'admin' },
-    RoleDeleted:              { icon: 'person_cancel',     category: 'danger' },
+    RoleCreated:              { icon: 'person_add',         category: 'admin' },
+    RoleUpdated:              { icon: 'person_edit',        category: 'admin' },
+    RoleDeleted:              { icon: 'person_cancel',      category: 'danger' },
 
     // Controle
-    ControleCreated:          { icon: 'add_moderator',         category: 'admin' },
-    ControleUpdated:          { icon: 'edit_location_alt',               category: 'admin' },
-    ControleDeleted:          { icon: 'remove_moderator',             category: 'danger' },
+    ControleCreated:          { icon: 'add_moderator',      category: 'admin' },
+    ControleUpdated:          { icon: 'edit_location_alt',  category: 'admin' },
+    ControleDeleted:          { icon: 'remove_moderator',   category: 'danger' },
+
+    // Error actions
+    Unauthorized:             { icon: 'warning',            category: 'danger' },
+    UserNotFound:             { icon: 'search_off',         category: 'danger' },
+    UnhandledError:           { icon: 'bug_report',         category: 'danger' }
   };
 
   constructor(
@@ -124,15 +133,26 @@ export class AuditLogComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.flash('error', 'Failed to load audit logs.');
+        this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR'));
       }
     });
   }
 
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  prevPage(): void { if (this.pageNumber > 1) { this.pageNumber--; this.load(); } }
-  nextPage(): void { if (this.pageNumber < this.totalPages) { this.pageNumber++; this.load(); } }
 
+  prevPage(): void {
+    if (this.pageNumber > 1) {
+      this.pageNumber--;
+      this.load();
+    }
+  }
+
+  nextPage(): void {
+    if (this.pageNumber < this.totalPages) {
+      this.pageNumber++;
+      this.load();
+    }
+  }
 
   onFilterChange(): void {
     this.pageNumber = 1;
@@ -145,40 +165,39 @@ export class AuditLogComponent implements OnInit {
 
   confirmClear(): void {
     const dialogRef = this.dialog.open(ModalComponent, {
-          width: '400px',
-          data: {
-            title: 'Clear Logs',
-            message: `Are you sure you want to clear the logs ?`,
-            confirmText: 'Ok',
-            showCancel: true,
-            icon: 'contract_delete',
-            iconColor: 'warn',
-          },
+      width: '400px',
+      data: {
+        title: this.translate.instant('AUDIT.CLEAR'),
+        message: this.translate.instant('CONFIRMATION.CLEAR_AUDIT_LOGS'),
+        confirmText: this.translate.instant('COMMON.OK'),
+        showCancel: true,
+        icon: 'playlist_remove',
+        iconColor: 'warn',
+      },
     });
 
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         if (result) {
-              this.auditLogService.clear().subscribe({
-                next: () => {
-                    this.flash('success', 'Audit logs cleared.');
-                    this.load();
-                    this.cdr.markForCheck();
-                },
-                error: () =>(this.flash('error', 'Failed to clear logs.'))
-              });
-        }else{
-          return;
+          this.auditLogService.clear().subscribe({
+            next: () => {
+              this.flash('success', this.translate.instant('SUCCESS.AUDIT_LOG_CLEARED'));
+              this.load();
+              this.cdr.markForCheck();
+            },
+            error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR'))
+          });
         }
-    });
+      });
   }
 
   formatAction(action: AuditAction): string {
-    return action.replace(/([A-Z])/g, ' $1').trim();
+    // Return the translation key path, the template will use the translate pipe
+    return `AUDIT.ACTIONS.${action}`;
   }
 
- getActionIcon(action: AuditAction): string {
+  getActionIcon(action: AuditAction): string {
     return this.ACTION_MAP[action]?.icon ?? 'circle';
   }
 
@@ -207,17 +226,18 @@ export class AuditLogComponent implements OnInit {
   }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
+    } else {
       this.error = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.error = null), 3000);
     }
   }
-  dismissError(): void { this.error = null; }
 
+  dismissError(): void {
+    this.error = null;
+  }
 }

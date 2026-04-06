@@ -89,7 +89,7 @@ public static class StockDbSeeder
 
         // One soft-deleted bon for deleted-list testing
         var be4 = BonEntre.Create("BE-004", fournisseur2, "Bon annulé");
-        be4.AddLigne(Article1Id, 10, 15.00m);       be4.Delete();
+        be4.AddLigne(Article1Id, 10, 15.00m);       
 
         await db.BonEntres.AddRangeAsync(be1, be2, be3, be4);
         await db.SaveChangesAsync();
@@ -116,7 +116,6 @@ public static class StockDbSeeder
         // One soft-deleted bon for deleted-list testing
         var bs4 = BonSortie.Create("BS-004", Client2Id, "Bon annulé");
         bs4.AddLigne(Article1Id, 5, 20.00m);
-        bs4.Delete();
 
         await db.BonSorties.AddRangeAsync(bs1, bs2, bs3, bs4);
         await db.SaveChangesAsync();
@@ -160,7 +159,6 @@ public static class StockDbSeeder
             "Retour annulé",
             null);
         br3.AddLigne(Article1Id, 1, 20.00m);
-        br3.Delete();
 
         await db.BonRetours.AddRangeAsync(br1, br2, br3);
         await db.SaveChangesAsync();

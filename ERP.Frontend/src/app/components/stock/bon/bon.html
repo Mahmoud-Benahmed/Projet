@@ -3,9 +3,9 @@
   <!-- ===================== PAGE HEADER ===================== -->
   <div class="page-header">
     <div>
-      <p class="breadcrumb">STOCK MANAGEMENT</p>
+      <p class="breadcrumb">{{ 'STOCK.BREADCRUMB' | translate }}</p>
       <h1 class="page-title">
-        {{ activeBonType === 'entre' ? "Bons d'Entrée" : activeBonType === 'sortie' ? 'Bons de Sortie' : 'Bons de Retour' }}
+        {{ activeBonType === 'entre' ? ('STOCK.BONS.TITLE_ENTRE' | translate) : activeBonType === 'sortie' ? ('STOCK.BONS.TITLE_SORTIE' | translate) : ('STOCK.BONS.TITLE_RETOUR' | translate) }}
       </h1>
     </div>
   </div>
@@ -37,25 +37,25 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="5 12 19 12"/><polyline points="13 6 19 12 13 18"/>
       </svg>
-      Bons d'Entrée
+      {{ 'STOCK.BONS.TAB_ENTRE' | translate }}
     </button>
     <button class="type-tab" [class.type-tab--active]="activeBonType === 'sortie'" (click)="switchBonType('sortie')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="19 12 5 12"/><polyline points="11 18 5 12 11 6"/>
       </svg>
-      Bons de Sortie
+      {{ 'STOCK.BONS.TAB_SORTIE' | translate }}
     </button>
     <button class="type-tab" [class.type-tab--active]="activeBonType === 'retour'" (click)="switchBonType('retour')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
         <path d="M3 3v5h5"/>
       </svg>
-      Bons de Retour
+      {{ 'STOCK.BONS.TAB_RETOUR' | translate }}
     </button>
   </div>
 
   <!-- ===================== LIST VIEWS ===================== -->
-  <ng-container *ngIf="isList() || isDeletedList()">
+  <ng-container *ngIf="isList()">
 
     <!-- ===================== STAT CARDS ===================== -->
     <div class="stats-grid">
@@ -65,34 +65,13 @@
            [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Active</p>
+            <p class="stat-card__label">{{ 'STOCK.BONS.STATS.ACTIVE' | translate }}</p>
             <p class="stat-card__value">{{ activeCount }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--green">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="9 11 12 14 22 4"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card stat-card--red"
-           *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
-           (click)="onDeletedCardClick()"
-           [class.stat-card--current]="isDeletedList()"
-           [class.disabled]="deletedCount < 1">
-        <div class="stat-card__body">
-          <div>
-            <p class="stat-card__label">Deleted</p>
-            <p class="stat-card__value">{{ deletedCount }}</p>
-          </div>
-          <div class="stat-card__icon stat-card__icon--red">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/>
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
             </svg>
           </div>
         </div>
@@ -107,7 +86,7 @@
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input class="search-input" type="text" placeholder="Search by number, observation..."
+        <input class="search-input" type="text" [placeholder]="'STOCK.BONS.SEARCH_PLACEHOLDER' | translate"
                [(ngModel)]="searchQuery" (ngModelChange)="applyFilter()" />
       </div>
 
@@ -116,12 +95,12 @@
         <input class="form__input form__input--sm" type="date" [(ngModel)]="dateFrom" />
         <span class="date-filter__sep">→</span>
         <input class="form__input form__input--sm" type="date" [(ngModel)]="dateTo" />
-        <button class="btn-icon" title="Apply" [disabled]="!dateFrom || !dateTo" (click)="applyDateFilter()">
+        <button class="btn-icon" [title]="'COMMON.SEARCH' | translate" [disabled]="!dateFrom || !dateTo" (click)="applyDateFilter()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
         </button>
-        <button class="btn-icon" title="Clear" *ngIf="dateFrom || dateTo" (click)="clearDateFilter()">
+        <button class="btn-icon" [title]="'COMMON.CLEAR' | translate" *ngIf="dateFrom || dateTo" (click)="clearDateFilter()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -131,7 +110,7 @@
       <button class="btn-add"
               *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && isList()"
               (click)="openCreate()">
-        + New Bon
+        + {{ 'STOCK.BONS.NEW_BON' | translate }}
       </button>
     </div>
 
@@ -142,7 +121,7 @@
           <thead>
             <tr>
               <th (click)="sortBy('numero')" class="th--sortable">
-                NUMÉRO
+                {{ 'STOCK.BONS.TABLE.NUMERO' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        [style.opacity]="sortColumn === 'numero' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -154,9 +133,9 @@
                   </svg>
                 </span>
               </th>
-              <th>OBSERVATION</th>
+              <th>{{ 'STOCK.BONS.TABLE.OBSERVATION' | translate }}</th>
               <th (click)="sortBy('total')" class="th--sortable">
-                TOTAL
+                {{ 'STOCK.BONS.TABLE.TOTAL' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        [style.opacity]="sortColumn === 'total' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -169,7 +148,7 @@
                 </span>
               </th>
               <th (click)="sortBy('createdAt')" class="th--sortable">
-                DATE
+                {{ 'STOCK.BONS.TABLE.DATE' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -181,7 +160,7 @@
                   </svg>
                 </span>
               </th>
-              <th class="text-center">ACTIONS</th>
+              <th class="text-center">{{ 'STOCK.BONS.TABLE.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +176,7 @@
                 <td class="td--price">{{ asEntre(bon).total | number:'1.2-2' }}</td>
                 <td>{{ asEntre(bon).createdAt | date:'dd-MM-yyyy' }}</td>
                 <td class="td--actions">
-                  <button class="icon-btn icon-btn--view" title="View"
+                  <button class="icon-btn icon-btn--view" [title]="'COMMON.VIEW' | translate"
                           *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
                           (click)="openView(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -205,16 +184,16 @@
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--edit" title="Edit"
-                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asEntre(bon).isDeleted"
+                  <button class="icon-btn icon-btn--edit" [title]="'COMMON.EDIT' | translate"
+                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)"
                           (click)="openEdit(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--delete" (click)="delete(asEntre(bon))" title="Delete"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asEntre(bon).isDeleted">
+                  <button class="icon-btn icon-btn--delete" (click)="delete(asEntre(bon))" [title]="'COMMON.DELETE' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -237,7 +216,7 @@
                 <td class="td--price">{{ asSortie(bon).total | number:'1.2-2' }}</td>
                 <td>{{ asSortie(bon).createdAt | date:'dd-MM-yyyy' }}</td>
                 <td class="td--actions">
-                  <button class="icon-btn icon-btn--view" title="View"
+                  <button class="icon-btn icon-btn--view" [title]="'COMMON.VIEW' | translate"
                           *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
                           (click)="openView(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -245,16 +224,16 @@
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--edit" title="Edit"
-                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asSortie(bon).isDeleted"
+                  <button class="icon-btn icon-btn--edit" [title]="'COMMON.EDIT' | translate"
+                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)"
                           (click)="openEdit(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--delete" (click)="delete(asSortie(bon))" title="Delete"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asSortie(bon).isDeleted">
+                  <button class="icon-btn icon-btn--delete" (click)="delete(asSortie(bon))" [title]="'COMMON.DELETE' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -277,7 +256,7 @@
                 <td class="td--price">{{ asRetour(bon).total | number:'1.2-2' }}</td>
                 <td>{{ asRetour(bon).createdAt | date:'dd-MM-yyyy' }}</td>
                 <td class="td--actions">
-                  <button class="icon-btn icon-btn--view" title="View"
+                  <button class="icon-btn icon-btn--view" [title]="'COMMON.VIEW' | translate"
                           *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
                           (click)="openView(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -285,16 +264,16 @@
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--edit" title="Edit"
-                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asRetour(bon).isDeleted"
+                  <button class="icon-btn icon-btn--edit" [title]="'COMMON.EDIT' | translate"
+                          *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)"
                           (click)="openEdit(bon)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--delete" (click)="delete(asRetour(bon))" title="Delete"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !asRetour(bon).isDeleted">
+                  <button class="icon-btn icon-btn--delete" (click)="delete(asRetour(bon))" [title]="'COMMON.DELETE' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -308,7 +287,7 @@
 
             <tr *ngIf="sortedData.length === 0">
               <td colspan="8" class="td--empty">
-                No bons found{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
+                {{ 'COMMON.NO_RESULTS' | translate }}{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
               </td>
             </tr>
           </tbody>
@@ -330,9 +309,9 @@
   <!-- ===================== VIEW PANEL ===================== -->
   <div class="panel" *ngIf="isView() && selectedBon">
     <div class="panel__header">
-      <h2 class="panel__title">Bon #{{ selectedBon.numero }}</h2>
+      <h2 class="panel__title">{{ 'STOCK.BONS.DETAILS.NUMERO' | translate }} #{{ selectedBon.numero }}</h2>
       <div class="panel__header-actions">
-        <button class="btn-back" (click)="cancel()">← Back</button>
+        <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
       </div>
     </div>
     <div class="panel__body">
@@ -340,52 +319,52 @@
       <!-- Header details -->
       <div class="detail-grid">
         <div class="detail-item">
-          <span class="detail-label">NUMÉRO</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.NUMERO' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedBon.numero }}</span>
         </div>
         <div class="detail-item" *ngIf="activeBonType === 'entre'">
-          <span class="detail-label">FOURNISSEUR</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.FOURNISSEUR' | translate }}</span>
           <span class="role-badge role-badge--clickable" [routerLink]="['/stock/fournisseurs', asEntre(selectedBon).fournisseurId]">{{ asEntre(selectedBon).fournisseurName }}</span>
         </div>
         <div class="detail-item" *ngIf="activeBonType === 'sortie'">
-          <span class="detail-label">CLIENT ID</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.CLIENT' | translate }}</span>
           <span class="role-badge role-badge--clickable" [routerLink]="['/clients', asSortie(selectedBon).clientId]">{{ asSortie(selectedBon).clientId }}</span>
         </div>
         <ng-container *ngIf="activeBonType === 'retour'">
           <div class="detail-item">
-            <span class="detail-label">SOURCE TYPE</span>
+            <span class="detail-label">{{ 'STOCK.BONS.DETAILS.SOURCE_TYPE' | translate }}</span>
             <span class="detail-value">{{ asRetour(selectedBon).sourceType }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">SOURCE ID</span>
+            <span class="detail-label">{{ 'STOCK.BONS.DETAILS.SOURCE_ID' | translate }}</span>
             <span class="detail-value detail-value--mono">{{ asRetour(selectedBon).sourceId }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">MOTIF</span>
+            <span class="detail-label">{{ 'STOCK.BONS.DETAILS.MOTIF' | translate }}</span>
             <span class="detail-value">{{ asRetour(selectedBon).motif }}</span>
           </div>
         </ng-container>
         <div class="detail-item">
-          <span class="detail-label">OBSERVATION</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.OBSERVATION' | translate }}</span>
           <span class="detail-value">{{ selectedBon.observation ?? '—' }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">TOTAL</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.TOTAL' | translate }}</span>
           <span class="detail-value">{{ getTotal(selectedBon) | number:'1.2-2' }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CREATED AT</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.CREATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedBon.createdAt | date:'medium' }}</span>
         </div>
         <div class="detail-item" *ngIf="selectedBon.updatedAt">
-          <span class="detail-label">UPDATED AT</span>
+          <span class="detail-label">{{ 'STOCK.BONS.DETAILS.UPDATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedBon.updatedAt | date:'medium' }}</span>
         </div>
       </div>
 
       <!-- Lignes -->
       <div class="section-divider">
-        <span class="section-divider__label">LIGNES</span>
+        <span class="section-divider__label">{{ 'STOCK.BONS.LIGNES' | translate }}</span>
       </div>
 
       <div class="table-card">
@@ -393,13 +372,13 @@
           <table class="table table--inner">
             <thead>
               <tr>
-                <th>ARTICLE ID</th>
-                <th>QTY</th>
-                <th>PRICE</th>
-                <th>TOTAL</th>
-                <th *ngIf="activeBonType === 'retour'">REMARQUE</th>
-                <th *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted && isEdit()"
-                    class="text-center">ACTIONS</th>
+                <th>{{ 'STOCK.BONS.LIGNE_TABLE.ARTICLE_ID' | translate }}</th>
+                <th>{{ 'STOCK.BONS.LIGNE_TABLE.QTY' | translate }}</th>
+                <th>{{ 'STOCK.BONS.LIGNE_TABLE.PRICE' | translate }}</th>
+                <th>{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</th>
+                <th *ngIf="activeBonType === 'retour'">{{ 'STOCK.BONS.LIGNE_TABLE.REMARQUE' | translate }}</th>
+                <th *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && isEdit()"
+                    class="text-center">{{ 'STOCK.BONS.LIGNE_TABLE.ACTIONS' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -409,16 +388,16 @@
                 <td class="td--price">{{ l.price | number:'1.2-2' }}</td>
                 <td class="td--price">{{ l.total | number:'1.2-2' }}</td>
                 <td *ngIf="activeBonType === 'retour'">{{ l.remarque ?? '—' }}</td>
-                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted && isEdit()"
+                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && isEdit()"
                     class="td--actions">
-                  <button class="icon-btn icon-btn--edit" title="Edit ligne"
+                  <button class="icon-btn icon-btn--edit" [title]="'STOCK.BONS.EDIT_LIGNE' | translate"
                           (click)="openEditLigne(selectedBon, l)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="icon-btn icon-btn--delete" title="Remove ligne"
+                  <button class="icon-btn icon-btn--delete" [title]="'STOCK.BONS.REMOVE_LIGNE' | translate"
                           (click)="removeLigne(selectedBon, l.id)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
@@ -428,15 +407,15 @@
                 </td>
               </tr>
               <tr *ngIf="getLignes(selectedBon).length === 0">
-                <td colspan="6" class="td--empty">No lignes yet.</td>
+                <td colspan="6" class="td--empty">{{ 'STOCK.BONS.NO_LIGNES' | translate }}</td>
               </tr>
             </tbody>
             <tfoot *ngIf="getLignes(selectedBon).length > 0">
               <tr>
-                <td colspan="3" class="td--total-label">TOTAL</td>
+                <td colspan="3" class="td--total-label">{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</td>
                 <td class="td--price td--total">{{ getTotal(selectedBon) | number:'1.2-2' }}</td>
                 <td *ngIf="activeBonType === 'retour'"></td>
-                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted"></td>
+                <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)"></td>
               </tr>
             </tfoot>
           </table>
@@ -445,12 +424,12 @@
 
       <div class="panel__actions">
         <button class="btn-secondary" (click)="openEdit(selectedBon)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted">
-          Edit Bon
+                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)">
+          {{ 'STOCK.BONS.EDIT_BON' | translate }}
         </button>
         <button class="btn-danger" (click)="delete(selectedBon)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !selectedBon.isDeleted">
-          Delete
+                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)">
+          {{ 'COMMON.DELETE' | translate }}
         </button>
       </div>
     </div>
@@ -461,10 +440,10 @@
                          || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">
     <div class="panel__header">
       <h2 class="panel__title">
-        {{ isCreate() ? 'New' : 'Edit' }}
-        {{ activeBonType === 'entre' ? "Bon d'Entrée" : activeBonType === 'sortie' ? 'Bon de Sortie' : 'Bon de Retour' }}
+        {{ isCreate() ? ('STOCK.BONS.NEW_BON' | translate) : ('STOCK.BONS.EDIT_BON' | translate) }}
+        {{ activeBonType === 'entre' ? ('STOCK.BONS.TITLE_ENTRE' | translate) : activeBonType === 'sortie' ? ('STOCK.BONS.TITLE_SORTIE' | translate) : ('STOCK.BONS.TITLE_RETOUR' | translate) }}
       </h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
 
     <div class="panel__body">
@@ -476,38 +455,38 @@
           <!-- Entre: Fournisseur -->
           <div class="form__field" *ngIf="activeBonType === 'entre'">
             <div class="form__label">
-              <label>Fournisseur *</label>
+              <label>{{ 'STOCK.BONS.FORM.FOURNISSEUR' | translate }}</label>
               <mat-icon>local_shipping</mat-icon>
             </div>
             <select class="form__input form__select" formControlName="fournisseurId"
                     [class.form__input--error]="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched">
-              <option value="" disabled selected>— Select a fournisseur —</option>
+              <option value="" disabled selected>{{ 'STOCK.BONS.FORM.SELECT_FOURNISSEUR' | translate }}</option>
               <option *ngFor="let f of filteredFournisseurs" [value]="f.id" [selected]="f.id === headerForm.get('fournisseurId')?.value">
                 {{ f.name }} — {{ f.taxNumber }}
               </option>
             </select>
             <span class="form__error"
                   *ngIf="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched">
-              Fournisseur is required
+              {{ 'VALIDATION.REQUIRED' | translate }}
             </span>
           </div>
 
           <!-- Sortie: Client -->
           <div class="form__field" *ngIf="activeBonType === 'sortie'">
             <div class="form__label">
-              <label>Client *</label>
+              <label>{{ 'STOCK.BONS.FORM.CLIENT' | translate }}</label>
               <mat-icon>person</mat-icon>
             </div>
             <select class="form__input form__select" formControlName="clientId"
                     [class.form__input--error]="headerForm.get('clientId')?.invalid && headerForm.get('clientId')?.touched">
-              <option value="" selected disabled>— Select client —</option>
+              <option value="" selected disabled>{{ 'STOCK.BONS.FORM.SELECT_CLIENT' | translate }}</option>
               <option *ngFor="let client of filteredClients" [value]="client.id">
                 {{ client.name }} — {{ client.email }}
               </option>
             </select>
             <span class="form__error"
                   *ngIf="headerForm.get('clientId')?.invalid && headerForm.get('clientId')?.touched">
-              Client is required
+              {{ 'VALIDATION.REQUIRED' | translate }}
             </span>
           </div>
 
@@ -515,30 +494,30 @@
           <ng-container *ngIf="activeBonType === 'retour'">
             <div class="form__field">
               <div class="form__label">
-                <label>Source Bon *</label>
+                <label>{{ 'STOCK.BONS.FORM.SOURCE_BON' | translate }}</label>
                 <mat-icon>link</mat-icon>
               </div>
               <select class="form__input form__select" formControlName="sourceId"
                       (change)="onSourceBonChange(headerForm.get('sourceId')!.value)"
                       [class.form__input--error]="headerForm.get('sourceId')?.invalid && headerForm.get('sourceId')?.touched">
-                <option value="" disabled selected>— Select a source bon —</option>
+                <option value="" disabled selected>{{ 'STOCK.BONS.FORM.SELECT_SOURCE' | translate }}</option>
                 <option *ngFor="let bon of allSourceBons" [value]="bon.id">
                   {{ bon.numero }} ({{ bon.sourceType === RetourSource.BonEntre ? "Entrée" : "Sortie" }})
                 </option>
               </select>
               <span class="form__error" *ngIf="headerForm.get('sourceId')?.invalid && headerForm.get('sourceId')?.touched">
-                Source bon is required
+                {{ 'VALIDATION.REQUIRED' | translate }}
               </span>
             </div>
             <div class="form__field">
               <div class="form__label">
-                <label>Motif *</label>
+                <label>{{ 'STOCK.BONS.FORM.MOTIF' | translate }}</label>
                 <mat-icon>comment</mat-icon>
               </div>
-              <input class="form__input" type="text" formControlName="motif" placeholder="Reason for return"
+              <input class="form__input" type="text" formControlName="motif" [placeholder]="'STOCK.BONS.FORM.MOTIF_PLACEHOLDER' | translate"
                      [class.form__input--error]="headerForm.get('motif')?.invalid && headerForm.get('motif')?.touched"/>
               <span class="form__error" *ngIf="headerForm.get('motif')?.invalid && headerForm.get('motif')?.touched">
-                Motif is required
+                {{ 'VALIDATION.REQUIRED' | translate }}
               </span>
             </div>
           </ng-container>
@@ -546,10 +525,10 @@
           <!-- Observation -->
           <div class="form__field">
             <div class="form__label">
-              <label>Observation <span class="form__optional">(optional)</span></label>
+              <label>{{ 'STOCK.BONS.FORM.OBSERVATION' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>notes</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="observation" placeholder="Optional note" />
+            <input class="form__input" type="text" formControlName="observation" [placeholder]="'STOCK.BONS.FORM.OBSERVATION_PLACEHOLDER' | translate" />
           </div>
         </div>
 
@@ -557,11 +536,11 @@
 
       <!-- ── SECTION 2: Lignes ───────────────────────────────────────────── -->
       <div class="section-divider">
-        <span class="section-divider__label">LIGNES</span>
+        <span class="section-divider__label">{{ 'STOCK.BONS.LIGNES' | translate }}</span>
         <!-- Show ligne count hint in create mode -->
         <span class="section-divider__hint" *ngIf="isCreate()">
-          {{ pendingLignes.length }} ligne(s) added
-          <span *ngIf="pendingLignes.length === 0" class="section-divider__required"> — at least one required</span>
+          {{ 'STOCK.BONS.LIGNE_COUNT' | translate : { count: pendingLignes.length } }}
+          <span *ngIf="pendingLignes.length === 0" class="section-divider__required">{{ 'STOCK.BONS.LIGNE_REQUIRED' | translate }}</span>
         </span>
       </div>
 
@@ -572,12 +551,12 @@
             <table class="table table--inner">
               <thead>
                 <tr>
-                  <th>ARTICLE</th>
-                  <th>QTY</th>
-                  <th>PRICE</th>
-                  <th>TOTAL</th>
-                  <th *ngIf="activeBonType === 'retour'">REMARQUE</th>
-                  <th class="text-center">ACTIONS</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.ARTICLE' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.QTY' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.PRICE' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</th>
+                  <th *ngIf="activeBonType === 'retour'">{{ 'STOCK.BONS.LIGNE_TABLE.REMARQUE' | translate }}</th>
+                  <th class="text-center">{{ 'STOCK.BONS.LIGNE_TABLE.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -588,14 +567,14 @@
                   <td class="td--price">{{ l.total | number:'1.2-2' }}</td>
                   <td *ngIf="activeBonType === 'retour'">{{ l.remarque ?? '—' }}</td>
                   <td class="td--actions">
-                    <button class="icon-btn icon-btn--edit" title="Edit ligne"
+                    <button class="icon-btn icon-btn--edit" [title]="'STOCK.BONS.EDIT_LIGNE' | translate"
                             (click)="openInlineLigneEdit(l, true)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
-                    <button class="icon-btn icon-btn--delete" title="Remove ligne"
+                    <button class="icon-btn icon-btn--delete" [title]="'STOCK.BONS.REMOVE_LIGNE' | translate"
                             (click)="removePendingLigne(l._localId)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
@@ -607,7 +586,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="3" class="td--total-label">TOTAL</td>
+                  <td colspan="3" class="td--total-label">{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</td>
                   <td class="td--price td--total">{{ pendingTotal | number:'1.2-2' }}</td>
                   <td *ngIf="activeBonType === 'retour'"></td>
                   <td></td>
@@ -625,7 +604,7 @@
             <line x1="12" y1="12" x2="12" y2="16"/>
             <line x1="10" y1="14" x2="14" y2="14"/>
           </svg>
-          <p>No lignes added yet. Add at least one ligne to create the bon.</p>
+          <p>{{ 'STOCK.BONS.NO_LIGNES' | translate }}</p>
         </div>
       </ng-container>
 
@@ -636,12 +615,12 @@
             <table class="table table--inner">
               <thead>
                 <tr>
-                  <th>ARTICLE ID</th>
-                  <th>QTY</th>
-                  <th>PRICE</th>
-                  <th>TOTAL</th>
-                  <th *ngIf="activeBonType === 'retour'">REMARQUE</th>
-                  <th class="text-center">ACTIONS</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.ARTICLE_ID' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.QTY' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.PRICE' | translate }}</th>
+                  <th>{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</th>
+                  <th *ngIf="activeBonType === 'retour'">{{ 'STOCK.BONS.LIGNE_TABLE.REMARQUE' | translate }}</th>
+                  <th class="text-center">{{ 'STOCK.BONS.LIGNE_TABLE.ACTIONS' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -652,14 +631,14 @@
                   <td class="td--price">{{ l.total | number:'1.2-2' }}</td>
                   <td *ngIf="activeBonType === 'retour'">{{ l.remarque ?? '—' }}</td>
                   <td class="td--actions">
-                    <button class="icon-btn icon-btn--edit" title="Edit ligne"
+                    <button class="icon-btn icon-btn--edit" [title]="'STOCK.BONS.EDIT_LIGNE' | translate"
                             (click)="openInlineLigneEdit(l, false)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
-                    <button class="icon-btn icon-btn--delete" title="Remove ligne"
+                    <button class="icon-btn icon-btn--delete" [title]="'STOCK.BONS.REMOVE_LIGNE' | translate"
                             (click)="removeLigne(selectedBon, l.id)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
@@ -671,7 +650,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="3" class="td--total-label">TOTAL</td>
+                  <td colspan="3" class="td--total-label">{{ 'STOCK.BONS.LIGNE_TABLE.TOTAL' | translate }}</td>
                   <td class="td--price td--total">{{ getTotal(selectedBon) | number:'1.2-2' }}</td>
                   <td *ngIf="activeBonType === 'retour'"></td>
                   <td></td>
@@ -687,7 +666,7 @@
             <line x1="12" y1="12" x2="12" y2="16"/>
             <line x1="10" y1="14" x2="14" y2="14"/>
           </svg>
-          <p>No lignes yet. Add a ligne below.</p>
+          <p>{{ 'STOCK.BONS.NO_LIGNES' | translate }}</p>
         </div>
       </ng-container>
 
@@ -695,9 +674,9 @@
       <div class="inline-ligne-form" *ngIf="inlineLigneOpen" [formGroup]="ligneForm">
         <div class="inline-ligne-form__header">
           <span class="inline-ligne-form__title">
-            {{ inlineLigneLocalId ? 'Edit Ligne' : 'Add Ligne' }}
+            {{ inlineLigneLocalId ? ('STOCK.BONS.EDIT_LIGNE' | translate) : ('STOCK.BONS.ADD_LIGNE' | translate) }}
           </span>
-          <button type="button" class="icon-btn" (click)="closeInlineLigne()" title="Cancel">
+          <button type="button" class="icon-btn" (click)="closeInlineLigne()" [title]="'COMMON.CANCEL' | translate">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -707,54 +686,54 @@
         <div class="inline-ligne-form__body">
           <!-- Article -->
           <div class="form__field">
-            <label class="form__label">Article *</label>
+            <label class="form__label">{{ 'STOCK.BONS.FORM.ARTICLE' | translate }}</label>
             <select class="form__input form__select" formControlName="articleId"
                     (change)="onArticleSelected(ligneForm.get('articleId')!.value)"
                     [class.form__input--error]="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
-              <option value="" selected disabled>— Select an article —</option>
+              <option value="" selected disabled>{{ 'STOCK.BONS.FORM.SELECT_ARTICLE' | translate }}</option>
               <option *ngFor="let article of articles" [value]="article.id">
                 {{ article.codeRef }} — {{ article.libelle }} ({{ article.prix | number:'1.2-2' }})
               </option>
             </select>
             <span class="form__error"
                   *ngIf="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
-              Article is required
+              {{ 'VALIDATION.REQUIRED' | translate }}
             </span>
           </div>
 
           <!-- Qty -->
           <div class="form__field">
-            <label class="form__label">Quantity *</label>
+            <label class="form__label">{{ 'STOCK.BONS.FORM.QUANTITY' | translate }}</label>
             <input class="form__input" formControlName="quantity" type="number" min="1" step="1"
                    [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"/>
             <span class="form__error" *ngIf="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched">
-              Quantity must be > 0
+              {{ 'VALIDATION.INVALID_QUANTITY' | translate }}
             </span>
           </div>
 
           <!-- Price -->
           <div class="form__field">
-            <label class="form__label">Price *</label>
+            <label class="form__label">{{ 'STOCK.BONS.FORM.PRICE' | translate }}</label>
             <input class="form__input" formControlName="price" type="number" readonly
                    [class.form__input--error]="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched"/>
             <span class="form__error" *ngIf="ligneForm.get('price')?.invalid && ligneForm.get('price')?.touched">
-              Price must be ≥ 0
+              {{ 'VALIDATION.INVALID_PRICE' | translate }}
             </span>
           </div>
 
           <!-- Remarque (retour only) -->
           <div class="form__field" *ngIf="activeBonType === 'retour'">
-            <label class="form__label">Remarque <span class="form__optional">(optional)</span></label>
-            <input class="form__input" formControlName="remarque" placeholder="Optional remark" />
+            <label class="form__label">{{ 'STOCK.BONS.FORM.REMARQUE' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
+            <input class="form__input" formControlName="remarque" [placeholder]="'STOCK.BONS.FORM.REMARQUE_PLACEHOLDER' | translate" />
           </div>
         </div>
-
+        
         <div class="inline-ligne-form__actions">
-          <button type="button" class="btn-secondary" (click)="closeInlineLigne()">Cancel</button>
+          <button type="button" class="btn-secondary" (click)="closeInlineLigne()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="button" class="btn-add"
                   [disabled]="ligneForm.invalid || isInlineLigneSubmitting"
                   (click)="submitInlineLigne()">
-            {{ inlineLigneLocalId ? 'Update Ligne' : 'Add Ligne' }}
+            {{ inlineLigneLocalId ? ('COMMON.UPDATE' | translate) : ('COMMON.ADD' | translate) }}
           </button>
         </div>
       </div>
@@ -763,16 +742,19 @@
       <div class="lignes-add-row" *ngIf="!inlineLigneOpen">
         <button type="button" class="btn-add btn-add--sm btn-add--outline"
                 (click)="openInlineLigneAdd()">
-          + Add Ligne
+          + {{ 'STOCK.BONS.ADD_LIGNE' | translate }}
         </button>
       </div>
 
       <!-- ── Final form actions ──────────────────────────────────────────── -->
       <div class="form__actions form__actions--panel">
-        <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
         <button type="submit" form="bon-header-form" class="btn-add"
-                [disabled]="headerForm.invalid || (isCreate() && pendingLignes.length === 0)">
-          {{ isCreate() ? '+ Create Bon' : 'Save Changes' }}
+                [disabled]="headerForm.invalid
+                          || (isEdit()   && editLignes.length === 0)
+                          || (isCreate() && pendingLignes.length === 0)
+                          || inlineLigneOpen">
+          {{ isCreate() ? ('STOCK.BONS.CREATE_BON' | translate) : ('STOCK.BONS.SAVE_CHANGES' | translate) }}
         </button>
       </div>
 

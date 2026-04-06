@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { ModalData } from '../../interfaces/ModalData';
+import { TranslatePipe } from '@ngx-translate/core';
 
 
 
@@ -11,7 +12,7 @@ import { ModalData } from '../../interfaces/ModalData';
 
 @Component({
   selector: 'app-modal',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, CommonModule],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, CommonModule, TranslatePipe],
   templateUrl: './modal.html',
   styleUrl: './modal.scss'
 })

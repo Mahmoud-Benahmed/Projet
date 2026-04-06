@@ -34,15 +34,6 @@ public class BonRetoursController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet(ApiRoutes.BonRetours.GetDeleted)]
-    public async Task<IActionResult> GetDeleted(
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 10)
-    {
-        var result = await _service.GetPagedDeletedAsync(page, size);
-        return Ok(result);
-    }
-
     [HttpGet(ApiRoutes.BonRetours.GetBySource)]
     public async Task<IActionResult> GetBySource(
         [FromRoute] Guid sourceId,

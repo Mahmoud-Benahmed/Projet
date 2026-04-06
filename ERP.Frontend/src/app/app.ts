@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { LoginComponent } from "./components/login/login";
 import { LoadingOverlayComponent } from "./components/loading-overlay/loading-overlay";
-import { ThemeService } from './services/theme.service';
+import { UserSettingsService } from './services/user-settings.service';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +13,13 @@ import { ThemeService } from './services/theme.service';
 })
 export class App {
   protected readonly title = signal('ERP.Frontend');
-  constructor(private theme: ThemeService) {
-    this.theme.init(); // call before any rendering
+  protected readonly userSettings = inject(UserSettingsService);
+  protected readonly translate = inject(TranslateService);
+
+  constructor() {
+
+    this.translate.reloadLang('en').pipe(take(1)).subscribe(() => {
+      this.userSettings.init();
+    });
   }
 }

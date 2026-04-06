@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.ClientService.Migrations
 {
     [DbContext(typeof(ClientDbContext))]
-    [Migration("20260326171009_InitialCreate")]
+    [Migration("20260405023018_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -49,6 +49,9 @@ namespace ERP.ClientService.Migrations
                     b.Property<decimal?>("DiscountRate")
                         .HasPrecision(5, 4)
                         .HasColumnType("decimal(5,4)");
+
+                    b.Property<int>("DuePaymentPeriod")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -97,6 +100,9 @@ namespace ERP.ClientService.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<int?>("DelaiRetour")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DuePaymentPeriod")
                         .HasColumnType("int");
 
                     b.Property<string>("Email")

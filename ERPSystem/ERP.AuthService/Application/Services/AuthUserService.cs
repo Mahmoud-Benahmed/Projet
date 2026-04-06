@@ -1,20 +1,13 @@
-﻿using Confluent.Kafka;
-using ERP.AuthService.Application.DTOs;
+﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions;
-using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using System.Globalization;
-using System.Security;
-using System.Security.Cryptography;
-using System.Text;
 
 
 namespace ERP.AuthService.Application.Services
@@ -42,6 +35,7 @@ namespace ERP.AuthService.Application.Services
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
             IPrivilegeRepository privilegeRepository
+
             )
             //,IEventPublisher eventPublisher
         {
@@ -142,11 +136,9 @@ namespace ERP.AuthService.Application.Services
         // ===============================
         public async Task<AuthUserGetResponseDto> UpdateProfile(Guid id, UpdateProfileDto request)
         {
-            var user= await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
+            var user = await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
             user.UpdateProfile(request.FullName, request.Email);
-
-
-            var updated= await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateAsync(user);
 
             await _auditLogger.LogAsync(
                 AuditAction.ProfileUpdated,
@@ -155,9 +147,23 @@ namespace ERP.AuthService.Application.Services
                 targetUserId: id,
                 metadata: new() { ["email"] = user.Email, ["fullName"] = user.FullName },
                 ipAddress: GetIp());
-            return await MapToDtoAsync(updated);
+
+            return await MapToDtoAsync(user);
         }
 
+        public async Task<UserSettingsResponseDto> UpdateSettings(Guid userId, UserSettingsRequestDto dto)
+        {
+            var user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new UserNotFoundException(userId);
+
+            user.UpdateSettings(dto.Theme.ToString(), dto.Language.ToString());
+            await _userRepository.UpdateAsync(user);
+
+            return new UserSettingsResponseDto(
+                Theme: user.Settings.Theme.ToString(),
+                Language: user.Settings.Language.ToString()
+            );
+        }
 
         public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request, Guid performedById)
         {
@@ -226,7 +232,7 @@ namespace ERP.AuthService.Application.Services
                 await _auditLogger.LogAsync(
                         AuditAction.Login,
                         success: false,
-                        failureReason: "Invalid credentials",
+                        failureReason: ex.Message,
                         metadata: new() { ["login"] = request.Login },
                         ipAddress: GetIp(),
                         userAgent: GetUserAgent());
@@ -252,7 +258,7 @@ namespace ERP.AuthService.Application.Services
         public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
-                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+                ?? throw new InvalidRefreshTokenException();
 
             if (token.IsExpired())
                 throw new UnauthorizedAccessException("Refresh token expired.");
@@ -288,8 +294,7 @@ namespace ERP.AuthService.Application.Services
         public async Task RevokeRefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
-               ?? throw new UnauthorizedAccessException("Invalid refresh token.");
-
+               ?? throw new InvalidRefreshTokenException();
             await RevokeRefreshTokenAsyncPrivate(token);
             await _auditLogger.LogAsync(
                 AuditAction.Logout,
@@ -322,39 +327,21 @@ namespace ERP.AuthService.Application.Services
                        ?? throw new InvalidOperationException("Role not found.");
 
             var privileges = await _privilegeRepository.GetByRoleIdAsync(user.RoleId);
-            
-            Console.WriteLine("=== RAW PRIVILEGES ===");
-            foreach (var p in privileges)
-            {
-                Console.WriteLine($"RoleId={p.RoleId}, ControleId={p.ControleId}, IsGranted={p.IsGranted}");
-            }
 
             var grantedControleIds = privileges
                 .Where(p => p.IsGranted)
                 .Select(p => p.ControleId)
                 .ToList();
 
-            Console.WriteLine("=== GRANTED IDS ===");
-            foreach (var id in grantedControleIds)
-            {
-                Console.WriteLine(id);
-            }
-
-
             var controles = await _controleRepository.GetByIdsAsync(grantedControleIds);
             var privilegeNames = controles.Select(c => c.Libelle).ToList();
-
-            Console.WriteLine("=== CONTROLES ===");
-            foreach (var c in controles)
-            {
-                Console.WriteLine($"Id={c.Id}, Libelle={c.Libelle}");
-            }
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
                 user.Login,
                 role.Libelle,
-                privilegeNames
+                privilegeNames,
+                user.Settings
             );
 
             var refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
@@ -575,6 +562,14 @@ namespace ERP.AuthService.Application.Services
                 CreatedAt: user.CreatedAt,
                 UpdatedAt: user.UpdatedAt,
                 LastLoginAt: user.LastLoginAt
+            ); 
+        }
+
+        private UserSettingsResponseDto MapUserSettingsToDto(UserSettings settings)
+        {
+            return new UserSettingsResponseDto(
+                Theme: settings.Theme.ToString(),
+                Language: settings.Language.ToString()
             );
         }
 

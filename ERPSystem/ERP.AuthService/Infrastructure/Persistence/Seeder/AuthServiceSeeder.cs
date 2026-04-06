@@ -1,5 +1,7 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
+using ERP.AuthService.Infrastructure.Persistence;
+using ERP.AuthService.Infrastructure.Persistence.Repositories;
 using ERP.AuthService.Infrastructure.Persistence.Seeder;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +12,7 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
     public static class AuthServiceSeeder
     {
         public static async Task SeedAsync(
+            MongoDbContext dbContext,
             IAuditLogRepository auditLogRepository,
             IAuthUserRepository userRepository,
             IRoleRepository roleRepository,
@@ -18,11 +21,12 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
             IConfiguration configuration)
         {
-            await controleRepository.DeleteAllAsync();
-            await roleRepository.DeleteAllAsync();
-            await privilegeRepository.DeleteAllAsync();
-            await userRepository.DeleteAllAsync();
-            await auditLogRepository.ClearAsync();
+            await dbContext.DropCollectionAsync("AuditLogs");
+            await dbContext.DropCollectionAsync("Privileges");
+            await dbContext.DropCollectionAsync("Controles");
+            await dbContext.DropCollectionAsync("Roles");
+            await dbContext.DropCollectionAsync("RefreshTokens");
+            await dbContext.DropCollectionAsync("AuthUsers");
 
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
@@ -236,10 +240,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             IConfiguration configuration,
             IPasswordHasher<AuthUser> passwordHasher)
         {
-            if (await userRepository.CountAsync() > 0)
-            {
-                await userRepository.DeleteAllAsync();
-            }
             List<Role> roles = await roleRepository.GetAllAsync();
 
             var adminRole = roles.Find(r => r.Libelle == Roles.SystemAdmin)  ?? throw new InvalidOperationException($"Role '{Roles.SystemAdmin}' not found. Ensure roles are seeded before users.");
@@ -261,13 +261,24 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
 
-                var user = new AuthUser(login, email, fullName, roleId);
+                var random = new Random();
+                var themes = Enum.GetValues<Theme>();
+                var languages = Enum.GetValues<Language>();
+
+                var settings = new UserSettings
+                {
+                    Theme = themes[random.Next(themes.Length)],
+                    Language = languages[random.Next(languages.Length)]
+                };
+
+                var user = new AuthUser(login, email, fullName, roleId, settings);
 
 
                 var hashedPassword = passwordHasher.HashPassword(user, password);
                 user.SetPasswordHash(hashedPassword);
 
                 await userRepository.AddAsync(user);
+
             }
         }
     }

@@ -9,7 +9,7 @@ public class Client
     public string Email { get; private set; } = default!;
     public string Address { get; private set; } = default!;
     public string? Phone { get; private set; }
-
+    public int? DuePaymentPeriod { get; private set; }
     public string? TaxNumber { get; private set; }
     public decimal? CreditLimit { get; private set; }
     public int? DelaiRetour { get; private set; }
@@ -28,13 +28,16 @@ public class Client
     public static Client Create(
         string name, string email, string address,
         string? phone = null, string? taxNumber = null,
-        decimal? creditLimit = null, int? DelaiRetour = null)
+        decimal? creditLimit = null,
+        int? delaiRetour = null,
+        int? duePaymentPeriod = null)
     {
         ValidateName(name);
         ValidateEmail(email);
         ValidateAddress(address);
         ValidateCreditLimit(creditLimit);
-        ValidateDelaiRetour(DelaiRetour);
+        ValidateDelaiRetour(delaiRetour);
+        ValidateDuePaymentPeriod(duePaymentPeriod);
 
         return new Client
         {
@@ -45,7 +48,8 @@ public class Client
             Phone = phone?.Trim(),
             TaxNumber = taxNumber?.Trim(),
             CreditLimit = creditLimit,
-            DelaiRetour = DelaiRetour,
+            DelaiRetour = delaiRetour,
+            DuePaymentPeriod = duePaymentPeriod,
             CreatedAt = DateTime.UtcNow,
         };
     }
@@ -70,7 +74,6 @@ public class Client
     public ClientCategory AddCategory(Category category, Guid assignedById)
     {
         GuardNotDeleted();
-
         if (!category.IsActive)
             throw new InvalidOperationException(
                 $"Category '{category.Name}' is not active.");
@@ -81,6 +84,10 @@ public class Client
 
         var clientCategory = ClientCategory.Create(Id, category.Id, assignedById);
         ClientCategories.Add(clientCategory);
+
+        CreditLimit = GetEffectiveCreditLimit();
+        DelaiRetour = GetEffectiveDelaiRetour();
+        DuePaymentPeriod = GetEffectiveDuePaymentPeriod();
         UpdatedAt = DateTime.UtcNow;
         return clientCategory;
     }
@@ -97,6 +104,10 @@ public class Client
                 $"Client does not have category '{category.Name}'.");
 
         ClientCategories.Remove(existing);
+
+        CreditLimit = GetEffectiveCreditLimit();   // ← add
+        DelaiRetour = GetEffectiveDelaiRetour();   // ← add
+        DuePaymentPeriod = GetEffectiveDuePaymentPeriod(); // ← add
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -175,13 +186,39 @@ public class Client
 
         var multiplier = ClientCategories
             .Select(cc => cc.Category)
-            .Where(c => c is { IsActive: true })
-            .Select(c => c.CreditLimitMultiplier)
-            .FirstOrDefault(m => m.HasValue);
+            .Where(c => c is { IsActive: true } && c.CreditLimitMultiplier.HasValue)
+            .Max(c => c.CreditLimitMultiplier);
 
         return multiplier.HasValue
             ? CreditLimit.Value * multiplier.Value
             : CreditLimit.Value;
+    }
+
+    public void SetDuePaymentPeriod(int days)
+    {
+        ValidateDuePaymentPeriod(days);
+        DuePaymentPeriod = days;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearDuePaymentPeriod()
+    {
+        DuePaymentPeriod = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public int GetEffectiveDuePaymentPeriod()
+    {
+        if (DuePaymentPeriod.HasValue) return DuePaymentPeriod.Value;
+
+        var categoryMax = ClientCategories
+            .Select(cc => cc.Category)
+            .Where(c => c is { IsActive: true, IsDeleted: false })
+            .Select(c => c.DuePaymentPeriod)   // now int, no .Where(d => d.HasValue) needed
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return categoryMax;
     }
 
     public bool CanPlaceOrder(decimal orderAmount, decimal currentBalance)
@@ -237,5 +274,12 @@ public class Client
     {
         if (days.HasValue && days <= 0)
             throw new ArgumentException("Return delay must be at least 1 day.", nameof(days));
+    }
+
+    private static void ValidateDuePaymentPeriod(int? days)
+    {
+        if (days.HasValue && days <= 0)
+            throw new ArgumentException(
+                "Due payment period must be at least 1 day.", nameof(days));
     }
 }

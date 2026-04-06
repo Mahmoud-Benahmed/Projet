@@ -1,7 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Domain;
 using ERP.StockService.Infrastructure.Messaging;
 
 namespace ERP.StockService.Application.Services;
@@ -107,9 +106,10 @@ public class BonRetourService : IBonRetourService
     public async Task DeleteAsync(Guid id)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
-        bon.Delete();
-        await _repo.SaveChangesAsync();
+
+        await _repo.DeleteByIdAsync(id);
     }
+
 
     // =========================
     // READ
@@ -124,14 +124,6 @@ public class BonRetourService : IBonRetourService
     {
         ValidatePaging(page, size);
         var (items, total) = await _repo.GetAllAsync(page, size);
-        return new PagedResultDto<BonRetourResponseDto>(
-            items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
-    }
-
-    public async Task<PagedResultDto<BonRetourResponseDto>> GetPagedDeletedAsync(int page, int size)
-    {
-        ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedDeletedAsync(page, size);
         return new PagedResultDto<BonRetourResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }

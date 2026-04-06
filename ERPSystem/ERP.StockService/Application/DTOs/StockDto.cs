@@ -9,7 +9,7 @@ public record CreateFournisseurRequestDto(
     [Required] string Address,
     [Required] string Phone,
     [Required] string TaxNumber,
-    [Required] string RIB,
+    [Required] [Length(10,50)]string RIB,
     string? Email = null);
 
 public record UpdateFournisseurRequestDto(
@@ -17,7 +17,7 @@ public record UpdateFournisseurRequestDto(
     [Required] string Address,
     [Required] string Phone,
     [Required] string TaxNumber,
-    [Required] string RIB,
+    [Required] [Length(10,50)]string RIB,
     string? Email = null);
 
 public sealed record FournisseurResponseDto(
@@ -55,7 +55,7 @@ public record UpdateBonEntreRequestDto(
 public sealed record BonEntreResponseDto(
     Guid Id, Guid FournisseurId, string FournisseurName,
     string numero, string? Observation,
-    bool IsDeleted, DateTime CreatedAt, DateTime? UpdatedAt,
+    DateTime CreatedAt, DateTime? UpdatedAt,
     List<LigneResponseDto> Lignes, decimal Total);
 
 // ── BonSortie ─────────────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ public record UpdateBonSortieRequestDto(
 public sealed record BonSortieResponseDto(
     Guid Id, Guid ClientId,
     string numero, string? Observation,
-    bool IsDeleted, DateTime CreatedAt, DateTime? UpdatedAt,
+    DateTime CreatedAt, DateTime? UpdatedAt,
     List<LigneResponseDto> Lignes, decimal Total);
 
 // ── BonRetour ─────────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ public record UpdateBonRetourRequestDto(
 public sealed record BonRetourResponseDto(
     Guid Id, Guid SourceId, RetourSourceType SourceType,
     string numero, string Motif, string? Observation,
-    bool IsDeleted, DateTime CreatedAt, DateTime? UpdatedAt,
+    DateTime CreatedAt, DateTime? UpdatedAt,
     List<LigneResponseDto> Lignes, decimal Total);
 
 // ── Shared ────────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ public sealed record FournisseurStatsDto(
 );
 
 public sealed record BonStatsDto(
-    int TotalCount, int ActiveCount, int DeletedCount
+    int TotalCount
 );
 
 public class ErrorResponse
@@ -149,7 +149,7 @@ public static class BonEntreMapping
 {
     public static BonEntreResponseDto ToResponseDto(this BonEntre bon) =>
         new(bon.Id, bon.FournisseurId, bon.Fournisseur?.Name ?? string.Empty,
-            bon.Numero, bon.Observation, bon.IsDeleted, bon.CreatedAt, bon.UpdatedAt,
+            bon.Numero, bon.Observation ,bon.CreatedAt, bon.UpdatedAt,
             bon.Lignes.Select(l => new LigneResponseDto(
                 l.Id, l.ArticleId, l.Quantity, l.Price, l.CalculateTotalLigne()
             // Remarque omitted → defaults to null
@@ -161,7 +161,7 @@ public static class BonSortieMapping
 {
     public static BonSortieResponseDto ToResponseDto(this BonSortie bon) =>
         new(bon.Id, bon.ClientId,
-            bon.Numero,bon.Observation, bon.IsDeleted, bon.CreatedAt, bon.UpdatedAt,
+            bon.Numero,bon.Observation, bon.CreatedAt, bon.UpdatedAt,
             bon.Lignes.Select(l => new LigneResponseDto(
                 l.Id, l.ArticleId, l.Quantity, l.Price, l.CalculateTotalLigne()
             )).ToList(),
@@ -172,7 +172,7 @@ public static class BonRetourMapping
 {
     public static BonRetourResponseDto ToResponseDto(this BonRetour bon) =>
         new(bon.Id, bon.SourceId, bon.SourceType, bon.Numero, 
-            bon.Motif, bon.Observation, bon.IsDeleted, bon.CreatedAt, bon.UpdatedAt,
+            bon.Motif, bon.Observation, bon.CreatedAt, bon.UpdatedAt,
             bon.Lignes.Select(l => new LigneResponseDto(
                 l.Id, l.ArticleId, l.Quantity, l.Price, l.CalculateTotalLigne(), l.Remarque
             )).ToList(),

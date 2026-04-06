@@ -3,19 +3,25 @@
   <!-- ── PAGE HEADER ── -->
   <div class="page-header">
     <div>
-      <p class="breadcrumb">USER MANAGEMENT</p>
-      <h1 class="page-title">Deactivated Users</h1>
+      <p class="breadcrumb">{{ 'USERS.BREADCRUMB' | translate }}</p>
+      <h1 class="page-title">{{ 'USERS.TITLE_DEACTIVATED' | translate }}</h1>
     </div>
   </div>
 
-    <!-- ===================== ALERTS ===================== -->
+  <!-- ===================== ALERTS ===================== -->
   <div class="alert alert--error" *ngIf="error">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
     {{ error }}
     <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
   <div class="alert alert--success" *ngIf="successMessage">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
     {{ successMessage }}
     <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
@@ -32,7 +38,7 @@
       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
       <div class="stat-card__body">
         <div>
-          <p class="stat-card__label">Active Users</p>
+          <p class="stat-card__label">{{ 'USERS.STATS.ACTIVE' | translate }}</p>
           <p class="stat-card__value">{{ stats?.activeUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--green">
@@ -52,7 +58,7 @@
       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER) || authService.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)">
       <div class="stat-card__body">
         <div>
-          <p class="stat-card__label">Deactivated</p>
+          <p class="stat-card__label">{{ 'USERS.STATS.DEACTIVATED' | translate }}</p>
           <p class="stat-card__value">{{ stats?.deactivatedUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--red">
@@ -74,7 +80,7 @@
       <input
         class="search-input"
         type="text"
-        placeholder="Search users…"
+        [placeholder]="'USERS.SEARCH_PLACEHOLDER' | translate"
         [(ngModel)]="searchTerm"
         (ngModelChange)="applyFilter()" />
     </div>
@@ -91,7 +97,7 @@
       <thead>
         <tr>
           <th (click)="sortBy('fullName')" class="th--sortable">
-            FULL NAME
+            {{ 'USERS.TABLE.FULL_NAME' | translate }}
             <span class="sort-icon">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                   [style.opacity]="sortColumn === 'fullName' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -104,7 +110,7 @@
             </span>
           </th>
           <th (click)="sortBy('email')" class="th--sortable">
-            EMAIL
+            {{ 'USERS.TABLE.EMAIL' | translate }}
             <span class="sort-icon">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                   [style.opacity]="sortColumn === 'email' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -117,7 +123,7 @@
             </span>
           </th>
           <th (click)="sortBy('roleName')" class="th--sortable">
-            ROLE
+            {{ 'USERS.TABLE.ROLE' | translate }}
             <span class="sort-icon">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                   [style.opacity]="sortColumn === 'roleName' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -130,7 +136,7 @@
             </span>
           </th>
           <th (click)="sortBy('createdAt')" class="th--sortable">
-            JOINED
+            {{ 'USERS.TABLE.JOINED' | translate }}
             <span class="sort-icon">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                   [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -143,7 +149,7 @@
             </span>
           </th>
           <th (click)="sortBy('lastLoginAt')" class="th--sortable">
-            LAST LOGIN
+            {{ 'USERS.TABLE.LAST_LOGIN' | translate }}
             <span class="sort-icon">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                   [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -155,7 +161,7 @@
               </svg>
             </span>
           </th>
-          <th>ACTIONS</th>
+          <th>{{ 'USERS.TABLE.ACTIONS' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -180,45 +186,45 @@
 
           <td>
             <span class="date-cell">
-              {{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
+              {{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy') : ('USERS.TABLE.NO_LOGIN' | translate) }}
             </span>
           </td>
 
           <td class="td--actions">
-           <button class="icon-btn icon-btn--view"
-                  title="View"
-                  [routerLink]="['/users', user.id]"
-                  *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
+            <button class="icon-btn icon-btn--view"
+                    [title]="'COMMON.VIEW' | translate"
+                    [routerLink]="['/users', user.id]"
+                    *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
             </button>
             <button class="icon-btn icon-btn--reactivate"
-              title="Reactivate"
-              (click)="activateUser(user)"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)">
+                    [title]="'COMMON.ACTIVATE' | translate"
+                    (click)="activateUser(user)"
+                    *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.ACTIVATE_USER)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </button>
-            <button class="icon-btn icon-btn--delete" title="Delete"
-                      (click)="delete(user)"
-                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/><path d="M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
+            <button class="icon-btn icon-btn--delete"
+                    [title]="'COMMON.DELETE' | translate"
+                    (click)="delete(user)"
+                    *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
             </button>
           </td>
 
         </tr>
 
-
         <tr *ngIf="sortedData.length === 0">
           <td colspan="6" class="td--empty">
-            No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
+            {{ 'COMMON.NO_RESULTS' | translate }}{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
           </td>
         </tr>
       </tbody>

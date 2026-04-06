@@ -11,18 +11,27 @@ import { PaginationComponent } from '../../pagination/pagination';
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { PagedResultDto, RoleResponseDto } from '../../../interfaces/AuthDto';
 import { MatTableDataSource } from '@angular/material/table';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-role',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatIcon,
+    PaginationComponent,
+    TranslatePipe
+  ],
   templateUrl: './roles.html',
   styleUrls: ['./roles.scss'],
 })
 export class RoleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
   dataSource = new MatTableDataSource<RoleResponseDto>([]);
 
@@ -43,8 +52,7 @@ export class RoleComponent implements OnInit {
 
   roleForm: FormGroup;
 
-
-  readonly PRIVILEGES= PRIVILEGES;
+  readonly PRIVILEGES = PRIVILEGES;
 
   constructor(
     public authService: AuthService,
@@ -62,6 +70,15 @@ export class RoleComponent implements OnInit {
     this.reload();
   }
 
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    if (this.viewMode === 'create') return 'ROLES.TITLE_ADD';
+    if (this.viewMode === 'edit') return 'ROLES.TITLE_EDIT';
+    if (this.viewMode === 'view') return 'ROLES.TITLE_DETAILS';
+    return 'ROLES.TITLE_LIST';
+  }
+
   // ── Pagination ────────────────────────────────────────────────────────────
 
   get totalPages(): number {
@@ -73,7 +90,7 @@ export class RoleComponent implements OnInit {
     this.pageNumber.set(1);
   }
 
-    // ── Sorting ───────────────────────────────────────────────────────────────
+  // ── Sorting ───────────────────────────────────────────────────────────────
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -120,7 +137,7 @@ export class RoleComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        this.flash('error', 'Failed to load roles.');
+        this.flash('error', this.translate.instant('ROLES.ERRORS.LOAD_FAILED'));
         this.loading = false;
       },
     });
@@ -168,11 +185,11 @@ export class RoleComponent implements OnInit {
         next: (role) => {
           this.reload();
           this.cancel();
-          this.flash('success', `Role "${role.libelle}" created successfully.`);
+          this.flash('success', this.translate.instant('SUCCESS.ROLE_CREATED', { name: role.libelle }));
         },
         error: (error) => {
           const err = error.error as HttpError;
-          this.flash('error', err?.message ?? 'Failed to create role.');
+          this.flash('error', err?.message ?? this.translate.instant('ROLES.ERRORS.CREATE_FAILED'));
         },
       });
     } else if (this.viewMode === 'edit' && this.selectedRole) {
@@ -181,11 +198,11 @@ export class RoleComponent implements OnInit {
         next: (role) => {
           this.cancel();
           this.reload();
-          this.flash('success', `Role "${role.libelle}" updated successfully.`);
+          this.flash('success', this.translate.instant('SUCCESS.ROLE_UPDATED', { name: role.libelle }));
         },
         error: (error) => {
           const err = error.error as HttpError;
-          this.flash('error', err?.message ?? 'Failed to update role.');
+          this.flash('error', err?.message ?? this.translate.instant('ROLES.ERRORS.UPDATE_FAILED'));
         },
       });
     }
@@ -195,9 +212,9 @@ export class RoleComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title: 'Delete Role',
-        message: `Role "${role.libelle}" will be permanently deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
+        title: this.translate.instant('CONFIRMATION.DELETE_ROLE_TITLE'),
+        message: this.translate.instant('CONFIRMATION.DELETE_ROLE', { name: role.libelle }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
         showCancel: true,
         icon: 'auto_delete',
         iconColor: 'danger',
@@ -212,10 +229,10 @@ export class RoleComponent implements OnInit {
         this.roleService.delete(role.id).subscribe({
           next: () => {
             if (this.viewMode === 'view') this.cancel();
-            this.flash('success', `Role "${role.libelle}" deleted successfully.`);
+            this.flash('success', this.translate.instant('SUCCESS.ROLE_DELETED', { name: role.libelle }));
             this.reload();
           },
-          error: () => this.flash('error', `Failed to delete role "${role.libelle}".`),
+          error: () => this.flash('error', this.translate.instant('ROLES.ERRORS.DELETE_FAILED', { name: role.libelle })),
         });
       });
   }

@@ -4,14 +4,14 @@
   <select class="page-btn page-size-select"
           [ngModel]="pageSize"
           (ngModelChange)="onSizeChange($event)">
-    <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
+    <option *ngFor="let size of pageSizeOptions" [value]="size">{{ 'COMMON.ITEMS_PER_PAGE' | translate : { size: size } }}</option>
   </select>
 
   <!-- Navigation only when more than 1 page -->
   <ng-container *ngIf="totalPages > 1">
-    <button class="page-btn" (click)="prev()" [disabled]="pageNumber === 1">‹ Previous</button>
-    <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
-    <button class="page-btn" (click)="next()" [disabled]="pageNumber === totalPages">Next ›</button>
+    <button class="page-btn" (click)="prev()" [disabled]="pageNumber === 1">{{ 'COMMON.PREVIOUS' | translate }}</button>
+    <span class="page-info">{{ 'COMMON.PAGE_OF' | translate : { current: pageNumber, total: totalPages } }}</span>
+    <button class="page-btn" (click)="next()" [disabled]="pageNumber === totalPages">{{ 'COMMON.NEXT' | translate }}</button>
   </ng-container>
 
 </div>

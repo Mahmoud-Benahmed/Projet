@@ -2,12 +2,12 @@
 
   <div class="page-header">
     <div>
-      <p class="breadcrumb">USER MANAGEMENT</p>
-      <h1 class="page-title">{{ pageTitle }}</h1>
+      <p class="breadcrumb">{{ 'USERS.BREADCRUMB' | translate }}</p>
+      <h1 class="page-title">{{ 'USERS.TITLE_ACTIVE' | translate }}</h1>
     </div>
   </div>
 
-  <!-- ✅ Fixed: consistent alert structure with errors array -->
+  <!-- Alert for errors -->
   <div class="alert alert--error" *ngIf="errors.length > 0">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="10"/>
@@ -20,6 +20,7 @@
     <button class="alert__close" (click)="dismissError()">✕</button>
   </div>
 
+  <!-- Alert for success -->
   <div class="alert alert--success" *ngIf="successMessage">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="20 6 9 17 4 12"/>
@@ -27,8 +28,8 @@
     {{ successMessage }}
   </div>
 
+  <!-- Stats Cards -->
   <div class="stats-grid">
-
     <div class="stat-card stat-card--green"
       [routerLink]="activeUsers > 0 ? '/users' : null"
       routerLinkActive="stat-card--current"
@@ -37,8 +38,7 @@
       [class.stat-card--disabled]="usersLink.isActive || activeUsers < 1">
       <div class="stat-card__body">
         <div>
-          <p class="stat-card__label">Active Users</p>
-          <!-- ✅ Fixed: use getter instead of stats?. to avoid null display -->
+          <p class="stat-card__label">{{ 'USERS.STATS.ACTIVE' | translate }}</p>
           <p class="stat-card__value">{{ activeUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--green">
@@ -57,7 +57,7 @@
       [class.stat-card--disabled]="deactivatedLink.isActive || deactivatedUsers < 1">
       <div class="stat-card__body">
         <div>
-          <p class="stat-card__label">Deactivated</p>
+          <p class="stat-card__label">{{ 'USERS.STATS.DEACTIVATED' | translate }}</p>
           <p class="stat-card__value">{{ deactivatedUsers }}</p>
         </div>
         <div class="stat-card__icon stat-card__icon--red">
@@ -67,9 +67,9 @@
         </div>
       </div>
     </div>
-
   </div>
 
+  <!-- Toolbar -->
   <div class="toolbar">
     <div class="search-wrap">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,23 +78,24 @@
       <input
         class="search-input"
         type="text"
-        placeholder="Search users…"
+        [placeholder]="'USERS.SEARCH_PLACEHOLDER' | translate"
         [(ngModel)]="searchTerm"
         (ngModelChange)="applyFilter()" />
     </div>
     <button class="btn-add" (click)="goToRegister()"
             *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.CREATE_USER)">
-      + Add User
+      + {{ 'USERS.ADD_BUTTON' | translate }}
     </button>
   </div>
 
+  <!-- Table -->
   <div class="table-card">
     <div class="table-scroll-wrap">
       <table class="table">
         <thead>
           <tr>
             <th (click)="sortBy('fullName')" class="th--sortable">
-              FULL NAME
+              {{ 'USERS.TABLE.FULL_NAME' | translate }}
               <span class="sort-icon">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'fullName' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -107,7 +108,7 @@
               </span>
             </th>
             <th (click)="sortBy('email')" class="th--sortable">
-              EMAIL
+              {{ 'USERS.TABLE.EMAIL' | translate }}
               <span class="sort-icon">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'email' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -120,7 +121,7 @@
               </span>
             </th>
             <th (click)="sortBy('roleName')" class="th--sortable">
-              ROLE
+              {{ 'USERS.TABLE.ROLE' | translate }}
               <span class="sort-icon">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'roleName' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -133,7 +134,7 @@
               </span>
             </th>
             <th (click)="sortBy('lastLoginAt')" class="th--sortable">
-              LAST LOGIN
+              {{ 'USERS.TABLE.LAST_LOGIN' | translate }}
               <span class="sort-icon">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     [style.opacity]="sortColumn === 'lastLoginAt' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -145,12 +146,11 @@
                 </svg>
               </span>
             </th>
-            <th>ACTIONS</th>
+            <th>{{ 'USERS.TABLE.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let user of sortedData" class="table__row">
-
             <td>
               <div class="user-cell"
                 [routerLink]="['/users', user.id]"
@@ -161,17 +161,16 @@
                 </div>
               </div>
             </td>
-
             <td><span class="mono">{{ user.email }}</span></td>
             <td><span class="role-badge">{{ user.roleName }}</span></td>
             <td>
               <span class="date-cell">
-                {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : 'No Log-in' }}
+                {{ user.lastLoginAt && user.isActive ? (user.lastLoginAt | date:'dd MMM yyyy') : ('USERS.TABLE.NO_LOGIN' | translate) }}
               </span>
             </td>
-
             <td class="td--actions">
-              <button class="icon-btn icon-btn--view" title="View"
+              <!-- View button -->
+              <button class="icon-btn icon-btn--view" [title]="'COMMON.VIEW' | translate"
                       (click)="goToProfile(user.id)"
                       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.VIEW_USERS)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,25 +178,17 @@
                 </svg>
               </button>
 
-              <!-- ✅ Fixed: deactivate now wrapped in dialog, hidden for self -->
-              <button class="icon-btn icon-btn--deactivate" title="Deactivate"
+              <!-- Deactivate button -->
+              <button class="icon-btn icon-btn--deactivate" [title]="'COMMON.DEACTIVATE' | translate"
                       (click)="deactivateUser(user)"
                       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DEACTIVATE_USER) && user.id !== currentUserId">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                 </svg>
               </button>
-              <button class="icon-btn icon-btn--delete" title="Delete"
-                      (click)="softDeleteUser(user)"
-                      *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER) && user.id !== currentUserId">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/><path d="M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              </button>
-              <button class="icon-btn icon-btn--delete" title="Delete"
+
+              <!-- Delete button (only one, not duplicated) -->
+              <button class="icon-btn icon-btn--delete" [title]="'COMMON.DELETE' | translate"
                       (click)="softDeleteUser(user)"
                       *ngIf="authService.hasPrivilege(PRIVILEGES.USERS.DELETE_USER) && user.id !== currentUserId">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -208,12 +199,11 @@
                 </svg>
               </button>
             </td>
-
           </tr>
 
           <tr *ngIf="sortedData.length === 0">
-            <td colspan="6" class="td--empty">
-              No users found{{ searchTerm ? ' for "' + searchTerm + '"' : '' }}
+            <td colspan="5" class="td--empty">
+              {{ 'COMMON.NO_RESULTS' | translate }}{{ searchTerm ? ' "' + searchTerm + '"' : '' }}
             </td>
           </tr>
         </tbody>

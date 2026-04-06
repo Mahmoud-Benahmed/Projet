@@ -1,9 +1,7 @@
 ﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Domain;
 using ERP.StockService.Infrastructure.Messaging;
-using static ERP.StockService.Properties.ApiRoutes;
 
 namespace ERP.StockService.Application.Services;
 
@@ -82,8 +80,8 @@ public class BonEntreService : IBonEntreService
     public async Task DeleteAsync(Guid id)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
-        bon.Delete();
-        await _repo.SaveChangesAsync();
+
+        await _repo.DeleteByIdAsync(id);
     }
 
     // =========================
@@ -99,14 +97,6 @@ public class BonEntreService : IBonEntreService
     {
         ValidatePaging(page, size);
         var (items, total) = await _repo.GetAllAsync(page, size);
-        return new PagedResultDto<BonEntreResponseDto>(
-            items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
-    }
-
-    public async Task<PagedResultDto<BonEntreResponseDto>> GetPagedDeletedAsync(int page, int size)
-    {
-        ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedDeletedAsync(page, size);
         return new PagedResultDto<BonEntreResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }

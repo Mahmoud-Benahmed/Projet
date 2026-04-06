@@ -1,57 +1,61 @@
 services:
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: erp-kafka
+  service_name-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          ignore:
+            - bin/
+            - obj/
+    container_name: erp-service_name
     ports:
-      - "9092:9092"
-      - "9094:9094"
+      - "PORT_TO_EXPOSE:8080"
+    env_file:
+      - .env
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - erp-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: erp-service_name-sqlserver
+    environment:
+      SA_PASSWORD: ${SQLSERVER__SA_PASSWORD}
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "WSL_PORT:1433"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${SQLSERVER__SA_PASSWORD}' -Q 'SELECT 1' -C"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-      KAFKA_LISTENERS: BROKER://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
-      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka:9092,EXTERNAL://localhost:9094
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_CLUSTER_ID: "MDZjMjJkMTUxOGJmNGNhOW"
     networks:
       - erp-network
-
-  kafka-init:
-    image: confluentinc/cp-kafka:latest
-    container_name: erp-kafka-init
-    depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command: |
-      "
-      echo 'Resetting consumer group offsets...'
-      kafka-consumer-groups \
-        --bootstrap-server kafka:9092 \
-        --group user-service-group \
-        --topic UserRegistered \
-        --reset-offsets \
-        --to-latest \
-        --execute
-      echo 'Done.'
-      "
-    networks:
-      - erp-network
-    restart: "no"  # run once and exit
 
 networks:
   erp-network:
+    external: true
     name: erp-network
-    driver: bridge
+
+
+# 1) SET THE VARIABLES IN .env FOR EACH SERVICE SO EACH SERVICE HAS ITS OWN .env, PLACE A COPY OF THIS FILE AND PLACE IT IN THE ROOT OF THE SERVICE PROJECT (SO IT IS NEXT T0 THE .env WHERE IT WILL USE ITS VARIABLES)
+# 2) EXAMPLE (BECAUSEWHYNOT!): IF YOU ARE IN ERP.ArticleService, SET
+# LINE 2)  service_name-service` === CHANGE IT TO ===> `article-service`,
+# LINE 13) container-name`: article-service,
+# LINE 15) PORT_TO_EXPOSE:8080` ==== CHANGE IT TO ====> `5001:8080`, EACH SERVICE MUST HAVE A SEPERATE PORT_TO_EXPOSE
+# LINE 26) container_name: erp-service_name-sqlserver ==== CHANGE IT TO ====> container_name: erp-article-sqlserver
+# LINE 32)   - "WSL_PORT:1433" ==== CHANGE IT TO ====> - "1434:1433", EACH SERVICE MUST HAVE A SEPERATE WSL_PORT
+# healthcheck problem ?  
+# LINE 34) CHANGE ${SQLSERVER__SA_PASSWORD} BY SQLSERVER PASSWORD (HARD CODE/SET IT) IN => test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'SQLSERVER__SA_PASSWORD value in .env of the service' -Q 'SELECT 1' -C"]
+#
+# DELETE EACH LINE STARTS WITH # (REMOVE THIS LINE AND ABOVE, DON NOT LEAVE ANY LINE THAT STARTS WITH # IN THIS FILE, WHY? TRUST ME, 
+# IF I'M A VILLAIN WHY TF DO I TAKE 15MIN (SKILL ISSUE? YEAH, I DON'T NEED TO IMPRESS SOMEONE BY HOW COOL I'M BECAUSE I PREFER RUST OVER C++ 0R C OVER PYTHON FOR THE SAKE OF PERFORMANCE 
+# OR ACTING LIKE A GIGGACHAD BECAUSE I INSTALLED ARCH AND NOW I HAVE TO SPAM EVERYBODY WITH `DUH, I USE ARCH BTW`) JUST TO TELL YOU HOW TO DEAL WITH AN EXAMPLE DOCKER-COMPOSE FILE, NO ONE TOLD ME,
+# ANYWAYS YOU WILL ASK CLAUDE TO EXPLAIN/DO/REFACTORE/IMPROVE SO WHATEVER HOPE IT WORTHS IT)

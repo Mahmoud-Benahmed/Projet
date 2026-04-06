@@ -26,8 +26,14 @@ public class ClientService : IClientService
             throw new ClientAlreadyExistsException(request.Email);
 
         var client = Client.Create(
-            request.Name, request.Email, request.Address,
-            request.Phone, request.TaxNumber, request.CreditLimit, request.DelaiRetour);
+            name: request.Name,
+            email: request.Email,
+            address: request.Address,
+            phone: request.Phone,
+            taxNumber: request.TaxNumber,
+            creditLimit: request.CreditLimit,
+            delaiRetour: request.DelaiRetour,
+            duePaymentPeriod: request.DuePaymentPeriod);   // ← named args prevent future positional bugs
 
         await _clientRepository.AddAsync(client);
         await _clientRepository.SaveChangesAsync();
@@ -60,6 +66,11 @@ public class ClientService : IClientService
 
         client.Update(request.Name, request.Email, request.Address,
             request.Phone, request.TaxNumber);
+
+        if (request.DuePaymentPeriod is > 0)        // ← pattern match guards against 0
+            client.SetDuePaymentPeriod(request.DuePaymentPeriod.Value);
+        else
+            client.ClearDuePaymentPeriod();
 
         if (request.CreditLimit.HasValue)
             client.SetCreditLimit(request.CreditLimit.Value);
@@ -121,47 +132,6 @@ public class ClientService : IClientService
         return client.ToResponseDto();
     }
 
-    // =========================
-    // CREDIT LIMIT
-    // =========================
-    public async Task<ClientResponseDto> SetCreditLimitAsync(Guid id, decimal limit)
-    {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
-
-        client.SetCreditLimit(limit);
-        await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
-    }
-
-    public async Task<ClientResponseDto> RemoveCreditLimitAsync(Guid id)
-    {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
-
-        client.RemoveCreditLimit();
-        await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
-    }
-
-    // =========================
-    // DELAI RETOUR
-    // =========================
-    public async Task<ClientResponseDto> SetDelaiRetourAsync(Guid id, int days)
-    {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
-
-        client.SetDelaiRetour(days);
-        await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
-    }
-
-    public async Task<ClientResponseDto> ClearDelaiRetourAsync(Guid id)
-    {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
-
-        client.ClearDelaiRetour();
-        await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
-    }
 
     // =========================
     // CATEGORY ASSIGNMENT

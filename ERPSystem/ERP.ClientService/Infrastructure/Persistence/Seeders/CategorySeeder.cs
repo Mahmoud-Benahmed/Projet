@@ -35,18 +35,20 @@ public class CategorySeeder
     [
         // Standard retail client — no special pricing
         Category.Create(
-            name:                  "Standard",
-            code:                  "STD",
-            delaiRetour:           15,
-            useBulkPricing:        false,
-            discountRate:          null,
-            creditLimitMultiplier: null),
+        name:                  "Standard",
+        code:                  "STD",
+        delaiRetour:           15,
+        duePaymentPeriod:      30,
+        useBulkPricing:        false,
+        discountRate:          null,
+        creditLimitMultiplier: null),
 
         // VIP — generous return window, 10% discount, 150% credit multiplier
         Category.Create(
             name:                  "VIP",
             code:                  "VIP",
             delaiRetour:           60,
+            duePaymentPeriod:      60,
             useBulkPricing:        true,
             discountRate:          0.10m,
             creditLimitMultiplier: 1.5m),
@@ -56,6 +58,7 @@ public class CategorySeeder
             name:                  "Wholesale",
             code:                  "WHL",
             delaiRetour:           30,
+            duePaymentPeriod:      45,
             useBulkPricing:        true,
             discountRate:          0.15m,
             creditLimitMultiplier: 2.0m),
@@ -65,6 +68,7 @@ public class CategorySeeder
             name:                  "Public Sector",
             code:                  "PUB",
             delaiRetour:           45,
+            duePaymentPeriod:      60,
             useBulkPricing:        false,
             discountRate:          null,
             creditLimitMultiplier: 1.2m),
@@ -74,6 +78,7 @@ public class CategorySeeder
             name:                  "Reseller",
             code:                  "RSL",
             delaiRetour:           30,
+            duePaymentPeriod:      45,
             useBulkPricing:        true,
             discountRate:          0.20m,
             creditLimitMultiplier: 1.8m),
@@ -83,6 +88,7 @@ public class CategorySeeder
             name:                  "New Client",
             code:                  "NEW",
             delaiRetour:           7,
+            duePaymentPeriod:      15,
             useBulkPricing:        false,
             discountRate:          null,
             creditLimitMultiplier: null),
@@ -97,6 +103,7 @@ public class CategorySeeder
             name: "Legacy",
             code: "LGC",
             delaiRetour: 10,
+            duePaymentPeriod: 30,
             useBulkPricing: false,
             discountRate: null,
             creditLimitMultiplier: null);

@@ -18,9 +18,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
 import { AuthUserGetResponseDto, PagedResultDto, UserStatsDto } from '../../../../interfaces/AuthDto';
 import { PaginationComponent } from "../../../pagination/pagination";
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalComponent } from '../../../modal/modal';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
-  selector: 'app-deactivated',
+  selector: 'app-deleted',
   standalone: true,
   imports: [
     CommonModule,
@@ -40,16 +44,18 @@ import { PaginationComponent } from "../../../pagination/pagination";
     MatSnackBarModule,
     RouterLinkActive,
     RouterLink,
-    PaginationComponent
-],
+    PaginationComponent,
+    TranslatePipe
+  ],
   templateUrl: './deleted.html',
   styleUrl: './deleted.scss',
 })
 export class DeletedUsersComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
-  private readonly destroyRef= inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
-  stats: UserStatsDto | null= null;
+  stats: UserStatsDto | null = null;
 
   displayedColumns: string[] = [
     'fullName',
@@ -65,8 +71,7 @@ export class DeletedUsersComponent implements OnInit {
   pageNumber = signal(1);
   pageSize = signal(10);
   pageSizeOptions = [5, 10, 25, 50];
-  totalCount: number =0;
-
+  totalCount: number = 0;
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -76,49 +81,73 @@ export class DeletedUsersComponent implements OnInit {
   error: string | null = null;
   successMessage: string | null = null;
 
-  readonly PRIVILEGES= PRIVILEGES;
+  readonly PRIVILEGES = PRIVILEGES;
 
   constructor(
     private cdr: ChangeDetectorRef,
     public authService: AuthService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
     this.reload();
   }
 
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    return this.translate.instant('USERS.TITLE_DELETED');
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  get activeUsers(): number { return this.stats?.activeUsers ?? 0; }
+  get deactivatedUsers(): number { return this.stats?.deactivatedUsers ?? 0; }
+  get deletedUsers(): number { return this.stats?.deletedUsers ?? 0; }
+
   loadUsers(): void {
     this.isLoading = true;
     this.authService.getDeleted(this.pageNumber(), this.pageSize()).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items;
-
         this.totalCount = result.totalCount;
-
         this.dataSource.sort = this.sort;
         this.isLoading = false;
-
+        this.loadStats();
       },
       error: () => {
         this.isLoading = false;
-        this.flash('error', 'Failed to load deactivated users.');
+        this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_DELETED_FAILED'));
       },
     });
   }
 
-  loadStats(){
-      this.authService.getStats().subscribe({
-        next: (result) => this.stats = result,
-        error: () =>{
-          this.isLoading = false;
-          this.flash('error', 'Failed to load users.');
+  loadStats(): void {
+    this.authService.getStats().subscribe({
+      next: (result) => this.stats = result,
+      error: () => {
+        this.isLoading = false;
+        this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_STATS_FAILED'));
       }
     });
   }
 
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
-  prevPage(): void { if (this.pageNumber() > 1) { this.pageNumber.set(this.pageNumber()-1); this.loadUsers(); } }
-  nextPage(): void { if (this.pageNumber() < this.totalPages) { this.pageNumber.set(this.pageNumber()+1); this.loadUsers(); } }
+
+  prevPage(): void {
+    if (this.pageNumber() > 1) {
+      this.pageNumber.set(this.pageNumber() - 1);
+      this.loadUsers();
+    }
+  }
+
+  nextPage(): void {
+    if (this.pageNumber() < this.totalPages) {
+      this.pageNumber.set(this.pageNumber() + 1);
+      this.loadUsers();
+    }
+  }
+
   onPageSizeChange(): void {
     this.pageNumber.set(1);
     this.reload();
@@ -151,20 +180,35 @@ export class DeletedUsersComponent implements OnInit {
     });
   }
 
-
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
 
   restore(user: AuthUserGetResponseDto): void {
-    this.authService.restore(user.id).subscribe({
-      next: () => {
-        this.flash('success', `${user.fullName ?? user.login} is restored but still deactivated. You can activate it later.`);
-        this.reload();
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title: this.translate.instant('CONFIRMATION.RESTORE_USER_TITLE'),
+        message: this.translate.instant('CONFIRMATION.RESTORE_USER', { name: user.fullName ?? user.login }),
+        confirmText: this.translate.instant('COMMON.RESTORE'),
+        showCancel: true,
+        icon: 'restore_from_trash',
+        iconColor: 'success',
       },
-      error: () =>
-        this.flash('error', 'Failed to restore user.')
     });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result) return;
+        this.authService.restore(user.id).subscribe({
+          next: () => {
+            this.flash('success', this.translate.instant('SUCCESS.USER_RESTORED', { name: user.fullName ?? user.login }));
+            this.reload();
+          },
+          error: () => this.flash('error', this.translate.instant('USERS.ERRORS.RESTORE_FAILED'))
+        });
+      });
   }
 
   getInitials(user: AuthUserGetResponseDto): string {
@@ -182,12 +226,11 @@ export class DeletedUsersComponent implements OnInit {
   dismissError(): void { this.error = null; }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
+    } else {
       this.error = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.error = null), 3000);

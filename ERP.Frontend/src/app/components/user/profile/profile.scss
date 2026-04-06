@@ -80,13 +80,17 @@
   }
 
   &__status {
-    position: absolute; width: 12px; height: 12px;
-    bottom: 2px; right: 2px; border-radius: 50%;
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    bottom: 2px;
+    right: 2px;
+    border-radius: 50%;
     border-width: 2px ;
     border-style: solid;
-    transition: background 0.3s;
-    &--active   { border-color: $green; background: $green; box-shadow: 0 0 8px $green; }
-    &--inactive { border-color: $red; background: $red; box-shadow: 0 0 8px $red;}
+    border-color: transparent;
+    &--active   { background: $green; box-shadow: 0 0 2px $green; }
+    &--inactive { background: $red;   box-shadow: 0 0 2px $red;}
   }
 }
 

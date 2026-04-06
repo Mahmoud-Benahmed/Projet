@@ -10,6 +10,7 @@ export interface ClientCategoryResponseDto {
   name: string;
   code: string;
   delaiRetour: number;
+  duePaymentPeriod: number;
   discountRate?: number | null;
   creditLimitMultiplier?: number | null;
   useBulkPricing: boolean;
@@ -24,6 +25,7 @@ export interface CreateCategoryRequestDto {
   name: string;
   code: string;
   delaiRetour: number;
+  duePaymentPeriod: number; 
   useBulkPricing?: boolean;
   discountRate?: number | null;
   creditLimitMultiplier?: number | null;

@@ -12,7 +12,6 @@ import { PermissionMatrixComponent } from './components/system-admin/permission-
 import { ArticleComponent } from './components/articles/home/home';
 import { AuditLogComponent } from './components/system-admin/audit-log/audit-log';
 import { DeletedUsersComponent } from './components/system-admin/users/deleted/deleted';
-import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 import { ControleComponent } from './components/system-admin/controles/controles';
 import { RoleComponent } from './components/system-admin/roles/roles';
 import { ArticleCategoriesComponent } from './components/articles/categories/categories';
@@ -21,7 +20,7 @@ import { ClientsComponent } from './components/clients/home/home';
 import { ClientCategoriesComponent } from './components/clients/categories/categories';
 import { FournisseurComponent } from './components/stock/fournisseur/fournisseur';
 import { BonsComponent } from './components/stock/bon/bon';
-import { InvoicesComponent } from './components/Invoices/invoices';
+import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {

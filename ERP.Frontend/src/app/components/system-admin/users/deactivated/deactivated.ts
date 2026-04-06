@@ -21,6 +21,7 @@ import { PaginationComponent } from "../../../pagination/pagination";
 import { ModalComponent } from '../../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-deactivated',
@@ -43,16 +44,19 @@ import { MatDialog } from '@angular/material/dialog';
     MatSnackBarModule,
     RouterLinkActive,
     RouterLink,
-    PaginationComponent
-],
+    PaginationComponent,
+    TranslatePipe
+  ],
   templateUrl: './deactivated.html',
   styleUrl: './deactivated.scss',
 })
 export class DeactivatedComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+
   @ViewChild(MatSort) sort!: MatSort;
 
-  stats: UserStatsDto | null= null;
+  stats: UserStatsDto | null = null;
 
   displayedColumns: string[] = [
     'fullName',
@@ -73,13 +77,12 @@ export class DeactivatedComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-
   isLoading = false;
   searchTerm = '';
   error: string | null = null;
   successMessage: string | null = null;
 
-  readonly PRIVILEGES= PRIVILEGES;
+  readonly PRIVILEGES = PRIVILEGES;
 
   constructor(
     public authService: AuthService,
@@ -88,41 +91,63 @@ export class DeactivatedComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.reload()
+    this.reload();
   }
+
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  get pageTitle(): string {
+    return this.translate.instant('USERS.TITLE_DEACTIVATED');
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  get activeUsers(): number { return this.stats?.activeUsers ?? 0; }
+  get deactivatedUsers(): number { return this.stats?.deactivatedUsers ?? 0; }
+  get deletedUsers(): number { return this.stats?.deletedUsers ?? 0; }
 
   loadUsers(): void {
     this.isLoading = true;
     this.authService.getDeactivatedUsers(this.pageNumber(), this.pageSize()).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
         this.dataSource.data = result.items;
-
         this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
         this.isLoading = false;
         this.loadStats();
-
       },
       error: () => {
         this.isLoading = false;
-        this.flash('error', 'Failed to load deactivated users.');
+        this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_DEACTIVATED_FAILED'));
       },
     });
   }
 
-  loadStats(){
-      this.authService.getStats().subscribe({
-        next: (result) => this.stats = result,
-        error: () =>{
-          this.isLoading = false;
-          this.flash('error', 'Failed to load users.');
+  loadStats(): void {
+    this.authService.getStats().subscribe({
+      next: (result) => this.stats = result,
+      error: () => {
+        this.isLoading = false;
+        this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_STATS_FAILED'));
       }
     });
   }
 
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
-  prevPage(): void { if (this.pageNumber() > 1) { this.pageNumber.set(this.pageNumber()-1); this.loadUsers(); } }
-  nextPage(): void { if (this.pageNumber() < this.totalPages) { this.pageNumber.set(this.pageNumber()+1); this.loadUsers(); } }
+
+  prevPage(): void {
+    if (this.pageNumber() > 1) {
+      this.pageNumber.set(this.pageNumber() - 1);
+      this.loadUsers();
+    }
+  }
+
+  nextPage(): void {
+    if (this.pageNumber() < this.totalPages) {
+      this.pageNumber.set(this.pageNumber() + 1);
+      this.loadUsers();
+    }
+  }
 
   sortBy(column: string): void {
     if (this.sortColumn === column) {
@@ -151,7 +176,6 @@ export class DeactivatedComponent implements OnInit {
     });
   }
 
-
   applyFilter(): void {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
   }
@@ -159,11 +183,11 @@ export class DeactivatedComponent implements OnInit {
   activateUser(user: AuthUserGetResponseDto): void {
     this.authService.activate(user.id).subscribe({
       next: () => {
-        this.flash('success',`User "${user.fullName}" has been reactivated.`);
+        this.flash('success', this.translate.instant('SUCCESS.USER_ACTIVATED', { name: user.fullName ?? user.login }));
         this.reload();
       },
       error: () =>
-        this.flash('error', `Failed to reactivate user "${user.fullName}".`),
+        this.flash('error', this.translate.instant('USERS.ERRORS.ACTIVATE_FAILED', { name: user.fullName ?? user.login })),
     });
   }
 
@@ -171,12 +195,12 @@ export class DeactivatedComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Delete User',
-        message:     `${user.fullName ?? user.login} will be deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
-        showCancel:  true,
-        icon:        'auto_delete',
-        iconColor:   'danger',
+        title: this.translate.instant('CONFIRMATION.DELETE_USER_TITLE'),
+        message: this.translate.instant('CONFIRMATION.DELETE_USER', { name: user.fullName ?? user.login }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
+        showCancel: true,
+        icon: 'auto_delete',
+        iconColor: 'danger',
       },
     });
 
@@ -185,8 +209,11 @@ export class DeactivatedComponent implements OnInit {
       .subscribe(result => {
         if (!result) return;
         this.authService.softDelete(user.id).subscribe({
-          next: () => { this.flash('success', `${user.fullName ?? user.login} has been deleted.`); this.reload(); },
-          error: () => this.flash('error', 'Failed to delete user.'),
+          next: () => {
+            this.flash('success', this.translate.instant('SUCCESS.USER_DELETED', { name: user.fullName ?? user.login }));
+            this.reload();
+          },
+          error: () => this.flash('error', this.translate.instant('USERS.ERRORS.DELETE_FAILED')),
         });
       });
   }
@@ -204,11 +231,11 @@ export class DeactivatedComponent implements OnInit {
   }
 
   onPageSizeChange(): void {
-    this.pageNumber.set(1); // reset to first page on size change
+    this.pageNumber.set(1);
     this.reload();
   }
 
-  reload():void{
+  reload(): void {
     this.loadStats();
     this.loadUsers();
     this.cdr.markForCheck();
@@ -217,12 +244,11 @@ export class DeactivatedComponent implements OnInit {
   dismissError(): void { this.error = null; }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
+    } else {
       this.error = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.error = null), 3000);
