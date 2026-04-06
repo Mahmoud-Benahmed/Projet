@@ -1,4 +1,6 @@
-﻿namespace ERP.ClientService.Domain;
+﻿using ERP.ClientService.Application.DTOs;
+
+namespace ERP.ClientService.Domain;
 
 public class Client
 {
