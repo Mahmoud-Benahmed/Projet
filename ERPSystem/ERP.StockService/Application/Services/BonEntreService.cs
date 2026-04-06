@@ -2,7 +2,7 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
-using ERP.StockService.Infrastructure.Persistence.Messaging;
+using ERP.StockService.Infrastructure.Messaging;
 using static ERP.StockService.Properties.ApiRoutes;
 
 namespace ERP.StockService.Application.Services;
