@@ -1,6 +1,6 @@
+using ERP.InvoiceService.Infrastructure.Persistence;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Application.Services;
-using InvoiceService.Infrastructure;
 using InvoiceService.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -53,15 +53,7 @@ builder.Services.AddScoped<IInvoiceService, InvoiceService.Application.Services.
 // =========================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new()
-    {
-        Title = "InvoiceService API",
-        Version = "v1",
-        Description = "RESTful API for managing invoices"
-    });
-});
+builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -76,8 +68,7 @@ using (var scope = app.Services.CreateScope())
     Console.WriteLine("✓ Database migrations applied successfully.");
 }
 app.UseSwagger();
-app.UseSwaggerUI(c =>
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "InvoiceService v1"));
+app.UseSwaggerUI();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 

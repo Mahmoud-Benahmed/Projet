@@ -2,7 +2,7 @@
 {
     public static class ApiRoutes
     {
-        private const string Base = "api";
+        private const string Base = "";
         public static class Invoices
         {
             private const string Root = $"{Base}/invoices";
@@ -10,6 +10,7 @@
             public const string GetById = $"{Root}/{{id:guid}}";
             public const string GetByClient = $"{Root}/client/{{clientId:guid}}";
             public const string GetByStatus = $"{Root}/status/{{status}}";
+            public const string GetStats = $"{Root}/stats";
             // ──── POST ROUTES ────
             public const string Create = Root;
             public const string AddItem = $"{Root}/{{id:guid}}/items";

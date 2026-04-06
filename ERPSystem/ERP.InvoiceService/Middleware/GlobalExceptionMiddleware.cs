@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using InvoiceService.Application.Exceptions;
-using InvoiceService.Domain;
+using ERP.InvoiceService.Application.Exceptions;
 
 namespace InvoiceService.Middleware
 {

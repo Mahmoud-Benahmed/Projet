@@ -69,3 +69,57 @@ namespace InvoiceService.Application.DTOs
         public decimal TaxRate { get; set; }
     }
 }
+
+/// <summary>
+/// Aggregated statistics snapshot for the invoice service.
+/// </summary>
+public class InvoiceStatsDto
+{
+    // ── Volume ───────────────────────────────────────────────────────────────
+    public int TotalInvoices { get; init; }
+    public int DraftCount { get; init; }
+    public int UnpaidCount { get; init; }
+    public int PaidCount { get; init; }
+    public int CancelledCount { get; init; }
+    public int DeletedCount { get; init; }
+    public int OverdueCount { get; init; }   // UNPAID + past DueDate
+
+    // ── Revenue ──────────────────────────────────────────────────────────────
+    public decimal TotalRevenueHT { get; init; }   // PAID invoices, excl. tax
+    public decimal TotalRevenueTTC { get; init; }   // PAID invoices, incl. tax
+    public decimal TotalTVACollected { get; init; }   // PAID invoices, tax only
+
+    public decimal OutstandingHT { get; init; }   // UNPAID, excl. tax
+    public decimal OutstandingTTC { get; init; }   // UNPAID, incl. tax
+
+    public decimal OverdueHT { get; init; }   // UNPAID + overdue, excl. tax
+    public decimal OverdueTTC { get; init; }   // UNPAID + overdue, incl. tax
+
+    // ── Averages ─────────────────────────────────────────────────────────────
+    public decimal AverageInvoiceValueHT { get; init; }  // across PAID + UNPAID
+    public double AveragePaymentDays { get; init; }  // PAID only (DueDate span)
+
+    // ── Top clients (by paid revenue TTC) ───────────────────────────────────
+    public IReadOnlyList<ClientRevenueDto> TopClients { get; init; } = [];
+
+    // ── Monthly breakdown (current calendar year) ───────────────────────────
+    public IReadOnlyList<MonthlyStatsDto> MonthlyBreakdown { get; init; } = [];
+}
+
+public class ClientRevenueDto
+{
+    public Guid ClientId { get; init; }
+    public string ClientFullName { get; init; } = string.Empty;
+    public int InvoiceCount { get; init; }
+    public decimal RevenueTTC { get; init; }
+}
+
+public class MonthlyStatsDto
+{
+    public int Year { get; init; }
+    public int Month { get; init; }
+    public int IssuedCount { get; init; }
+    public int PaidCount { get; init; }
+    public decimal IssuedTTC { get; init; }
+    public decimal PaidTTC { get; init; }
+}

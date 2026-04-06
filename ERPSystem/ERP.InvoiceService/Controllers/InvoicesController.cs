@@ -107,5 +107,9 @@ namespace InvoiceService.API.Controllers
             await _invoiceService.RestoreAsync(id);
             return NoContent();
         }
+
+        [HttpGet(ApiRoutes.Invoices.GetStats)]
+        public async Task<ActionResult<InvoiceStatsDto>> GetStats([FromQuery] int top = 5)
+            => Ok(await _invoiceService.GetStatsAsync(top));
     }
 }

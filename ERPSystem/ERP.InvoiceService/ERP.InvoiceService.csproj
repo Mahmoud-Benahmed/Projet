@@ -19,12 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\DTOs\" />
     <Folder Include="Application\Interfaces\" />
-    <Folder Include="Application\Exceptions\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Domain\" />
-    <Folder Include="Infrastructure\" />
     <Folder Include="Middleware\" />
   </ItemGroup>
 

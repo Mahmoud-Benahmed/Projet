@@ -34,7 +34,7 @@ namespace InvoiceService.Domain
         public InvoiceItem(
             Guid invoiceId,
             Guid articleId,
-            string articleName,
+            string articleLibelle,
             string articleBarCode,
             int quantity,
             decimal uniPriceHT,

@@ -24,6 +24,8 @@ namespace InvoiceService.Application.Interfaces
         // SOFT DELETE OPERATIONS
         // ────────────────────────────────────────────────────────────────────────
         Task DeleteAsync(Guid id);
+
         Task RestoreAsync(Guid id);
+        Task<InvoiceStatsDto> GetStatsAsync(int topClientsCount = 5);
     }
 }

@@ -20,3 +20,9 @@ namespace InvoiceService.Application.Exceptions
             : base(message) { }
     }
 }
+
+public class InvoiceDomainException : Exception
+{
+    public InvoiceDomainException(string message)
+        : base(message) { }
+}
