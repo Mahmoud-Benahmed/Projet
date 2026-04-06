@@ -19,7 +19,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET ALL
         // =========================
         [HttpGet(ApiRoutes.Articles.GetAll)]
-        public async Task<ActionResult> GetAllPagedAsync([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<ActionResult<ArticleResponseDto>> GetAllPagedAsync([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
             var result = await _articleService.GetAllAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
@@ -30,7 +30,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET DELETED
         // =========================
         [HttpGet(ApiRoutes.Articles.GetDeletedRoute)]
-        public async Task<ActionResult> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<ArticleResponseDto>> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
@@ -40,7 +40,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET BY ID
         // =========================
         [HttpGet(ApiRoutes.Articles.GetById)]
-        public async Task<ActionResult<Article>> GetById([FromRoute] Guid id)
+        public async Task<ActionResult<ArticleResponseDto>> GetById([FromRoute] Guid id)
         {
             var article = await _articleService.GetByIdAsync(id);
             return Ok(article);
@@ -50,7 +50,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET BY CODE
         // =========================
         [HttpGet(ApiRoutes.Articles.GetByCode)]
-        public async Task<ActionResult<Article>> GetByCode([FromQuery] string code)
+        public async Task<ActionResult<ArticleResponseDto>> GetByCode([FromQuery] string code)
         {
             var article = await _articleService.GetByCodeAsync(code);
             return Ok(article);
@@ -60,7 +60,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET PAGED BY CATEGORY
         // =========================
         [HttpGet(ApiRoutes.Articles.GetPagedByCategory)]
-        public async Task<ActionResult> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<ArticleResponseDto>> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
                 var result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
                 return Ok(new { result.Items, result.TotalCount });
@@ -79,7 +79,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET PAGED BY LIBELLE
         // =========================
         [HttpGet(ApiRoutes.Articles.GetPagedByLibelle)]
-        public async Task<ActionResult> GetPagedByLibelle(
+        public async Task<ActionResult<ArticleResponseDto>> GetPagedByLibelle(
             [FromQuery] string libelleFilter,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
@@ -93,7 +93,7 @@ namespace ERP.ArticleService.API.Controllers
         // CREATE
         // =========================
         [HttpPost(ApiRoutes.Articles.Create)]
-        public async Task<ActionResult<Article>> Create([FromBody] CreateArticleRequestDto request)
+        public async Task<ActionResult<ArticleResponseDto>> Create([FromBody] CreateArticleRequestDto request)
         {
                 var article = await _articleService.CreateAsync(request);
                 return CreatedAtAction(
@@ -106,7 +106,7 @@ namespace ERP.ArticleService.API.Controllers
         // UPDATE
         // =========================
         [HttpPut(ApiRoutes.Articles.Update)]
-        public async Task<ActionResult<Article>> Update([FromRoute] Guid id, [FromBody] UpdateArticleRequestDto request)
+        public async Task<ActionResult<ArticleResponseDto>> Update([FromRoute] Guid id, [FromBody] UpdateArticleRequestDto request)
         {
                 var article = await _articleService.UpdateAsync(id, request);
                 return Ok(article);
@@ -116,7 +116,7 @@ namespace ERP.ArticleService.API.Controllers
         // RESTORE
         // =========================
         [HttpPatch(ApiRoutes.Articles.Restore)]
-        public async Task<ActionResult> Restore([FromRoute] Guid id)
+        public async Task<ActionResult<ArticleResponseDto>> Restore([FromRoute] Guid id)
         {
             await _articleService.RestoreAsync(id);
             return NoContent();
@@ -126,7 +126,7 @@ namespace ERP.ArticleService.API.Controllers
         // DELETE
         // =========================
         [HttpDelete(ApiRoutes.Articles.Delete)]
-        public async Task<ActionResult> Delete([FromRoute] Guid id)
+        public async Task<ActionResult<ArticleResponseDto>> Delete([FromRoute] Guid id)
         {
                 await _articleService.DeleteAsync(id);
                 return NoContent();
