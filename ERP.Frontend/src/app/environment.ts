@@ -14,6 +14,7 @@ export const environment = {
     articles:    '/articles',
     clients:     '/clients',
     stock:       '/stock',
+    fournisseurs:'/fournisseurs',
     invoices:    '/invoices',
   },
 } as const;
