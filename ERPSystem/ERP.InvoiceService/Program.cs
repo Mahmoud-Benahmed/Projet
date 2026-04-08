@@ -1,7 +1,12 @@
+
+
+using ERP.InvoiceService.Infrastructure.Messaging;
 using ERP.InvoiceService.Infrastructure.Persistence;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Application.Services;
+using InvoiceService.Infrastructure.Seeders;
 using InvoiceService.Middleware;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +22,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<InvoiceDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
 
 // =========================
 // API RESPONSE NORMALIZATION
@@ -46,7 +59,28 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 // =========================
 // SERVICES
 // =========================
-builder.Services.AddScoped<IInvoiceService, InvoiceService.Application.Services.InvoiceService>();
+builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
+builder.Services.AddScoped<IInvoicesService, InvoicesService>();
+
+
+// =========================
+// HTTP CLIENTS
+// =========================
+builder.Services.AddHttpClient<IArticleServiceHttpClient, ArticleServiceHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:ArticleService:BaseUrl"]
+            ?? throw new InvalidOperationException(
+                "Services:ArticleService:BaseUrl is not configured."));
+});
+
+builder.Services.AddHttpClient<IClientServiceHttpClient, ClientServiceHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:ClientService:BaseUrl"]
+            ?? throw new InvalidOperationException(
+                "Services:ClientService:BaseUrl is not configured."));
+});
 
 // =========================
 // CONTROLLERS & API
@@ -55,8 +89,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDatabaseSeeders();
 
 var app = builder.Build();
+
+app.UseExceptionHandler(
+    errApp => errApp.Run(async ctx =>
+    {
+        var feature = ctx.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is InvoiceDomainException domainEx)
+        {
+            ctx.Response.StatusCode = 400;
+            await ctx.Response.WriteAsJsonAsync(new { error = domainEx.Message });
+        }
+    })
+);
 
 // =========================
 // MIGRATIONS
@@ -64,8 +111,12 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<InvoiceDbContext>();
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+
+    await context.Database.EnsureDeletedAsync();
     await context.Database.MigrateAsync();
-    Console.WriteLine("✓ Database migrations applied successfully.");
+    await seeder.SeedAsync();
+
 }
 app.UseSwagger();
 app.UseSwaggerUI();

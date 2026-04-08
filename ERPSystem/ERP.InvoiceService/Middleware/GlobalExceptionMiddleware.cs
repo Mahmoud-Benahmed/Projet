@@ -1,11 +1,6 @@
-using System;
+using InvoiceService.Application.Exceptions;
 using System.Net;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using InvoiceService.Application.Exceptions;
-using ERP.InvoiceService.Application.Exceptions;
 
 namespace InvoiceService.Middleware
 {
@@ -30,16 +25,16 @@ namespace InvoiceService.Middleware
             }
             catch (Exception ex)
             {
-             
+
                 _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
 
-        
+
                 await HandleExceptionAsync(context, ex);
             }
         }
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-         
+
             var (statusCode, message) = exception switch
             {
                 // 404 Not Found
@@ -62,7 +57,7 @@ namespace InvoiceService.Middleware
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
             };
 
-         
+
             var response = new
             {
                 status = (int)statusCode,
@@ -70,11 +65,11 @@ namespace InvoiceService.Middleware
                 message
             };
 
-          
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
 
-       
+
             return context.Response.WriteAsync(
                 JsonSerializer.Serialize(response, new JsonSerializerOptions
                 {
