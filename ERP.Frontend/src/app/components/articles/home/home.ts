@@ -7,7 +7,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 
-import { ArticleService, ArticleResponseDto, ArticleStatsDto, CreateArticleRequestDto, UpdateArticleRequestDto } from './../../../services/articles/articles.service';
+import { ArticleService, ArticleResponseDto, ArticleStatsDto, CreateArticleRequestDto, UpdateArticleRequestDto, UnitEnum } from './../../../services/articles/articles.service';
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { CurrencyConfigService } from '../../../services/currency-config.service';
 import { ModalComponent } from '../../modal/modal';
@@ -63,6 +63,10 @@ export class ArticleComponent implements OnInit {
   isView = this.isMode('view');
   private previousMode: ViewMode = 'list';
 
+  readonly units = Object.keys(UnitEnum)
+    .filter(key => isNaN(Number(key)))  // Only keep the enum names, not the reverse mapping numbers
+    .map(key => ({ value: key, label: key }));
+
   constructor(
     public authService: AuthService,
     private articleService: ArticleService,
@@ -76,6 +80,7 @@ export class ArticleComponent implements OnInit {
       libelle:    ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
       prix:       [null, [Validators.required, Validators.min(0.01)]],
       categoryId: ['', Validators.required],
+      unit:       ['', Validators.required],
       barCode:    ['', [Validators.required, Validators.minLength(8), Validators.maxLength(13)]],
       tva:        [null, [Validators.min(0.01), Validators.max(100)]],
     });
@@ -227,7 +232,7 @@ export class ArticleComponent implements OnInit {
     if (this.isCreate()) return;
     this.setViewMode('create');
     this.selectedArticle = null;
-    this.articleForm.reset({ libelle: '', prix: null, categoryId: '', barCode: '', tva: null });
+    this.articleForm.reset({ libelle: '', prix: null, unit: null, categoryId: '', barCode: '', tva: null, });
   }
 
   openEdit(article: ArticleResponseDto): void {
@@ -238,6 +243,7 @@ export class ArticleComponent implements OnInit {
     this.articleForm.patchValue({
       libelle:    article.libelle,
       prix:       article.prix,
+      unit:       article.unit,
       categoryId: article.category.id,
       barCode:    article.barCode,
       tva:        article.tva,
@@ -298,10 +304,10 @@ export class ArticleComponent implements OnInit {
       const dto: CreateArticleRequestDto = {
         libelle:    val.libelle,
         prix:       val.prix,
+        unit:       val.unit,
         categoryId: val.categoryId,
         barCode:    val.barCode,
-        tva:        val.tva ?? undefined,
-      };
+        tva: val.tva != null ? val.tva / 100 : undefined,      };
       this.articleService.create(dto).subscribe({
         next: () => {
           this.reload();
@@ -315,9 +321,10 @@ export class ArticleComponent implements OnInit {
       const dto: UpdateArticleRequestDto = {
         libelle:    val.libelle,
         prix:       val.prix,
+        unit:       val.unit,
         categoryId: val.categoryId,
         barCode:    val.barCode ?? undefined,
-        tva:        val.tva ?? undefined,
+        tva: val.tva != null ? val.tva / 100 : undefined,
       };
       this.articleService.update(this.selectedArticle.id, dto).subscribe({
         next: () => {
@@ -390,6 +397,9 @@ export class ArticleComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   trackById(_: number, a: ArticleResponseDto): string { return a.id; }
+  trackByIndex(index: number, item: any){
+    return index;
+  }
 
   private flattenObject(obj: any): string {
     return Object.keys(obj)
