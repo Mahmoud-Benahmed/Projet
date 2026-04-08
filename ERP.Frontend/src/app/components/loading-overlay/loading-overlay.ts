@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
   template: `
     @if (loading$ | async) {
       <div class="overlay">
-        <div class="spinner"></div>
+        <div class="loader"></div>
       </div>
     }
   `,
