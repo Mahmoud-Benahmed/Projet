@@ -7,12 +7,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PRIVILEGES, AuthService } from '../../../services/auth/auth.service';
 import {
-  StockService,
+  FournisseurService,
   FournisseurResponse,
   CreateFournisseurRequest,
   UpdateFournisseurRequest,
   FournisseurStatsDto,
-} from './../../../services/stock.service';
+} from '../../../services/fournisseur.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { MatDialog } from '@angular/material/dialog';
@@ -75,7 +75,7 @@ export class FournisseurComponent implements OnInit {
   selectedFournisseur: FournisseurResponse | null = null;
 
   constructor(
-    private stock: StockService,
+    private service: FournisseurService,
     public authService: AuthService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -110,7 +110,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   private openFournisseurFromRoute(id: string): void {
-    this.stock.getFournisseurById(id).subscribe({
+    this.service.getFournisseurById(id).subscribe({
       next: (fournisseur) => {
         this.selectedFournisseur = fournisseur;
         this.setViewMode('view');
@@ -175,7 +175,7 @@ export class FournisseurComponent implements OnInit {
 
   // ── Data loading ───────────────────────────────────────────────────────────
   load(): void {
-    this.stock.getFournisseurs().subscribe({
+    this.service.getFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items.filter(f => !f.isDeleted && !f.isBlocked);
         this.totalCount = res.totalCount;
@@ -189,7 +189,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   loadDeleted(): void {
-    this.stock.getDeletedFournisseurs().subscribe({
+    this.service.getDeletedFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
@@ -203,7 +203,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   loadBlocked(): void {
-    this.stock.getBlockedFournisseurs().subscribe({
+    this.service.getBlockedFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
@@ -217,7 +217,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   loadStats(): void {
-    this.stock.getFournisseurStats().subscribe({
+    this.service.getFournisseurStats().subscribe({
       next: (res) => {
         this.stats = res;
         this.cdr.markForCheck();
@@ -358,7 +358,7 @@ export class FournisseurComponent implements OnInit {
         email:       val.email || undefined,
       };
 
-      this.stock.createFournisseur(dto).subscribe({
+      this.service.createFournisseur(dto).subscribe({
         next: () => {
           this.cancel();
           this.reload();
@@ -379,7 +379,7 @@ export class FournisseurComponent implements OnInit {
         email:       val.email || undefined,
       };
 
-      this.stock.updateFournisseur(this.selectedFournisseur.id, dto).subscribe({
+      this.service.updateFournisseur(this.selectedFournisseur.id, dto).subscribe({
         next: () => {
           this.cancel();
           this.reload();
@@ -411,7 +411,7 @@ export class FournisseurComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
-        this.stock.deleteFournisseur(fournisseur.id).subscribe({
+        this.service.deleteFournisseur(fournisseur.id).subscribe({
           next: () => {
             if (this.isView()) this.cancel();
             this.reload();
@@ -426,7 +426,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   restore(id: string): void {
-    this.stock.restoreFournisseur(id).subscribe({
+    this.service.restoreFournisseur(id).subscribe({
       next: () => {
         this.flash('success', this.translate.instant('SUCCESS.FOURNISSEUR_RESTORED'));
         this.reload();
@@ -458,7 +458,7 @@ export class FournisseurComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
-        this.stock.toggleBlock(fournisseur).subscribe({
+        this.service.toggleBlock(fournisseur).subscribe({
           next: (updated) => {
             this.flash('success', this.translate.instant(`SUCCESS.FOURNISSEUR_${actionKey}ED`, { name: fournisseur.name }));
             if (this.selectedFournisseur?.id === fournisseur.id) this.selectedFournisseur = updated;
