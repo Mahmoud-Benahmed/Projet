@@ -27,7 +27,7 @@
 
         public void Update(string name, decimal tva)
         {
-            if (tva < 0) 
+            if (tva < 0)
                 throw new ArgumentException("TVA cannot be below 0");
 
             if (string.IsNullOrWhiteSpace(name))
@@ -36,7 +36,7 @@
             if (Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
                 return;
 
-            TVA= tva;
+            TVA = tva;
             Name = name.Trim();
             UpdatedAt = DateTime.UtcNow;
         }

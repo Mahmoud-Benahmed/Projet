@@ -1,5 +1,4 @@
-﻿using ERP.ArticleService.Domain;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ERP.ArticleService.Application.DTOs
 {
@@ -12,6 +11,9 @@ namespace ERP.ArticleService.Application.DTOs
         [Range(0.01, double.MaxValue, ErrorMessage = "Prix must be greater than zero.")]
         decimal Prix,
 
+        [Required(ErrorMessage = "Unit is required.")]
+        UnitEnum Unit,
+
         [Required(ErrorMessage = "CategoryId is required.")]
         Guid CategoryId,
 
@@ -19,7 +21,7 @@ namespace ERP.ArticleService.Application.DTOs
         [StringLength(13, MinimumLength = 8, ErrorMessage = "BarCode must be between 8 and 13 characters.")]
         string BarCode,
 
-        [Range(0.01, 100, ErrorMessage = "TVA must be between 0.01 and 100.")]
+        [Range(0.01, 1, ErrorMessage = "TVA must be between 0.01 and 1.")]
         decimal? TVA
     );
 
@@ -32,13 +34,16 @@ namespace ERP.ArticleService.Application.DTOs
         [Range(0.01, double.MaxValue, ErrorMessage = "Prix must be greater than zero.")]
         decimal Prix,
 
+        [Required(ErrorMessage = "Unit is required.")]
+        UnitEnum Unit,
+
         [Required(ErrorMessage = "CategoryId is required.")]
         Guid CategoryId,
 
         [StringLength(13, MinimumLength = 8, ErrorMessage = "BarCode must be between 8 and 13 characters.")]
         string? BarCode,
 
-        [Range(0.01, 100, ErrorMessage = "TVA must be between 0.01 and 100.")]
+        [Range(0.0, 1.0, ErrorMessage = "TVA must be between 0 and 1 (0% – 100%).")]
         decimal? TVA
     );
 
@@ -56,6 +61,7 @@ namespace ERP.ArticleService.Application.DTOs
         string BarCode,
         string Libelle,
         decimal Prix,
+        UnitEnum Unit,
         decimal TVA,
         bool IsDeleted,
         DateTime CreatedAt,

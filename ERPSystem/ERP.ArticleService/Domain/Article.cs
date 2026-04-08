@@ -4,15 +4,16 @@
     {
         public Guid Id { get; private set; }
 
-        public Guid CategoryId { get; private set; }  
+        public Guid CategoryId { get; private set; }
         public Category Category { get; private set; }
-        
+
         public string CodeRef { get; init; }
         public string BarCode { get; private set; }
 
         public string Libelle { get; private set; }
         public decimal Prix { get; private set; }
         public decimal TVA { get; private set; }
+        public UnitEnum Unit { get; private set; }
 
         public bool IsDeleted { get; private set; } = false;
         public DateTime CreatedAt { get; private set; }
@@ -21,7 +22,7 @@
 
         private Article() { }
 
-        public Article(string code, string libelle, decimal prix, Category category, string barCode, decimal? tva)
+        public Article(string code, string libelle, decimal prix, UnitEnum unit,Category category, string barCode, decimal? tva)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentException("Code is required");
@@ -38,16 +39,17 @@
 
             Id = Guid.NewGuid();
             CodeRef = code;
-            Libelle = libelle.Trim(); ;
+            Libelle = libelle.Trim();
             Prix = Math.Round(prix, 2);
+            Unit = unit;
             Category = category ?? throw new ArgumentException("Category is required");
             CategoryId = category.Id;
-            BarCode= barCode;
+            BarCode = barCode;
             TVA = resolvedTVA;
             CreatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string libelle, decimal prix, Category category, string barCode, decimal? tva)
+        public void Update(string libelle, decimal prix, UnitEnum unit,Category category, string barCode, decimal? tva)
         {
             if (string.IsNullOrWhiteSpace(libelle))
                 throw new ArgumentException("Libelle is required");
@@ -72,6 +74,7 @@
 
             Libelle = libelle.Trim();
             Prix = Math.Round(prix, 2);
+            Unit = unit;
             Category = category;
             CategoryId = category.Id;
             BarCode = barCode;
@@ -91,7 +94,48 @@
         {
             if (!IsDeleted) return;
             IsDeleted = false;
-            
+
         }
     }
+}
+
+public enum UnitEnum
+{
+    // ── Pieces / Countable Items ─────────────────────────
+    Piece,          // single item
+    Dozen,          // 12 pieces
+    Pair,           // 2 pieces
+    Set,            // a group sold together
+
+    // ── Packaging Units ────────────────────────────────
+    Box,            // container with multiple pieces
+    Carton,         // larger packaging
+    Pack,           // small bundle
+    Roll,           // fabric, paper, etc.
+    Bag,            // bagged items
+    Crate,          // crate of items
+    Pallet,         // large shipment unit
+
+    // ── Weight Units ──────────────────────────────────
+    Gram,
+    Kilogram,
+    Milligram,
+    Ton,            // metric ton
+
+    // ── Volume Units ──────────────────────────────────
+    Milliliter,
+    Liter,
+    CubicMeter,     // e.g., liquids, bulk materials
+
+    // ── Length / Distance Units ───────────────────────
+    Millimeter,
+    Centimeter,
+    Meter,
+    Kilometer,
+
+    // ── Misc / Special Units ─────────────────────────
+    Hour,           // used for labor tracking
+    Day,            // rental periods or project durations
+    Service,        // intangible unit, e.g., consulting
+    Item,           // generic placeholder
 }

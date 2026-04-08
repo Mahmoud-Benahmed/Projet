@@ -1,7 +1,7 @@
-﻿using ERP.ArticleService.API;
-using ERP.ArticleService.Application.DTOs;
+﻿using ERP.ArticleService.Application.DTOs;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
+using ERP.ArticleService.Properties;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.ArticleService.API.Controllers
