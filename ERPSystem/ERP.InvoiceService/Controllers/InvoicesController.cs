@@ -1,18 +1,16 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using ERP.InvoiceService.Properties;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
-using ERP.InvoiceService.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
 namespace InvoiceService.API.Controllers
 {
     [ApiController]
     public class InvoicesController : ControllerBase
     {
-        private readonly IInvoiceService _invoiceService;
-        public InvoicesController(IInvoiceService invoiceService)
+        private readonly IInvoicesService _invoiceService;
+        public InvoicesController(IInvoicesService invoiceService)
         {
             _invoiceService = invoiceService;
         }
@@ -25,18 +23,21 @@ namespace InvoiceService.API.Controllers
             var invoices = await _invoiceService.GetAllAsync(includeDeleted);
             return Ok(invoices);
         }
+
         [HttpGet(ApiRoutes.Invoices.GetById)]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
             var invoice = await _invoiceService.GetByIdAsync(id);
             return Ok(invoice);
         }
+
         [HttpGet(ApiRoutes.Invoices.GetByClient)]
         public async Task<IActionResult> GetByClient([FromRoute] Guid clientId)
         {
             var invoices = await _invoiceService.GetByClientIdAsync(clientId);
             return Ok(invoices);
         }
+
         [HttpGet(ApiRoutes.Invoices.GetByStatus)]
         public async Task<IActionResult> GetByStatus([FromRoute] string status)
         {
@@ -46,6 +47,7 @@ namespace InvoiceService.API.Controllers
             var invoices = await _invoiceService.GetByStatusAsync(invoiceStatus);
             return Ok(invoices);
         }
+
         // ════════════════════════════════════════════════════════════════════════════
         // POST OPERATIONS - Create/Add
         // ════════════════════════════════════════════════════════════════════════════
@@ -58,6 +60,7 @@ namespace InvoiceService.API.Controllers
                 new { id = invoice.Id },
                 invoice);
         }
+
         [HttpPost(ApiRoutes.Invoices.AddItem)]
         public async Task<IActionResult> AddItem([FromRoute] Guid id, [FromBody] AddInvoiceItemDto dto)
         {
@@ -74,24 +77,28 @@ namespace InvoiceService.API.Controllers
             await _invoiceService.RemoveItemAsync(id, itemId);
             return NoContent();
         }
+
         [HttpPut(ApiRoutes.Invoices.Finalize)]
         public async Task<IActionResult> Finalize([FromRoute] Guid id)
         {
             var invoice = await _invoiceService.FinalizeAsync(id);
             return Ok(invoice);
         }
+
         [HttpPut(ApiRoutes.Invoices.MarkAsPaid)]
         public async Task<IActionResult> MarkAsPaid([FromRoute] Guid id)
         {
             var invoice = await _invoiceService.MarkAsPaidAsync(id);
             return Ok(invoice);
         }
+
         [HttpPut(ApiRoutes.Invoices.Cancel)]
         public async Task<IActionResult> Cancel([FromRoute] Guid id)
         {
             var invoice = await _invoiceService.CancelAsync(id);
             return Ok(invoice);
         }
+
         // ════════════════════════════════════════════════════════════════════════════
         // SOFT DELETE OPERATIONS
         // ════════════════════════════════════════════════════════════════════════════
@@ -101,6 +108,7 @@ namespace InvoiceService.API.Controllers
             await _invoiceService.DeleteAsync(id);
             return NoContent();
         }
+
         [HttpPut(ApiRoutes.Invoices.Restore)]
         public async Task<IActionResult> Restore([FromRoute] Guid id)
         {
