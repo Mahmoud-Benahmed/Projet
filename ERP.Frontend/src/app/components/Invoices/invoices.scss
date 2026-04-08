@@ -245,3 +245,313 @@
   align-items: center;
   gap: 0.75rem;
 }
+
+.stats-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid $border;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &--muted {
+      opacity: 0.6;
+    }
+  }
+
+  &__count {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-hi;
+    background: $bg-card-hi;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    min-width: 40px;
+    text-align: center;
+  }
+}
+
+.form__divider {
+  text-align: center;
+  margin: 0.5rem 0;
+  position: relative;
+
+  span {
+    background: $bg-card;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    color: $text-lo;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $border;
+    z-index: 0;
+  }
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.combobox-wrap {
+  position: relative;
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: $bg-card;
+  border: 1px solid $border-hi;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.combobox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover {
+    background: $bg-card-hi;
+  }
+
+  &--selected {
+    background: $blue-bg;
+    border-left: 3px solid $blue;
+  }
+
+  &__name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $text-hi;
+  }
+
+  &__sub {
+    font-size: 0.75rem;
+    color: $text-lo;
+  }
+}
+
+.tabs-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid $border;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: $text-mid;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &--active {
+    color: $blue;
+    border-bottom: 2px solid $blue;
+    margin-bottom: -1px;
+  }
+
+  &:hover:not(.tab-btn--active) {
+    color: $text-hi;
+  }
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease;
+}
+
+.discount-banner {
+  background: $green-bg;
+  border: 1px solid $green-border;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  
+  &__content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid $green-border;
+    
+    mat-icon {
+      color: $green;
+    }
+    
+    strong {
+      color: $green;
+    }
+    
+    .discount-amount {
+      margin-left: auto;
+      font-weight: 700;
+      color: $green;
+      font-size: 1.1rem;
+    }
+  }
+  
+  &__details {
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      font-size: 0.85rem;
+      
+      &.discount {
+        color: $green;
+        font-weight: 500;
+      }
+      
+      &.final {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid $green-border;
+      }
+    }
+  }
+}
+
+.credit-warning {
+  background: $red-bg;
+  border: 1px solid $red-border;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  mat-icon {
+    color: $red;
+    flex-shrink: 0;
+  }
+  
+  .warning-content {
+    display: flex;
+    flex-direction: column;
+    
+    strong {
+      color: $red;
+    }
+    
+    span {
+      font-size: 0.85rem;
+      color: $text-mid;
+    }
+  }
+}
+
+.totals-row {
+  .totals-label-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    
+    .original-total {
+      text-decoration: line-through;
+      color: $text-lo;
+    }
+  }
+}
+
+.discount-row {
+  background: $green-bg;
+  
+  .discount-label,
+  .discount-amount {
+    color: $green;
+    font-weight: 600;
+  }
+}
+
+.final-totals {
+  background: $bg-card-hi;
+  border-top: 2px solid $border-hi;
+  
+  .final-label,
+  .final-value {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+}
+
+.client-info-card {
+  background: $bg-card-hi;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  
+  .client-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid $border;
+    
+    mat-icon {
+      color: $blue;
+    }
+  }
+  
+  .client-info-body {
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      font-size: 0.85rem;
+      
+      span:first-child {
+        color: $text-mid;
+      }
+      
+      strong {
+        color: $text-hi;
+        
+        &.text-warning {
+          color: $amber;
+        }
+        
+        &.text-success {
+          color: $green;
+        }
+      }
+    }
+  }
+}
