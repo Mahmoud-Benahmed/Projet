@@ -37,7 +37,7 @@ namespace ERP.AuthService.Application.Services
             IPrivilegeRepository privilegeRepository
 
             )
-            //,IEventPublisher eventPublisher
+        //,IEventPublisher eventPublisher
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -59,7 +59,7 @@ namespace ERP.AuthService.Application.Services
         {
             ValidatePaging(pageNumber, pageSize);
 
-            var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
+            var (items, totalCount) = await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
 
@@ -190,10 +190,10 @@ namespace ERP.AuthService.Application.Services
                 targetUserId: user.Id,
                 metadata: new() { ["login"] = request.Login, ["email"] = request.Email },
                 ipAddress: GetIp());
-            
+
             return await MapToDtoAsync(user);
         }
-                
+
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
             try
@@ -280,7 +280,7 @@ namespace ERP.AuthService.Application.Services
             // Rotate token
             await RevokeRefreshTokenAsyncPrivate(token);// revoke the token to refresh before getting a fresh one
 
-            var result=await GenerateAuthResponseAsync(user);
+            var result = await GenerateAuthResponseAsync(user);
 
             await _auditLogger.LogAsync(
                     AuditAction.TokenRefreshed,
@@ -374,7 +374,7 @@ namespace ERP.AuthService.Application.Services
 
             if (request.CurrentPassword.Equals(request.NewPassword))
                 throw new ArgumentException("The new password cannot be the same as the current password.");
-            
+
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
@@ -390,7 +390,7 @@ namespace ERP.AuthService.Application.Services
                   success: true,
                   performedBy: id,
                   ipAddress: GetIp(),
-                  metadata: new() { ["login"]= user.Login });
+                  metadata: new() { ["login"] = user.Login });
         }
 
         public async Task ChangePasswordByAdminAsync(Guid userId, AdminChangeProfileRequest request, Guid adminId)
@@ -425,7 +425,7 @@ namespace ERP.AuthService.Application.Services
                        ?? throw new UserNotFoundException(authUserId);
 
 
-            var performedBy= await _userRepository.GetByIdAsync(performedById)
+            var performedBy = await _userRepository.GetByIdAsync(performedById)
                        ?? throw new UserNotFoundException(performedById);
 
             if (user.IsActive)
@@ -488,7 +488,7 @@ namespace ERP.AuthService.Application.Services
                     performedBy: performedById,
                     targetUserId: user.Id,
                     ipAddress: GetIp(),
-                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
+                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString() });
         }
 
         public async Task RestoreAsync(Guid deletedId, Guid performedById)
@@ -562,7 +562,7 @@ namespace ERP.AuthService.Application.Services
                 CreatedAt: user.CreatedAt,
                 UpdatedAt: user.UpdatedAt,
                 LastLoginAt: user.LastLoginAt
-            ); 
+            );
         }
 
         private UserSettingsResponseDto MapUserSettingsToDto(UserSettings settings)
