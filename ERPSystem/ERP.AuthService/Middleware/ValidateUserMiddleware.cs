@@ -1,5 +1,4 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
-using System.Security.Claims;
 
 namespace ERP.AuthService.Middleware
 {

@@ -88,26 +88,26 @@ public class GlobalExceptionMiddleware
     {
         var (statusCode, code, message) = exception switch
         {
-            EmailAlreadyExistsException =>                                  ((int)HttpStatusCode.Conflict,              "AUTH_001",         "AUTH_001"),
-            InvalidCredentialsException =>                                  ((int)HttpStatusCode.Unauthorized,          "AUTH_002",         "AUTH_002"),
-            UserInactiveException =>                                        ((int)HttpStatusCode.Forbidden,             "AUTH_003",         "AUTH_003"),
-            UserActiveException =>                                          ((int)HttpStatusCode.Forbidden,             "AUTH_004",         "AUTH_004"),
-            TokenAlreadyRevokedException =>                                 ((int)HttpStatusCode.BadRequest,            "AUTH_005",         "AUTH_005"),
-            UnauthorizedAccessException =>                                  ((int)HttpStatusCode.Unauthorized,          "AUTH_006",         "AUTH_006"),
-            UnauthorizedOperationException =>                               ((int)HttpStatusCode.Forbidden,             "AUTH_007",         "AUTH_007"),
-            SecurityException =>                                            ((int)HttpStatusCode.Unauthorized,          "AUTH_008",         "AUTH_008"),
-            UserNotFoundException =>                                        ((int)HttpStatusCode.NotFound,              "AUTH_009",         "AUTH_009"),
-            RoleNotFoundException =>                                        ((int)HttpStatusCode.NotFound,              "AUTH_010",         "AUTH_010"),
-            ControleNotFoundException =>                                    ((int)HttpStatusCode.NotFound,              "AUTH_011",         "AUTH_011"),
-            PrivilegeNotFoundException =>                                   ((int)HttpStatusCode.NotFound,              "AUTH_012",         "AUTH_012"),
-            ArgumentException =>                                            ((int)HttpStatusCode.BadRequest,            "AUTH_013",         "AUTH_013"),
-            InvalidOperationException =>                                    ((int)HttpStatusCode.BadRequest,            "AUTH_014",         "AUTH_014"),
-            LoginAlreadyExsistException =>                                  ((int)HttpStatusCode.Conflict,              "AUTH_015",         "AUTH_015"),
-            FluentValidation.ValidationException vex =>                     ((int)HttpStatusCode.BadRequest,            "AUTH_016",         string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
-            MongoWriteException mwx when mwx.WriteError?.Code == 11000 => 
-                                                                            ((int)HttpStatusCode.Conflict,              "AUTH_017",         "AUTH_017"),
-            InvalidRefreshTokenException =>                                 ((int)HttpStatusCode.Unauthorized, "AUTH_018", "AUTH_018"),
-            _ =>                                                            ((int)HttpStatusCode.InternalServerError,   "INTERNAL_ERROR",   "AUTH_000")
+            EmailAlreadyExistsException => ((int)HttpStatusCode.Conflict, "AUTH_001", "AUTH_001"),
+            InvalidCredentialsException => ((int)HttpStatusCode.Unauthorized, "AUTH_002", "AUTH_002"),
+            UserInactiveException => ((int)HttpStatusCode.Forbidden, "AUTH_003", "AUTH_003"),
+            UserActiveException => ((int)HttpStatusCode.Forbidden, "AUTH_004", "AUTH_004"),
+            TokenAlreadyRevokedException => ((int)HttpStatusCode.BadRequest, "AUTH_005", "AUTH_005"),
+            UnauthorizedAccessException => ((int)HttpStatusCode.Unauthorized, "AUTH_006", "AUTH_006"),
+            UnauthorizedOperationException => ((int)HttpStatusCode.Forbidden, "AUTH_007", "AUTH_007"),
+            SecurityException => ((int)HttpStatusCode.Unauthorized, "AUTH_008", "AUTH_008"),
+            UserNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_009", "AUTH_009"),
+            RoleNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_010", "AUTH_010"),
+            ControleNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_011", "AUTH_011"),
+            PrivilegeNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_012", "AUTH_012"),
+            ArgumentException => ((int)HttpStatusCode.BadRequest, "AUTH_013", "AUTH_013"),
+            InvalidOperationException => ((int)HttpStatusCode.BadRequest, "AUTH_014", "AUTH_014"),
+            LoginAlreadyExsistException => ((int)HttpStatusCode.Conflict, "AUTH_015", "AUTH_015"),
+            FluentValidation.ValidationException vex => ((int)HttpStatusCode.BadRequest, "AUTH_016", string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
+            MongoWriteException mwx when mwx.WriteError?.Code == 11000 =>
+                                                                            ((int)HttpStatusCode.Conflict, "AUTH_017", "AUTH_017"),
+            InvalidRefreshTokenException => ((int)HttpStatusCode.Unauthorized, "AUTH_018", "AUTH_018"),
+            _ => ((int)HttpStatusCode.InternalServerError, "INTERNAL_ERROR", "AUTH_000")
         };
 
         context.Response.ContentType = "application/json";
