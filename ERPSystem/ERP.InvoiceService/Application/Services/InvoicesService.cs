@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ERP.InvoiceService.Infrastructure.Messaging;
+using ERP.InvoiceService.Infrastructure.Persistence;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Exceptions;
 using InvoiceService.Application.Interfaces;
@@ -10,16 +7,25 @@ using InvoiceService.Domain;
 
 namespace InvoiceService.Application.Services
 {
-    public class InvoiceService : IInvoiceService
+    public class InvoicesService : IInvoicesService
     {
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IClientServiceHttpClient _clientServiceHttpClient;
         private readonly IArticleServiceHttpClient _articleServiceHttpClient;
+        private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
 
-        public InvoiceService(IInvoiceRepository invoiceRepository)
+        public InvoicesService(
+            IInvoiceRepository invoiceRepository,
+            IInvoiceNumberGenerator invoiceNumberGenerator,
+            IClientServiceHttpClient clientServiceHttpClient,
+            IArticleServiceHttpClient articleServiceHttpClient) // Add missing dependencies
         {
             _invoiceRepository = invoiceRepository;
+            _invoiceNumberGenerator = invoiceNumberGenerator; // THIS WAS MISSING!
+            _clientServiceHttpClient = clientServiceHttpClient;
+            _articleServiceHttpClient = articleServiceHttpClient;
         }
+
         public async Task<InvoiceDto> GetByIdAsync(Guid id)
         {
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(id)
@@ -49,22 +55,19 @@ namespace InvoiceService.Application.Services
 
         public async Task<InvoiceDto> CreateAsync(CreateInvoiceDto dto)
         {
-            // ──── VALIDATION ────
-            // Check if invoice number already exists
-            if (await _invoiceRepository.ExistsByInvoiceNumberAsync(dto.InvoiceNumber))
-                throw new InvoiceAlreadyExistsException(dto.InvoiceNumber);
-
             var client = await _clientServiceHttpClient.GetByIdAsync(dto.ClientId);
 
-            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + i.TaxRate / 100m));
+            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + i.TaxRate));
 
             await CheckClientCreditLimit(client.Id, invoiceTotalTTC);
+
+            var invoiceNumber = await _invoiceNumberGenerator.GenerateNextInvoiceNumberAsync();
 
             // add dropdown to list available clients and select it 
 
             // ──── CREATE INVOICE ────
             var invoice = new Invoice(
-                dto.InvoiceNumber,
+                invoiceNumber,
                 dto.InvoiceDate,
                 dto.DueDate,
                 dto.ClientId,
@@ -89,14 +92,14 @@ namespace InvoiceService.Application.Services
                 invoice.AddItem(item);
             }
 
-    
+
             await _invoiceRepository.AddAsync(invoice);
             return invoice.ToDto();
         }
 
         public async Task<InvoiceDto> AddItemAsync(Guid invoiceId, AddInvoiceItemDto dto)
         {
-         
+
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(invoiceId)
                 ?? throw new InvoiceNotFoundException(invoiceId);
 
@@ -104,7 +107,7 @@ namespace InvoiceService.Application.Services
 
 
             var client = await _clientServiceHttpClient.GetByIdAsync(invoice.ClientId);
-            var itemTotalTTC = dto.Quantity * dto.UniPriceHT * (1 + dto.TaxRate / 100m);
+            var itemTotalTTC = dto.Quantity * dto.UniPriceHT * (1 + dto.TaxRate);
 
             await CheckClientCreditLimit(client.Id, itemTotalTTC);
 
@@ -119,15 +122,15 @@ namespace InvoiceService.Application.Services
 
             invoice.AddItem(item);
 
-    
+
             await _invoiceRepository.UpdateAsync(invoice);
             return invoice.ToDto();
         }
 
-    
+
         public async Task RemoveItemAsync(Guid invoiceId, Guid itemId)
         {
-    
+
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(invoiceId)
                 ?? throw new InvoiceNotFoundException(invoiceId);
             invoice.RemoveItem(itemId);
@@ -137,7 +140,7 @@ namespace InvoiceService.Application.Services
 
         public async Task<InvoiceDto> FinalizeAsync(Guid id)
         {
-  
+
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(id)
                 ?? throw new InvoiceNotFoundException(id);
             invoice.FinalizeInvoice();
@@ -235,12 +238,12 @@ namespace InvoiceService.Application.Services
             var topClients = paid
                 .GroupBy(i => new { i.ClientId, i.ClientFullName })
                 .Select(g => new ClientRevenueDto
-                {
-                    ClientId = g.Key.ClientId,
-                    ClientFullName = g.Key.ClientFullName,
-                    InvoiceCount = g.Count(),
-                    RevenueTTC = g.Sum(i => i.TotalTTC)
-                })
+                (
+                    ClientId: g.Key.ClientId,
+                    ClientFullName: g.Key.ClientFullName,
+                    InvoiceCount: g.Count(),
+                    RevenueTTC: g.Sum(i => i.TotalTTC)
+                ))
                 .OrderByDescending(c => c.RevenueTTC)
                 .Take(topClientsCount)
                 .ToList();
@@ -263,44 +266,44 @@ namespace InvoiceService.Application.Services
                         .ToList();
 
                     return new MonthlyStatsDto
-                    {
-                        Year = currentYear,
-                        Month = month,
-                        IssuedCount = issued.Count,
-                        PaidCount = monthPaid.Count,
-                        IssuedTTC = issued.Sum(i => i.TotalTTC),
-                        PaidTTC = monthPaid.Sum(i => i.TotalTTC)
-                    };
+                    (
+                        Year: currentYear,
+                        Month: month,
+                        IssuedCount: issued.Count,
+                        PaidCount: monthPaid.Count,
+                        IssuedTTC: issued.Sum(i => i.TotalTTC),
+                        PaidTTC: monthPaid.Sum(i => i.TotalTTC)
+                    );
                 })
                 .ToList();
 
             // ── Assemble ─────────────────────────────────────────────────────────────
             return new InvoiceStatsDto
-            {
-                TotalInvoices = projections.Count,
-                DraftCount = drafts.Count,
-                UnpaidCount = unpaid.Count,
-                PaidCount = paid.Count,
-                CancelledCount = cancelled.Count,
-                DeletedCount = deletedCount,
-                OverdueCount = overdue.Count,
+            (
+                TotalInvoices: projections.Count,
+                DraftCount: drafts.Count,
+                UnpaidCount: unpaid.Count,
+                PaidCount: paid.Count,
+                CancelledCount: cancelled.Count,
+                DeletedCount: deletedCount,
+                OverdueCount: overdue.Count,
 
-                TotalRevenueHT = revenueHT,
-                TotalRevenueTTC = revenueTTC,
-                TotalTVACollected = tvaColl,
+                TotalRevenueHT: revenueHT,
+                TotalRevenueTTC: revenueTTC,
+                TotalTVACollected: tvaColl,
 
-                OutstandingHT = outstandingHT,
-                OutstandingTTC = outstandingTTC,
+                OutstandingHT: outstandingHT,
+                OutstandingTTC: outstandingTTC,
 
-                OverdueHT = overdueHT,
-                OverdueTTC = overdueTTC,
+                OverdueHT: overdueHT,
+                OverdueTTC: overdueTTC,
 
-                AverageInvoiceValueHT = avgValueHT,
-                AveragePaymentDays = avgPaymentDays,
+                AverageInvoiceValueHT: avgValueHT,
+                AveragePaymentDays: avgPaymentDays,
 
-                TopClients = topClients,
-                MonthlyBreakdown = monthlyBreakdown
-            };
+                TopClients: topClients,
+                MonthlyBreakdown: monthlyBreakdown
+            );
         }
 
         private async Task CheckClientCreditLimit(Guid clientId, decimal invoiceTotalTTC)
