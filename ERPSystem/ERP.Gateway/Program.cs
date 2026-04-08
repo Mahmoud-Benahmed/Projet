@@ -119,17 +119,17 @@ builder.Services.AddAuthorization(options =>
         Privileges.Users.RESTORE_USER,
         Privileges.Users.ASSIGN_ROLES);
 
-    AddManagePolicy(Privileges.Users.MANAGE_ROLES,
+    AddManagePolicy("MANAGE_ROLES",
         Privileges.Users.CREATE_ROLE,
         Privileges.Users.UPDATE_ROLE,
         Privileges.Users.DELETE_ROLE);
 
-    AddManagePolicy(Privileges.Users.MANAGE_CONTROLES,
+    AddManagePolicy("MANAGE_CONTROLES",
         Privileges.Users.CREATE_CONTROLE,
         Privileges.Users.UPDATE_CONTROLE,
         Privileges.Users.DELETE_CONTROLE);
 
-    AddManagePolicy(Privileges.Clients.MANAGE_CLIENTS,
+    AddManagePolicy("MANAGE_CLIENTS",
         Privileges.Clients.VIEW_CLIENTS,
         Privileges.Clients.CREATE_CLIENT,
         Privileges.Clients.UPDATE_CLIENT,
@@ -140,7 +140,7 @@ builder.Services.AddAuthorization(options =>
         Privileges.Clients.DELETE_CLIENT_CATEGORIES,
         Privileges.Clients.RESTORE_CLIENT_CATEGORIES);
 
-    AddManagePolicy(Privileges.Articles.MANAGE_ARTICLES,
+    AddManagePolicy("MANAGE_ARTICLES",
         Privileges.Articles.VIEW_ARTICLES,
         Privileges.Articles.CREATE_ARTICLE,
         Privileges.Articles.UPDATE_ARTICLE,
@@ -151,29 +151,36 @@ builder.Services.AddAuthorization(options =>
         Privileges.Articles.DELETE_ARTICLE_CATEGORIES,
         Privileges.Articles.RESTORE_ARTICLE_CATEGORIES);
 
-    AddManagePolicy(Privileges.Invoices.MANAGE_INVOICES,
+    AddManagePolicy("MANAGE_INVOICES",
         Privileges.Invoices.VIEW_INVOICES,
         Privileges.Invoices.CREATE_INVOICE,
         Privileges.Invoices.VALIDATE_INVOICE,
         Privileges.Invoices.DELETE_INVOICE,
         Privileges.Invoices.RESTORE_INVOICE);
 
-    AddManagePolicy(Privileges.Payments.MANAGE_PAYMENTS,
+    AddManagePolicy("MANAGE_PAYMENTS",
         Privileges.Payments.VIEW_PAYMENTS,
         Privileges.Payments.RECORD_PAYMENT,
         Privileges.Payments.DELETE_PAYMENT,
         Privileges.Payments.RESTORE_PAYMENT);
 
-    AddManagePolicy(Privileges.Stock.MANAGE_STOCK,
+    AddManagePolicy("MANAGE_STOCK",
         Privileges.Stock.VIEW_STOCK,
         Privileges.Stock.UPDATE_STOCK,
         Privileges.Stock.ADD_ENTRY);
 
-    AddManagePolicy(Privileges.Reports.MANAGE_REPORTS,
+    AddManagePolicy("MANAGE_FOURNISSEURS",
+        Privileges.Fournisseurs.VIEW_FOURNISSEURS,
+        Privileges.Fournisseurs.CREATE_FOURNISSEUR,
+        Privileges.Fournisseurs.UPDATE_FOURNISSEUR,
+        Privileges.Fournisseurs.DELETE_FOURNISSEUR,
+        Privileges.Fournisseurs.RESTORE_FOURNISSEUR);
+
+    AddManagePolicy("MANAGE_REPORTS",
         Privileges.Reports.VIEW_REPORTS,
         Privileges.Reports.EXPORT_REPORTS);
 
-    options.AddPolicy(Privileges.Audit.MANAGE_AUDITLOGS, p =>
+    options.AddPolicy("MANAGE_AUDITLOGS", p =>
         p.RequireAuthenticatedUser()
          .RequireClaim("privilege", Privileges.Audit.MANAGE_AUDITLOGS));
 
