@@ -1,6 +1,4 @@
-﻿using ERP.ClientService.Application.DTOs;
-
-namespace ERP.ClientService.Domain;
+﻿namespace ERP.ClientService.Domain;
 
 public class Client
 {
@@ -11,9 +9,8 @@ public class Client
     public string? Phone { get; private set; }
     public int? DuePaymentPeriod { get; private set; }
     public string? TaxNumber { get; private set; }
-    public decimal? CreditLimit { get; private set; }
+    public decimal? CreditLimit { get; private set; }  // ← Made nullable
     public int? DelaiRetour { get; private set; }
-
     public bool IsBlocked { get; private set; } = false;
     public bool IsDeleted { get; private set; } = false;
 
@@ -27,8 +24,8 @@ public class Client
 
     public static Client Create(
         string name, string email, string address,
+        decimal? creditLimit = null,  // ← Made nullable with default
         string? phone = null, string? taxNumber = null,
-        decimal? creditLimit = null,
         int? delaiRetour = null,
         int? duePaymentPeriod = null)
     {
@@ -85,6 +82,7 @@ public class Client
         var clientCategory = ClientCategory.Create(Id, category.Id, assignedById);
         ClientCategories.Add(clientCategory);
 
+        // Recalculate effective values after adding category
         CreditLimit = GetEffectiveCreditLimit();
         DelaiRetour = GetEffectiveDelaiRetour();
         DuePaymentPeriod = GetEffectiveDuePaymentPeriod();
@@ -105,9 +103,10 @@ public class Client
 
         ClientCategories.Remove(existing);
 
-        CreditLimit = GetEffectiveCreditLimit();   // ← add
-        DelaiRetour = GetEffectiveDelaiRetour();   // ← add
-        DuePaymentPeriod = GetEffectiveDuePaymentPeriod(); // ← add
+        // Recalculate effective values after removing category
+        CreditLimit = GetEffectiveCreditLimit();
+        DelaiRetour = GetEffectiveDelaiRetour();
+        DuePaymentPeriod = GetEffectiveDuePaymentPeriod();
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -120,7 +119,7 @@ public class Client
 
     public void RemoveCreditLimit()
     {
-        CreditLimit = null;
+        CreditLimit = null;  // ← Now works because CreditLimit is nullable
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -180,18 +179,21 @@ public class Client
         return categoryMax > 0 ? categoryMax : null;
     }
 
-    public decimal? GetEffectiveCreditLimit()
+    public decimal? GetEffectiveCreditLimit()  // ← Returns nullable decimal
     {
-        if (!CreditLimit.HasValue) return null;
+        // If no base credit limit, return null
+        if (!CreditLimit.HasValue || CreditLimit.Value <= 0)
+            return null;
 
+        // Get the highest multiplier from active categories
         var multiplier = ClientCategories
             .Select(cc => cc.Category)
-            .Where(c => c is { IsActive: true } && c.CreditLimitMultiplier.HasValue)
-            .Max(c => c.CreditLimitMultiplier);
+            .Where(c => c is { IsActive: true, IsDeleted: false } && c.CreditLimitMultiplier.HasValue)
+            .Select(c => c.CreditLimitMultiplier!.Value)  // Use ! after filtering
+            .DefaultIfEmpty(1m)  // Default to 1 if no multipliers found
+            .Max();
 
-        return multiplier.HasValue
-            ? CreditLimit.Value * multiplier.Value
-            : CreditLimit.Value;
+        return CreditLimit.Value * multiplier;
     }
 
     public void SetDuePaymentPeriod(int days)
@@ -214,7 +216,7 @@ public class Client
         var categoryMax = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false })
-            .Select(c => c.DuePaymentPeriod)   // now int, no .Where(d => d.HasValue) needed
+            .Select(c => c.DuePaymentPeriod)
             .DefaultIfEmpty(0)
             .Max();
 
@@ -224,8 +226,12 @@ public class Client
     public bool CanPlaceOrder(decimal orderAmount, decimal currentBalance)
     {
         if (IsBlocked || IsDeleted) return false;
+
         var limit = GetEffectiveCreditLimit();
+
+        // If no credit limit set, allow order
         if (!limit.HasValue) return true;
+
         return currentBalance + orderAmount <= limit.Value;
     }
 
