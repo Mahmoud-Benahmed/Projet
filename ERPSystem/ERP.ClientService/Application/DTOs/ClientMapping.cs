@@ -1,5 +1,4 @@
-﻿using ERP.ClientService.Application.DTOs;
-using ERP.ClientService.Domain;
+﻿using ERP.ClientService.Domain;
 
 namespace ERP.ClientService.Application.DTOs;
 
@@ -25,6 +24,13 @@ public static class ClientMappings
                                         Id: cc.CategoryId,
                                         Name: cc.Category?.Name ?? string.Empty,
                                         Code: cc.Category?.Code ?? string.Empty,
+                                        DelaiRetour: cc.Category.DelaiRetour,
+                                        DuePaymentPeriod: cc.Category.DuePaymentPeriod,
+                                        DiscountRate: cc.Category.DiscountRate ?? 0,
+                                        CreditLimitMultiplier: cc.Category.CreditLimitMultiplier ?? 0,
+                                        UseBulkPricing: cc.Category.UseBulkPricing,
+                                        IsDeleted: cc.Category.IsDeleted,
+                                        IsActive: cc.Category.IsActive,                                        
                                         AssignedAt: cc.AssignedAt))
                                     .ToList()
         );

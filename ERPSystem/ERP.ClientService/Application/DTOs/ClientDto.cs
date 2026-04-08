@@ -95,5 +95,12 @@ public sealed record ClientCategoryResponseDto(
     Guid Id,
     string Name,
     string Code,
+    int DelaiRetour,
+    int DuePaymentPeriod,
+    decimal DiscountRate,
+    decimal CreditLimitMultiplier,
+    bool UseBulkPricing,
+    bool IsActive,
+    bool IsDeleted,
     DateTime AssignedAt
 );

@@ -2,7 +2,6 @@
 using ERP.ClientService.Application.Exceptions;
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
-using Microsoft.Data;
 
 namespace ERP.ClientService.Application.Services;
 
