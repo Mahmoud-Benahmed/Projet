@@ -142,7 +142,7 @@
         <!-- Invoices -->
         <a class="sidebar__item" routerLink="/invoices" routerLinkActive="sidebar__item--active"
            *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)" (click)="closeMobileNav()">
-          <mat-icon>receipt</mat-icon><span>Invoices</span>
+          <mat-icon>receipt</mat-icon>{{ 'NAV.INVOICES' | translate}}
         </a>
 
         <!-- Audit Log -->
@@ -305,7 +305,7 @@
       <!-- Invoices -->
       <a class="sidebar__item" routerLink="/invoices" routerLinkActive="sidebar__item--active"
          *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)">
-        <mat-icon>receipt</mat-icon> <span>Invoices</span>
+        <mat-icon>receipt</mat-icon>{{ 'NAV.INVOICES' | translate}}
       </a>
 
       <!-- Audit Log -->
