@@ -1,16 +1,17 @@
-using Microsoft.EntityFrameworkCore;
 using InvoiceService.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence
 {
 
     public class InvoiceDbContext : DbContext
     {
-      
+
         public InvoiceDbContext(DbContextOptions<InvoiceDbContext> options)
             : base(options) { }
         public DbSet<Invoice> Invoices => Set<Invoice>();
         public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+        public DbSet<InvoiceSequence> InvoiceSequences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,7 +26,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 // ──── TABLE ────
                 entity.ToTable("Invoices");
 
-            
+
                 entity.HasKey(i => i.Id);
 
 
@@ -44,7 +45,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 entity.Property(i => i.AdditionalNotes)
                       .HasMaxLength(1000);
 
-            
+
                 entity.Property(i => i.TotalHT)
                       .HasColumnType("decimal(18,4)");
 
@@ -55,7 +56,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                       .HasColumnType("decimal(18,4)");
 
                 entity.Property(i => i.Status)
-                      .HasConversion<string>()  
+                      .HasConversion<string>()
                       .HasMaxLength(20);
                 entity.HasIndex(i => i.InvoiceNumber).IsUnique();
 
@@ -91,7 +92,6 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 entity.Property(ii => ii.UniPriceHT)
                       .HasColumnType("decimal(18,4)");
 
-                // Tax rate: decimal(5,4) allows 0.0000 to 9.9999 (covers 0% to 999.99%)
                 entity.Property(ii => ii.TaxRate)
                       .HasColumnType("decimal(5,4)");
 
@@ -100,6 +100,14 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
                 entity.Property(ii => ii.TotalTTC)
                       .HasColumnType("decimal(18,4)");
+            });
+
+            modelBuilder.Entity<InvoiceSequence>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Year).IsUnique();
+                entity.Property(e => e.Year).IsRequired();
+                entity.Property(e => e.CurrentNumber).IsRequired();
             });
         }
     }

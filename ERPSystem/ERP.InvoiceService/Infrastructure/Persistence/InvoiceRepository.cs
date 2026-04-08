@@ -1,14 +1,22 @@
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using static InvoiceService.Application.Interfaces.IInvoiceRepository;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence
 {
+
+
+    public interface IInvoiceNumberGenerator
+    {
+        /// <summary>
+        /// Generates the next invoice number in format INV-YYYY-SEQ
+        /// This method is thread-safe and should be called within a transaction
+        /// </summary>
+        Task<string> GenerateNextInvoiceNumberAsync();
+    }
+
+
     public class InvoiceRepository : IInvoiceRepository
     {
         private readonly InvoiceDbContext _context;
@@ -48,6 +56,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
         public async Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false)
         {
+            Console.WriteLine($"includeDeleted: {includeDeleted}");
             var query = includeDeleted
                 ? _context.Invoices.IgnoreQueryFilters()
                 : _context.Invoices.AsQueryable();
