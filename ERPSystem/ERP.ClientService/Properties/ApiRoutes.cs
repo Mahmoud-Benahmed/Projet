@@ -1,4 +1,4 @@
-﻿namespace ERP.ClientService.API.Routes;
+﻿namespace ERP.ClientService.Properties;
 
 public static class ApiRoutes
 {

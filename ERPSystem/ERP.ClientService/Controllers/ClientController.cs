@@ -1,8 +1,7 @@
-﻿using ERP.ClientService.API.Routes;
-using ERP.ClientService.Application.DTOs;
+﻿using ERP.ClientService.Application.DTOs;
 using ERP.ClientService.Application.Interfaces;
+using ERP.ClientService.Properties;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ERP.ClientService.API.Controllers;
 
@@ -22,7 +21,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _clientService.GetAllAsync(pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetDeleted)]
@@ -31,7 +30,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _clientService.GetPagedDeletedAsync(pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetById)]
@@ -50,7 +49,7 @@ public class ClientController : ControllerBase
     {
         var result = await _clientService
             .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.GetByName)]
@@ -61,7 +60,7 @@ public class ClientController : ControllerBase
     {
         var result = await _clientService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Clients.Stats)]
@@ -164,8 +163,8 @@ public class ClientController : ControllerBase
     private bool TryGetRequesterId(out Guid requesterId)
     {
         requesterId = Guid.Empty;
-        var raw= HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
-        var res=!string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        var res = !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         Console.WriteLine($">>>>>>>>>>>> {res} <<<<<<<<<<<<");
         return res;
     }

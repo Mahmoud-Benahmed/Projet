@@ -9,7 +9,7 @@ namespace ERP.StockService.API.Controllers;
 public class BonSortieController : ControllerBase
 {
     private readonly IBonSortieService _service;
-    public BonSortieController(IBonSortieService service)=> _service = service;
+    public BonSortieController(IBonSortieService service) => _service = service;
 
     // =========================
     // READ
@@ -64,7 +64,10 @@ public class BonSortieController : ControllerBase
     [HttpPost(ApiRoutes.BonSorties.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonSortieRequestDto dto)
     {
-        var result = await _service.CreateAsync(dto);
+        if (!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.CreateAsync(dto, requesterId);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -76,7 +79,10 @@ public class BonSortieController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonSortieRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        if(!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.UpdateAsync(id, dto, requesterId);
         return Ok(result);
     }
 
@@ -85,5 +91,12 @@ public class BonSortieController : ControllerBase
     {
         await _service.DeleteAsync(id);
         return NoContent();
+    }
+
+    private bool TryGetRequesterId(out Guid requesterId)
+    {
+        requesterId = Guid.Empty;
+        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
     }
 }

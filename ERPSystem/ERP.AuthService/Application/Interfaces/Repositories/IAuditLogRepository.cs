@@ -1,5 +1,4 @@
-﻿using ERP.AuthService.Domain;
-using ERP.AuthService.Domain.Logger;
+﻿using ERP.AuthService.Domain.Logger;
 
 namespace ERP.AuthService.Application.Interfaces.Repositories
 {

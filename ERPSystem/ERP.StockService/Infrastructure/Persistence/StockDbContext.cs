@@ -1,14 +1,12 @@
 ﻿using ERP.StockService.Domain;
 using ERP.StockService.Domain.Entre;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ERP.StockService.Infrastructure.Persistence;
 
 public sealed class StockDbContext(DbContextOptions<StockDbContext> options) : DbContext(options)
 {
-    public DbSet<Fournisseur> Fournisseurs => Set<Fournisseur>();
     public DbSet<BonEntre> BonEntres => Set<BonEntre>();
     public DbSet<BonSortie> BonSorties => Set<BonSortie>();
     public DbSet<BonRetour> BonRetours => Set<BonRetour>();
@@ -16,40 +14,11 @@ public sealed class StockDbContext(DbContextOptions<StockDbContext> options) : D
     public DbSet<LigneSortie> LigneSorties => Set<LigneSortie>();
     public DbSet<LigneRetour> LigneRetours => Set<LigneRetour>();
     public DbSet<BonNumber> BonNumber => Set<BonNumber>();
+    public DbSet<JournalStock> JournalStocks => Set<JournalStock>();
 
     protected override void OnModelCreating(ModelBuilder m) =>
         m.ApplyConfigurationsFromAssembly(typeof(StockDbContext).Assembly);
 
-}
-
-// ── Fournisseur ───────────────────────────────────────────────────────────────
-internal sealed class FournisseurConfiguration : IEntityTypeConfiguration<Fournisseur>
-{
-    public void Configure(EntityTypeBuilder<Fournisseur> b)
-    {
-        b.ToTable("Fournisseurs");
-        b.HasKey(f => f.Id);
-        b.Property(f => f.Name).IsRequired().HasMaxLength(200);
-        b.Property(f => f.Address).IsRequired().HasMaxLength(500);
-        b.Property(f => f.Phone).IsRequired().HasMaxLength(50);
-        b.Property(f => f.Email).HasMaxLength(200);
-        b.Property(f => f.TaxNumber).IsRequired().HasMaxLength(50);
-        b.Property(f => f.RIB).IsRequired().HasMaxLength(50);
-        b.Property(f => f.IsDeleted).IsRequired();
-        b.Property(f => f.IsBlocked).IsRequired();
-        b.Property(f => f.CreatedAt).IsRequired();
-        b.Property(f => f.UpdatedAt)
-                 .IsConcurrencyToken(false)
-                 .ValueGeneratedNever();
-
-        b.HasIndex(f => f.TaxNumber)
-         .IsUnique()
-         .HasDatabaseName("IX_Fournisseurs_TaxNumber")
-         .HasFilter("[IsDeleted] = 0");
-
-
-        b.HasQueryFilter(f => !f.IsDeleted);
-    }
 }
 
 internal sealed class DocumentNumberSequenceConfiguration : IEntityTypeConfiguration<BonNumber>
@@ -96,11 +65,6 @@ internal sealed class BonEntreConfiguration : IEntityTypeConfiguration<BonEntre>
         b.HasIndex(x => x.Numero)
          .IsUnique()
          .HasDatabaseName("IX_BonEntres_Numero");
-
-        b.HasOne(x => x.Fournisseur)
-         .WithMany()
-         .HasForeignKey(x => x.FournisseurId)
-         .OnDelete(DeleteBehavior.Restrict);
 
         b.HasMany(x => x.Lignes)
          .WithOne(l => l.BonEntre)
@@ -224,5 +188,37 @@ internal sealed class LigneRetourConfiguration : IEntityTypeConfiguration<LigneR
         b.Property(l => l.Quantity).IsRequired().HasPrecision(18, 4);
         b.Property(l => l.Price).IsRequired().HasPrecision(18, 4);
         b.Property(l => l.Remarque).HasMaxLength(500);
+    }
+}
+
+public class JournalStockConfiguration : IEntityTypeConfiguration<JournalStock>
+{
+    public void Configure(EntityTypeBuilder<JournalStock> entity)
+    {
+        entity.ToTable("JournalStocks");
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.Quantity)
+              .HasColumnType("decimal(18,3)");
+
+        entity.Property(x => x.StockBefore)
+              .HasColumnType("decimal(18,3)");
+
+        entity.Property(x => x.StockAfter)
+              .HasColumnType("decimal(18,3)");
+
+        entity.Property(x => x.SourceService)
+              .HasMaxLength(100);
+
+        entity.Property(x => x.SourceOperation)
+              .HasMaxLength(100);
+
+        entity.HasIndex(x => x.ArticleId);
+        entity.HasIndex(x => x.CreatedAt);
+
+        entity.Property(x => x.MovementType)
+                .HasConversion<string>();
+        entity.HasIndex(x => x.MovementType);
     }
 }

@@ -1,6 +1,5 @@
 ﻿using ERP.AuthService.Application.DTOs.AuditLog;
 using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Domain.Logger;
 
 namespace ERP.AuthService.Application.Interfaces.Services
 {

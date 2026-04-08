@@ -1,6 +1,4 @@
-﻿using ERP.AuthService.Domain;
-
-namespace ERP.AuthService.Application.DTOs.Role
+﻿namespace ERP.AuthService.Application.DTOs.Role
 {
     public record RoleResponseDto(
        Guid Id,

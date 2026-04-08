@@ -1,7 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs.Role;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Properties;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -40,7 +39,7 @@ namespace ERP.AuthService.Api.Controllers
         }
 
         [HttpGet("by-category")]
-        public async Task<IActionResult> GetByCategory([FromQuery]string category, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetByCategory([FromQuery] string category, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _controleService.GetByCategoryAsync(category, pageNumber, pageSize);
             return result is null ? NotFound() : Ok(result);

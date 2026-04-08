@@ -26,13 +26,13 @@
         UserRestored,
 
         // Role
-        RoleCreated, 
-        RoleUpdated, 
+        RoleCreated,
+        RoleUpdated,
         RoleDeleted,
 
         // Controle
-        ControleCreated, 
-        ControleUpdated, 
+        ControleCreated,
+        ControleUpdated,
         ControleDeleted,
 
         Unauthorized,

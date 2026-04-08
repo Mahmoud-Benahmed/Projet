@@ -1,8 +1,5 @@
 ﻿using ERP.ClientService.Domain;
-using ERP.ClientService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Runtime.Intrinsics.Arm;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
 

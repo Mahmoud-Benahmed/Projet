@@ -1,8 +1,6 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Persistence;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
-using ERP.AuthService.Infrastructure.Persistence.Seeder;
 using ERP.AuthService.Properties;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
@@ -21,13 +19,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
             IConfiguration configuration)
         {
-            await dbContext.DropCollectionAsync("AuditLogs");
-            await dbContext.DropCollectionAsync("Privileges");
-            await dbContext.DropCollectionAsync("Controles");
-            await dbContext.DropCollectionAsync("Roles");
-            await dbContext.DropCollectionAsync("RefreshTokens");
-            await dbContext.DropCollectionAsync("AuthUsers");
-
             var controles = await SeedControlesAsync(controleRepository);
             var roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
@@ -36,21 +27,20 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
 
         // ── 1. SEED CONTROLES ─────────────────────────────
         private static async Task<Dictionary<string, Controle>> SeedControlesAsync(
-            IControleRepository controleRepository
-        )
+            IControleRepository controleRepository)
         {
             await controleRepository.DeleteAllAsync();
 
-            var result = new Dictionary<string, Controle>();
+            var result = new Dictionary<string, Controle>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var def in PrivilegeRegistry.All)
+            // Deduplicate by Code — same code may appear under multiple categories
+            var distinctDefs = PrivilegeRegistry.All
+                .GroupBy(d => d.Code, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First());
+
+            foreach (var def in distinctDefs)
             {
-                var controle = new Controle(
-                    def.Category,
-                    def.Code,
-                    def.Description
-                );
-
+                var controle = new Controle(def.Category, def.Code, def.Description);
                 await controleRepository.AddAsync(controle);
                 result[def.Code] = controle;
             }
@@ -63,10 +53,7 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
         private static async Task<Dictionary<string, Role>> SeedRolesAsync(
             IRoleRepository roleRepository)
         {
-            if (await roleRepository.CountAsync() > 0)
-            {
-                await roleRepository.DeleteAllAsync();
-            }
+            await roleRepository.DeleteAllAsync();
 
             var result = new Dictionary<string, Role>(StringComparer.OrdinalIgnoreCase);
             string[] roleNames = [Roles.SystemAdmin, Roles.Accountant, Roles.SalesManager, Roles.StockManager];
@@ -99,8 +86,7 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Dictionary<string, Controle> controles
         )
         {
-            if (await privilegeRepository.CountAsync() > 0)
-                await privilegeRepository.DeleteAllAsync();
+            await privilegeRepository.DeleteAllAsync();
 
             foreach (var rolePair in roles)
             {
@@ -162,6 +148,9 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Articles.CREATE_ARTICLE => true,
             Privileges.Articles.UPDATE_ARTICLE => true,
 
+            // Fournisseurs — view only
+            Privileges.Fournisseurs.VIEW_FOURNISSEURS => true,
+
             // Invoices — create/view only
             Privileges.Invoices.MANAGE_INVOICES => true,
             Privileges.Invoices.VIEW_INVOICES => true,
@@ -199,6 +188,14 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Stock.VIEW_STOCK => true,
             Privileges.Stock.UPDATE_STOCK => true,
             Privileges.Stock.ADD_ENTRY => true,
+
+            Privileges.Fournisseurs.VIEW_FOURNISSEURS=> true,
+            Privileges.Fournisseurs.CREATE_FOURNISSEUR => true,
+            Privileges.Fournisseurs.UPDATE_FOURNISSEUR => true,
+            Privileges.Fournisseurs.DELETE_FOURNISSEUR => true,
+            Privileges.Fournisseurs.RESTORE_FOURNISSEUR => true,
+            Privileges.Fournisseurs.BLOCK_FOURNISSEUR => true,
+            Privileges.Fournisseurs.UNBLOCK_FOURNISSEUR => true,
 
             // Reports — view only
             Privileges.Reports.VIEW_REPORTS => true,
@@ -240,9 +237,11 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             IConfiguration configuration,
             IPasswordHasher<AuthUser> passwordHasher)
         {
+            await userRepository.DeleteAllAsync();
+
             List<Role> roles = await roleRepository.GetAllAsync();
 
-            var adminRole = roles.Find(r => r.Libelle == Roles.SystemAdmin)  ?? throw new InvalidOperationException($"Role '{Roles.SystemAdmin}' not found. Ensure roles are seeded before users.");
+            var adminRole = roles.Find(r => r.Libelle == Roles.SystemAdmin) ?? throw new InvalidOperationException($"Role '{Roles.SystemAdmin}' not found. Ensure roles are seeded before users.");
             var salesRole = roles.Find(r => r.Libelle == Roles.SalesManager) ?? throw new InvalidOperationException($"Role '{Roles.SalesManager}' not found.");
             var stockRole = roles.Find(r => r.Libelle == Roles.StockManager) ?? throw new InvalidOperationException($"Role '{Roles.StockManager}' not found.");
             var accountRole = roles.Find(r => r.Libelle == Roles.Accountant) ?? throw new InvalidOperationException($"Role '{Roles.Accountant}' not found.");

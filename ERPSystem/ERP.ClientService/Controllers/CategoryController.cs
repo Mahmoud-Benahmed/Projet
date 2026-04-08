@@ -1,9 +1,10 @@
-﻿using ERP.ClientService.API.Routes;
+﻿
 using ERP.ClientService.Application.DTOs;
 using ERP.ClientService.Application.Interfaces;
+using ERP.ClientService.Properties;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ERP.ClientService.API.Controllers;
+namespace ERP.ClientService.Controllers;
 
 [ApiController]
 public class CategoryController : ControllerBase
@@ -21,7 +22,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _categoryService.GetAllPagedAsync(pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
 
@@ -38,7 +39,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Categories.GetById)]
@@ -57,7 +58,7 @@ public class CategoryController : ControllerBase
     {
         var result = await _categoryService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
-        return Ok(new { items=result.Items, totalCount= result.TotalCount });
+        return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
     [HttpGet(ApiRoutes.Categories.Stats)]

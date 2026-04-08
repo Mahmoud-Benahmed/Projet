@@ -41,14 +41,14 @@ namespace ERP.AuthService.Domain
                 return;
             Category = string.IsNullOrWhiteSpace(controle.Category) ? Category : controle.Category;
             Libelle = string.IsNullOrWhiteSpace(controle.Libelle) ? Libelle : controle.Libelle;
-            Description= string.IsNullOrWhiteSpace(controle.Description) ? Description: controle.Description;
+            Description = string.IsNullOrWhiteSpace(controle.Description) ? Description : controle.Description;
         }
 
         private bool equals(ControleRequestDto controle)
         {
-            return  controle.Description.Equals(Description, StringComparison.OrdinalIgnoreCase) 
-                &&  controle.Libelle.Equals(Libelle, StringComparison.OrdinalIgnoreCase) 
-                &&  controle.Category.Equals(Category, StringComparison.OrdinalIgnoreCase);
+            return controle.Description.Equals(Description, StringComparison.OrdinalIgnoreCase)
+                && controle.Libelle.Equals(Libelle, StringComparison.OrdinalIgnoreCase)
+                && controle.Category.Equals(Category, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

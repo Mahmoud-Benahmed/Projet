@@ -1,4 +1,5 @@
 ﻿namespace ERP.Gateway.Properties;
+
 public static class Roles
 {
     public const string SystemAdmin = "SYSTEM_ADMIN";

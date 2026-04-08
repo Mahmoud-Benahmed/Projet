@@ -1,3 +1,4 @@
+import { FournisseurService } from './../../../services/fournisseur.service';
 import {
   Component, OnInit, ChangeDetectorRef, ViewEncapsulation,
   DestroyRef, inject, signal, computed,
@@ -16,7 +17,6 @@ import {
   BonRetourResponse, CreateBonRetourRequest, UpdateBonRetourRequest,
   LigneResponseDto, LigneRequestDto, RetourSourceType, BonStatsDto,
   PagedResult,
-  FournisseurResponse,
 } from '../../../services/stock.service';
 
 /** A single record that can be any of the three bon response shapes. */
@@ -32,6 +32,7 @@ import { RouterLink } from "@angular/router";
 import { ClientResponseDto, ClientsService } from '../../../services/clients/clients.service';
 import { ArticleResponseDto, ArticleService } from '../../../services/articles/articles.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { FournisseurResponse } from '../../../services/fournisseur.service';
 
 export type BonType = 'entre' | 'sortie' | 'retour';
 
@@ -151,6 +152,7 @@ export class BonsComponent implements OnInit {
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
+    private fournisseurService: FournisseurService
   ) {
     this.headerForm = this.buildHeaderForm();
     this.ligneForm  = this.buildLigneForm();
@@ -329,7 +331,7 @@ export class BonsComponent implements OnInit {
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
 
   // ── Stats getters ──────────────────────────────────────────────────────────
-  get activeCount():  number { return this.stats?.totalCount  ?? 0; }
+  get activeCount():  number { return this.sortedData.length  ?? 0; }
 
   /** Computed total of pending lignes during create mode. */
   get pendingTotal(): number {
@@ -379,7 +381,7 @@ export class BonsComponent implements OnInit {
   }
 
   loadFournisseurs(): void {
-    this.stock.getFournisseurs(1, 1000).subscribe({
+    this.fournisseurService.getFournisseurs(1, 1000).subscribe({
       next: (res) => {
         this.fournisseurs = res.items.filter(f => !f.isDeleted && !f.isBlocked);
         this.filteredFournisseurs = this.fournisseurs;

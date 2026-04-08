@@ -31,7 +31,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         private IQueryable<BonEntre> ActiveQuery() =>
             _context.BonEntres
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)   // joined via filtered context
                 .AsSplitQuery();               // avoids cartesian explosion on Lignes
 
         // For Fournisseur navigation: if the Fournisseur itself may be soft-deleted
@@ -39,8 +38,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         // Use a manual join instead of navigation include to bypass the filter.
         private IQueryable<BonEntre> ActiveQueryWithFournisseur() =>
             _context.BonEntres
-                .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)   // now loads even soft-deleted fournisseurs
+                .Include(b => b.Lignes)   // now loads even soft-deleted fournisseurs
                 .AsSplitQuery();
 
         // ── single record ─────────────────────────────────────────────────────
@@ -52,7 +50,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             await _context.BonEntres
                 .IgnoreQueryFilters()
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(b => b.Id == id);
 
@@ -95,7 +92,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             var query = _context.BonEntres
                 .IgnoreQueryFilters()
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)
                 .AsSplitQuery()
                 .OrderByDescending(b => b.CreatedAt);
 

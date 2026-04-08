@@ -2,6 +2,7 @@
 using ERP.AuthService.Application.DTOs.AuthUser;
 
 namespace ERP.AuthService.Application.Interfaces.Services;
+
 public interface IAuthUserService
 {
     Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request, Guid id);
@@ -10,7 +11,7 @@ public interface IAuthUserService
     Task RevokeRefreshTokenAsync(string refreshToken);
     Task ChangePasswordAsync(Guid id, ChangePasswordRequestDto request);
     Task ChangePasswordByAdminAsync(Guid userId, AdminChangeProfileRequest request, Guid adminId);
-        
+
     Task ActivateAsync(Guid authUserId, Guid performedById);
     Task DeactivateAsync(Guid authUserId, Guid performedById);
 

@@ -1,7 +1,6 @@
-﻿using ERP.ArticleService.Application.DTOs;
+﻿using DotNetEnv;
+using ERP.ArticleService.Application.DTOs;
 using ERP.ArticleService.Application.Interfaces;
-using ERP.ArticleService.Domain;
-using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 {
@@ -63,7 +62,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                 ("Kit d'outils informatiques",              99.99m, "Outillage"),
             };
 
-            var random= new Random();
+            var random = new Random();
             foreach (var (libelle, prix, categoryName) in seedData)
             {
                 if (!categoryMap.TryGetValue(categoryName, out var categoryId))
@@ -77,14 +76,17 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                 try
                 {
 
-                    var tva = Math.Round((decimal)(random.NextDouble() * 19 + 1), 2);
+                    var tva = Math.Round((decimal)random.NextDouble(), 2);
                     var barCode = GenerateEAN13();
+                    var randomUnit = (UnitEnum)Enum.GetValues(typeof(UnitEnum)).GetValue(random.Next(Enum.GetValues(typeof(UnitEnum)).Length));
+
                     var article = await _articleService.CreateAsync(new CreateArticleRequestDto(
                         Libelle: libelle,
                         Prix: prix,
+                        randomUnit,
                         CategoryId: categoryId,
                         BarCode: barCode,
-                        TVA:  tva
+                        TVA: tva
                     ));
 
                     _logger.LogInformation(

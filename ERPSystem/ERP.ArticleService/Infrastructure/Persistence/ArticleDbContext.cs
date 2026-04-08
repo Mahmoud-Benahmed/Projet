@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ERP.ArticleService.Domain;
+﻿using ERP.ArticleService.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ArticleService.Infrastructure.Persistence
 {
@@ -38,6 +38,10 @@ namespace ERP.ArticleService.Infrastructure.Persistence
 
                 entity.Property(a => a.Prix)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(a => a.Unit)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
 
                 entity.Property(a => a.IsDeleted)
                       .HasDefaultValue(false);

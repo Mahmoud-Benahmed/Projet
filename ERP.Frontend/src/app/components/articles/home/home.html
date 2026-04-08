@@ -262,6 +262,12 @@
           </span>
         </div>
         <div class="detail-item">
+          <span class="detail-label">{{ 'ARTICLES.DETAILS.UNIT' | translate }}</span>
+          <span class="detail-value">
+            {{ 'ARTICLES.UNIT.'+(selectedArticle.unit.toLocaleString().toUpperCase()) | translate}}
+          </span>
+        </div>
+        <div class="detail-item">
           <span class="detail-label">{{ 'ARTICLES.DETAILS.TVA' | translate }}</span>
           <span class="detail-value">{{ selectedArticle.tva }}%</span>
         </div>
@@ -344,6 +350,32 @@
             </span>
           </div>
 
+          <!-- Measurement unit -->
+          <div class="form__field">
+            <div class="form__label">
+              <label>{{ 'ARTICLES.FORM.UNIT' | translate }}</label>
+              <mat-icon>balance</mat-icon>
+            </div>
+            <select
+              class="form__input form__select"
+              formControlName="unit"
+              [class.form__input--error]="articleForm.get('unit')?.invalid && articleForm.get('unit')?.touched"
+            >
+              <option value="" selected disabled>{{'ARTICLES.FORM.SELECT_UNIT' | translate}}</option>
+              <option *ngFor="let unit of units; let i= index; trackBy: trackByIndex" [value]="unit.value">
+                {{ `ARTICLES.UNIT.${unit.label.toUpperCase()}` | translate}}
+              </option>
+            </select>
+            <span class="form__error"
+                  *ngIf="articleForm.get('unit')?.invalid && articleForm.get('unit')?.touched">
+              {{ 'VALIDATION.UNIT_REQUIRED' | translate }}
+            </span>
+          </div>
+
+
+        </div>
+
+        <div class="form__row">
           <!-- TVA -->
           <div class="form__field">
             <div class="form__label">
@@ -365,10 +397,6 @@
               {{ 'VALIDATION.TVA_REQUIRED' | translate }}
             </span>
           </div>
-
-        </div>
-
-        <div class="form__row">
 
           <!-- Bar Code -->
           <div class="form__field">
@@ -406,7 +434,7 @@
               formControlName="categoryId"
               [class.form__input--error]="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched"
             >
-              <option value="">{{ 'ARTICLES.FORM.SELECT_CATEGORY' | translate }}</option>
+              <option value="" disabled selected>{{ 'ARTICLES.FORM.SELECT_CATEGORY' | translate }}</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
             </select>
             <span class="form__error"

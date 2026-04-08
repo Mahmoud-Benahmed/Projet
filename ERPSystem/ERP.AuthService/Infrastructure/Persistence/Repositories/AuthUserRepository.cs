@@ -1,10 +1,8 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
-using Microsoft.IdentityModel.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using static System.Net.WebRequestMethods;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {
@@ -49,7 +47,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
         }
 
-        public async Task<(List<AuthUser>, int)> GetDeletedPagedAsync(int pageNumber, int pageSize,Guid? excludeId = null)
+        public async Task<(List<AuthUser>, int)> GetDeletedPagedAsync(int pageNumber, int pageSize, Guid? excludeId = null)
         {
             return await GetPagedAsync(pageNumber, pageSize, excludeId, includeDeleted: true);
         }
@@ -79,7 +77,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
 
         public async Task<int> CountByStatusAsync(bool status) =>
-            (int)await _collection.CountDocumentsAsync(x=> x.IsActive == status);
+            (int)await _collection.CountDocumentsAsync(x => x.IsActive == status);
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {

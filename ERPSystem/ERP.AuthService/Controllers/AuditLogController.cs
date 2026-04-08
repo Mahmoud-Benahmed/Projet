@@ -1,5 +1,4 @@
 ﻿using ERP.AuthService.Application.DTOs.AuditLog;
-using ERP.AuthService.Domain.Logger;
 using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;

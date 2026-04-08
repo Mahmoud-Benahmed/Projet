@@ -8,15 +8,15 @@ using ERP.AuthService.Domain.Logger;
 
 namespace ERP.AuthService.Application.Services
 {
-    public class ControleService: IControleService
+    public class ControleService : IControleService
     {
         private readonly IAuditLogger _auditLogger;
         private readonly IControleRepository _controleRepository;
 
-        public ControleService( IAuditLogger auditLogger,
+        public ControleService(IAuditLogger auditLogger,
                                 IControleRepository controleRepository)
         {
-            _auditLogger= auditLogger;
+            _auditLogger = auditLogger;
             _controleRepository = controleRepository;
         }
 
@@ -28,10 +28,10 @@ namespace ERP.AuthService.Application.Services
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _controleRepository.GetAllPagedAsync(pageNumber, pageSize);
             var mapped = items.Select(MapToDto).ToList();
-            return new PagedResultDto<ControleResponseDto> (
+            return new PagedResultDto<ControleResponseDto>(
                 mapped,
                 totalCount,
-                pageNumber, 
+                pageNumber,
                 pageSize);
         }
 
@@ -86,7 +86,7 @@ namespace ERP.AuthService.Application.Services
                         metadata: new() { ["created"] = request.Libelle.ToString(), ["createdBy"] = requesterId.ToString() });
 
             return MapToDto(controle);
-            
+
         }
 
         /// <summary>

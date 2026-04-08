@@ -1,6 +1,5 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Domain;
-using MongoDB.Driver;
 
 namespace ERP.AuthService.Application.Interfaces.Repositories
 {
@@ -25,6 +24,6 @@ namespace ERP.AuthService.Application.Interfaces.Repositories
         Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default);
 
         Task DeleteAllAsync();
-        
+
     }
 }

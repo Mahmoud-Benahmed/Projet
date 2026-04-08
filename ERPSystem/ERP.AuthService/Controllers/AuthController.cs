@@ -51,7 +51,7 @@ namespace ERP.AuthService.Controllers
             if (isSelf && !user.IsActive)
                 return Unauthorized();
 
-            bool hasAccess = User.HasClaim("privilege",Privileges.Users.VIEW_USERS);
+            bool hasAccess = User.HasClaim("privilege", Privileges.Users.VIEW_USERS);
 
             if (!isSelf && !hasAccess)
                 throw new UnauthorizedAccessException("You are not authorized to access this resource.");
@@ -71,7 +71,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
 
             if (!TryGetRequesterId(out var requesterId))
@@ -83,7 +83,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("deactivated")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDeactivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDeactivated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
                 return Unauthorized();
@@ -94,7 +94,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("activated")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetActivated([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetActivated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
                 return Unauthorized();
@@ -151,7 +151,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpGet("deleted")]
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDeleted([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDeleted([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (!TryGetRequesterId(out var requesterId))
                 return Unauthorized();
@@ -232,7 +232,7 @@ namespace ERP.AuthService.Controllers
 
         [HttpPut("update/{id:guid}/settings")]
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateSettings([FromRoute] Guid id, 
+        public async Task<IActionResult> UpdateSettings([FromRoute] Guid id,
                                                         [FromBody] UserSettingsRequestDto settings)
         {
             if (!TryGetRequesterId(out var requesterId) || !requesterId.Equals(id))
@@ -260,7 +260,7 @@ namespace ERP.AuthService.Controllers
                     requesterId,
                     request);
 
-                return NoContent();
+            return NoContent();
         }
 
 
@@ -278,7 +278,7 @@ namespace ERP.AuthService.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenRequestDto request)
         {
-            
+
             var result = await _authService.RefreshTokenAsync(request.RefreshToken);
             return Ok(result);
         }

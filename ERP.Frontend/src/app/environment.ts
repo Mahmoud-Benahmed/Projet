@@ -13,6 +13,8 @@ export const environment = {
     privileges:  '/auth/privileges',
     articles:    '/articles',
     clients:     '/clients',
-    stock:      '/stock',
+    stock:       '/stock',
+    fournisseurs:'/fournisseurs',
+    invoices:    '/invoices',
   },
 } as const;

@@ -1,5 +1,4 @@
 ﻿using ERP.ClientService.Application.DTOs;
-using ERP.ClientService.Domain;
 using FluentValidation;
 
 namespace ERP.ClientService.Application.Validators;

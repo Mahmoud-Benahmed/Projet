@@ -4,27 +4,25 @@ using ERP.StockService.Domain.Entre;
 public sealed class BonEntre : PieceStock
 {
     public Guid FournisseurId { get; private set; }
-    public Fournisseur? Fournisseur { get; private set; }
 
     private readonly List<LigneEntre> _lignes = [];
     public IReadOnlyCollection<LigneEntre> Lignes => _lignes.AsReadOnly();
 
     private BonEntre() { }
 
-    public static BonEntre Create(string numero, Fournisseur fournisseur, string? observation = null)
+    public static BonEntre Create(string numero, Guid fournisseurId, string? observation = null)
     {
         if (string.IsNullOrWhiteSpace(numero))
             throw new ArgumentException("Numero is required.");
 
-        if (fournisseur is null)
+        if (fournisseurId == Guid.Empty)
             throw new ArgumentException("FournisseurId is required.");
 
         return new BonEntre
         {
             Id = Guid.NewGuid(),
             Numero = numero.Trim(),
-            FournisseurId = fournisseur.Id,
-            Fournisseur= fournisseur,
+            FournisseurId = fournisseurId,
             Observation = observation?.Trim(),
             CreatedAt = DateTime.UtcNow,
         };
@@ -54,10 +52,9 @@ public sealed class BonEntre : PieceStock
 
         return ligne;
     }
-    public void Update(Fournisseur fournisseur, string? observation = null)
+    public void Update(Guid fournisseurId, string? observation = null)
     {
-        Fournisseur = fournisseur;
-        FournisseurId = fournisseur.Id;
+        FournisseurId = fournisseurId;
         base.Update(observation);
     }
 

@@ -246,15 +246,10 @@ $bp-xl:  1200px;
 
   &:hover { background: $bg-card-hi; transform: translateY(-2px); cursor: pointer; }
 
-  &--gray {
-    border-color: $gray-border;
-    cursor: default;
-    &:hover { background: $bg-card; transform: none; border-color: $gray-border; cursor: default; }
-  }
-
-  &--amber { border-color: $amber-border; &:hover { border-color: $amber; } }
-  &--red   { border-color: $red-border;   &:hover { border-color: $red; } }
-  &--green { border-color: $green-border; &:hover { border-color: $green; } }
+  &--gray   { border-color: $gray-border;   &:hover { background: $gray-bg; }}
+  &--amber  { border-color: $amber-border; &:hover { border-color: $amber; } }
+  &--red    { border-color: $red-border;   &:hover { border-color: $red; } }
+  &--green  { border-color: $green-border; &:hover { border-color: $green; } }
   &--blue  { border-color: $blue-border;  &:hover { border-color: $blue; } }
 
   &--current {
@@ -578,10 +573,27 @@ $bp-xl:  1200px;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
+
   &--active   { background: $green-bg;  color: $green; border: 1px solid $green-border; }
-  &--inactive { background: $orange-bg;    color: $orange;   border: 1px solid $orange-border; }
-  &--blocked  { background: $amber-bg;    color: $amber;  border: 1px solid $amber-border;}
-  &--deleted  { background: $red-bg;    color: $red;  border: 1px solid $red-border;}
+  &--inactive { background: $orange-bg; color: $orange; border: 1px solid $orange-border; }
+  &--blocked  { background: $amber-bg;  color: $amber; border: 1px solid $amber-border; }
+  &--deleted  { background: $red-bg;    color: $red;   border: 1px solid $red-border; }
+
+  // Invoice status badges
+  &--amber,
+  &--red,
+  &--green,
+  &--grey,
+  &--blue {
+    background: rgba($gray, 0.12);
+    border: 1px solid rgba($gray, 0.3);
+  }
+
+  &--amber { color: $amber; border-color: $amber-border; background: $amber-bg; }
+  &--red   { color: $red;   border-color: $red-border;   background: $red-bg;   }
+  &--green { color: $green; border-color: $green-border; background: $green-bg; }
+  &--grey  { color: $gray;  border-color: $gray-border;  background: $gray-bg;  }
+  &--blue  { color: $blue;  border-color: $blue-border;  background: $blue-bg;  }
 }
 
 .role-badge {
@@ -604,6 +616,8 @@ $bp-xl:  1200px;
     cursor: pointer;
   }
 }
+
+
 
 // =======================
 // Chips
@@ -1388,5 +1402,16 @@ $bp-xl:  1200px;
 
       svg { opacity: 1; }
     }
+  }
+}
+
+.text-warning {
+  color: $amber;
+  font-weight: 600;
+  position: relative;
+
+  &::before {
+    content: "⚠️ ";
+    font-size: 12px;
   }
 }

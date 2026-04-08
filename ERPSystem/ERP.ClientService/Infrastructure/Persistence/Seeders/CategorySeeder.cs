@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ERP.ClientService.Domain;
+﻿using ERP.ClientService.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
+
 public class CategorySeeder
 {
     private readonly ClientDbContext _context;

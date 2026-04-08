@@ -294,7 +294,8 @@ CREATE TABLE ArticleCodes (
 
 ### Category Rules
 1. **Name**: Unique, required, max 100 characters
-2. **TVA**: Between 0-100%
+2. **TVA**: Between 0 and 1 (0% – 100)
+
 3. **Deletion**: Categories with articles cannot be deleted
 4. **Soft Delete**: Categories can be restored
 5. **TVA Inheritance**: Categories provide default TVA for articles

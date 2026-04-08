@@ -1,6 +1,6 @@
-﻿using ERP.StockService.Properties;
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Interfaces;
+using ERP.StockService.Properties;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.StockService.API.Controllers;
@@ -58,7 +58,10 @@ public class BonEntreController : ControllerBase
     [HttpPost(ApiRoutes.BonEntres.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonEntreRequestDto dto)
     {
-        var result = await _service.CreateAsync(dto);
+        if(!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.CreateAsync(dto, requesterId);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -70,7 +73,10 @@ public class BonEntreController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonEntreRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        if(!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.UpdateAsync(id, dto, requesterId);
         return Ok(result);
     }
 
@@ -87,5 +93,12 @@ public class BonEntreController : ControllerBase
     {
         var result = await _service.GetStatsAsync();
         return Ok(result);
+    }
+
+    private bool TryGetRequesterId(out Guid requesterId)
+    {
+        requesterId = Guid.Empty;
+        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
     }
 }

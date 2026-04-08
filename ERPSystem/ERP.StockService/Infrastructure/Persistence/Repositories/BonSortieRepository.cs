@@ -1,6 +1,4 @@
 ﻿using ERP.StockService.Application.DTOs;
-using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
@@ -44,7 +42,7 @@ public class BonSortieRepository : IBonSortieRepository
     public async Task<BonSortie?> GetByIdAsync(Guid id) =>
         await _context.BonSorties
             .Include(b => b.Lignes)
-            .FirstOrDefaultAsync(b => b.Id == id );
+            .FirstOrDefaultAsync(b => b.Id == id);
 
     public async Task<BonSortie?> GetByIdDeletedAsync(Guid id) =>
         await _context.BonSorties

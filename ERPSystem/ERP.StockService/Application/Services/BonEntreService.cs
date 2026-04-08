@@ -1,6 +1,7 @@
 ﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
+using ERP.StockService.Domain;
 using ERP.StockService.Infrastructure.Messaging;
 
 namespace ERP.StockService.Application.Services;
@@ -8,36 +9,31 @@ namespace ERP.StockService.Application.Services;
 public class BonEntreService : IBonEntreService
 {
     private readonly IBonEntreRepository _repo;
-    private readonly IFournisseurRepository _fournisseurRepo;
-    private readonly IArticleService _articleService;
+    private readonly IArticleServiceHttpClient _articleService;
     private readonly IBonNumeroRepository _bonNumberRepo;
+    private readonly IJournalStockRepository _journalStockRepository;
 
-    public BonEntreService(IBonEntreRepository repo, IFournisseurRepository fournisseurRepo, 
-                            IArticleService articleService, IBonNumeroRepository bonNumberRepository)
+    public BonEntreService(IBonEntreRepository repo, IArticleServiceHttpClient articleService, 
+        IBonNumeroRepository bonNumberRepository, IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
-        _fournisseurRepo = fournisseurRepo;
         _articleService = articleService;
-        _bonNumberRepo= bonNumberRepository;
+        _bonNumberRepo = bonNumberRepository;
+        _journalStockRepository = journalStockRepository;
     }
 
     // =========================
     // CREATE
     // =========================
-    public async Task<BonEntreResponseDto> CreateAsync(CreateBonEntreRequestDto dto)
+    public async Task<BonEntreResponseDto> CreateAsync(CreateBonEntreRequestDto dto, Guid userId)
     {
-        var fournisseur = await _fournisseurRepo.GetByIdAsync(dto.FournisseurId)
-            ?? throw new FournisseurNotFoundException(dto.FournisseurId);
-
-        if (fournisseur.IsBlocked)
-            throw new FournisseurBlockedException(dto.FournisseurId);
 
         var numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
-        var bon = BonEntre.Create(numero, fournisseur, dto.Observation);
+        var bon = BonEntre.Create(numero, dto.FournisseurId, dto.Observation);
 
         foreach (var l in dto.Lignes ?? [])
         {
-            await _articleService.ExistsByIdAsync(l.ArticleId);
+            await _articleService.GetByIdAsync(l.ArticleId);
             bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
         }
 
@@ -45,32 +41,72 @@ public class BonEntreService : IBonEntreService
 
         await _repo.AddAsync(bon);
         await _repo.SaveChangesAsync();
+
+        foreach (var ligne in bon.Lignes)
+        {
+            var stockBefore = ligne.Quantity; // calculate the quantity by fetching the quantity from LigneEntre, LigneSortie, LigneRetour
+
+            var journal = JournalStock.Create(
+                ligne.ArticleId,
+                ligne.Id,
+                bon.Id,
+                ligne.Quantity,
+                stockBefore,
+                StockMovementType.BonEntre,
+                "StockService",
+                "CreateBonEntre",
+                userId
+            );
+
+            await _journalStockRepository.AddAsync(journal);
+            await _journalStockRepository.SaveChangesAsync();
+        }
+
         return bon.ToResponseDto();
     }
 
     // =========================
     // UPDATE
     // =========================
-    public async Task<BonEntreResponseDto> UpdateAsync(Guid id, UpdateBonEntreRequestDto dto)
+    public async Task<BonEntreResponseDto> UpdateAsync(Guid id, UpdateBonEntreRequestDto dto, Guid userId)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
-        var fournisseur = await _fournisseurRepo.GetByIdAsync(dto.FournisseurId)
-            ?? throw new FournisseurNotFoundException(dto.FournisseurId);
 
-        bon.Update(fournisseur, dto.Observation);
+        bon.Update(dto.FournisseurId, dto.Observation);
 
         if (dto.Lignes is { Count: > 0 })
         {
             bon.ClearLignes();
             foreach (var l in dto.Lignes)
             {
-                await _articleService.ExistsByIdAsync(l.ArticleId);
+                await _articleService.GetByIdAsync(l.ArticleId);
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);  // Id = Guid.Empty → Added
             }
             bon.ValidateLignes();
         }
 
         await _repo.SaveChangesAsync();
+
+        foreach (var ligne in bon.Lignes)
+        {
+            var stockBefore = ligne.Quantity;
+
+            var journal = JournalStock.Create(
+                ligne.ArticleId,
+                ligne.Id,
+                bon.Id,
+                ligne.Quantity,
+                stockBefore,
+                StockMovementType.BonEntre,
+                "StockService",
+                "CreateBonEntre",
+                userId
+            );
+
+            await _journalStockRepository.AddAsync(journal);
+            await _journalStockRepository.SaveChangesAsync();
+        }
+
         return bon.ToResponseDto();
     }
 

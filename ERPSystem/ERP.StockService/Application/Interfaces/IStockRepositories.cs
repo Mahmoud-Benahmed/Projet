@@ -2,20 +2,6 @@
 using ERP.StockService.Application.DTOs;
 using ERP.StockService.Domain;
 
-public interface IFournisseurRepository
-{
-    Task AddAsync(Fournisseur f);
-    Task SaveChangesAsync();
-    Task<Fournisseur?> GetByIdAsync(Guid id);
-    Task<Fournisseur?> GetByIdDeletedAsync(Guid id);
-    Task<(List<Fournisseur> Items, int TotalCount)> GetPagedByNameAsync(
-    string nameFilter, int page, int size);
-    Task<(List<Fournisseur> Items, int TotalCount)> GetAllAsync(int page, int size);
-    Task<(List<Fournisseur> Items, int TotalCount)> GetPagedDeletedAsync(int page, int size);
-    Task<FournisseurStatsDto> GetStatsAsync();
-}
-
-
 public interface IBonNumeroRepository
 {
     /// <summary>
@@ -68,4 +54,11 @@ public interface IBonRetourRepository
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedBySourceAsync(Guid sourceId, int page, int size);
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
+}
+
+public interface IJournalStockRepository
+{
+    Task AddAsync(JournalStock entry);
+    Task SaveChangesAsync();
+    Task<List<JournalStock>> GetByArticleAsync(Guid articleId);
 }

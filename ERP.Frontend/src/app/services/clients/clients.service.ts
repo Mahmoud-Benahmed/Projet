@@ -5,20 +5,26 @@ import { environment } from '../../environment';
 import { ClientCategoryResponseDto } from './categories.service';
 
 // ── DTOs ─────────────────────────────────────────────
-
 export interface AssignedCategoryDto {
   id: string;
   name: string;
   code: string;
   assignedAt: string;
+  delaiRetour: number;
+  duePaymentPeriod: number;
+  discountRate: number | null;
+  creditLimitMultiplier: number | null;
+  useBulkPricing: boolean;
+  isActive: boolean;
+  isDeleted: boolean;
 }
-
 export interface ClientResponseDto {
   id: string;
   name: string;
   email: string;
   address: string;
   duePaymentPeriod: number;
+  canUseBulkPricing: boolean;
   phone?: string;
   taxNumber?: string;
   creditLimit?: number;
