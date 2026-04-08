@@ -59,7 +59,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountAsync()
         {
-            return (int) await _collection.CountDocumentsAsync(FilterDefinition<Controle>.Empty);
+            return (int)await _collection.CountDocumentsAsync(FilterDefinition<Controle>.Empty);
         }
 
 
@@ -84,7 +84,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
                                     ? Builders<Controle>.Filter.And(filters)
                                     : Builders<Controle>.Filter.Empty;
 
-            sort ??= Builders<Controle>.Sort.Ascending(c=> c.Libelle);
+            sort ??= Builders<Controle>.Sort.Ascending(c => c.Libelle);
 
             var findOptions = new FindOptions { Collation = collation };
 
