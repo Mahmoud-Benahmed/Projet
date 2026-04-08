@@ -1,5 +1,4 @@
 ﻿using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 
 public sealed class BonRetour : PieceStock
 {
@@ -39,7 +38,7 @@ public sealed class BonRetour : PieceStock
     }
 
     // ---------------- UPDATE BON ----------------
-    public void Update(Guid sourceId, string sourceType, string motif, string? observation )
+    public void Update(Guid sourceId, string sourceType, string motif, string? observation)
     {
 
         if (string.IsNullOrWhiteSpace(motif))

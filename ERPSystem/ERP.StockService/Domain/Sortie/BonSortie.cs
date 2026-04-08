@@ -1,6 +1,5 @@
 ﻿
 using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 
 public sealed class BonSortie : PieceStock
 {
@@ -12,7 +11,7 @@ public sealed class BonSortie : PieceStock
     public static BonSortie Create(string numero, Guid clientId, string? observation = null) =>
         new() { Id = Guid.NewGuid(), Numero = numero.Trim(), ClientId = clientId, Observation = observation?.Trim(), CreatedAt = DateTime.UtcNow };
 
-    public void Update(Guid clientId, string? observation= null)
+    public void Update(Guid clientId, string? observation = null)
     {
         ClientId = clientId;
         base.Update(observation);
