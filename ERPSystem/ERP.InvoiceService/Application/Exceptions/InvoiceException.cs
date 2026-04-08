@@ -1,5 +1,3 @@
-using System;
-
 namespace InvoiceService.Application.Exceptions
 {
     public class InvoiceNotFoundException : Exception
