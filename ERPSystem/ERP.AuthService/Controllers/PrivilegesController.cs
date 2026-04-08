@@ -1,6 +1,5 @@
 ﻿using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Properties;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.AuthService.Api.Controllers
