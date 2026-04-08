@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.ArticleService.Migrations
 {
     [DbContext(typeof(ArticleDbContext))]
-    [Migration("20260326011959_InitialCreate")]
+    [Migration("20260408084352_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -64,6 +64,11 @@ namespace ERP.ArticleService.Migrations
                     b.Property<decimal>("TVA")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
