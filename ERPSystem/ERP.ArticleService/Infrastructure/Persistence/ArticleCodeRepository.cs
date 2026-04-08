@@ -1,5 +1,4 @@
 ﻿using ERP.ArticleService.Application.Interfaces;
-using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ArticleService.Infrastructure.Persistence
