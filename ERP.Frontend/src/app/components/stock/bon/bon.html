@@ -60,18 +60,16 @@
     <!-- ===================== STAT CARDS ===================== -->
     <div class="stats-grid">
 
-      <div class="stat-card stat-card--green"
-           (click)="onActiveCardClick()"
+      <div class="stat-card stat-card--gray"
            [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">{{ 'STOCK.BONS.STATS.ACTIVE' | translate }}</p>
+            <p class="stat-card__label">{{ 'STOCK.BONS.STATS.TOTAL' | translate }}</p>
             <p class="stat-card__value">{{ activeCount }}</p>
           </div>
-          <div class="stat-card__icon stat-card__icon--green">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="9 11 12 14 22 4"/>
+          <div class="stat-card__icon stat-card__icon--gray">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M6 22q-1.25 0-2.125-.875T3 19v-2q0-.425.288-.712T4 16h2V2.6q0-.175.15-.238t.275.063l.725.725q.15.15.35.15t.35-.15l.8-.8Q8.8 2.2 9 2.2t.35.15l.8.8q.15.15.35.15t.35-.15l.8-.8q.15-.15.35-.15t.35.15l.8.8q.15.15.35.15t.35-.15l.8-.8q.15-.15.35-.15t.35.15l.8.8q.15.15.35.15t.35-.15l.8-.8q.15-.15.35-.15t.35.15l.8.8q.15.15.35.15t.35-.15l.725-.725q.125-.125.275-.063T21 2.6V19q0 1.25-.875 2.125T18 22zm12-2q.425 0 .713-.288T19 19V5H8v11h8q.425 0 .713.288T17 17v2q0 .425.288.713T18 20M10 7h4q.425 0 .713.288T15 8t-.288.713T14 9h-4q-.425 0-.712-.288T9 8t.288-.712T10 7m0 3h4q.425 0 .713.288T15 11t-.288.713T14 12h-4q-.425 0-.712-.288T9 11t.288-.712T10 10m7-1q-.425 0-.712-.288T16 8t.288-.712T17 7t.713.288T18 8t-.288.713T17 9m0 3q-.425 0-.712-.288T16 11t.288-.712T17 10t.713.288T18 11t-.288.713T17 12"/>
             </svg>
           </div>
         </div>
@@ -110,7 +108,7 @@
       <button class="btn-add"
               *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && isList()"
               (click)="openCreate()">
-        + {{ 'STOCK.BONS.NEW_BON' | translate }}
+        {{ 'STOCK.BONS.NEW_BON' | translate }}
       </button>
     </div>
 
@@ -324,7 +322,7 @@
         </div>
         <div class="detail-item" *ngIf="activeBonType === 'entre'">
           <span class="detail-label">{{ 'STOCK.BONS.DETAILS.FOURNISSEUR' | translate }}</span>
-          <span class="role-badge role-badge--clickable" [routerLink]="['/stock/fournisseurs', asEntre(selectedBon).fournisseurId]">{{ asEntre(selectedBon).fournisseurName }}</span>
+          <span class="role-badge role-badge--clickable" [routerLink]="['/stock/fournisseurs', asEntre(selectedBon).fournisseurId]">{{ asEntre(selectedBon).fournisseurId }}</span>
         </div>
         <div class="detail-item" *ngIf="activeBonType === 'sortie'">
           <span class="detail-label">{{ 'STOCK.BONS.DETAILS.CLIENT' | translate }}</span>
@@ -727,7 +725,7 @@
             <input class="form__input" formControlName="remarque" [placeholder]="'STOCK.BONS.FORM.REMARQUE_PLACEHOLDER' | translate" />
           </div>
         </div>
-        
+
         <div class="inline-ligne-form__actions">
           <button type="button" class="btn-secondary" (click)="closeInlineLigne()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="button" class="btn-add"
