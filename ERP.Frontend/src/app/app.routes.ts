@@ -21,6 +21,8 @@ import { ClientCategoriesComponent } from './components/clients/categories/categ
 import { FournisseurComponent } from './components/stock/fournisseur/fournisseur';
 import { BonsComponent } from './components/stock/bon/bon';
 import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
+import { InvoicesComponent } from './components/invoices/invoices';
+import { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
