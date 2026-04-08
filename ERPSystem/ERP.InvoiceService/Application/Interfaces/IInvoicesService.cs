@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Domain;
 
 namespace InvoiceService.Application.Interfaces
 {
 
-    public interface IInvoiceService
+    public interface IInvoicesService
     {
 
         Task<InvoiceDto> GetByIdAsync(Guid id);
