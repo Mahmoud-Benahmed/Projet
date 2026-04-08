@@ -1,9 +1,9 @@
-﻿using ERP.AuthService.Domain;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 
 namespace ERP.AuthService.Domain;
+
 public class AuthUser
 {
     [BsonId]
@@ -39,7 +39,7 @@ public class AuthUser
 
     private AuthUser() { }
 
-    public AuthUser(string login, string email, string fullName, Guid roleId, UserSettings? settings= null)
+    public AuthUser(string login, string email, string fullName, Guid roleId, UserSettings? settings = null)
     {
         if (string.IsNullOrWhiteSpace(fullName))
             throw new ArgumentNullException("FullName is required");
@@ -93,14 +93,14 @@ public class AuthUser
     }
     public void Activate()
     {
-        if(IsActive) return;
+        if (IsActive) return;
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Deactivate()
     {
-        if(!IsActive) return;
+        if (!IsActive) return;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
