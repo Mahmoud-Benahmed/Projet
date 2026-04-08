@@ -1,6 +1,4 @@
-﻿using ERP.AuthService.Domain;
-
-namespace ERP.AuthService.Application.DTOs.AuthUser
+﻿namespace ERP.AuthService.Application.DTOs.AuthUser
 {
     public record AuthUserGetResponseDto
     (

@@ -18,4 +18,4 @@ namespace ERP.AuthService.Application.DTOs
         string FullName
     );
 }
-    
+
