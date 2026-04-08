@@ -1,5 +1,4 @@
 ﻿using ERP.AuthService.Domain;
-using MongoDB.Driver;
 
 namespace ERP.AuthService.Application.Interfaces.Repositories
 {
