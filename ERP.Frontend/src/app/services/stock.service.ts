@@ -284,4 +284,11 @@ export class StockService {
   getBonRetourStats(): Observable<BonStatsDto> {
     return this.http.get<BonStatsDto>(`${this.base}/bon-retours/stats`);
   }
+
+  // Quantity
+  getArticleCurrentStock(articleId: string): Observable<{ articleId: string; currentStock: number }> {
+    return this.http.get<{ articleId: string; currentStock: number }>(
+      `${this.base}/quantity/${articleId}`
+    );
+  }
 }

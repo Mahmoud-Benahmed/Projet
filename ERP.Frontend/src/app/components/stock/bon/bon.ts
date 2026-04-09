@@ -91,6 +91,7 @@ export class BonsComponent implements OnInit {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   stats: BonStatsDto | null = null;
+  articleMaxQty = new Map<string, number>();
 
   // ── View mode ──────────────────────────────────────────────────────────────
   viewMode = signal<ViewMode>('list');
@@ -378,6 +379,34 @@ export class BonsComponent implements OnInit {
     if (article) {
       this.ligneForm.patchValue({ price: article.prix });
     }
+
+    // Only enforce max for sortie
+    if (this.activeBonType === 'sortie') {
+      this.stock.getArticleCurrentStock(articleId).subscribe({
+        next: ({ currentStock }) => {
+          this.articleMaxQty.set(articleId, currentStock);
+          this.updateQuantityValidator(currentStock);
+        },
+        error: () => this.updateQuantityValidator(null)
+      });
+    }
+
+    // For retour: max = qty from source bon ligne
+    if (this.activeBonType === 'retour') {
+      const sourceLigne = this.pendingLignes.find(l => l.articleId === articleId)
+                      ?? this.editLignes.find(l => l.articleId === articleId);
+      const max = sourceLigne?.quantity ?? null;
+      this.articleMaxQty.set(articleId, max ?? Infinity);
+      this.updateQuantityValidator(max);
+    }
+  }
+
+  private updateQuantityValidator(max: number | null): void {
+    const ctrl = this.ligneForm.get('quantity')!;
+    const validators = [Validators.required, Validators.min(0.001)];
+    if (max !== null) validators.push(Validators.max(max));
+    ctrl.setValidators(validators);
+    ctrl.updateValueAndValidity();
   }
 
   loadFournisseurs(): void {
@@ -485,6 +514,8 @@ export class BonsComponent implements OnInit {
   // ── Navigation ─────────────────────────────────────────────────────────────
   openCreate(): void {
     if (this.isCreate()) return;
+    this.articleMaxQty.clear();
+
     this.previousMode = this.viewMode();
     this.headerForm.reset({ numero: '', observation: '', sourceType: RetourSourceType.BonEntre });
     this.pendingLignes = [];
@@ -500,6 +531,7 @@ export class BonsComponent implements OnInit {
 
   openView(bon: BonRecord): void {
     if (this.isView()) return;
+    this.articleMaxQty.clear();
     this.previousMode = this.viewMode();
 
     // ← shallow clone sufficient for view-only, prevents accidental mutation
@@ -509,6 +541,7 @@ export class BonsComponent implements OnInit {
 
   openEdit(bon: BonRecord): void {
     if (this.isEdit()) return;
+    this.articleMaxQty.clear();
     this.previousMode = this.viewMode();
 
     // ← always source from dataSource.data to get the pristine server copy,
