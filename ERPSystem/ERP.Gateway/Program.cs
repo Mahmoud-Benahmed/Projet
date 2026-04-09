@@ -1,3 +1,4 @@
+using ERP.Gateway.AuthServiceClient;
 using ERP.Gateway.Properties;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +10,31 @@ using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+string GetAuthServiceAddress()
+{
+    // Read from ReverseProxy configuration
+    var authCluster = config.GetSection("ReverseProxy:Clusters:authCluster");
+    var destination = authCluster.GetSection("Destinations:authDestination");
+    var address = destination["Address"];
+
+    if (string.IsNullOrEmpty(address))
+    {
+        throw new InvalidOperationException("AuthService address not found in ReverseProxy configuration");
+    }
+
+    return address.TrimEnd('/'); // Remove trailing slash if present
+}
+
+var authServiceUrl = GetAuthServiceAddress();
+
+Console.WriteLine($"[Gateway] Using AuthService at: {authServiceUrl}");
+builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(authServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 
 //////////////////////////////////////////////////
 // JWT Authentication
@@ -48,11 +74,36 @@ builder.Services.AddAuthentication(options =>
             Console.WriteLine($"[Gateway] JWT validation failed: {context.Exception.Message}");
             return Task.CompletedTask;
         },
-        OnTokenValidated = context =>
+        OnTokenValidated = async context =>
         {
-            var sub = context.Principal?.FindFirst("sub")?.Value;
-            Console.WriteLine($"[Gateway] Token valid for sub={sub}");
-            return Task.CompletedTask;
+            var tokenString = context.Request.Headers["Authorization"].ToString()?.Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(tokenString))
+            {
+                context.Fail("No token provided");
+                return;
+            }
+
+            // Call AuthService to validate token and check user existence
+            var authServiceClient = context.HttpContext.RequestServices.GetRequiredService<IAuthServiceClient>();
+            var validationResult = await authServiceClient.ValidateTokenAsync(tokenString);
+            if (!validationResult.IsValid)
+            {
+                Console.WriteLine($"[Gateway] User validation failed: {validationResult.Reason}");
+                context.Fail(validationResult.Reason ?? "User validation failed");
+                return;
+            }
+
+            // Optionally: Add additional claims from the validation result
+            var identity = context.Principal?.Identity as ClaimsIdentity;
+            if (identity != null && validationResult.User != null)
+            {
+                identity.AddClaim(new Claim("user_validated", "true"));
+                identity.AddClaim(new Claim("user_email", validationResult.User.Email ?? ""));
+                identity.AddClaim(new Claim("user_fullname", validationResult.User.FullName ?? ""));
+            }
+
+            Console.WriteLine($"[Gateway] User {validationResult.User?.UserId} successfully validated");
         },
         OnChallenge = async context =>
         {
