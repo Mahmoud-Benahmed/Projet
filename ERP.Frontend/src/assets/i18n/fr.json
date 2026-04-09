@@ -139,7 +139,9 @@
     "DUPLICATE_CATEGORY_NAME": "Une catégorie avec ce nom existe déjà",
     "DUPLICATE_CLIENT_EMAIL": "Un client avec cet email existe déjà",
     "DUPLICATE_CLIENT_NAME": "Un client avec ce nom existe déjà",
-    "DUPLICATE_CATEGORY_CODE": "Une catégorie avec ce code existe déjà"
+    "DUPLICATE_CATEGORY_CODE": "Une catégorie avec ce code existe déjà",
+    "ACCESS_DENIED_TITLE": "Accès refusé",
+    "ACCESS_DENIED_MESSAGE": "Vous n'avez pas la permission d'accéder à cette ressource."
   },
   "SUCCESS": {
     "OPERATION_COMPLETED": "Opération terminée avec succès",
@@ -1062,5 +1064,13 @@
   "TOGGLE_THEME": {
     "LIGHT": "Changer le thème en clair",
     "DARK": "Changer le thème en sombre"
+  },
+  "SESSION": {
+    "EXPIRED_TITLE": "Session expirée",
+    "EXPIRED_MESSAGE": "Votre session a expiré. Veuillez vous reconnecter pour continuer."
+  },
+  "ACCOUNT": {
+    "INVALID_TITLE": "Problème de compte",
+    "INVALID_MESSAGE": "Votre compte n'est plus actif ou a été supprimé. Veuillez contacter le support."
   }
 }

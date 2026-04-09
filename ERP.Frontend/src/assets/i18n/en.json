@@ -139,7 +139,10 @@
     "DUPLICATE_CATEGORY_NAME": "A category with this name already exists",
     "DUPLICATE_CLIENT_EMAIL": "A client with this email already exists",
     "DUPLICATE_CLIENT_NAME": "A client with this name already exists",
-    "DUPLICATE_CATEGORY_CODE": "A category with this code already exists"
+    "DUPLICATE_CATEGORY_CODE": "A category with this code already exists",
+    "ACCESS_DENIED_TITLE": "Access Denied",
+    "ACCESS_DENIED_MESSAGE": "You don't have permission to access this resource."
+  
 
   },
   "SUCCESS": {
@@ -1073,5 +1076,13 @@
   "TOGGLE_THEME": {
     "LIGHT": "Switch to light theme",
     "DARK": "Switch to dark theme"
+  },
+  "SESSION": {
+    "EXPIRED_TITLE": "Session Expired",
+    "EXPIRED_MESSAGE": "Your session has expired. Please login again to continue."
+  },
+  "ACCOUNT": {
+    "INVALID_TITLE": "Account Issue",
+    "INVALID_MESSAGE": "Your account is no longer active or has been deleted. Please contact support."
   }
 }

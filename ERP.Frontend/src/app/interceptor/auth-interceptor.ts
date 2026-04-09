@@ -8,6 +8,7 @@ import { ModalComponent } from "../components/modal/modal";
 import { TranslateService } from "@ngx-translate/core";
 
 let serverDownDialogOpen = false;
+let authErrorDialogOpen = false; // Add this to prevent multiple dialogs
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const auth      = inject(AuthService);
@@ -33,9 +34,13 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       dialog.open(ModalComponent, {
         width: '400px',
         data: { title, message, confirmText: ok, showCancel: false, icon, iconColor }
-      }).afterClosed().subscribe(() => onClose());
+      }).afterClosed().subscribe(() => {
+        onClose();
+        authErrorDialogOpen = false; // Reset dialog flag
+      });
     });
   };
+
   const isPublicCall = req.url.includes('/auth/refresh')
                     || req.url.includes('/auth/revoke')
                     || req.url.includes('/auth/login');
@@ -47,8 +52,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
-  // ← keep early return only for login/revoke, NOT refresh
-  // refresh needs error handling too
+  // Skip interceptor for login and revoke
   if (req.url.includes('/auth/login') || req.url.includes('/auth/revoke')) {
     return next(authReq);
   }
@@ -56,9 +60,9 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // ── Server unreachable — don't logout if this is a refresh attempt ──
+      // ── Server unreachable ─────────────────────────────────────────────
       if (error.status === 0) {
-        if (!isRefreshCall && !serverDownDialogOpen) {   // ← guard added
+        if (!isRefreshCall && !serverDownDialogOpen) {
           serverDownDialogOpen = true;
           openDialog(
             'DIALOG.SERVER_UNREACHABLE', 'ERRORS.SERVER_UNREACHABLE',
@@ -74,28 +78,119 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
       // ── Unauthorized ───────────────────────────────────────────────────
       if (error.status === 401) {
         const code = error.error?.code;
+        const message = error.error?.message;
 
-        if (code === 'AUTH_019') { /* ... unchanged */ }
-        if (code === 'AUTH_002') return throwError(() => error);
-        if (code === 'AUTH_008') { auth.logout(); return throwError(() => error); }
+        // Handle specific error codes from Gateway
+        switch (code) {
+          case 'AUTH_006': // Authentication required / Invalid token
+            console.log('[AuthInterceptor] Invalid or expired token');
+            
+            // Don't show modal for refresh token calls to avoid loops
+            if (!isRefreshCall && !authErrorDialogOpen) {
+              authErrorDialogOpen = true;
+              openDialog(
+                'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
+                'warning', 'warn',
+                () => {
+                  auth.logout();
+                  router.navigate(['/login']);
+                },
+                'Session Expired', 'Your session has expired. Please login again.'
+              );
+            } else if (!isRefreshCall) {
+              // If dialog already open, just logout
+              auth.logout();
+              router.navigate(['/login']);
+            }
+            return throwError(() => error);
 
-        // ← guard: don't attempt refresh if this IS the refresh call
-        if (!isRefreshCall) {
-          const refreshToken = auth.getRefreshToken();
-          if (!refreshToken) { auth.logout(); return throwError(() => error); }
+          case 'AUTH_007': // Forbidden - no permission
+            if (!authErrorDialogOpen) {
+              authErrorDialogOpen = true;
+              openDialog(
+                'ERRORS.ACCESS_DENIED_TITLE', 'ERRORS.ACCESS_DENIED_MESSAGE',
+                'lock', 'warn',
+                () => {
+                  router.navigate(['/home']);
+                },
+                'Access Denied', 'You do not have permission to access this resource.'
+              );
+            }
+            return throwError(() => error);
 
-          return auth.refresh({ refreshToken }).pipe(
-            switchMap(response => next(req.clone({
-              setHeaders: { Authorization: `Bearer ${response.accessToken}` }
-            }))),
-            catchError(refreshError => {
-              auth.endSession();
-              return throwError(() => refreshError);
-            })
+          case 'AUTH_002': // Invalid credentials (keep your existing logic)
+            return throwError(() => error);
+
+          case 'AUTH_008': // User not found or deactivated
+            if (!authErrorDialogOpen) {
+              authErrorDialogOpen = true;
+              openDialog(
+                'ACCOUNT.INVALID_TITLE', 'ACCOUNT.INVALID_MESSAGE',
+                'error', 'warn',
+                () => {
+                  auth.logout();
+                  router.navigate(['/login']);
+                },
+                'Account Issue', 'Your account is no longer active or has been deleted.'
+              );
+            }
+            return throwError(() => error);
+
+          default:
+            // Handle other 401 errors - try to refresh token
+            if (!isRefreshCall) {
+              const refreshToken = auth.getRefreshToken();
+              if (!refreshToken) { 
+                auth.logout(); 
+                return throwError(() => error); 
+              }
+
+              return auth.refresh({ refreshToken }).pipe(
+                switchMap(response => {
+                  // Retry the original request with new token
+                  return next(req.clone({
+                    setHeaders: { Authorization: `Bearer ${response.accessToken}` }
+                  }));
+                }),
+                catchError(refreshError => {
+                  // Refresh failed - session is truly expired
+                  if (!authErrorDialogOpen) {
+                    authErrorDialogOpen = true;
+                    openDialog(
+                      'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
+                      'warning', 'warn',
+                      () => {
+                        auth.endSession();
+                        router.navigate(['/login']);
+                      },
+                      'Session Expired', 'Your session has expired. Please login again.'
+                    );
+                  }
+                  return throwError(() => refreshError);
+                })
+              );
+            }
+
+            // If this was a refresh call that failed, logout
+            auth.logout();
+            router.navigate(['/login']);
+            return throwError(() => error);
+        }
+      }
+
+      // ── Forbidden (non-401) ─────────────────────────────────────────────
+      if (error.status === 403) {
+        if (!authErrorDialogOpen) {
+          authErrorDialogOpen = true;
+          openDialog(
+            'ERRORS.ACCESS_DENIED_TITLE', 'ERRORS.ACCESS_DENIED_MESSAGE',
+            'lock', 'warn',
+            () => {
+              router.navigate(['/home']);
+            },
+            'Access Denied', 'You do not have permission to access this resource.'
           );
         }
-
-        auth.logout();
         return throwError(() => error);
       }
 
