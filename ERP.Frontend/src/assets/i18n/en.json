@@ -29,6 +29,7 @@
     "RESTORE": "Restore",
     "ACTIVATE": "Activate",
     "ACTIVE": "Active",
+    "INACTIVE":"Inactive",
     "DEACTIVATE": "Deactivate",
     "BLOCK": "Block",
     "UNBLOCK": "Unblock",

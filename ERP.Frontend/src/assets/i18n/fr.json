@@ -30,6 +30,7 @@
     "ACTIVATE": "Activer",
     "DEACTIVATE": "Désactiver",
     "ACTIVE": "Actif",
+    "INACTIVE":"Inactif",
     "BLOCK": "Bloquer",
     "UNBLOCK": "Débloquer",
     "BLOCKED": "Bloqué",
