@@ -3,6 +3,9 @@ using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
 using ERP.StockService.Infrastructure.Messaging;
+using ERP.StockService.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
+using static ERP.StockService.Properties.ApiRoutes;
 
 namespace ERP.StockService.Application.Services;
 
@@ -39,27 +42,43 @@ public class BonEntreService : IBonEntreService
 
         bon.ValidateLignes();
 
-        await _repo.AddAsync(bon);
-        await _repo.SaveChangesAsync();
+        await using var transaction = await _repo.BeginTransactionAsync();
 
-        foreach (var ligne in bon.Lignes)
+        try
         {
-            var stockBefore = ligne.Quantity; // calculate the quantity by fetching the quantity from LigneEntre, LigneSortie, LigneRetour
+            // 1. Save BonEntre + lignes first
+            await _repo.AddAsync(bon);
+            await _repo.SaveChangesAsync();
 
-            var journal = JournalStock.Create(
-                ligne.ArticleId,
-                ligne.Id,
-                bon.Id,
-                ligne.Quantity,
-                stockBefore,
-                StockMovementType.BonEntre,
-                "StockService",
-                "CreateBonEntre",
-                userId
-            );
+            // 2. Create journal entries — all in one loop, NO SaveChanges inside
+            foreach (var ligne in bon.Lignes)
+            {
+                decimal stockBefore = await _journalStockRepository
+                                            .GetCurrentStockAsync(ligne.ArticleId);
 
-            await _journalStockRepository.AddAsync(journal);
+                var journal = JournalStock.Create(
+                    articleId: ligne.ArticleId,
+                    ligneId: ligne.Id,
+                    pieceId: bon.Id,
+                    quantity: ligne.Quantity,   // renamed from quantity
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonEntre,
+                    sourceService: "StockService",
+                    sourceOperation: "CreateBonEntre",
+                    performedBy: userId
+                );
+
+                await _journalStockRepository.AddAsync(journal);
+            }
+
+            // 3. ONE SaveChanges for all journals
             await _journalStockRepository.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
 
         return bon.ToResponseDto();
@@ -74,37 +93,94 @@ public class BonEntreService : IBonEntreService
 
         bon.Update(dto.FournisseurId, dto.Observation);
 
-        if (dto.Lignes is { Count: > 0 })
+        if (dto.Lignes is not { Count: > 0 })
         {
-            bon.ClearLignes();
-            foreach (var l in dto.Lignes)
-            {
-                await _articleService.GetByIdAsync(l.ArticleId);
-                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);  // Id = Guid.Empty → Added
-            }
-            bon.ValidateLignes();
+            await _repo.SaveChangesAsync();
+            return bon.ToResponseDto();
         }
 
-        await _repo.SaveChangesAsync();
+        // Capture old quantities BEFORE clearing
+        var oldQtyMap = bon.Lignes
+            .ToDictionary(l => l.ArticleId, l => l.Quantity);
 
-        foreach (var ligne in bon.Lignes)
+        bon.ClearLignes();
+
+        foreach (var l in dto.Lignes)
         {
-            var stockBefore = ligne.Quantity;
+            await _articleService.GetByIdAsync(l.ArticleId);
+            bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+        }
 
-            var journal = JournalStock.Create(
-                ligne.ArticleId,
-                ligne.Id,
-                bon.Id,
-                ligne.Quantity,
-                stockBefore,
-                StockMovementType.BonEntre,
-                "StockService",
-                "CreateBonEntre",
-                userId
-            );
+        bon.ValidateLignes();
 
-            await _journalStockRepository.AddAsync(journal);
+        await using var transaction = await _repo.BeginTransactionAsync();
+
+        try
+        {
+            await _repo.SaveChangesAsync(); // persist new lignes, get their Ids
+
+            var newQtyMap = bon.Lignes
+                .ToDictionary(l => l.ArticleId, l => l.Quantity);
+
+            // 1. Handle new or modified articles
+            foreach (var ligne in bon.Lignes)
+            {
+                oldQtyMap.TryGetValue(ligne.ArticleId, out decimal oldQty);
+                decimal delta = ligne.Quantity - oldQty;
+
+                if (delta == 0) continue; // no stock movement needed
+
+                decimal stockBefore = await _journalStockRepository
+                                            .GetCurrentStockAsync(ligne.ArticleId);
+                decimal stockAfter = stockBefore + delta;
+
+                var journal = JournalStock.Create(
+                    articleId: ligne.ArticleId,
+                    ligneId: ligne.Id,
+                    pieceId: bon.Id,
+                    quantity: delta,           // delta, not full qty
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonEntre,
+                    sourceService: "StockService",
+                    sourceOperation: "UpdateBonEntre",
+                    performedBy: userId
+                );
+
+                await _journalStockRepository.AddAsync(journal);
+            }
+
+            // 2. Handle removed articles (were in old, not in new) → reversal
+            foreach (var (articleId, oldQty) in oldQtyMap)
+            {
+                if (newQtyMap.ContainsKey(articleId)) continue;
+
+                decimal stockBefore = await _journalStockRepository
+                                            .GetCurrentStockAsync(articleId);
+                decimal delta = -oldQty; // negative = reversal
+                decimal stockAfter = stockBefore + delta;
+
+                var reversal = JournalStock.Create(
+                    articleId: articleId,
+                    ligneId: Guid.Empty,  // original ligne was deleted
+                    pieceId: bon.Id,
+                    quantity: delta,
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonEntre,
+                    sourceService: "StockService",
+                    sourceOperation: "UpdateBonEntre_Reversal",
+                    performedBy: userId
+                );
+
+                await _journalStockRepository.AddAsync(reversal);
+            }
+
             await _journalStockRepository.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
 
         return bon.ToResponseDto();

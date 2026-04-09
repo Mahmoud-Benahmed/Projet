@@ -1,6 +1,7 @@
 ﻿// IFournisseurRepository
 using ERP.StockService.Application.DTOs;
 using ERP.StockService.Domain;
+using Microsoft.EntityFrameworkCore.Storage;
 
 public interface IBonNumeroRepository
 {
@@ -28,6 +29,8 @@ public interface IBonEntreRepository
     Task<(List<BonEntre> Items, int TotalCount)> GetByFournisseurAsync(Guid fournisseurId, int page, int size);
     Task<(List<BonEntre> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
+
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }
 
 public interface IBonSortieRepository
@@ -61,4 +64,5 @@ public interface IJournalStockRepository
     Task AddAsync(JournalStock entry);
     Task SaveChangesAsync();
     Task<List<JournalStock>> GetByArticleAsync(Guid articleId);
+    Task<decimal> GetCurrentStockAsync(Guid articleId);
 }

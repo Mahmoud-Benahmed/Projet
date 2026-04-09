@@ -20,4 +20,15 @@ public class JournalStockRepository: IJournalStockRepository
         _context.JournalStocks.Remove(entry);
         await _context.SaveChangesAsync();
     }
+
+    // In your JournalStockRepository
+    public async Task<decimal> GetCurrentStockAsync(Guid articleId)
+    {
+        // Returns 0 if no movements exist yet for this article
+        var movements = await _context.JournalStocks
+            .Where(j => j.ArticleId == articleId)
+            .ToListAsync();
+
+        return movements.Any() ? movements.Sum(j => j.Quantity) : 0m;
+    }
 }

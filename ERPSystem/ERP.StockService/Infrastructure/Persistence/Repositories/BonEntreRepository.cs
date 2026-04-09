@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories
 {
@@ -140,5 +141,8 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
                 TotalCount: count
             );
         }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+            => await _context.Database.BeginTransactionAsync();
     }
 }
