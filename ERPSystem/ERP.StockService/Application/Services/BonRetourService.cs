@@ -92,6 +92,10 @@ public class BonRetourService : IBonRetourService
             bon.ClearLignes();
             foreach (var l in dto.Lignes)
             {
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(l.ArticleId);
+                if (l.Quantity > stockBefore)
+                    throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
+
                 await _articleService.GetByIdAsync(l.ArticleId);
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
             }

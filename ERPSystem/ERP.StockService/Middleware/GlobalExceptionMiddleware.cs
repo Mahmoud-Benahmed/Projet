@@ -35,6 +35,12 @@ public class GlobalExceptionMiddleware
     {
         var response = exception switch
         {
+            InsufficientStockException ex => new ErrorResponse 
+            {
+                Code= "STOCK_001",
+                Message= ex.Message,
+                StatusCode=(int)HttpStatusCode.BadRequest
+            },
 
             BonEntreNotFoundException ex => new ErrorResponse
             {

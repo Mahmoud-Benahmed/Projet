@@ -38,3 +38,6 @@ public class ArticleNotFoundException : Exception
     public ArticleNotFoundException(string code)
         : base($"Article with code '{code}' was not found.") { }
 }
+
+public class InsufficientStockException(Guid articleId, decimal available, decimal requested)
+    : Exception($"Insufficient stock for article {articleId}: available={available}, requested={requested}");

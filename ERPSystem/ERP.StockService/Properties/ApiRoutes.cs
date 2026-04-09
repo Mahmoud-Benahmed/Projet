@@ -2,7 +2,7 @@
 
 public static class ApiRoutes
 {
-    private const string Base = "stock";
+    public const string Base = "stock";
     public static class BonEntres
     {
         private const string Root = $"{Base}/bon-entres";
