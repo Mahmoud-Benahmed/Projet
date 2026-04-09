@@ -7,7 +7,9 @@ using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
+using System.Security.Claims;
 
 
 namespace ERP.AuthService.Application.Services
@@ -540,6 +542,177 @@ namespace ERP.AuthService.Application.Services
             return await _userRepository.GetStatsAsync(excludeId);
         }
 
+        // Add this method to your AuthUserService class
+
+        /// <summary>
+        /// Validates a JWT token and returns the associated user if valid and exists
+        /// </summary>
+        /// <param name="token">The JWT access token</param>
+        /// <returns>User info if token is valid and user exists</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown when token is invalid or user doesn't exist</exception>
+        public async Task<TokenValidationResultDto> ValidateTokenAsync(string token)
+        {
+            try
+            {
+                var principal = _jwtGenerator.ValidateToken(token);
+
+                if (principal == null)
+                    throw new UnauthorizedAccessException("Invalid token signature or structure.");
+
+                var userIdClaim = principal.FindFirst("sub") ?? principal.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                    throw new UnauthorizedAccessException("Token does not contain a valid user identifier.");
+
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new UnauthorizedAccessException($"User with ID '{userId}' no longer exists.");
+
+                if (!user.IsActive)
+                    throw new UnauthorizedAccessException("User account is deactivated.");
+
+                if (user.IsDeleted)
+                    throw new UnauthorizedAccessException("User account has been deleted.");
+
+
+                await _auditLogger.LogAsync(
+                    AuditAction.TokenValidated,
+                    success: true,
+                    performedBy: userId,
+                    ipAddress: GetIp(),
+                    userAgent: GetUserAgent(),
+                    metadata: new() { ["token_validation"] = "success" }
+                );
+
+                // 8. Return validation result
+                return new TokenValidationResultDto(
+                    IsValid: true,
+                    UserId: user.Id,
+                    Login: user.Login,
+                    Email: user.Email,
+                    FullName: user.FullName,
+                    RoleId: user.RoleId,
+                    IsActive: user.IsActive,
+                    ExpirationReason: null
+                );
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                await LogTokenValidationFailure("Token expired", token);
+                return new TokenValidationResultDto(
+                    IsValid: false,
+                    UserId: null,
+                    Login: null,
+                    Email: null,
+                    FullName: null,
+                    RoleId: null,
+                    IsActive: false,
+                    ExpirationReason: "Token has expired"
+                );
+            }
+            catch (SecurityTokenValidationException ex)
+            {
+                await LogTokenValidationFailure($"Invalid token: {ex.Message}", token);
+                throw new UnauthorizedAccessException($"Token validation failed: {ex.Message}");
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                await LogTokenValidationFailure($"Validation error: {ex.Message}", token);
+                throw new UnauthorizedAccessException("Token validation failed due to internal error.");
+            }
+        }
+
+        /// <summary>
+        /// Validates a refresh token
+        /// </summary>
+        public async Task<RefreshTokenValidationResultDto> ValidateRefreshTokenAsync(string refreshToken)
+        {
+            try
+            {
+                // 1. Check if refresh token exists in database
+                var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+
+                if (token == null)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: null,
+                        ExpirationReason: "Refresh token not found"
+                    );
+
+                // 2. Check if token is expired
+                if (token.IsExpired())
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "Refresh token has expired"
+                    );
+
+                // 3. Check if token is revoked
+                if (token.IsRevoked)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "Refresh token has been revoked"
+                    );
+
+                // 4. Check if user still exists and is active
+                var user = await _userRepository.GetByIdAsync(token.UserId);
+                if (user == null)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "User associated with token no longer exists"
+                    );
+
+                if (!user.IsActive)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "User account is deactivated"
+                    );
+
+                // 5. Return success
+                return new RefreshTokenValidationResultDto(
+                    IsValid: true,
+                    UserId: token.UserId,
+                    ExpirationReason: null
+                );
+            }
+            catch (Exception ex)
+            {
+                await _auditLogger.LogAsync(
+                    AuditAction.TokenValidationFailed,
+                    success: false,
+                    failureReason: ex.Message,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["token_type"] = "refresh" }
+                );
+
+                return new RefreshTokenValidationResultDto(
+                    IsValid: false,
+                    UserId: null,
+                    ExpirationReason: $"Validation error: {ex.Message}"
+                );
+            }
+        }
+
+        private async Task LogTokenValidationFailure(string reason, string token)
+        {
+            // Only log first few characters of token for security
+            var tokenPreview = token?.Length > 20 ? token.Substring(0, 20) + "..." : token;
+
+            await _auditLogger.LogAsync(
+                AuditAction.TokenValidationFailed,
+                success: false,
+                failureReason: reason,
+                ipAddress: GetIp(),
+                userAgent: GetUserAgent(),
+                metadata: new()
+                {
+                    ["token_preview"] = tokenPreview,
+                    ["validation_type"] = "access_token"
+                }
+            );
+        }
 
         // ======================
         // DTO MAPPING HELPER

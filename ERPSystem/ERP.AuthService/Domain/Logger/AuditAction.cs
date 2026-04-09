@@ -37,6 +37,9 @@
 
         Unauthorized,
         UserNotFound,
-        UnhandledError
+        UnhandledError,
+
+        TokenValidated,
+        TokenValidationFailed,
     }
 }

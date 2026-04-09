@@ -35,6 +35,10 @@ public interface IAuthUserService
 
     Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default); // <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    Task<RefreshTokenValidationResultDto> ValidateRefreshTokenAsync(string refreshToken);
+    Task<TokenValidationResultDto> ValidateTokenAsync(string token);
+
+
 
 
 }

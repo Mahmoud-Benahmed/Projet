@@ -297,5 +297,30 @@ namespace ERP.AuthService.Controllers
             return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         }
 
+        [HttpGet("validate-token")]
+        public async Task<IActionResult> ValidateToken([FromHeader(Name = "Authorization")] string authorization)
+        {
+            if (string.IsNullOrEmpty(authorization) || !authorization.StartsWith("Bearer "))
+                return BadRequest(new { isValid = false, reason = "No token provided" });
+
+            var token = authorization.Substring("Bearer ".Length);
+            var result = await _authService.ValidateTokenAsync(token);
+
+            if (!result.IsValid)
+                return Unauthorized(new { isValid = false, reason = result.ExpirationReason });
+
+            return Ok(new
+            {
+                isValid = true,
+                user = new
+                {
+                    result.UserId,
+                    result.Login,
+                    result.Email,
+                    result.FullName,
+                    result.IsActive
+                }
+            });
+        }
     }
 }
