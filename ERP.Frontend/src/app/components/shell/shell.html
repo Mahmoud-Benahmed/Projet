@@ -113,7 +113,8 @@
         </div>
 
         <!-- Stock -->
-        <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+        <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) || 
+                                          authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)">
           <button class="sidebar__item sidebar__item--group"
                   (click)="toggleGroup('stock')"
                   type="button"
@@ -122,7 +123,8 @@
             <mat-icon class="sidebar__chevron" [class.open]="openGroups['stock']">expand_more</mat-icon>
           </button>
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['stock']">
-            <a class="sidebar__subitem"
+            <a class="sidebar__subitem" 
+              *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)"
               routerLink="/stock/fournisseurs"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}"
@@ -130,6 +132,7 @@
               <mat-icon>local_shipping</mat-icon> {{ 'NAV.FOURNISSEURS' | translate }}
             </a>
             <a class="sidebar__subitem"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
               routerLink="/stock/bons"
               routerLinkActive="sidebar__subitem--active"
               [routerLinkActiveOptions]="{exact:true}"
@@ -278,7 +281,8 @@
       </div>
 
       <!-- Stock -->
-      <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+      <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) || 
+                                          authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)">
         <button class="sidebar__item sidebar__item--group"
                 (click)="toggleGroup('stock')"
                 type="button"
@@ -288,12 +292,14 @@
         </button>
         <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['stock']">
           <a class="sidebar__subitem"
+            *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)"
             routerLink="/stock/fournisseurs"
             routerLinkActive="sidebar__subitem--active"
             [routerLinkActiveOptions]="{exact:true}">
             <mat-icon>local_shipping</mat-icon> <span>{{ 'NAV.FOURNISSEURS' | translate }}</span>
           </a>
           <a class="sidebar__subitem"
+            *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
             routerLink="/stock/bons"
             routerLinkActive="sidebar__subitem--active"
             [routerLinkActiveOptions]="{exact:true}">
