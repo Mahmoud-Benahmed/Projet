@@ -534,8 +534,12 @@ export class BonsComponent implements OnInit {
     this.articleMaxQty.clear();
     this.previousMode = this.viewMode();
 
+    
+    const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
+
     // ← shallow clone sufficient for view-only, prevents accidental mutation
     this.selectedBon = { ...bon, lignes: bon.lignes.map(l => ({ ...l })) };
+    
     this.setViewMode('view');
   }
 
@@ -546,6 +550,7 @@ export class BonsComponent implements OnInit {
 
     // ← always source from dataSource.data to get the pristine server copy,
     //   never from selectedBon which may already be mutated
+    
     const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
 
     this.selectedBon = {
