@@ -53,7 +53,7 @@ public record CreateInvoiceItemDto(
     [property: Required] Guid ArticleId,
     [property: Required][property: Range(1, int.MaxValue)] int Quantity,
     [property: Required][property: Range(0, double.MaxValue)] decimal UniPriceHT,
-    [property: Required][property: Range(0, 100)] decimal TaxRate  // Changed to 0-100 for percentage
+    [property: Required][property: Range(0, 1)] decimal TaxRate
 );
 
 public record AddInvoiceItemDto(
