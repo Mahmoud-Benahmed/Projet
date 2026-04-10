@@ -101,6 +101,8 @@ export interface InvoiceValidationResult {
   discountRate?: number;
 }
 
+export interface UpdateInvoiceDto extends CreateInvoiceDto{}
+
 // ── SERVICE ──────────────────────────────────────────
 
 @Injectable({
@@ -372,5 +374,9 @@ export class InvoiceService {
     };
   }
 
+
+  update(id: string, dto: UpdateInvoiceDto): Observable<InvoiceDto> {
+    return this.http.put<InvoiceDto>(`${this.baseUrl}/update/${id}`, dto);
+  }
   
 }
