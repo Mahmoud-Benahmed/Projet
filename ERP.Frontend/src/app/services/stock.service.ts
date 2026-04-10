@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
+import { ArticleResponseDto } from './articles/articles.service';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export enum RetourSourceType {
@@ -116,6 +117,21 @@ export interface UpdateBonRetourRequest {
 }
 
 export type BonRecord = BonEntreResponse | BonSortieResponse | BonRetourResponse;
+
+export interface StockItem extends ArticleResponseDto {
+  quantity: number;
+}
+
+export interface StockStatusResponse {
+  inStock: StockItem[];  // or IN_STOCK if your API returns uppercase
+  outStock: StockItem[]; // or OUT_STOCK
+}
+
+// If your API returns uppercase property names
+export interface StockStatusResponseUppercase {
+  IN_STOCK: StockItem[];
+  OUT_STOCK: StockItem[];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -290,5 +306,15 @@ export class StockService {
     return this.http.get<{ articleId: string; currentStock: number }>(
       `${this.base}/quantity/${articleId}`
     );
+  }
+
+  getStockArticles(): Observable<StockStatusResponse> {
+    return this.http.get<StockStatusResponseUppercase>(`${this.base}/articles`)
+      .pipe(
+        map(response => ({
+          inStock: response.IN_STOCK || [],
+          outStock: response.OUT_STOCK || []
+        }))
+      );
   }
 }
