@@ -19,7 +19,11 @@
     "AUDIT_LOG": "Audit Log"
   },
   "COMMON": {
+    "LEAVE": "Leave",
+    "STAY": "Stay",
+    "PROCESSING": "Processing...",
     "SAVE": "Save",
+    "SAVE_CHANGES": "Save changes",
     "CANCEL": "Cancel",
     "DELETE": "Delete",
     "EDIT": "Edit",
@@ -88,7 +92,8 @@
     "PASSWORD_FAIR": "Fair",
     "PASSWORD_GOOD": "Good",
     "PASSWORD_STRONG": "Very Strong",
-    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être supérieur à 0"
+    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être supérieur à 0",
+    "MAX_QUANTITY": "Maximum quantity allowed is {{max}}"
   },
   "ERRORS": {
     "AUTH_001": "This email is already in use.",
@@ -142,8 +147,6 @@
     "DUPLICATE_CATEGORY_CODE": "A category with this code already exists",
     "ACCESS_DENIED_TITLE": "Access Denied",
     "ACCESS_DENIED_MESSAGE": "You don't have permission to access this resource."
-  
-
   },
   "SUCCESS": {
     "OPERATION_COMPLETED": "Operation completed successfully",
@@ -195,6 +198,8 @@
     "AUDIT_LOG_CLEARED": "Audit logs cleared successfully"
   },
   "CONFIRMATION": {
+    "RESTORE_FOURNISSEUR_TITLE": "Restore Supplier",
+    "RESTORE_FOURNISSEUR": "Restore supplier \"{{name}}\"? It will reappear in the active suppliers list",
     "DELETE_CATEGORY_TITLE": "Supression catégorie",
     "DELETE_CATEGORY": "Category \"{{name}}\" will be permanently deleted. Do you want to proceed?",
     "DELETE_CATEGORY_SOFT": "Category \"{{name}}\" will be soft-deleted. Clients assigned to it will not be affected. Proceed?",
@@ -472,166 +477,178 @@
     }
   },
   "STOCK": {
-    "KEYWORD": "Stock",
-    "KEYWORD_PLURAL": "Stocks",
     "BREADCRUMB": "STOCK MANAGEMENT",
     "FOURNISSEURS": {
-    "TITLE": "Suppliers",
-    "TITLE_LIST": "Suppliers",
-    "TITLE_DELETED": "Deleted Suppliers",
-    "TITLE_BLOCKED": "Blocked Suppliers",
-    "TITLE_ADD": "Add Supplier",
-    "TITLE_EDIT": "Edit Supplier",
-    "TITLE_DETAILS": "Supplier Details",
-    "ADD_BUTTON": "Add Supplier",
-    "EDIT_BUTTON": "Edit Supplier",
-    "SEARCH_PLACEHOLDER": "Search by name, email, phone...",
-    "STATS": {
-      "ACTIVE": "Active",
-      "BLOCKED": "Blocked",
-      "DELETED": "Deleted"
+      "TITLE": "Suppliers",
+      "TITLE_LIST": "Suppliers",
+      "TITLE_DELETED": "Deleted Suppliers",
+      "TITLE_BLOCKED": "Blocked Suppliers",
+      "TITLE_ADD": "Add Supplier",
+      "TITLE_EDIT": "Edit Supplier",
+      "TITLE_DETAILS": "Supplier Details",
+      "ADD_BUTTON": "Add Supplier",
+      "EDIT_BUTTON": "Edit Supplier",
+      "SEARCH_PLACEHOLDER": "Search by name, email, phone...",
+      "STATS": {
+        "ACTIVE": "Active",
+        "BLOCKED": "Blocked",
+        "DELETED": "Deleted"
+      },
+      "TABLE": {
+        "NAME": "NAME",
+        "PHONE": "PHONE",
+        "EMAIL": "EMAIL",
+        "PARTNERSHIP_DATE": "PARTNERSHIP DATE",
+        "ACTIONS": "ACTIONS"
+      },
+      "DETAILS": {
+        "NAME": "NAME",
+        "ADDRESS": "ADDRESS",
+        "PHONE": "PHONE",
+        "EMAIL": "EMAIL",
+        "TAX_NUMBER": "TAX NUMBER",
+        "RIB": "RIB",
+        "STATUS": "STATUS",
+        "CREATED_AT": "CREATED AT",
+        "UPDATED_AT": "UPDATED AT"
+      },
+      "STATUS": {
+        "ACTIVE": "ACTIVE",
+        "BLOCKED": "BLOCKED",
+        "DELETED": "DELETED"
+      },
+      "FORM": {
+        "ADD_TITLE": "Add New Supplier",
+        "EDIT_TITLE": "Edit Supplier",
+        "FULL_NAME": "Full Name",
+        "NAME_PLACEHOLDER": "Supplier name",
+        "PHONE": "Phone",
+        "PHONE_PLACEHOLDER": "+216 XX XXX XXX",
+        "ADDRESS": "Address",
+        "ADDRESS_PLACEHOLDER": "Enter full address",
+        "TAX_NUMBER": "Tax Number",
+        "TAX_NUMBER_PLACEHOLDER": "e.g. TN12345678",
+        "RIB": "RIB",
+        "RIB_PLACEHOLDER": "10–34 alphanumeric characters",
+        "EMAIL": "Email",
+        "EMAIL_PLACEHOLDER": "supplier@example.com"
+      },
+      "ERRORS": {
+        "LOAD_FAILED": "Failed to load suppliers.",
+        "LOAD_DELETED_FAILED": "Failed to load deleted suppliers.",
+        "LOAD_BLOCKED_FAILED": "Failed to load blocked suppliers.",
+        "LOAD_STATS_FAILED": "Failed to load statistics.",
+        "CREATE_FAILED": "Failed to create supplier.",
+        "UPDATE_FAILED": "Failed to update supplier.",
+        "DELETE_FAILED": "Failed to delete supplier \"{{name}}\".",
+        "RESTORE_FAILED": "Failed to restore supplier.",
+        "BLOCK_FAILED": "Failed to block supplier \"{{name}}\".",
+        "UNBLOCK_FAILED": "Failed to unblock supplier \"{{name}}\"."
+      }
     },
-    "TABLE": {
-      "NAME": "NAME",
-      "PHONE": "PHONE",
-      "EMAIL": "EMAIL",
-      "PARTNERSHIP_DATE": "PARTNERSHIP DATE",
-      "ACTIONS": "ACTIONS"
-    },
-    "DETAILS": {
-      "NAME": "NAME",
-      "ADDRESS": "ADDRESS",
-      "PHONE": "PHONE",
-      "EMAIL": "EMAIL",
-      "TAX_NUMBER": "TAX NUMBER",
-      "RIB": "RIB",
-      "STATUS": "STATUS",
-      "CREATED_AT": "CREATED AT",
-      "UPDATED_AT": "UPDATED AT"
-    },
-    "STATUS": {
-      "ACTIVE": "ACTIVE",
-      "BLOCKED": "BLOCKED",
-      "DELETED": "DELETED"
-    },
-    "FORM": {
-      "ADD_TITLE": "Add New Supplier",
-      "EDIT_TITLE": "Edit Supplier",
-      "FULL_NAME": "Full Name",
-      "NAME_PLACEHOLDER": "Supplier name",
-      "PHONE": "Phone",
-      "PHONE_PLACEHOLDER": "+216 XX XXX XXX",
-      "ADDRESS": "Address",
-      "ADDRESS_PLACEHOLDER": "Enter full address",
-      "TAX_NUMBER": "Tax Number",
-      "TAX_NUMBER_PLACEHOLDER": "e.g. TN12345678",
-      "RIB": "RIB",
-      "RIB_PLACEHOLDER": "10–34 alphanumeric chars",
-      "EMAIL": "Email",
-      "EMAIL_PLACEHOLDER": "supplier@example.com"
-    },
+    "BONS": {
+      "TITLE_ENTRE": "Incoming Goods Receipts",
+      "TITLE_SORTIE": "Outgoing Goods Receipts",
+      "TITLE_RETOUR": "Returned Goods Receipts",
+      "TAB_ENTRE": "Incoming",
+      "TAB_SORTIE": "Outgoing",
+      "TAB_RETOUR": "Returned",
+      "NEW_BON": "+ New Receipt",
+      "EDIT_BON": "Edit Receipt",
+      "CREATE_BON": "Create Receipt",
+      "SAVE_CHANGES": "Save Changes",
+      "ADD_LIGNE": "Add Line",
+      "EDIT_LIGNE": "Edit Line",
+      "REMOVE_LIGNE": "Remove Line",
+      "LIGNES": "LINES",
+      "NO_LIGNES": "No lines added yet. Add at least one line to create the receipt.",
+      "LIGNE_COUNT": "{{count}} line(s) added",
+      "LIGNE_REQUIRED": " — at least one required",
+      "SEARCH_PLACEHOLDER": "Search by number, observation...",
+      "CLOSE_LIGNE_FORM_FIRST": "Close the inline line form first.",
+      "STATS": {
+        "TOTAL": "Total"
+      },
+      "TABLE": {
+        "NUMERO": "NUMBER",
+        "OBSERVATION": "OBSERVATION",
+        "TOTAL": "TOTAL",
+        "DATE": "DATE",
+        "ACTIONS": "ACTIONS"
+      },
+      "DETAILS": {
+        "NUMERO": "NUMBER",
+        "FOURNISSEUR": "SUPPLIER",
+        "CLIENT": "CLIENT",
+        "SOURCE_TYPE": "SOURCE TYPE",
+        "SOURCE_ID": "SOURCE ID",
+        "MOTIF": "REASON",
+        "OBSERVATION": "OBSERVATION",
+        "TOTAL": "TOTAL",
+        "CREATED_AT": "CREATED AT",
+        "UPDATED_AT": "UPDATED AT"
+      },
+      "LIGNE_TABLE": {
+        "ARTICLE_ID": "ARTICLE ID",
+        "ARTICLE": "ARTICLE",
+        "QTY": "QTY",
+        "PRICE": "PRICE",
+        "TOTAL": "TOTAL",
+        "REMARQUE": "NOTE",
+        "ACTIONS": "ACTIONS"
+      },
+      "FORM": {
+        "FOURNISSEUR": "Supplier *",
+        "CLIENT": "Client *",
+        "SOURCE_BON": "Source Receipt *",
+        "MOTIF": "Reason *",
+        "MOTIF_PLACEHOLDER": "Reason for return",
+        "OBSERVATION": "Observation",
+        "OBSERVATION_PLACEHOLDER": "Optional note",
+        "SELECT_FOURNISSEUR": "— Select a supplier —",
+        "SELECT_CLIENT": "— Select a client —",
+        "SELECT_SOURCE": "— Select a source receipt —",
+        "SELECT_ARTICLE": "— Select an article —",
+        "ARTICLE": "Article *",
+        "QUANTITY": "Quantity *",
+        "PRICE": "Price *",
+        "REMARQUE": "Note",
+        "REMARQUE_PLACEHOLDER": "Optional remark"
+      },
+      "SUCCESS": {
+        "CREATED": "Receipt created successfully.",
+        "UPDATED": "Receipt updated successfully.",
+        "DELETED": "Receipt \"{{numero}}\" deleted successfully."
+      },
+      "ERRORS": {
+        "DATE_FILTER_FAILED": "Date filter failed",
+        "LOAD_FAILED": "Failed to load receipts.",
+        "LOAD_DELETED_FAILED": "Failed to load deleted receipts.",
+        "LOAD_STATS_FAILED": "Failed to load statistics.",
+        "LOAD_SOURCE_BONS_FAILED": "Failed to load source receipts.",
+        "LOAD_ARTICLES_FAILED": "Failed to load articles.",
+        "LOAD_FOURNISSEURS_FAILED": "Failed to load suppliers.",
+        "LOAD_CLIENTS_FAILED": "Failed to load clients.",
+        "LOAD_SOURCE_BON_LIGNES_FAILED": "Failed to load source receipt lines.",
+        "NO_LIGNES": "Please add at least one line before creating the receipt.",
+        "OPERATION_FAILED": "Operation failed.",
+        "DELETE_FAILED": "Delete failed."
+      }
+    },    
     "ERRORS": {
-      "LOAD_FAILED": "Failed to load fournisseurs.",
-      "LOAD_DELETED_FAILED": "Failed to load deleted fournisseurs.",
-      "LOAD_BLOCKED_FAILED": "Failed to load blocked fournisseurs.",
-      "LOAD_STATS_FAILED": "Failed to load stats.",
-      "CREATE_FAILED": "Failed to create fournisseur.",
-      "UPDATE_FAILED": "Failed to update fournisseur.",
-      "DELETE_FAILED": "Failed to delete fournisseur \"{{name}}\".",
-      "RESTORE_FAILED": "Failed to restore fournisseur.",
-      "BLOCK_FAILED": "Failed to block fournisseur \"{{name}}\".",
-      "UNBLOCK_FAILED": "Failed to unblock fournisseur \"{{name}}\"."
+      "QUANTITY_EXCEEDS_STOCK":"Quantity cannot exceed {{stock}}",
+      "ARTICLES_NOT_FOUND": "No articles available in stock"
+    },
+    "LABELS": {
+      "AVAILABLE_STOCK":"Available quantity" ,
+      "UNIT": "Unit",
+      "UNITS": "Units"
+    },
+    "WARNINGS": {
+      "OUT_OF_STOCK": "⚠️ Out of stock! This item is no longer available.",
+      "LOW_STOCK": "⚠️ Low stock! Only {{count}} units remaining.",
+      "CRITICAL_STOCK": "⚠️ Critical stock! Only {{count}} units left."
     }
-  },
-  "BONS": {
-    "SUCCESS": {
-      "CREATED": "Receipt created successfully.",
-      "UPDATED": "Receipt updated successfully.",
-      "DELETED": "Receipt \"{{numero}}\" deleted successfully."
-    },
-    "ERRORS": {
-      "DATE_FILTER_FAILED": "Date filter failed",
-      "LOAD_FAILED": "Failed to load bons.",
-      "LOAD_DELETED_FAILED": "Failed to load deleted bons.",
-      "LOAD_STATS_FAILED": "Failed to load stats.",
-      "LOAD_SOURCE_BONS_FAILED": "Failed to load source bons.",
-      "LOAD_ARTICLES_FAILED": "Failed to load articles.",
-      "LOAD_FOURNISSEURS_FAILED": "Failed to load fournisseurs.",
-      "LOAD_CLIENTS_FAILED": "Failed to load clients.",
-      "LOAD_SOURCE_BON_LIGNES_FAILED": "Failed to load source bon lignes.",
-      "NO_LIGNES": "Please add at least one ligne before creating the bon.",
-      "OPERATION_FAILED": "Operation failed.",
-      "DELETE_FAILED": "Delete failed."
-    },
-    "TITLE_ENTRE": "Incoming goods receipts",
-    "TITLE_SORTIE": "Outgoing goods receipts",
-    "TITLE_RETOUR": "Returned goods receipts",
-    "TAB_ENTRE": "Incoming",
-    "TAB_SORTIE": "Outgoing",
-    "TAB_RETOUR": "Returned",
-    "NEW_BON": "+ New Receipt",
-    "EDIT_BON": "Edit Receipt",
-    "CREATE_BON": "Create Receipt",
-    "SAVE_CHANGES": "Save Changes",
-    "ADD_LIGNE": "Add Ligne",
-    "EDIT_LIGNE": "Edit Ligne",
-    "REMOVE_LIGNE": "Remove Ligne",
-    "LIGNES": "LIGNES",
-    "NO_LIGNES": "No lignes added yet. Add at least one ligne to create the bon.",
-    "LIGNE_COUNT": "{{count}} ligne(s) added",
-    "LIGNE_REQUIRED": " — at least one required",
-    "SEARCH_PLACEHOLDER": "Search by number, observation...",
-    "CLOSE_LIGNE_FORM_FIRST": "Close the inline ligne form first.",
-    "STATS": {
-      "TOTAL": "Total"
-    },
-    "TABLE": {
-      "NUMERO": "NUMÉRO",
-      "OBSERVATION": "OBSERVATION",
-      "TOTAL": "TOTAL",
-      "DATE": "DATE",
-      "ACTIONS": "ACTIONS"
-    },
-    "DETAILS": {
-      "NUMERO": "NUMÉRO",
-      "FOURNISSEUR": "FOURNISSEUR",
-      "CLIENT": "CLIENT",
-      "SOURCE_TYPE": "SOURCE TYPE",
-      "SOURCE_ID": "SOURCE ID",
-      "MOTIF": "MOTIF",
-      "OBSERVATION": "OBSERVATION",
-      "TOTAL": "TOTAL",
-      "CREATED_AT": "CREATED AT",
-      "UPDATED_AT": "UPDATED AT"
-    },
-    "LIGNE_TABLE": {
-      "ARTICLE_ID": "ARTICLE ID",
-      "ARTICLE": "ARTICLE",
-      "QTY": "QTY",
-      "PRICE": "PRICE",
-      "TOTAL": "TOTAL",
-      "REMARQUE": "NOTE",
-      "ACTIONS": "ACTIONS"
-    },
-    "FORM": {
-      "FOURNISSEUR": "Supplier *",
-      "CLIENT": "Client *",
-      "SOURCE_BON": "Source Receipt *",
-      "MOTIF": "Reason *",
-      "MOTIF_PLACEHOLDER": "Reason for return",
-      "OBSERVATION": "Observation",
-      "OBSERVATION_PLACEHOLDER": "Optional note",
-      "SELECT_FOURNISSEUR": "— Select a fournisseur —",
-      "SELECT_CLIENT": "— Select client —",
-      "SELECT_SOURCE": "— Select a source bon —",
-      "SELECT_ARTICLE": "— Select an article —",
-      "ARTICLE": "Article *",
-      "QUANTITY": "Quantity *",
-      "PRICE": "Price *",
-      "REMARQUE": "Remarque",
-      "REMARQUE_PLACEHOLDER": "Optional remark"
-    }
-  }
   },
   "INVOICES": {
     "KEYWORD": "Invoice",
@@ -643,6 +660,7 @@
     "TITLE_DELETED": "Deleted Invoices",
     "TITLE_ANALYTICS": "Invoice Analytics",
     "TITLE_NEW": "New Invoice",
+    "TITLE_EDIT": "Edit Invoice",
     "TITLE_DETAILS": "Invoice Details",
     "NEW_BUTTON": "+ New Invoice",
     "BACK_BUTTON": "← Back",
@@ -682,7 +700,7 @@
       "MONTH": "MONTH",
       "ISSUED": "ISSUED",
       "ISSUED_TTC": "ISSUED TTC",
-      "PAID": "PAID",
+      "PAID": "Paid",
       "PAID_TTC": "PAID TTC",
       "LOADING": "Loading statistics…",
       "NO_PAID_INVOICES": "No paid invoices yet.",
@@ -732,11 +750,27 @@
       "TOTALS": "Totals"
     },
     "FORM": {
+      "EDIT_INVOICE_INFO": "Edit invoice information",
+      "ORIGINAL_TOTAL": "Original total",
+      "DISCOUNT_ROW":"Discounted amount",
+      "FINAL_TOTALS":"Final amount",
+      "SELECTED_CLIENT": "Client details",
+      "BULK_PRICING_LABEL":"Bulk pricing",
+      "WHOLE_NUMBERS_ONLY":"Whole numbers allowed.",
+      "DECIMALS_ALLOWED":"Decimals allowed.",
+      "CLIENT_NAME_LABEL": "Client name",
+      "BULK_ELIGIBLE": "eligible",
+      "LIMIT_WARNING":"Credit limit warning",
+      "CREDIT_LIMIT_LABEL":"Credit limit",
+      "SELECT_ARTICLE_FIRST":"Select an article",
+      "CLIENT_NOT_SELECTED_MATTOOLTIP":"Select a client before adding a line.",
       "INVOICE_DETAILS": "Invoice Details",
       "FILL_INVOICE_CLIENT_INFO": "Fill in the invoice and client information",
       "INVOICE_NUMBER": "Invoice Number *",
       "INVOICE_DATE": "Invoice Date *",
       "DUE_DATE": "Due Date *",
+      "DUE_DATE_AUTO_TOOLTIP":"Due date of the invoice is computed based on the payement period the selected client have.",
+      "DUE_DATE_HINT": "Due date calculated: {{days}} days after invoice date",
       "CLIENT": "Client *",
       "CLIENT_ADDRESS": "Client Address *",
       "ADDITIONAL_NOTES": "Additional Notes",
@@ -775,7 +809,9 @@
       "DELETE_INVOICE_TITLE": "Delete Invoice",
       "DELETE_INVOICE_MESSAGE": "Invoice \"{{number}}\" will be soft-deleted. Do you want to proceed?",
       "DELETE_CONFIRM": "Delete",
-      "GO_BACK": "Go Back"
+      "GO_BACK": "Go Back",
+      "UNSAVED_CHANGES_TITLE": "Unsaved Changes",
+      "UNSAVED_CHANGES_MESSAGE": "You have unsaved changes. Do you really want to leave?"
     },
     "ERRORS": {
       "LOAD_FAILED": "Failed to load invoices.",
@@ -790,7 +826,10 @@
       "CANCEL_FAILED": "Failed to cancel invoice.",
       "LOAD_DETAILS_FAILED": "Failed to load invoice details.",
       "LOAD_CLIENTS_FAILED": "Failed to load clients.",
-      "LOAD_ARTICLES_FAILED": "Failed to load articles."
+      "LOAD_ARTICLES_FAILED": "Failed to load articles.",
+      "CLIENT_NOT_FOUND": "Client not found",
+      "CREDIT_LIMIT_EXCEEDED": "Credit limit exceeded. Cannot create invoice.",
+      "VALIDATION_FAILED": "Validation failed. Please try again."
     },
     "SUCCESS": {
       "CREATED": "Invoice created successfully.",
