@@ -1031,7 +1031,7 @@ $bp-xl:  1200px;
 
 .btn-secondary {
   background: $bg-card-hi;
-  border: 1px solid $border;
+  border: 1px solid $gray;
   border-radius: 8px;
   color: $text-mid;
   font-family: 'Outfit', sans-serif;
@@ -1076,6 +1076,28 @@ $bp-xl:  1200px;
     background: rgba($amber, 0.2);
     color: $text-hi;
     border-color: $amber;
+  }
+}
+
+.btn-primary {
+  background: $blue-bg;
+  border: 1px solid $blue-border;
+  border-radius: 8px;
+  color: $blue;
+
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba($blue, 0.2);
+    color: $text-hi;
+    border-color: $blue;
   }
 }
 
