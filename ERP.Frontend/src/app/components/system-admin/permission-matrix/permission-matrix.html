@@ -1,20 +1,14 @@
 <!-- ── MATRIX ── -->
 <ng-container *ngIf="!isLoading">
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">{{'PERMISSIONS.BREADCRUMB'| translate}}</p>
+      <h1 class="page-title">{{'PERMISSIONS.TITLE_LIST'| translate}}</h1>
+    </div>
+  </div>
 
   <div class="matrix-wrap" [style.--cell-width]="cellWidthPx">
-
-    <!-- Role Legend -->
-    <div class="table-card legend-card">
-      <div class="legend">
-        <span class="legend__label">Roles</span>
-        <div class="legend__roles">
-          <div class="legend__role-label" *ngFor="let role of roles">
-            {{ formatRole(role.libelle) }}
-          </div>
-        </div>
-      </div>
-    </div>
-
+    
     <!-- Category Sections -->
     <div class="table-card category-card" *ngFor="let category of categories">
 
@@ -62,7 +56,7 @@
                   <button class="cell cell--granted"
                           *ngSwitchCase="getCell(role.id, controle.id)?.isGranted === true && !getCell(role.id, controle.id)?.loading"
                           (click)="togglePrivilege(role.id, controle.id)"
-                          [title]="'Revoke ' + controle.libelle + ' from ' + formatRole(role.libelle)">
+                          [title]="('PERMISSIONS.REVOKE_TOOLTIP' | translate: { controle: controle.libelle, role: formatRole(role.libelle) })">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
@@ -70,7 +64,7 @@
                   <button class="cell cell--denied"
                           *ngSwitchDefault
                           (click)="togglePrivilege(role.id, controle.id)"
-                          [title]="'Grant ' + controle.libelle + ' to ' + formatRole(role.libelle)">
+                          [title]="('PERMISSIONS.GRANT_TOOLTIP' | translate: { controle: controle.libelle, role: formatRole(role.libelle) })">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                       <line x1="18" y1="6" x2="6" y2="18"/>
                       <line x1="6" y1="6" x2="18" y2="18"/>
@@ -90,17 +84,17 @@
     <div class="matrix-footer">
       <div class="matrix-stat">
         <span class="matrix-stat__value">{{ roles.length }}</span>
-        <span class="matrix-stat__label">Roles</span>
+        <span class="matrix-stat__label">{{ 'PERMISSIONS.ROLES' | translate }}</span>
       </div>
       <div class="matrix-stat__divider"></div>
       <div class="matrix-stat">
         <span class="matrix-stat__value">{{ controles.length }}</span>
-        <span class="matrix-stat__label">Controls</span>
+        <span class="matrix-stat__label">{{ 'PERMISSIONS.CONTROLS' | translate }}</span>
       </div>
       <div class="matrix-stat__divider"></div>
       <div class="matrix-stat">
         <span class="matrix-stat__value">{{ categories.length }}</span>
-        <span class="matrix-stat__label">Services</span>
+        <span class="matrix-stat__label">{{ 'PERMISSIONS.SERVICES' | translate }}</span>
       </div>
     </div>
 

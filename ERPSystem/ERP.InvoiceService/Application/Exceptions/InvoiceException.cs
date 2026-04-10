@@ -1,5 +1,3 @@
-using System;
-
 namespace InvoiceService.Application.Exceptions
 {
     public class InvoiceNotFoundException : Exception
@@ -19,4 +17,10 @@ namespace InvoiceService.Application.Exceptions
         public InvoiceInvalidOperationException(string message)
             : base(message) { }
     }
+}
+
+public class InvoiceDomainException : Exception
+{
+    public InvoiceDomainException(string message)
+        : base(message) { }
 }

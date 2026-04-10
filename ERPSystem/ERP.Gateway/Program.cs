@@ -1,3 +1,4 @@
+using ERP.Gateway.AuthServiceClient;
 using ERP.Gateway.Properties;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +10,31 @@ using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+string GetAuthServiceAddress()
+{
+    // Read from ReverseProxy configuration
+    var authCluster = config.GetSection("ReverseProxy:Clusters:authCluster");
+    var destination = authCluster.GetSection("Destinations:authDestination");
+    var address = destination["Address"];
+
+    if (string.IsNullOrEmpty(address))
+    {
+        throw new InvalidOperationException("AuthService address not found in ReverseProxy configuration");
+    }
+
+    return address.TrimEnd('/'); // Remove trailing slash if present
+}
+
+var authServiceUrl = GetAuthServiceAddress();
+
+Console.WriteLine($"[Gateway] Using AuthService at: {authServiceUrl}");
+builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(authServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 
 //////////////////////////////////////////////////
 // JWT Authentication
@@ -37,7 +63,8 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = config["JWT:Issuer"],
         ValidAudience = config["JWT:Audience"],
         IssuerSigningKey = signingKey,
-        RoleClaimType = "role"
+        RoleClaimType = "role",
+        ClockSkew = TimeSpan.FromMinutes(5),
     };
 
     options.Events = new JwtBearerEvents
@@ -47,11 +74,36 @@ builder.Services.AddAuthentication(options =>
             Console.WriteLine($"[Gateway] JWT validation failed: {context.Exception.Message}");
             return Task.CompletedTask;
         },
-        OnTokenValidated = context =>
+        OnTokenValidated = async context =>
         {
-            var sub = context.Principal?.FindFirst("sub")?.Value;
-            Console.WriteLine($"[Gateway] Token valid for sub={sub}");
-            return Task.CompletedTask;
+            var tokenString = context.Request.Headers["Authorization"].ToString()?.Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(tokenString))
+            {
+                context.Fail("No token provided");
+                return;
+            }
+
+            // Call AuthService to validate token and check user existence
+            var authServiceClient = context.HttpContext.RequestServices.GetRequiredService<IAuthServiceClient>();
+            var validationResult = await authServiceClient.ValidateTokenAsync(tokenString);
+            if (!validationResult.IsValid)
+            {
+                Console.WriteLine($"[Gateway] User validation failed: {validationResult.Reason}");
+                context.Fail(validationResult.Reason ?? "User validation failed");
+                return;
+            }
+
+            // Optionally: Add additional claims from the validation result
+            var identity = context.Principal?.Identity as ClaimsIdentity;
+            if (identity != null && validationResult.User != null)
+            {
+                identity.AddClaim(new Claim("user_validated", "true"));
+                identity.AddClaim(new Claim("user_email", validationResult.User.Email ?? ""));
+                identity.AddClaim(new Claim("user_fullname", validationResult.User.FullName ?? ""));
+            }
+
+            Console.WriteLine($"[Gateway] User {validationResult.User?.UserId} successfully validated");
         },
         OnChallenge = async context =>
         {
@@ -59,7 +111,7 @@ builder.Services.AddAuthentication(options =>
             context.Response.StatusCode = 401;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(
-                """{"statusCode":401,"code":"AUTH_001","message":"Authentication required. Please log in."}""");
+               """{"statusCode":401,"code":"AUTH_006","message":"Authentication required. Please log in."}""");
         },
         OnForbidden = async context =>
         {
@@ -118,17 +170,17 @@ builder.Services.AddAuthorization(options =>
         Privileges.Users.RESTORE_USER,
         Privileges.Users.ASSIGN_ROLES);
 
-    AddManagePolicy(Privileges.Users.MANAGE_ROLES,
+    AddManagePolicy("MANAGE_ROLES",
         Privileges.Users.CREATE_ROLE,
         Privileges.Users.UPDATE_ROLE,
         Privileges.Users.DELETE_ROLE);
 
-    AddManagePolicy(Privileges.Users.MANAGE_CONTROLES,
+    AddManagePolicy("MANAGE_CONTROLES",
         Privileges.Users.CREATE_CONTROLE,
         Privileges.Users.UPDATE_CONTROLE,
         Privileges.Users.DELETE_CONTROLE);
 
-    AddManagePolicy(Privileges.Clients.MANAGE_CLIENTS,
+    AddManagePolicy("MANAGE_CLIENTS",
         Privileges.Clients.VIEW_CLIENTS,
         Privileges.Clients.CREATE_CLIENT,
         Privileges.Clients.UPDATE_CLIENT,
@@ -139,7 +191,7 @@ builder.Services.AddAuthorization(options =>
         Privileges.Clients.DELETE_CLIENT_CATEGORIES,
         Privileges.Clients.RESTORE_CLIENT_CATEGORIES);
 
-    AddManagePolicy(Privileges.Articles.MANAGE_ARTICLES,
+    AddManagePolicy("MANAGE_ARTICLES",
         Privileges.Articles.VIEW_ARTICLES,
         Privileges.Articles.CREATE_ARTICLE,
         Privileges.Articles.UPDATE_ARTICLE,
@@ -150,29 +202,36 @@ builder.Services.AddAuthorization(options =>
         Privileges.Articles.DELETE_ARTICLE_CATEGORIES,
         Privileges.Articles.RESTORE_ARTICLE_CATEGORIES);
 
-    AddManagePolicy(Privileges.Invoices.MANAGE_INVOICES,
+    AddManagePolicy("MANAGE_INVOICES",
         Privileges.Invoices.VIEW_INVOICES,
         Privileges.Invoices.CREATE_INVOICE,
         Privileges.Invoices.VALIDATE_INVOICE,
         Privileges.Invoices.DELETE_INVOICE,
         Privileges.Invoices.RESTORE_INVOICE);
 
-    AddManagePolicy(Privileges.Payments.MANAGE_PAYMENTS,
+    AddManagePolicy("MANAGE_PAYMENTS",
         Privileges.Payments.VIEW_PAYMENTS,
         Privileges.Payments.RECORD_PAYMENT,
         Privileges.Payments.DELETE_PAYMENT,
         Privileges.Payments.RESTORE_PAYMENT);
 
-    AddManagePolicy(Privileges.Stock.MANAGE_STOCK,
+    AddManagePolicy("MANAGE_STOCK",
         Privileges.Stock.VIEW_STOCK,
         Privileges.Stock.UPDATE_STOCK,
         Privileges.Stock.ADD_ENTRY);
 
-    AddManagePolicy(Privileges.Reports.MANAGE_REPORTS,
+    AddManagePolicy("MANAGE_FOURNISSEURS",
+        Privileges.Fournisseurs.VIEW_FOURNISSEURS,
+        Privileges.Fournisseurs.CREATE_FOURNISSEUR,
+        Privileges.Fournisseurs.UPDATE_FOURNISSEUR,
+        Privileges.Fournisseurs.DELETE_FOURNISSEUR,
+        Privileges.Fournisseurs.RESTORE_FOURNISSEUR);
+
+    AddManagePolicy("MANAGE_REPORTS",
         Privileges.Reports.VIEW_REPORTS,
         Privileges.Reports.EXPORT_REPORTS);
 
-    options.AddPolicy(Privileges.Audit.MANAGE_AUDITLOGS, p =>
+    options.AddPolicy("MANAGE_AUDITLOGS", p =>
         p.RequireAuthenticatedUser()
          .RequireClaim("privilege", Privileges.Audit.MANAGE_AUDITLOGS));
 
@@ -280,8 +339,7 @@ builder.Services.AddRateLimiter(options =>
         };
 
         await context.HttpContext.Response.WriteAsync(
-            $$"""{"statusCode":429,"code":"RATE_LIMIT","content":"{{message}}","retryAfterSeconds":{{retrySeconds}}}""",
-            token);
+            $$"""{"statusCode":429,"code":"RATE_LIMIT","message":"{{message}}","retryAfterSeconds":{{retrySeconds}}}""");
     };
 });
 

@@ -23,6 +23,9 @@ public record CreateClientRequestDto(
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
     string Address,
 
+    [Range(1, 120 , ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+    int? DuePaymentPeriod = null,
+
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
@@ -50,6 +53,9 @@ public record UpdateClientRequestDto(
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
     string Address,
 
+    [Range(1, 120 , ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+    int? DuePaymentPeriod = null,
+
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
@@ -63,16 +69,6 @@ public record UpdateClientRequestDto(
     int? DelaiRetour = null
 );
 
-public record SetCreditLimitRequestDto(
-    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
-    decimal Limit
-);
-
-public record SetDelaiRetourRequestDto(
-    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
-    int Days
-);
-
 public record AddCategoryRequestDto(
     [Required(ErrorMessage = "CategoryId is required.")]
     Guid CategoryId
@@ -83,6 +79,7 @@ public sealed record ClientResponseDto(
     string Name,
     string Email,
     string Address,
+    int DuePaymentPeriod,
     string? Phone,
     string? TaxNumber,
     decimal? CreditLimit,
@@ -98,5 +95,12 @@ public sealed record ClientCategoryResponseDto(
     Guid Id,
     string Name,
     string Code,
+    int DelaiRetour,
+    int DuePaymentPeriod,
+    decimal DiscountRate,
+    decimal CreditLimitMultiplier,
+    bool UseBulkPricing,
+    bool IsActive,
+    bool IsDeleted,
     DateTime AssignedAt
 );

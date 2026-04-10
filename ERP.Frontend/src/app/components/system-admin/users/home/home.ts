@@ -23,6 +23,7 @@ import { ModalComponent } from '../../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService, PRIVILEGES } from '../../../../services/auth/auth.service';
 import { PaginationComponent } from '../../../pagination/pagination';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home',
@@ -48,12 +49,15 @@ import { PaginationComponent } from '../../../pagination/pagination';
     RouterLinkActive,
     RouterLink,
     PaginationComponent,
+    TranslatePipe
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class UsersHomeComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+
   @ViewChild(MatSort) sort!: MatSort;
 
   displayedColumns: string[] = [
@@ -72,7 +76,6 @@ export class UsersHomeComponent implements OnInit {
 
   isLoading = false;
   searchTerm = '';
-  // ✅ Fixed: separate error array and successMessage (consistent with other components)
   errors: string[] = [];
   successMessage: string | null = null;
 
@@ -94,7 +97,7 @@ export class UsersHomeComponent implements OnInit {
   // ── Page title ────────────────────────────────────────────────────────────
 
   get pageTitle(): string {
-    return 'Active Users';
+    return this.translate.instant('USERS.TITLE_ACTIVE');
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
@@ -109,7 +112,6 @@ export class UsersHomeComponent implements OnInit {
     this.isLoading = true;
     this.authService.getActivatedUsers(this.pageNumber(), this.pageSize()).subscribe({
       next: (result: PagedResultDto<AuthUserGetResponseDto>) => {
-        // ✅ Fixed: filter happens server-side ideally, but kept client-side filter here
         this.dataSource.data = result.items.filter(u => u.id !== this.currentUserId);
         this.totalCount = result.totalCount;
         this.dataSource.sort = this.sort;
@@ -117,8 +119,7 @@ export class UsersHomeComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        // ✅ Fixed: was calling flash('success', ...) on error
-        this.flash('error', 'Failed to load users.');
+        this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_ACTIVE_FAILED'));
         this.isLoading = false;
       },
     });
@@ -127,7 +128,7 @@ export class UsersHomeComponent implements OnInit {
   loadStats(): void {
     this.authService.getStats().subscribe({
       next: (result) => { this.stats = result; this.cdr.markForCheck(); },
-      error: () => this.flash('error', 'Failed to load stats.'),
+      error: () => this.flash('error', this.translate.instant('USERS.ERRORS.LOAD_STATS_FAILED')),
     });
   }
 
@@ -185,12 +186,12 @@ export class UsersHomeComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Deactivate User',
-        message:     `Are you sure you want to deactivate "${user.fullName ?? user.login}"?`,
-        confirmText: 'Deactivate',
-        showCancel:  true,
-        icon:        'block',
-        iconColor:   'warning',
+        title: this.translate.instant('CONFIRMATION.DEACTIVATE_USER_TITLE'),
+        message: this.translate.instant('CONFIRMATION.DEACTIVATE_USER', { name: user.fullName ?? user.login }),
+        confirmText: this.translate.instant('COMMON.DEACTIVATE'),
+        showCancel: true,
+        icon: 'block',
+        iconColor: 'warning',
       },
     });
 
@@ -199,8 +200,11 @@ export class UsersHomeComponent implements OnInit {
       .subscribe(result => {
         if (!result) return;
         this.authService.deactivate(user.id).subscribe({
-          next: () => { this.flash('success', `${user.fullName ?? user.login} deactivated.`); this.reload(); },
-          error: () => this.flash('error', 'Failed to deactivate user.'),
+          next: () => {
+            this.flash('success', this.translate.instant('SUCCESS.USER_DEACTIVATED', { name: user.fullName ?? user.login }));
+            this.reload();
+          },
+          error: () => this.flash('error', this.translate.instant('USERS.ERRORS.DEACTIVATE_FAILED')),
         });
       });
   }
@@ -209,12 +213,12 @@ export class UsersHomeComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Delete User',
-        message:     `${user.fullName ?? user.login} will be deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
-        showCancel:  true,
-        icon:        'auto_delete',
-        iconColor:   'danger',
+        title: this.translate.instant('CONFIRMATION.DELETE_USER_TITLE'),
+        message: this.translate.instant('CONFIRMATION.DELETE_USER', { name: user.fullName ?? user.login }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
+        showCancel: true,
+        icon: 'auto_delete',
+        iconColor: 'danger',
       },
     });
 
@@ -223,8 +227,11 @@ export class UsersHomeComponent implements OnInit {
       .subscribe(result => {
         if (!result) return;
         this.authService.softDelete(user.id).subscribe({
-          next: () => { this.flash('success', `${user.fullName ?? user.login} has been deleted.`); this.reload(); },
-          error: () => this.flash('error', 'Failed to delete user.'),
+          next: () => {
+            this.flash('success', this.translate.instant('SUCCESS.USER_DELETED', { name: user.fullName ?? user.login }));
+            this.reload();
+          },
+          error: () => this.flash('error', this.translate.instant('USERS.ERRORS.DELETE_FAILED')),
         });
       });
   }
@@ -233,12 +240,12 @@ export class UsersHomeComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Restore User',
-        message:     `Restore "${user.fullName ?? user.login}"? They will regain access.`,
-        confirmText: 'Restore',
-        showCancel:  true,
-        icon:        'settings_backup_restore',
-        iconColor:   'success',
+        title: this.translate.instant('CONFIRMATION.RESTORE_USER_TITLE'),
+        message: this.translate.instant('CONFIRMATION.RESTORE_USER', { name: user.fullName ?? user.login }),
+        confirmText: this.translate.instant('COMMON.RESTORE'),
+        showCancel: true,
+        icon: 'settings_backup_restore',
+        iconColor: 'success',
       },
     });
 
@@ -247,8 +254,11 @@ export class UsersHomeComponent implements OnInit {
       .subscribe(result => {
         if (!result) return;
         this.authService.restore(user.id).subscribe({
-          next: () => { this.flash('success', `${user.fullName ?? user.login} restored.`); this.reload(); },
-          error: () => this.flash('error', 'Failed to restore user.'),
+          next: () => {
+            this.flash('success', this.translate.instant('SUCCESS.USER_RESTORED', { name: user.fullName ?? user.login }));
+            this.reload();
+          },
+          error: () => this.flash('error', this.translate.instant('USERS.ERRORS.RESTORE_FAILED')),
         });
       });
   }

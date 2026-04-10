@@ -3,8 +3,8 @@
   <!-- ===================== PAGE HEADER ===================== -->
   <div class="page-header">
     <div>
-      <p class="breadcrumb">STOCK MANAGEMENT</p>
-      <h1 class="page-title">Fournisseurs</h1>
+      <p class="breadcrumb">{{ 'STOCK.BREADCRUMB' | translate }}</p>
+      <h1 class="page-title">{{ 'STOCK.FOURNISSEURS.TITLE' | translate }}</h1>
     </div>
   </div>
 
@@ -40,7 +40,7 @@
            [class.stat-card--current]="isList()">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Active</p>
+            <p class="stat-card__label">{{ 'STOCK.FOURNISSEURS.STATS.ACTIVE' | translate }}</p>
             <p class="stat-card__value">{{ activeFournisseurs }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--green">
@@ -58,7 +58,7 @@
            [class.disabled]="blockedFournisseurs < 1">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Blocked</p>
+            <p class="stat-card__label">{{ 'STOCK.FOURNISSEURS.STATS.BLOCKED' | translate }}</p>
             <p class="stat-card__value">{{ blockedFournisseurs }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--amber">
@@ -72,13 +72,13 @@
       </div>
 
       <div class="stat-card stat-card--red"
-           *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)"
+           *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.RESTORE_FOURNISSEUR)"
            (click)="onDeletedCardClick()"
            [class.stat-card--current]="isDeletedList()"
            [class.disabled]="deletedFournisseurs < 1">
         <div class="stat-card__body">
           <div>
-            <p class="stat-card__label">Deleted</p>
+            <p class="stat-card__label">{{ 'STOCK.FOURNISSEURS.STATS.DELETED' | translate }}</p>
             <p class="stat-card__value">{{ deletedFournisseurs }}</p>
           </div>
           <div class="stat-card__icon stat-card__icon--red">
@@ -104,15 +104,15 @@
         <input
           class="search-input"
           type="text"
-          placeholder="Search by name, email, phone..."
+          [placeholder]="'STOCK.FOURNISSEURS.SEARCH_PLACEHOLDER' | translate"
           [(ngModel)]="searchQuery"
           (ngModelChange)="applyFilter()"
         />
       </div>
       <button class="btn-add"
-              *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && isList()"
+              *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.CREATE_FOURNISSEUR) && isList()"
               (click)="openCreate()">
-        + Add Fournisseur
+        + {{ 'STOCK.FOURNISSEURS.ADD_BUTTON' | translate }}
       </button>
     </div>
 
@@ -123,7 +123,7 @@
           <thead>
             <tr>
               <th (click)="sortBy('name')" class="th--sortable">
-                NAME
+                {{ 'STOCK.FOURNISSEURS.TABLE.NAME' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        [style.opacity]="sortColumn === 'name' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -135,10 +135,10 @@
                   </svg>
                 </span>
               </th>
-              <th>PHONE</th>
-              <th>EMAIL</th>
+              <th>{{ 'STOCK.FOURNISSEURS.TABLE.PHONE' | translate }}</th>
+              <th>{{ 'STOCK.FOURNISSEURS.TABLE.EMAIL' | translate }}</th>
               <th (click)="sortBy('createdAt')" class="th--sortable">
-              PARTNERSHIP DATE
+                {{ 'STOCK.FOURNISSEURS.TABLE.PARTNERSHIP_DATE' | translate }}
                 <span class="sort-icon">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                        [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
@@ -150,7 +150,7 @@
                   </svg>
                 </span>
               </th>
-              <th class="text-center">ACTIONS</th>
+              <th class="text-center">{{ 'STOCK.FOURNISSEURS.TABLE.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -166,8 +166,8 @@
 
               <td class="td--actions">
                 <!-- View -->
-                <button class="icon-btn icon-btn--view" (click)="openView(f)" title="View"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)">
+                <button class="icon-btn icon-btn--view" (click)="openView(f)" [title]="'COMMON.VIEW' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
@@ -175,8 +175,8 @@
                 </button>
 
                 <!-- Edit -->
-                <button class="icon-btn icon-btn--edit" (click)="openEdit(f)" title="Edit"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !f.isDeleted && !f.isBlocked">
+                <button class="icon-btn icon-btn--edit" (click)="openEdit(f)" [title]="'COMMON.EDIT' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UPDATE_FOURNISSEUR) && !f.isDeleted && !f.isBlocked">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -187,10 +187,11 @@
                 <button class="icon-btn"
                         [ngClass]="f.isBlocked ? 'icon-btn--unblock' : 'icon-btn--block'"
                         (click)="toggleBlock(f)"
-                        [title]="f.isBlocked ? 'Unblock' : 'Block'"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) &&
-                              authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) &&
-                              authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && !f.isDeleted">
+                        [title]="f.isBlocked ? ('COMMON.UNBLOCK' | translate) : ('COMMON.BLOCK' | translate)"
+                        *ngIf="(
+                                (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !f.isBlocked) 
+                            ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && f.isBlocked) 
+                              ) && !f.isDeleted">
                   <svg *ngIf="!f.isBlocked" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
@@ -202,8 +203,8 @@
                 </button>
 
                 <!-- Delete -->
-                <button class="icon-btn icon-btn--delete" (click)="delete(f)" title="Delete"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && !f.isDeleted">
+                <button class="icon-btn icon-btn--delete" (click)="delete(f)" [title]="'COMMON.DELETE' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.DELETE_FOURNISSEUR) && !f.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -213,21 +214,21 @@
                 </button>
 
                 <!-- Restore -->
-                <button class="icon-btn icon-btn--reactivate" (click)="restore(f.id)" title="Restore"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) && f.isDeleted">
+                <button class="icon-btn icon-btn--reactivate" (click)="restore(f.id)" [title]="'COMMON.RESTORE' | translate"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.RESTORE_FOURNISSEUR) && f.isDeleted">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
                   </svg>
                 </button>
-              </td>
+               </td>
 
-            </tr>
+             </tr>
             <tr *ngIf="sortedData.length === 0">
               <td colspan="7" class="td--empty">
-                No fournisseurs found{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
-              </td>
-            </tr>
+                {{ 'COMMON.NO_RESULTS' | translate }}{{ searchQuery ? ' for "' + searchQuery + '"' : '' }}
+               </td>
+             </tr>
           </tbody>
         </table>
       </div>
@@ -247,86 +248,86 @@
   <!-- ===================== VIEW PANEL ===================== -->
   <div class="panel" *ngIf="isView() && selectedFournisseur">
     <div class="panel__header">
-      <h2 class="panel__title">Fournisseur Details</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ 'STOCK.FOURNISSEURS.TITLE_DETAILS' | translate }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <div class="detail-grid">
         <div class="detail-item">
-          <span class="detail-label">NAME</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.NAME' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.name }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">ADDRESS</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.ADDRESS' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.address }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">PHONE</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.PHONE' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.phone }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">EMAIL</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.EMAIL' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.email ?? '—' }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">TAX NUMBER</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.TAX_NUMBER' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedFournisseur.taxNumber }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">RIB</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.RIB' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedFournisseur.rib }}</span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">STATUS</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.STATUS' | translate }}</span>
           <span class="badge"
                 [class.badge--active]="!selectedFournisseur.isBlocked && !selectedFournisseur.isDeleted"
                 [class.badge--blocked]="selectedFournisseur.isBlocked"
                 [class.badge--danger]="selectedFournisseur.isDeleted">
-            {{ selectedFournisseur.isDeleted ? 'DELETED' : selectedFournisseur.isBlocked ? 'BLOCKED' : 'ACTIVE' }}
+            {{ selectedFournisseur.isDeleted ? ('STOCK.FOURNISSEURS.STATUS.DELETED' | translate) : selectedFournisseur.isBlocked ? ('STOCK.FOURNISSEURS.STATUS.BLOCKED' | translate) : ('STOCK.FOURNISSEURS.STATUS.ACTIVE' | translate) }}
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">CREATED AT</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.CREATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.createdAt | date:'medium' }}</span>
         </div>
         <div class="detail-item" *ngIf="selectedFournisseur.updatedAt">
-          <span class="detail-label">UPDATED AT</span>
+          <span class="detail-label">{{ 'STOCK.FOURNISSEURS.DETAILS.UPDATED_AT' | translate }}</span>
           <span class="detail-value">{{ selectedFournisseur.updatedAt | date:'medium' }}</span>
         </div>
       </div>
 
       <div class="panel__actions">
         <button class="btn-secondary" (click)="openEdit(selectedFournisseur)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK)
-                       && !selectedFournisseur.isDeleted
-                       && !selectedFournisseur.isBlocked">
-          Edit Fournisseur
+                *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UPDATE_FOURNISSEUR) && !selectedFournisseur.isDeleted">
+          {{ 'STOCK.FOURNISSEURS.EDIT_BUTTON' | translate }}
         </button>
         <button class="btn-warning" (click)="toggleBlock(selectedFournisseur)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)
-                       && !selectedFournisseur.isDeleted">
-          {{ selectedFournisseur.isBlocked ? 'Unblock Fournisseur' : 'Block Fournisseur' }}
+                *ngIf="(
+                          (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !selectedFournisseur.isBlocked) 
+                      ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && selectedFournisseur.isBlocked) 
+                        )  && !selectedFournisseur.isDeleted">
+          {{ selectedFournisseur.isBlocked ? ('COMMON.UNBLOCK' | translate) : ('COMMON.BLOCK' | translate) }} {{ 'STOCK.FOURNISSEURS.TITLE' | translate }}
         </button>
         <button class="btn-danger" (click)="delete(selectedFournisseur)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)
+                *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.DELETE_FOURNISSEUR)
                        && !selectedFournisseur.isDeleted">
-          Delete
+          {{ 'COMMON.DELETE' | translate }}
         </button>
         <button class="btn-success" (click)="restore(selectedFournisseur.id)"
-                *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK)
+                *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.RESTORE_FOURNISSEUR)
                        && selectedFournisseur.isDeleted">
-          Restore
+          {{ 'COMMON.RESTORE' | translate }}
         </button>
       </div>
     </div>
   </div>
 
   <!-- ===================== FORM PANEL ===================== -->
-  <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY))
-                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">
+  <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.CREATE_FOURNISSEUR))
+                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UPDATE_FOURNISSEUR))">
     <div class="panel__header">
-      <h2 class="panel__title">{{ isCreate() ? 'Add New Fournisseur' : 'Edit Fournisseur' }}</h2>
-      <button class="btn-back" (click)="cancel()">← Back</button>
+      <h2 class="panel__title">{{ isCreate() ? ('STOCK.FOURNISSEURS.FORM.ADD_TITLE' | translate) : ('STOCK.FOURNISSEURS.FORM.EDIT_TITLE' | translate) }}</h2>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
     <div class="panel__body">
       <form [formGroup]="fournisseurForm" (ngSubmit)="submit()" class="form">
@@ -334,60 +335,60 @@
         <div class="form__row">
           <div class="form__field">
             <div class="form__label">
-              <label>Full Name</label>
+              <label>{{ 'STOCK.FOURNISSEURS.FORM.FULL_NAME' | translate }}</label>
               <mat-icon>business</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="name" placeholder="Supplier name"
+            <input class="form__input" type="text" formControlName="name" [placeholder]="'STOCK.FOURNISSEURS.FORM.NAME_PLACEHOLDER' | translate"
                    [class.form__input--error]="fournisseurForm.get('name')?.invalid && fournisseurForm.get('name')?.touched"/>
             <span class="form__error" *ngIf="fournisseurForm.get('name')?.invalid && fournisseurForm.get('name')?.touched">
-              Name is required (min 2, max 200 characters)
+              {{ 'VALIDATION.NAME_REQUIRED' | translate }}
             </span>
           </div>
 
           <div class="form__field">
             <div class="form__label">
-              <label>Phone</label>
+              <label>{{ 'STOCK.FOURNISSEURS.FORM.PHONE' | translate }}</label>
               <mat-icon>phone</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="phone" placeholder="+216 XX XXX XXX"
+            <input class="form__input" type="text" formControlName="phone" [placeholder]="'STOCK.FOURNISSEURS.FORM.PHONE_PLACEHOLDER' | translate"
                    [class.form__input--error]="fournisseurForm.get('phone')?.invalid && fournisseurForm.get('phone')?.touched"/>
             <span class="form__error" *ngIf="fournisseurForm.get('phone')?.invalid && fournisseurForm.get('phone')?.touched">
-              A valid phone number is required (min 8, max 50 digits)
+              {{ 'VALIDATION.INVALID_PHONE' | translate }}
             </span>
           </div>
         </div>
 
         <div class="form__field">
           <div class="form__label">
-            <label>Address</label>
+            <label>{{ 'STOCK.FOURNISSEURS.FORM.ADDRESS' | translate }}</label>
             <mat-icon>location_on</mat-icon>
           </div>
-          <input class="form__input" type="text" formControlName="address" placeholder="Enter full address"
+          <input class="form__input" type="text" formControlName="address" [placeholder]="'STOCK.FOURNISSEURS.FORM.ADDRESS_PLACEHOLDER' | translate"
                  [class.form__input--error]="fournisseurForm.get('address')?.invalid && fournisseurForm.get('address')?.touched"/>
           <span class="form__error" *ngIf="fournisseurForm.get('address')?.invalid && fournisseurForm.get('address')?.touched">
-            Address is required (min 5 characters)
+            {{ 'VALIDATION.ADDRESS_REQUIRED' | translate }}
           </span>
         </div>
 
         <div class="form__row">
           <div class="form__field">
             <div class="form__label">
-              <label>Tax Number</label>
+              <label>{{ 'STOCK.FOURNISSEURS.FORM.TAX_NUMBER' | translate }}</label>
               <mat-icon>receipt_long</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="taxNumber" placeholder="e.g. TN12345678"
+            <input class="form__input" type="text" formControlName="taxNumber" [placeholder]="'STOCK.FOURNISSEURS.FORM.TAX_NUMBER_PLACEHOLDER' | translate"
                    [class.form__input--error]="fournisseurForm.get('taxNumber')?.invalid && fournisseurForm.get('taxNumber')?.touched"/>
             <span class="form__error" *ngIf="fournisseurForm.get('taxNumber')?.invalid && fournisseurForm.get('taxNumber')?.touched">
-              Tax number is required
+              {{ 'VALIDATION.INVALID_TAX_NUMBER' | translate }}
             </span>
           </div>
 
           <div class="form__field">
             <div class="form__label">
-              <label>RIB</label>
+              <label>{{ 'STOCK.FOURNISSEURS.FORM.RIB' | translate }}</label>
               <mat-icon>account_balance</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="rib" placeholder="10–34 alphanumeric chars"
+            <input class="form__input" type="text" formControlName="rib" [placeholder]="'STOCK.FOURNISSEURS.FORM.RIB_PLACEHOLDER' | translate"
                    [class.form__input--error]="fournisseurForm.get('rib')?.invalid && fournisseurForm.get('rib')?.touched"/>
             <span class="form__info"
                   *ngIf="fournisseurForm.get('rib')?.value?.length > 0"
@@ -395,27 +396,27 @@
               {{ fournisseurForm.get('rib')?.value?.length || 0 }} / {{ fournisseurForm.get('rib')?.value?.length <= 10 ? 10 : 34 }}
             </span>
             <span class="form__error" *ngIf="fournisseurForm.get('rib')?.invalid && fournisseurForm.get('rib')?.touched">
-              RIB must be 10–34 alphanumeric characters
+              {{ 'VALIDATION.INVALID_RIB' | translate }}
             </span>
           </div>
         </div>
 
         <div class="form__field">
           <div class="form__label">
-            <label>Email <span class="form__optional">(optional)</span></label>
+            <label>{{ 'STOCK.FOURNISSEURS.FORM.EMAIL' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
             <mat-icon>email</mat-icon>
           </div>
-          <input class="form__input" type="email" formControlName="email" placeholder="supplier@example.com"
+          <input class="form__input" type="email" formControlName="email" [placeholder]="'STOCK.FOURNISSEURS.FORM.EMAIL_PLACEHOLDER' | translate"
                  [class.form__input--error]="fournisseurForm.get('email')?.invalid && fournisseurForm.get('email')?.touched"/>
           <span class="form__error" *ngIf="fournisseurForm.get('email')?.invalid && fournisseurForm.get('email')?.touched">
-            Invalid email address
+            {{ 'VALIDATION.INVALID_EMAIL' | translate }}
           </span>
         </div>
 
         <div class="form__actions">
-          <button type="button" class="btn-secondary" (click)="cancel()">Cancel</button>
+          <button type="button" class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="submit" class="btn-add" [disabled]="fournisseurForm.invalid">
-            {{ isCreate() ? '+ Add Fournisseur' : 'Save Changes' }}
+            {{ isCreate() ? ('COMMON.ADD' | translate) : ('COMMON.SAVE' | translate) }}
           </button>
         </div>
 

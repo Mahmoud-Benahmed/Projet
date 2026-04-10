@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -6,11 +6,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
-import { environment } from  '../../../environment';
+import { environment } from '../../../environment';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../services/auth/auth.service';
 import { RoleService } from '../../../services/auth/roles.service';
 import { ControleService } from '../../../services/auth/controle.service';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 interface RoleDto {
   id: string;
@@ -49,12 +50,15 @@ interface MatrixCell {
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatIconModule,
-    MatButtonModule
-],
+    MatButtonModule,
+    TranslatePipe
+  ],
   templateUrl: './permission-matrix.html',
   styleUrl: './permission-matrix.scss',
 })
 export class PermissionMatrixComponent implements OnInit {
+  private translate = inject(TranslateService);
+
   roles: RoleDto[] = [];
   controles: ControleDto[] = [];
   categories: string[] = [];
@@ -64,14 +68,15 @@ export class PermissionMatrixComponent implements OnInit {
   successMessage: string | null = null;
 
   collapsedCategories = new Set<string>();
-  readonly cellWidth = 160; // ← only value to change
+  readonly cellWidth = 160;
   private baseUrl = `${environment.apiUrl}`;
 
-  constructor(private http: HttpClient,
-              private cdr: ChangeDetectorRef,
-              public authService: AuthService,
-              private roleService: RoleService,
-              private controleService: ControleService
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    public authService: AuthService,
+    private roleService: RoleService,
+    private controleService: ControleService
   ) {}
 
   ngOnInit(): void {
@@ -94,7 +99,7 @@ export class PermissionMatrixComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.flash('error', 'Failed to load permission matrix.');
+        this.flash('error', this.translate.instant('PERMISSIONS.ERRORS.LOAD_MATRIX_FAILED'));
       },
     });
   }
@@ -131,7 +136,7 @@ export class PermissionMatrixComponent implements OnInit {
               this.matrix.set(key, {
                 roleId: role.id,
                 controleId: controle.id,
-                isGranted: false,  // Default to denied
+                isGranted: false,
                 loading: false,
               });
             }
@@ -142,7 +147,7 @@ export class PermissionMatrixComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.flash('error', 'Failed to load privileges.');
+        this.flash('error', this.translate.instant('PERMISSIONS.ERRORS.LOAD_PRIVILEGES_FAILED'));
       },
     });
   }
@@ -165,13 +170,13 @@ export class PermissionMatrixComponent implements OnInit {
 
     this.http.patch(url, {}).subscribe({
       next: () => {
-        this.flash('success', 'Privilege has been updated succcessfully.');
+        this.flash('success', this.translate.instant('SUCCESS.PRIVILEGE_UPDATED'));
         cell.isGranted = !wasGranted;
         cell.loading = false;
       },
       error: () => {
         cell.loading = false;
-        this.flash('error', 'Operation failed, please retry later.');
+        this.flash('error', this.translate.instant('PERMISSIONS.ERRORS.OPERATION_FAILED'));
       },
     });
   }
@@ -183,7 +188,7 @@ export class PermissionMatrixComponent implements OnInit {
     } else {
       next.add(category);
     }
-    this.collapsedCategories = next; // new reference → triggers change detection
+    this.collapsedCategories = next;
     this.cdr.markForCheck();
   }
 
@@ -206,12 +211,11 @@ export class PermissionMatrixComponent implements OnInit {
   dismissError(): void { this.error = null; }
 
   flash(type: 'success' | 'error', msg: string): void {
-    if(type === 'success'){
+    if (type === 'success') {
       this.successMessage = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.successMessage = null), 3000);
-    }
-    else{
+    } else {
       this.error = msg;
       this.cdr.markForCheck();
       setTimeout(() => (this.error = null), 3000);

@@ -1,5 +1,4 @@
 ﻿using ERP.ClientService.Application.DTOs;
-using ERP.ClientService.Domain;
 
 namespace ERP.ClientService.Application.Interfaces;
 
@@ -11,10 +10,6 @@ public interface IClientService
     Task RestoreAsync(Guid id);
     Task<ClientResponseDto> BlockAsync(Guid id);
     Task<ClientResponseDto> UnblockAsync(Guid id);
-    Task<ClientResponseDto> SetCreditLimitAsync(Guid id, decimal limit);
-    Task<ClientResponseDto> RemoveCreditLimitAsync(Guid id);
-    Task<ClientResponseDto> SetDelaiRetourAsync(Guid id, int days);
-    Task<ClientResponseDto> ClearDelaiRetourAsync(Guid id);
     Task<ClientResponseDto> AddCategoryAsync(Guid clientId, Guid categoryId, Guid assignedById);
     Task<ClientResponseDto> RemoveCategoryAsync(Guid clientId, Guid categoryId);
     Task<ClientResponseDto> GetByIdAsync(Guid id);

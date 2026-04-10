@@ -1,7 +1,8 @@
+using ERP.InvoiceService.Infrastructure.Messaging;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Application.Services;
+using ERP.StockService.Infrastructure.Messaging;
 using ERP.StockService.Infrastructure.Persistence;
-using ERP.StockService.Infrastructure.Persistence.Messaging;
 using ERP.StockService.Infrastructure.Persistence.Repositories;
 using ERP.StockService.Infrastructure.Persistence.Seeders;
 using ERP.StockService.Middleware;
@@ -22,10 +23,18 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<StockDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
+
 // =========================
 // HTTP CLIENTS
 // =========================
-builder.Services.AddHttpClient<IArticleService, ArticleServiceClient>(client =>
+builder.Services.AddHttpClient<IArticleServiceHttpClient, ArticleServiceHttpClient>(client =>
 {
     client.BaseAddress = new Uri(
         builder.Configuration["Services:ArticleService:BaseUrl"]
@@ -33,7 +42,7 @@ builder.Services.AddHttpClient<IArticleService, ArticleServiceClient>(client =>
                 "Services:ArticleService:BaseUrl is not configured."));
 });
 
-builder.Services.AddHttpClient<IClientService, ClientServiceHttpClient>(client =>
+builder.Services.AddHttpClient<IClientServiceHttpClient, ClientServiceHttpClient>(client =>
 {
     client.BaseAddress = new Uri(
         builder.Configuration["Services:ClientService:BaseUrl"]
@@ -49,13 +58,17 @@ builder.Services.AddHttpClient<IClientService, ClientServiceHttpClient>(client =
 builder.Services.AddScoped<IBonEntreRepository, BonEntreRepository>();
 builder.Services.AddScoped<IBonSortieRepository, BonSortieRepository>();
 builder.Services.AddScoped<IBonRetourRepository, BonRetourRepository>();
-builder.Services.AddScoped<IFournisseurRepository, FournisseurRepository>();
 
 builder.Services.AddScoped<IBonNumeroRepository, BonNumeroRepository>();
-builder.Services.AddScoped<IBonEntreService,  BonEntreService>();
+builder.Services.AddScoped<IBonEntreService, BonEntreService>();
 builder.Services.AddScoped<IBonSortieService, BonSortieService>();
 builder.Services.AddScoped<IBonRetourService, BonRetourService>();
-builder.Services.AddScoped<IFournisseurService, FournisseurService>();
+builder.Services.AddScoped<IJournalStockRepository, JournalStockRepository>();
+
+// =========================
+// SEEDERS
+// =========================
+builder.Services.AddStockSeeders(); // Add this line!
 
 // =========================
 // CONTROLLERS & API
@@ -66,9 +79,9 @@ builder.Services
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.ReferenceHandler =
-            System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; // ← add this
-    }).ConfigureApiBehaviorOptions(options =>
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    })
+    .ConfigureApiBehaviorOptions(options =>
     {
         // Unified validation error response — Data Annotations return this shape
         options.InvalidModelStateResponseFactory = context =>
@@ -92,11 +105,18 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
+// =========================
+// MIGRATIONS & SEEDING
+// =========================
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<StockDbContext>();
-    db.Database.Migrate();
-    await StockDbSeeder.SeedAsync(db);
+    await db.Database.EnsureDeletedAsync();
+    await db.Database.MigrateAsync(); // Make this async
+
+    // Use the seeded instance instead of static method
+    var seeder = scope.ServiceProvider.GetRequiredService<StockDbSeeder>();
+    await seeder.SeedAsync();
 }
 
 app.UseSwagger();

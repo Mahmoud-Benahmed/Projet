@@ -1,6 +1,6 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.DTOs.Role;
-using ERP.AuthService.Application.Exceptions.Role;
+using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
@@ -8,15 +8,15 @@ using ERP.AuthService.Domain.Logger;
 
 namespace ERP.AuthService.Application.Services
 {
-    public class ControleService: IControleService
+    public class ControleService : IControleService
     {
         private readonly IAuditLogger _auditLogger;
         private readonly IControleRepository _controleRepository;
 
-        public ControleService( IAuditLogger auditLogger,
+        public ControleService(IAuditLogger auditLogger,
                                 IControleRepository controleRepository)
         {
-            _auditLogger= auditLogger;
+            _auditLogger = auditLogger;
             _controleRepository = controleRepository;
         }
 
@@ -28,10 +28,10 @@ namespace ERP.AuthService.Application.Services
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _controleRepository.GetAllPagedAsync(pageNumber, pageSize);
             var mapped = items.Select(MapToDto).ToList();
-            return new PagedResultDto<ControleResponseDto> (
+            return new PagedResultDto<ControleResponseDto>(
                 mapped,
                 totalCount,
-                pageNumber, 
+                pageNumber,
                 pageSize);
         }
 
@@ -86,7 +86,7 @@ namespace ERP.AuthService.Application.Services
                         metadata: new() { ["created"] = request.Libelle.ToString(), ["createdBy"] = requesterId.ToString() });
 
             return MapToDto(controle);
-            
+
         }
 
         /// <summary>
@@ -121,9 +121,7 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task DeleteByIdAsync(Guid id, Guid requesterId)
         {
-            var existing = await _controleRepository.GetByIdAsync(id);
-            if (existing is null)
-                throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
+            var existing = await _controleRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
             await _controleRepository.DeleteAsync(id);
 

@@ -8,6 +8,8 @@ namespace ERP.AuthService.Infrastructure.Persistence
     {
         public static async Task InitializeAsync(MongoDbContext context)
         {
+            await context.DropDatabaseAsync();
+
             // Controles — unique libelle
             await context.Controles.Indexes.CreateOneAsync(
                 new CreateIndexModel<Controle>(

@@ -1,5 +1,4 @@
 ﻿using ERP.ClientService.Application.DTOs;
-using ERP.ClientService.Domain;
 using FluentValidation;
 
 namespace ERP.ClientService.Application.Validators;
@@ -172,25 +171,6 @@ public class UpdateClientRequestValidator : AbstractValidator<UpdateClientReques
     }
 }
 
-public class SetCreditLimitRequestValidator : AbstractValidator<SetCreditLimitRequestDto>
-{
-    public SetCreditLimitRequestValidator()
-    {
-        RuleFor(x => x.Limit)
-            .GreaterThan(0m)
-                .WithMessage("Credit limit must be positive.");
-    }
-}
-
-public class SetDelaiRetourRequestValidator : AbstractValidator<SetDelaiRetourRequestDto>
-{
-    public SetDelaiRetourRequestValidator()
-    {
-        RuleFor(x => x.Days)
-            .GreaterThan(0)
-                .WithMessage("Return delay must be at least 1 day.");
-    }
-}
 
 public class AddCategoryRequestValidator : AbstractValidator<AddCategoryRequestDto>
 {

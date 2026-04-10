@@ -1,5 +1,5 @@
 import { AuthService } from '../../services/auth/auth.service';
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 import { ModalComponent } from '../modal/modal';
 import { HttpError } from '../../interfaces/ErrorDto';
+import { environment } from '../../environment';
+import { UserSettingsService } from '../../services/user-settings.service';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -26,47 +30,67 @@ import { HttpError } from '../../interfaces/ErrorDto';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDialogModule
+    MatDialogModule,
+    TranslatePipe
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
   encapsulation: ViewEncapsulation.None
 })
-export class LoginComponent implements OnInit{
+export class LoginComponent implements OnInit, OnDestroy {
+  private langSub?: Subscription;
 
+  readonly year: number = new Date().getFullYear();
   userProfile: AuthUserGetResponseDto | null = null;
 
   credentials = { login: '', password: '' };
   showPassword = false;
   isLoading = false;
+  errorMessage: string | null = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public userSettings: UserSettingsService,
+    public translate: TranslateService
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn()!) {
+    if (this.authService.isLoggedIn()) {
       this.router.navigate(['/home']);
     }
+
+    this.langSub = this.translate.onLangChange.subscribe(() => {
+      this.cdr.detectChanges();
+    });
+
+    this.cdr.detectChanges();
   }
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
+  dismissError(): void {
+    this.errorMessage = null;
+  }
+
   onSubmit(): void {
     this.isLoading = true;
+    this.errorMessage = null;
+
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
         this.authService.getMe().subscribe({
           next: (authUser) => {
+            this.isLoading = false;
             this.userProfile = authUser;
             this.authService.setUserProfile(this.userProfile);
+            this.userSettings.persistToServer();
 
-            if (response.mustChangePassword) {
+            if (response.mustChangePassword && environment.production) {
               this.stopLoading();
               this.router.navigate(['/must-change-password']);
               return;
@@ -74,35 +98,69 @@ export class LoginComponent implements OnInit{
             this.router.navigate(['/home']);
           },
           error: () => {
+            this.stopLoading();
             this.authService.logout();
           }
         });
       },
       error: (error) => {
         this.stopLoading();
-        if ([0, 403, 429].includes(error.status)) return;
-        let err = error.error as HttpError
-        this.dialog.open(ModalComponent, {
-              width: '400px',
-              data: {
-                title: "Error",
-                message: err.message,
-                confirmText: 'Ok',
-                showCancel: false,
-                icon: 'dangerous',
-                iconColor: 'danger'
-              }
-          });
+
+        // Handle specific status codes
+        if (error.status === 0) {
+          this.showErrorDialog('SERVER_UNREACHABLE', error);
+          return;
+        }
+        if (error.status === 403) {
+          this.showErrorDialog('ACCESS_DENIED', error);
+          return;
+        }
+        if (error.status === 429) {
+          this.showErrorDialog('RATE_LIMIT', error);
+          return;
+        }
+
+        const code = error.error?.code ?? 'UNKNOWN';
+        this.showErrorDialog(code, error);
       }
     });
   }
 
-  goToSignup(): void {
-    this.router.navigate(['/register']);
+  private showErrorDialog(code: string, error: any): void {
+    const key = `ERRORS.${code}`;
+    const translatedMsg = this.translate.instant(key);
+
+    // If translation key doesn't exist, fall back to error message from server
+    const displayMessage = translatedMsg === key
+      ? (error.error?.message ?? translatedMsg)
+      : translatedMsg;
+
+    // Determine dialog title based on error type
+    let titleKey = 'DIALOG.ACCESS_DENIED';
+    if (code === 'SERVER_UNREACHABLE') titleKey = 'DIALOG.SERVER_UNREACHABLE';
+    if (code === 'RATE_LIMIT') titleKey = 'DIALOG.RATE_LIMIT';
+    if (code === 'AUTH_003') titleKey = 'DIALOG.ACCOUNT_DEACTIVATED';
+    if (code === 'AUTH_019') titleKey = 'DIALOG.SESSION_EXPIRED';
+
+    this.dialog.open(ModalComponent, {
+      width: '400px',
+      data: {
+        title:       this.translate.instant(titleKey),
+        message:     displayMessage,
+        confirmText: this.translate.instant('DIALOG.OK'),
+        showCancel:  false,
+        icon:        'dangerous',
+        iconColor:   'danger'
+      }
+    });
   }
 
-  stopLoading() {
+  stopLoading(): void {
     this.isLoading = false;
     this.cdr.markForCheck();
+  }
+
+  ngOnDestroy(): void {
+    this.langSub?.unsubscribe();
   }
 }

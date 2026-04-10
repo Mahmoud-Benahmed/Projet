@@ -1,5 +1,4 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
-using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
 using MongoDB.Driver;
 

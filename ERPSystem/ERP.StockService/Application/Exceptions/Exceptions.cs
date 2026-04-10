@@ -1,10 +1,4 @@
 ﻿namespace ERP.StockService.Application.Exceptions;
-public class FournisseurNotFoundException(Guid id)
-    : KeyNotFoundException($"Fournisseur '{id}' was not found.");
-
-public class FournisseurBlockedException(Guid id)
-    : InvalidOperationException($"Fournisseur '{id}' is blocked.");
-
 public class BonNotFoundException(Guid id)
     : KeyNotFoundException($"Bon with '{id}' was not found.");
 public class BonEntreNotFoundException(Guid id)
@@ -30,3 +24,20 @@ public class RetourQuantityExceedsSourceException : Exception
     {
     }
 }
+public class ClientNotFoundException : Exception
+{
+    public ClientNotFoundException(Guid id)
+        : base($"Client with id '{id}' was not found.") { }
+}
+
+public class ArticleNotFoundException : Exception
+{
+    public ArticleNotFoundException(Guid id)
+        : base($"Article with id '{id}' was not found.") { }
+
+    public ArticleNotFoundException(string code)
+        : base($"Article with code '{code}' was not found.") { }
+}
+
+public class InsufficientStockException(Guid articleId, decimal available, decimal requested)
+    : Exception($"Insufficient stock for article {articleId}: available={available}, requested={requested}");

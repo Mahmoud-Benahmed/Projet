@@ -1,16 +1,23 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, DestroyRef, ViewChild, ElementRef, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, firstValueFrom, forkJoin, Observable, of } from 'rxjs';
+
 import { AuthService, PRIVILEGES } from '../../services/auth/auth.service';
-import { InvoiceService, InvoiceDto, CreateInvoiceDto } from '../../services/invoices/invoice.service';
+import { InvoiceService, InvoiceDto, CreateInvoiceDto, InvoiceStatsDto } from '../../services/invoices/invoice.service';
 import { ClientsService, ClientResponseDto } from '../../services/clients/clients.service';
-import { ArticleService, ArticleResponseDto } from '../../services/articles/articles.service';
+import { ArticleService, UnitEnum } from '../../services/articles/articles.service';
 import { PaginationComponent } from '../pagination/pagination';
 import { ModalComponent } from '../modal/modal';
+import { HttpError } from '../../interfaces/ErrorDto';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { StockItem, StockService } from '../../services/stock.service';
 
 interface PendingItem {
   _localId: string;
@@ -24,6 +31,20 @@ interface PendingItem {
   totalTTC: number;
 }
 
+export interface InvoiceValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  discountedTotal?: number;
+  originalTotal?: number;
+  discountApplied?: number;
+  discountRate?: number;
+}
+
+type ViewMode = 'list' | 'list-deleted' | 'create'|'edit' | 'view' | 'stats';
+
+Chart.register(...registerables);
+
 @Component({
   selector: 'app-invoices',
   standalone: true,
@@ -36,35 +57,73 @@ interface PendingItem {
     MatTooltipModule,
     MatDialogModule,
     PaginationComponent,
+    TranslatePipe
   ],
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',
 })
-export class InvoicesComponent implements OnInit {
+export class InvoicesComponent implements OnInit, OnDestroy{
+  @ViewChild('monthlyChart') monthlyChartRef!: ElementRef<HTMLCanvasElement>;
+  private chart: Chart | null = null;
+  private themeObserver: MutationObserver | null = null;
+  private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+  private cdr = inject(ChangeDetectorRef);
+  
+
+  creditWarning: string | null = null;
+  discountInfo = {
+    applies: false,
+    rate: 0,
+    discountAmount: 0,
+    originalTotal: 0,
+    discountedTotal: 0
+  };
+  isValidating = false;
+  selectedClientForValidation: ClientResponseDto | null = null;
 
   readonly PRIVILEGES = PRIVILEGES;
+  readonly units = UnitEnum;
 
-  viewMode = signal<'list' | 'list-deleted' | 'create' | 'view'>('list');
-  isList()        { return this.viewMode() === 'list'; }
-  isDeletedList() { return this.viewMode() === 'list-deleted'; }
-  isCreate()      { return this.viewMode() === 'create'; }
-  isView()        { return this.viewMode() === 'view'; }
+  articles: StockItem[] = [];
+  private originalArticles: StockItem[] = [];
+  private usedQuantities: Map<string, number> = new Map();
 
-  invoices: InvoiceDto[]        = [];
+  // ── View mode ──────────────────────────────────────────────────────────────
+  viewMode = signal<ViewMode>('list');
+  private previousMode: ViewMode = 'list';
+
+  isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
+
+  isList = this.isMode('list');
+  isDeletedList = this.isMode('list-deleted');
+  isCreate = this.isMode('create');
+  isEdit = this.isMode('edit');
+  isView = this.isMode('view');
+  isStats = this.isMode('stats');
+
+  // ── Invoice list state ─────────────────────────────────────────────────────
+  invoices: InvoiceDto[] = [];
   deletedInvoices: InvoiceDto[] = [];
   selectedInvoice: InvoiceDto | null = null;
 
-  totalCount  = 0;
+  totalCount = 0;
   currentPage = 1;
   currentSize = 10;
   readonly pageSizeOptions = [5, 10, 25, 50];
   get totalPages(): number { return Math.ceil(this.totalCount / this.currentSize) || 1; }
 
+  // ── Quick stats (tabs/cards) ───────────────────────────────────────────────
   stats = { total: 0, draft: 0, unpaid: 0, paid: 0, cancelled: 0, deleted: 0 };
 
-  searchQuery   = '';
-  statusFilter  = 'ALL';
-  sortColumn    = '';
+  // ── Full stats from API ────────────────────────────────────────────────────
+  invoiceStats: InvoiceStatsDto | null = null;
+  statsLoading = false;
+
+  // ── Filters / sort ────────────────────────────────────────────────────────
+  searchQuery = '';
+  statusFilter = 'ALL';
+  sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
   get sortedData(): InvoiceDto[] {
@@ -87,41 +146,73 @@ export class InvoicesComponent implements OnInit {
     return data;
   }
 
+  // ── Alerts ────────────────────────────────────────────────────────────────
   errors: string[] = [];
-  successMessage   = '';
+  successMessage: string | null = null;
 
+  // ── Forms ────────────────────────────────────────────────────────────────
   invoiceForm!: FormGroup;
   itemForm!: FormGroup;
 
-  clients: ClientResponseDto[]         = [];
+  // ── Clients ───────────────────────────────────────────────────────────────
+  clients: ClientResponseDto[] = [];
   filteredClients: ClientResponseDto[] = [];
-  clientSearchQuery                    = '';
+  clientSearchQuery = '';
 
-  articles: ArticleResponseDto[] = [];
-
+  // ── Pending line items (create view) ──────────────────────────────────────
   pendingItems: PendingItem[] = [];
-  inlineItemOpen    = false;
+  inlineItemOpen = false;
   inlineItemLocalId = '';
 
+  // Cached selected article for template bindings to avoid repeated find() per CD cycle
+  private _selectedArticle: StockItem | null = null;
+
   constructor(
-    public  authService:    AuthService,
+    public authService: AuthService,
     private invoiceService: InvoiceService,
     private clientsService: ClientsService,
     private articleService: ArticleService,
-    private fb:             FormBuilder,
-    private dialog:         MatDialog,
+    private fb: FormBuilder,
+    private dialog: MatDialog,
+    private stock: StockService
   ) {}
+
+  ngAfterViewInit(): void {
+    this.observeThemeChanges();
+  }
 
   ngOnInit(): void {
     this.buildForms();
-    this.loadInvoices();
-    this.loadClients();
-    this.loadArticles();
+    this.reload();
   }
 
+  ngOnDestroy(): void {
+    this.themeObserver?.disconnect();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  }
+
+  // ── Page title ────────────────────────────────────────────────────────────
+  get pageTitle(): string {
+    if (this.isCreate()) return 'INVOICES.TITLE_NEW';
+    if (this.isView()) return 'INVOICES.TITLE_DETAILS';
+    if (this.isDeletedList()) return 'INVOICES.TITLE_DELETED';
+    if (this.isStats()) return 'INVOICES.TITLE_ANALYTICS';
+    return 'INVOICES.TITLE_LIST';
+  }
+
+  get duePaymentPeriodHint(): string {
+    if (!this.selectedClientForValidation?.duePaymentPeriod) return '';
+    return this.translate.instant('INVOICES.FORM.DUE_DATE_HINT', {
+      days: this.selectedClientForValidation.duePaymentPeriod
+    });
+  }
+
+  // ── Forms ─────────────────────────────────────────────────────────────────
   private buildForms(): void {
     this.invoiceForm = this.fb.group({
-      invoiceNumber:   ['', Validators.required],
       invoiceDate:     ['', Validators.required],
       dueDate:         ['', Validators.required],
       clientId:        ['', Validators.required],
@@ -129,56 +220,113 @@ export class InvoicesComponent implements OnInit {
       clientAddress:   ['', Validators.required],
       additionalNotes: [null],
     });
+
     this.itemForm = this.fb.group({
       articleId:  ['', Validators.required],
       quantity:   [1,  [Validators.required, Validators.min(1)]],
       uniPriceHT: [0,  [Validators.required, Validators.min(0)]],
-      taxRate:    [0.19],
+      taxRate:    [19, [Validators.required, Validators.min(0), Validators.max(100)]],
+    });
+
+    this.invoiceForm.get('invoiceDate')?.valueChanges.subscribe(() => {
+      this.onInvoiceDateChange();
+    });
+
+    // Clear cached selected article when articleId changes
+    this.itemForm.get('articleId')?.valueChanges.subscribe(id => {
+      this._selectedArticle = id ? (this.articles.find(a => a.id === id) ?? null) : null;
     });
   }
 
-  loadInvoices(): void {
-    if (this.statusFilter === 'ALL') {
-      this.invoiceService.getAll(this.currentPage, this.currentSize).subscribe({
-        next: (res: { items: InvoiceDto[]; totalCount: number }) => {
-          this.invoices   = res.items;
-          this.totalCount = res.totalCount;
-          this.refreshStats();
-        },
-        error: () => this.addError('Failed to load invoices'),
-      });
-    } else {
-      this.invoiceService.getByStatus(this.statusFilter, this.currentPage, this.currentSize).subscribe({
-        next: (res: { items: InvoiceDto[]; totalCount: number }) => {
-          this.invoices   = res.items;
-          this.totalCount = res.totalCount;
-        },
-        error: () => this.addError('Failed to load invoices'),
-      });
-    }
+  // ── Load data ─────────────────────────────────────────────────────────────
+  load(): void {
+    const req$ = this.statusFilter === 'ALL'
+      ? this.invoiceService.getAll(this.currentPage, this.currentSize)
+      : this.invoiceService.getByStatus(this.statusFilter, this.currentPage, this.currentSize);
+
+    req$.subscribe({
+      next: res => {
+        this.invoices = res.items;
+        this.totalCount = res.totalCount;
+        if (this.statusFilter === 'ALL') this.refreshStats();
+      },
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED')),
+    });
   }
 
   loadDeletedInvoices(): void {
     this.invoiceService.getDeleted(this.currentPage, this.currentSize).subscribe({
-      next: (res: { items: InvoiceDto[]; totalCount: number }) => {
+      next: res => {
         this.deletedInvoices = res.items;
-        this.totalCount      = res.totalCount;
+        this.totalCount = res.totalCount;
       },
-      error: () => this.addError('Failed to load deleted invoices'),
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_DELETED_FAILED')),
     });
   }
 
   loadClients(): void {
     this.clientsService.getAll(1, 1000).subscribe({
-      next: (res: { items: ClientResponseDto[]; totalCount: number }) => { this.clients = res.items; },
+      next: res => { this.clients = res.items; },
       error: () => {},
     });
   }
 
-  loadArticles(): void {
-    this.articleService.getAll(1, 1000).subscribe({
-      next: (res: { items: ArticleResponseDto[]; totalCount: number }) => { this.articles = res.items; },
-      error: () => {},
+  private loadArticlesWithStock(): void {
+    forkJoin({
+      articles: this.articleService.getAll(1, 1000).pipe(catchError(() => of({ items: [] }))),
+      stock: this.stock.getStockArticles().pipe(catchError(() => of({ inStock: [], outStock: [] })))
+    }).subscribe({
+      next: (results) => {
+        const allArticles = results.articles.items || [];
+        const stockData = results.stock || { inStock: [], outStock: [] };
+
+        const stockMap = new Map<string, number>();
+        stockData.inStock.forEach((s: any) => {
+          stockMap.set(s.articleId || s.id, s.quantity);
+        });
+
+        // Store original articles (never modified)
+        this.originalArticles = allArticles
+          .filter((a: any) => stockMap.has(a.id))
+          .map((a: any) => ({ ...a, quantity: stockMap.get(a.id) || 0 }));
+        
+        // Initialize available articles as a copy
+        this.resetAvailableArticles();
+
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.originalArticles = [];
+        this.articles = [];
+      }
+    });
+  }
+
+  // Reset available articles based on original stock
+  private resetAvailableArticles(): void {
+    // Create a deep copy of original articles
+    this.articles = this.originalArticles.map(article => ({
+      ...article,
+      quantity: article.quantity // Keep original stock quantity
+    }));
+    
+    // Reset used quantities tracking
+    this.usedQuantities.clear();
+  }
+
+  loadStats(): void {
+    this.statsLoading = true;
+    this.invoiceStats = null;
+    this.invoiceService.getStats().subscribe({
+      next: stats => {
+        this.invoiceStats = stats;
+        this.statsLoading = false;
+        setTimeout(() => this.renderStatusPieChart(), 100);
+      },
+      error: () => {
+        this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_STATS_FAILED'));
+        this.statsLoading = false;
+      },
     });
   }
 
@@ -186,7 +334,7 @@ export class InvoicesComponent implements OnInit {
     this.stats.total = this.totalCount;
     (['DRAFT', 'UNPAID', 'PAID', 'CANCELLED'] as const).forEach(status => {
       this.invoiceService.getByStatus(status, 1, 1).subscribe({
-        next: (res: { totalCount: number }) => {
+        next: res => {
           if (status === 'DRAFT')     this.stats.draft     = res.totalCount;
           if (status === 'UNPAID')    this.stats.unpaid    = res.totalCount;
           if (status === 'PAID')      this.stats.paid      = res.totalCount;
@@ -195,73 +343,242 @@ export class InvoicesComponent implements OnInit {
       });
     });
     this.invoiceService.getDeleted(1, 1).subscribe({
-      next: (res: { totalCount: number }) => this.stats.deleted = res.totalCount,
+      next: res => this.stats.deleted = res.totalCount,
     });
+  }
+
+  reload(): void {
+    this.loadClients();
+    this.loadArticlesWithStock();
+
+    if (this.isDeletedList()) {
+      this.loadDeletedInvoices();
+    } else if (this.isStats()) {
+      this.loadStats();
+    } else {
+      this.load();
+    }
+  }
+
+  // ── Navigation / Mode Management ──────────────────────────────────────────
+
+  openStats(): void {
+    if (this.isStats()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('stats');
+    this.loadStats();
   }
 
   openCreate(): void {
-    this.invoiceForm.reset();
-    this.pendingItems      = [];
-    this.inlineItemOpen    = false;
-    this.inlineItemLocalId = '';
-    this.clientSearchQuery = '';
-    this.filteredClients   = [];
-    this.viewMode.set('create');
+    if (this.isCreate()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('create');
+    this.resetCreateForm();
+
+    const today = new Date();
+    this.invoiceForm.patchValue({ invoiceDate: today.toISOString().split('T')[0] });
+  }
+
+  openEdit(invoice: InvoiceDto): void {
+    if (this.isEdit()) return;
+    
+    // Reset available articles first
+    this.resetAvailableArticles();
+    
+    this.previousMode = this.viewMode();
+    this.setViewMode('edit');
+    this.selectedInvoice = invoice;
+    
+    // Track used quantities from existing invoice items
+    invoice.items.forEach(item => {
+      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
+      this.usedQuantities.set(item.articleId, currentUsed + item.quantity);
+      
+      // Update available stock
+      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
+      if (articleToUpdate) {
+        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - (currentUsed + item.quantity);
+      }
+    });
+    
+    // Format dates
+    const formattedInvoiceDate = invoice.invoiceDate ? new Date(invoice.invoiceDate).toISOString().split('T')[0] : '';
+    const formattedDueDate = invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : '';
+    
+    // Populate form
+    this.invoiceForm.patchValue({
+      invoiceDate: formattedInvoiceDate,
+      dueDate: formattedDueDate,
+      clientId: invoice.clientId,
+      clientFullName: invoice.clientFullName,
+      clientAddress: invoice.clientAddress,
+      additionalNotes: invoice.additionalNotes,
+    });
+    
+    // Populate pending items
+    this.pendingItems = invoice.items.map(item => ({
+      _localId: crypto.randomUUID(),
+      articleId: item.articleId,
+      articleName: item.articleName,
+      articleBarCode: item.articleBarCode,
+      quantity: item.quantity,
+      uniPriceHT: item.uniPriceHT,
+      taxRate: item.taxRate,
+      totalHT: item.totalHT,
+      totalTTC: item.totalTTC
+    }));
+    
+    // Find and set the selected client
+    const client = this.clients.find(c => c.id === invoice.clientId);
+    if (client) {
+      this.selectedClientForValidation = client;
+    }
+    
+    this.cdr.markForCheck();
   }
 
   openView(invoice: InvoiceDto): void {
-    this.invoiceService.getById(invoice.id).subscribe({
-      next: (full: InvoiceDto) => { this.selectedInvoice = full; this.viewMode.set('view'); },
-      error: () => this.addError('Failed to load invoice details'),
-    });
+    if (this.isView()) return;
+    this.previousMode = this.viewMode();
+    this.setViewMode('view');
+    this.selectedInvoice = invoice;
   }
 
   cancel(): void {
-    this.viewMode.set('list');
-    this.selectedInvoice = null;
+    const target = this.resolveCancel();
+    this.setViewMode(target);
+
+    if (target !== 'view') this.selectedInvoice = null;
+    if (target !== 'create') this.resetCreateForm();
+
+    this.reload();
   }
+
+  private resolveCancel(): ViewMode {
+    const current = this.viewMode();
+    if (current === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted')) {
+      return this.previousMode;
+    }
+    if (current === 'create') return this.previousMode ?? 'list';
+    if (current === 'stats') return 'list';
+    this.resetCreateForm();
+    return 'list';
+  }
+
+  private resetCreateForm(): void {
+    // Reset form values
+    this.invoiceForm.reset({
+      invoiceDate: '',
+      dueDate: '',
+      clientId: '',
+      clientFullName: '',
+      clientAddress: '',
+      additionalNotes: null,
+    });
+    
+    // Mark form as pristine and untouched
+    this.invoiceForm.markAsPristine();
+    this.invoiceForm.markAsUntouched();
+    
+    // Reset all form controls individually
+    Object.keys(this.invoiceForm.controls).forEach(key => {
+      const control = this.invoiceForm.get(key);
+      control?.markAsPristine();
+      control?.markAsUntouched();
+      control?.setErrors(null);
+    });
+    
+    // Clear pending items
+    this.pendingItems = [];
+    this.inlineItemOpen = false;
+    this.inlineItemLocalId = '';
+    this.clientSearchQuery = '';
+    this.filteredClients = [];
+    this.creditWarning = null;
+    this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
+    this.selectedClientForValidation = null;
+    this._selectedArticle = null;
+    
+    // Reset available articles to original stock
+    this.resetAvailableArticles();
+    
+    
+    this.cdr.markForCheck();
+  }
+
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+  }
+
+  // ── Filters / sort ────────────────────────────────────────────────────────
 
   setStatusFilter(status: string): void {
     this.statusFilter = status;
-    this.currentPage  = 1;
-    this.loadInvoices();
+    this.currentPage = 1;
+    this.load();
   }
 
-  applyFilter(): void {}
-
   sortBy(col: string): void {
-    this.sortDirection = this.sortColumn === col && this.sortDirection === 'asc' ? 'desc' : 'asc';
-    this.sortColumn = col;
+    if (this.sortColumn === col) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = col;
+      this.sortDirection = 'asc';
+    }
   }
 
   onPageChange(page: number): void {
     this.currentPage = page;
-    this.isDeletedList() ? this.loadDeletedInvoices() : this.loadInvoices();
+    this.isDeletedList() ? this.loadDeletedInvoices() : this.load();
   }
 
   onPageSizeChange(size: number): void {
     this.currentSize = size;
     this.currentPage = 1;
-    this.isDeletedList() ? this.loadDeletedInvoices() : this.loadInvoices();
+    this.isDeletedList() ? this.loadDeletedInvoices() : this.load();
   }
 
+  // ── Client autocomplete ───────────────────────────────────────────────────
+
   filterClients(query: string): void {
-    if (!query) { this.filteredClients = []; return; }
+    if (!query || query.length < 2) { this.filteredClients = []; return; }
     const q = query.toLowerCase();
-    this.filteredClients = this.clients.filter(c =>
-      c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
-    ).slice(0, 8);
+    this.filteredClients = this.clients
+      .filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
+      .slice(0, 8);
   }
 
   selectClient(client: ClientResponseDto): void {
+    this.selectedClientForValidation = client;
+
+    let invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
+    if (!invoiceDate) {
+      invoiceDate = new Date().toISOString().split('T')[0];
+      this.invoiceForm.patchValue({ invoiceDate });
+    }
+
     this.invoiceForm.patchValue({
-      clientId:       client.id,
+      clientId: client.id,
       clientFullName: client.name,
-      clientAddress:  client.address ?? '',
+      clientAddress: client.address ?? '',
+      dueDate: this.calculateDueDate(invoiceDate, client.duePaymentPeriod),
     });
+
+    // Mark form as dirty to trigger unsaved changes detection
+    this.invoiceForm.markAsDirty();
+    
     this.clientSearchQuery = client.name;
-    this.filteredClients   = [];
+    this.filteredClients = [];
+    this.checkClientLimitsAndDiscount();
   }
+
+  onClientSelectChange(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    const client = this.clients.find(c => c.id === id);
+    if (client) this.selectClient(client);
+  }
+
+  // ── Article selection ─────────────────────────────────────────────────────
 
   onArticleSelectChange(event: Event): void {
     const id = (event.target as HTMLSelectElement).value;
@@ -269,143 +586,460 @@ export class InvoicesComponent implements OnInit {
     this.onArticleSelected(article);
   }
 
-  onArticleSelected(article: ArticleResponseDto | undefined): void {
+  onArticleSelected(article: StockItem | undefined): void {
     if (!article) return;
-    this.itemForm.patchValue({ uniPriceHT: article.prix ?? 0, taxRate: article.tva ?? 0.19 });
+    this._selectedArticle = article;
+    this.itemForm.patchValue({
+      uniPriceHT: article.prix ?? 0,
+      taxRate: article.tva ?? 19,
+    });
+    this.updateQuantityValidator(article.quantity ?? 0);
   }
 
+  // ── Inline item form ──────────────────────────────────────────────────────
+
   openInlineItemAdd(): void {
-    this.itemForm.reset({ quantity: 1, uniPriceHT: 0, taxRate: 0.19 });
+    this.itemForm.reset({ articleId: '', quantity: 1, uniPriceHT: 0, taxRate: 19 });
+    this._selectedArticle = null;
     this.inlineItemLocalId = '';
-    this.inlineItemOpen    = true;
+    this.inlineItemOpen = true;
   }
 
   openInlineItemEdit(item: PendingItem): void {
+    this._selectedArticle = this.articles.find(a => a.id === item.articleId) ?? null;
     this.itemForm.patchValue({
-      articleId: item.articleId, quantity: item.quantity,
-      uniPriceHT: item.uniPriceHT, taxRate: item.taxRate,
+      articleId: item.articleId,
+      quantity: item.quantity,
+      uniPriceHT: item.uniPriceHT,
+      taxRate: item.taxRate<1 ? item.taxRate* 100 : item.taxRate,
     });
+    if (this._selectedArticle) {
+      this.updateQuantityValidator(this._selectedArticle.quantity ?? 0);
+    }
     this.inlineItemLocalId = item._localId;
-    this.inlineItemOpen    = true;
+    this.inlineItemOpen = true;
   }
 
   closeInlineItem(): void {
-    this.inlineItemOpen    = false;
+    this.inlineItemOpen = false;
     this.inlineItemLocalId = '';
+    this._selectedArticle = null;
     this.itemForm.reset();
   }
 
   submitInlineItem(): void {
-    if (this.itemForm.invalid) return;
-    const { articleId, quantity, uniPriceHT, taxRate } = this.itemForm.value;
-    const article  = this.articles.find(a => a.id === articleId);
-    const totalHT  = quantity * uniPriceHT;
-    const totalTTC = totalHT * (1 + taxRate);
+    if (this.itemForm.invalid) {
+      this.flash('error', this.translate.instant('VALIDATION.REQUIRED'));
+      return;
+    }
+
+    const { articleId, quantity, uniPriceHT, taxRate} = {...this.itemForm.value, taxRate: this.itemForm.get('taxRate')?.value};
+    const article = this.articles.find(a => a.id === articleId);
+
+    if (!article) {
+      this.flash('error', this.translate.instant('ERRORS.ARTICLE_NOT_FOUND'));
+      return;
+    }
+
+    // Check available stock from availableArticles (which reflects already used quantities)
+    const currentAvailableStock = article.quantity;
+    const alreadyUsed = this.usedQuantities.get(articleId) || 0;
+    const maxAllowed = currentAvailableStock + alreadyUsed;
+    
+    if (quantity > maxAllowed) {
+      this.flash('error', this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK', {
+        max: maxAllowed, requested: quantity
+      }));
+      return;
+    }
+
+    const taxRateDecimal = taxRate / 100;
+    const totalHT = quantity * uniPriceHT;
+    const totalTTC = totalHT * (1 + taxRateDecimal);
 
     if (this.inlineItemLocalId) {
+      // Editing existing item - adjust used quantities
       const idx = this.pendingItems.findIndex(i => i._localId === this.inlineItemLocalId);
       if (idx !== -1) {
+        const oldQuantity = this.pendingItems[idx].quantity;
+        const quantityDiff = quantity - oldQuantity;
+        
+        // Update used quantities
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantityDiff;
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock for this article
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
         this.pendingItems[idx] = {
-          ...this.pendingItems[idx], articleId,
-          articleName: article?.libelle ?? '', articleBarCode: article?.barCode ?? '',
+          ...this.pendingItems[idx],
+          articleId, articleName: article.libelle ?? '',
+          articleBarCode: article.barCode ?? '',
           quantity, uniPriceHT, taxRate, totalHT, totalTTC,
         };
       }
     } else {
-      this.pendingItems.push({
-        _localId: crypto.randomUUID(), articleId,
-        articleName: article?.libelle ?? '', articleBarCode: article?.barCode ?? '',
-        quantity, uniPriceHT, taxRate, totalHT, totalTTC,
-      });
+      // Adding new item
+      const existingIndex = this.pendingItems.findIndex(i => i.articleId === articleId);
+      if (existingIndex !== -1) {
+        // Merge with existing item
+        const existing = this.pendingItems[existingIndex];
+        const newQuantity = existing.quantity + quantity;
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
+        
+        if (newQuantity > maxAllowed) {
+          this.flash('error', this.translate.instant('STOCK.ERRORS.MERGED_QUANTITY_EXCEEDS_STOCK', {
+            article: article.libelle, total: newQuantity, max: maxAllowed
+          }));
+          return;
+        }
+        
+        // Update used quantities
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
+        this.pendingItems[existingIndex] = {
+          ...existing,
+          quantity: newQuantity,
+          totalHT: newQuantity * existing.uniPriceHT,
+          totalTTC: newQuantity * existing.uniPriceHT * (1 + existing.taxRate / 100),
+        };
+      } else {
+        // Add new item
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
+        this.pendingItems.push({
+          _localId: crypto.randomUUID(),
+          articleId, articleName: article.libelle ?? '',
+          articleBarCode: article.barCode ?? '',
+          quantity, uniPriceHT, taxRate, totalHT, totalTTC,
+        });
+      }
     }
+    
+    this.pendingItems = [...this.pendingItems];
+    this.invoiceForm.markAsDirty();
     this.closeInlineItem();
+    this.checkClientLimitsAndDiscount();
+  }
+
+  // Helper to get original stock quantity
+  private getOriginalStock(articleId: string): number {
+    const original = this.originalArticles.find(a => a.id === articleId);
+    return original?.quantity ?? 0;
   }
 
   removePendingItem(localId: string): void {
+    const item = this.pendingItems.find(i => i._localId === localId);
+    if (item) {
+      // Restore the used quantity back to available stock
+      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
+      const newUsed = Math.max(0, currentUsed - item.quantity);
+      
+      if (newUsed === 0) {
+        this.usedQuantities.delete(item.articleId);
+      } else {
+        this.usedQuantities.set(item.articleId, newUsed);
+      }
+      
+      // Restore available stock
+      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
+      if (articleToUpdate) {
+        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - newUsed;
+      }
+    }
+    
     this.pendingItems = this.pendingItems.filter(i => i._localId !== localId);
+    this.checkClientLimitsAndDiscount();
   }
 
-  submit(): void {
-    if (this.invoiceForm.invalid || this.pendingItems.length === 0) return;
-    const dto: CreateInvoiceDto = {
-      ...this.invoiceForm.value,
-      items: this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => rest),
-    };
-    this.invoiceService.create(dto).subscribe({
-      next: () => { this.showSuccess('Invoice created successfully'); this.loadInvoices(); this.viewMode.set('list'); },
-      error: () => this.addError('Failed to create invoice'),
+  get canSubmit(): boolean {
+    if (this.invoiceForm.invalid) return false;
+    if (this.pendingItems.length === 0) return false;
+    if (this.creditWarning) return false;
+    if (this.isValidating) return false;
+    return true;
+  }
+
+  getSubmitButtonTooltip(): string {
+    if (this.isValidating) return this.translate.instant('COMMON.PROCESSING');
+    if (this.invoiceForm.invalid) return this.translate.instant('VALIDATION.REQUIRED');
+    if (this.pendingItems.length === 0) return this.translate.instant('INVOICES.FORM.NO_ITEMS_YET');
+    if (this.creditWarning) return this.translate.instant('INVOICES.ERRORS.CREDIT_LIMIT_EXCEEDED');
+    return '';
+  }
+
+  async validateAllItemsStock(): Promise<boolean> {
+    const stockChecks = this.pendingItems.map(async (item) => {
+      try {
+        const response = await firstValueFrom(this.stock.getArticleCurrentStock(item.articleId));
+        const currentStock = response?.currentStock ?? 0;
+        if (currentStock < item.quantity) {
+          return { valid: false, articleName: item.articleName, requested: item.quantity, available: currentStock };
+        }
+        return { valid: true };
+      } catch {
+        return { valid: true };
+      }
     });
+
+    const results = await Promise.all(stockChecks);
+    const failures = results.filter(r => !r.valid);
+
+    if (failures.length > 0) {
+      const msgs = failures.map(f =>
+        this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK_DETAIL', {
+          article: (f as any).articleName,
+          requested: (f as any).requested,
+          available: (f as any).available,
+        })
+      );
+      this.flash('error', msgs.join('; '));
+      return false;
+    }
+    return true;
+  }
+
+  // ── CRUD actions ──────────────────────────────────────────────────────────
+  async submit(): Promise<void> {
+    if (this.invoiceForm.invalid) {
+      this.flash('error', this.translate.instant('VALIDATION.REQUIRED'));
+      return;
+    }
+    if (this.pendingItems.length === 0) {
+      this.flash('error', this.translate.instant('INVOICES.FORM.NO_ITEMS_YET'));
+      return;
+    }
+
+    const stockValid = await this.validateAllItemsStock();
+    if (!stockValid) return;
+
+    const formValue = this.invoiceForm.value;
+    const selectedClient = this.clients.find(c => c.id === formValue.clientId);
+    if (!selectedClient) {
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_NOT_FOUND'));
+      return;
+    }
+
+    const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
+      articleId: rest.articleId,
+      quantity: rest.quantity,
+      uniPriceHT: rest.uniPriceHT,
+      taxRate: rest.taxRate,
+    }));
+
+    this.isValidating = true;
+
+    try {
+      const validation = await this.invoiceService.validateInvoiceBeforeSubmission(selectedClient, items);
+
+      if (!validation.isValid) {
+        this.flash('error', validation.errors.join(', '));
+        this.isValidating = false;
+        return;
+      }
+
+      validation.warnings.forEach(w => this.flash('success', w));
+
+      let finalItems = items;
+      if (validation.discountRate && validation.discountRate > 0) {
+        finalItems = this.invoiceService.applyDiscountToItems(items, validation.discountRate);
+      }
+
+      const dto: CreateInvoiceDto = {
+        invoiceDate: formValue.invoiceDate,
+        dueDate: formValue.dueDate,
+        clientId: formValue.clientId,
+        additionalNotes: formValue.additionalNotes,
+        items: finalItems,
+      };
+
+      this.invoiceService.create(dto).subscribe({
+        next: () => {
+          this.flash('success', this.translate.instant('INVOICES.SUCCESS.CREATED'));
+          this.cancel();
+        },
+        error: (err) => {
+          const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.CREATE_FAILED');
+          this.flash('error', errorMsg);
+          this.isValidating = false;
+        },
+      });
+    } catch {
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.VALIDATION_FAILED'));
+      this.isValidating = false;
+    }
   }
 
   finalize(invoice: InvoiceDto): void {
+    this.setViewMode('edit');
     this.invoiceService.finalize(invoice.id).subscribe({
-      next: (u: InvoiceDto) => { this.selectedInvoice = u; this.showSuccess('Invoice finalized'); this.loadInvoices(); },
-      error: () => this.addError('Failed to finalize invoice'),
+      next: (updated) => {
+        if (this.isEdit() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.FINALIZED'));
+        this.reload();
+      },
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.FINALIZE_FAILED')),
     });
   }
 
   markAsPaid(invoice: InvoiceDto): void {
     this.invoiceService.markAsPaid(invoice.id).subscribe({
-      next: (u: InvoiceDto) => { this.selectedInvoice = u; this.showSuccess('Invoice marked as paid'); this.loadInvoices(); },
-      error: () => this.addError('Failed to mark invoice as paid'),
+      next: (updated) => {
+        if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.MARKED_PAID'));
+        this.reload();
+      },
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.MARK_PAID_FAILED')),
     });
   }
 
   cancelInvoice(invoice: InvoiceDto): void {
-    const ref = this.dialog.open(ModalComponent, {
+    const dialogRef = this.dialog.open(ModalComponent, {
       width: '420px',
       data: {
-        icon:        'cancel',
-        iconColor:   'warn',
-        title:       'Cancel Invoice',
-        message:     `Invoice "${invoice.invoiceNumber}" will be cancelled. This action cannot be undone. Do you want to proceed?`,
-        confirmText: 'Cancel Invoice',
-        cancelText:  'Go Back',
+        icon: 'cancel', iconColor: 'warn',
+        title: this.translate.instant('INVOICES.DIALOG.CANCEL_INVOICE_TITLE'),
+        message: this.translate.instant('INVOICES.DIALOG.CANCEL_INVOICE_MESSAGE', { number: invoice.invoiceNumber }),
+        confirmText: this.translate.instant('INVOICES.DIALOG.CANCEL_CONFIRM'),
+        cancelText: this.translate.instant('INVOICES.DIALOG.GO_BACK'),
+        showCancel: true,
       },
     });
-    ref.afterClosed().subscribe(confirmed => {
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(confirmed => {
       if (!confirmed) return;
       this.invoiceService.cancel(invoice.id).subscribe({
-        next: (u: InvoiceDto) => { this.selectedInvoice = u; this.showSuccess('Invoice cancelled'); this.loadInvoices(); },
-        error: () => this.addError('Failed to cancel invoice'),
+        next: (updated) => {
+          if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+          this.flash('success', this.translate.instant('INVOICES.SUCCESS.CANCELLED'));
+          this.reload();
+        },
+        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.CANCEL_FAILED')),
       });
     });
   }
 
   delete(invoice: InvoiceDto): void {
-    const ref = this.dialog.open(ModalComponent, {
+    const dialogRef = this.dialog.open(ModalComponent, {
       width: '420px',
       data: {
-        icon:        'delete',
-        iconColor:   'warn',
-        title:       'Delete Invoice',
-        message:     `Invoice "${invoice.invoiceNumber}" will be soft-deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
-        cancelText:  'Annuler',
+        icon: 'delete', iconColor: 'warn',
+        title: this.translate.instant('INVOICES.DIALOG.DELETE_INVOICE_TITLE'),
+        message: this.translate.instant('INVOICES.DIALOG.DELETE_INVOICE_MESSAGE', { number: invoice.invoiceNumber }),
+        confirmText: this.translate.instant('INVOICES.DIALOG.DELETE_CONFIRM'),
+        cancelText: this.translate.instant('COMMON.CANCEL'),
+        showCancel: true,
       },
     });
-    ref.afterClosed().subscribe(confirmed => {
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(confirmed => {
       if (!confirmed) return;
       this.invoiceService.delete(invoice.id).subscribe({
         next: () => {
-          this.showSuccess('Invoice deleted');
-          this.selectedInvoice = null;
-          this.viewMode.set('list');
-          this.loadInvoices();
+          this.flash('success', this.translate.instant('INVOICES.SUCCESS.DELETED'));
+          if (this.isView()) this.cancel();
+          this.reload();
         },
-        error: () => this.addError('Failed to delete invoice'),
+        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.DELETE_FAILED')),
       });
     });
   }
 
   restore(invoice: InvoiceDto): void {
     this.invoiceService.restore(invoice.id).subscribe({
-      next: () => { this.showSuccess('Invoice restored'); this.loadDeletedInvoices(); },
-      error: () => this.addError('Failed to restore invoice'),
+      next: () => {
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.RESTORED'));
+        if (this.isView()) this.cancel();
+        if (this.isDeletedList()) this.loadDeletedInvoices();
+        else this.reload();
+      },
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.RESTORE_FAILED')),
     });
   }
 
-  /** Maps invoice status to the SCSS badge colour classes. */
+  updateInvoice(): void {
+    if (this.invoiceForm.invalid) {
+      this.flash('error', this.translate.instant('VALIDATION.REQUIRED'));
+      return;
+    }
+    if (this.pendingItems.length === 0) {
+      this.flash('error', this.translate.instant('INVOICES.FORM.NO_ITEMS_YET'));
+      return;
+    }
+
+    this.isValidating = true;
+    const formValue = this.invoiceForm.value;
+
+    const items = this.pendingItems.map(item => ({
+      articleId: item.articleId,
+      quantity: item.quantity,
+      uniPriceHT: item.uniPriceHT,
+      taxRate: item.taxRate, // This should already be in percentage (0-100)
+    }));
+
+    const updateDto = {
+      invoiceDate: formValue.invoiceDate,
+      dueDate: formValue.dueDate,
+      clientId: formValue.clientId,
+      clientAddress: formValue.clientAddress,
+      additionalNotes: formValue.additionalNotes,
+      items: items
+    };
+
+    this.invoiceService.update(this.selectedInvoice!.id, updateDto).subscribe({
+      next: () => {
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.UPDATED'));
+        this.cancel();
+        this.reload();
+      },
+      error: (err) => {
+        const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.UPDATE_FAILED');
+        this.flash('error', errorMsg);
+        this.isValidating = false;
+      },
+    });
+  }
+
+
+  // ── Feedback ──────────────────────────────────────────────────────────────
+
+  flash(type: 'success' | 'error', msg: string): void {
+    if (type === 'success') {
+      this.successMessage = msg;
+      setTimeout(() => { this.successMessage = null; }, 3000);
+    } else {
+      this.errors = [msg];
+      setTimeout(() => { this.errors = []; }, 4000);
+    }
+  }
+
+  dismissError(): void { this.errors = []; }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  isDateOverdue(date: string | Date): boolean {
+    if (!date) return false;
+    const today = new Date();
+    const compareDate = new Date(date);
+    today.setHours(0, 0, 0, 0);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  }
+
   statusClass(status: string): Record<string, boolean> {
     return {
       'badge--amber': status === 'DRAFT',
@@ -415,20 +1049,185 @@ export class InvoicesComponent implements OnInit {
     };
   }
 
-  /** Sum of totalHT across all pending line items. */
-  get pendingTotalHT(): number {
-    return this.pendingItems.reduce((sum, i) => sum + i.totalHT, 0);
-  }
+  get pendingTotalHT(): number { return this.pendingItems.reduce((s, i) => s + i.totalHT, 0); }
+  get pendingTotalTTC(): number { return this.pendingItems.reduce((s, i) => s + i.totalTTC, 0); }
+  get pendingTotalTVA(): number { return this.pendingTotalTTC - this.pendingTotalHT; }
 
-  /** Sum of totalTTC across all pending line items. */
-  get pendingTotalTTC(): number {
-    return this.pendingItems.reduce((sum, i) => sum + i.totalTTC, 0);
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(amount);
   }
 
   trackById(_: number, item: { id: string }) { return item.id; }
   trackByLocalId(_: number, item: PendingItem) { return item._localId; }
 
-  private addError(msg: string): void { this.errors = [msg]; setTimeout(() => this.errors = [], 5000); }
-  dismissError(): void { this.errors = []; }
-  private showSuccess(msg: string): void { this.successMessage = msg; setTimeout(() => this.successMessage = '', 3000); }
+  private getCSSVariable(variableName: string, fallback = '#ffffff'): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim() || fallback;
+  }
+
+  private renderStatusPieChart(): void {
+    if (!this.monthlyChartRef || !this.invoiceStats) return;
+    if (this.chart) { this.chart.destroy(); }
+
+    const textHi = this.getCSSVariable('--text-hi', '#ffffff');
+    const statusLabels = [
+      this.translate.instant('INVOICES.STATUS.DRAFT'),
+      this.translate.instant('INVOICES.STATUS.UNPAID'),
+      this.translate.instant('INVOICES.STATUS.PAID'),
+      this.translate.instant('INVOICES.STATUS.CANCELLED'),
+    ];
+    const statusCounts = [
+      this.invoiceStats.draftCount,
+      this.invoiceStats.unpaidCount,
+      this.invoiceStats.paidCount,
+      this.invoiceStats.cancelledCount,
+    ];
+
+    const config: ChartConfiguration = {
+      type: 'doughnut',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusCounts,
+          backgroundColor: ['#f5a623', '#e05252', '#3ecf8e', '#8b92a8'],
+          borderColor: '#fff',
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { color: textHi, font: { family: 'Outfit, sans-serif', size: 12 }, usePointStyle: true, boxWidth: 10, padding: 15 },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const total = statusCounts.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((ctx.raw as number / total) * 100).toFixed(1) : 0;
+                return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    };
+
+    this.chart = new Chart(this.monthlyChartRef.nativeElement, config);
+  }
+
+  private observeThemeChanges(): void {
+    this.themeObserver = new MutationObserver(() => {
+      if (this.isStats() && this.invoiceStats) this.renderStatusPieChart();
+    });
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['class', 'data-theme'],
+    });
+  }
+
+  async checkClientLimitsAndDiscount(): Promise<void> {
+    if (!this.selectedClientForValidation || this.pendingItems.length === 0) {
+      this.creditWarning = null;
+      this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
+      return;
+    }
+
+    const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
+      articleId: rest.articleId, quantity: rest.quantity,
+      uniPriceHT: rest.uniPriceHT, taxRate: rest.taxRate,
+    }));
+
+    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
+    const { originalTotalTTC, discountedTotalTTC, discountAmount } =
+      this.invoiceService.calculateDiscountedTotals(items, discountRate);
+
+    this.discountInfo = { applies, rate: discountRate, discountAmount, originalTotal: originalTotalTTC, discountedTotal: discountedTotalTTC };
+
+    try {
+      const outstanding = await firstValueFrom(this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id));
+      const creditCheck = this.invoiceService.validateCreditLimit(this.selectedClientForValidation, discountedTotalTTC, outstanding || 0);
+      this.creditWarning = creditCheck.hasSufficientCredit ? null : creditCheck.message;
+    } catch {
+      // silently ignore credit check failures
+    }
+  }
+
+  calculateDueDate(invoiceDate: string | Date | null | undefined, paymentPeriod: number | null | undefined): string {
+    const daysToAdd = paymentPeriod || 30;
+    const date = invoiceDate ? new Date(invoiceDate) : new Date();
+    const due = new Date(date);
+    due.setDate(date.getDate() + daysToAdd);
+    return due.toISOString().split('T')[0];
+  }
+
+  onInvoiceDateChange(): void {
+    const invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
+    if (this.selectedClientForValidation && invoiceDate) {
+      this.invoiceForm.patchValue({
+        dueDate: this.calculateDueDate(invoiceDate, this.selectedClientForValidation.duePaymentPeriod),
+      });
+    }
+  }
+
+  getStockStatusClass(availableStock: number): string {
+    if (availableStock === 0) return 'stock-out';
+    if (availableStock <= 5) return 'stock-critical';
+    if (availableStock <= 10) return 'stock-low';
+    return 'stock-normal';
+  }
+
+  isLowStock(stock: number): boolean { return stock > 0 && stock <= 10; }
+  isCriticalStock(stock: number): boolean { return stock > 0 && stock <= 5; }
+  isOutOfStock(stock: number): boolean { return stock === 0; }
+
+  getAddButtonTooltip(): string {
+    return this.articles.length === 0 ? this.translate.instant('STOCK.ERRORS.ARTICLES_NOT_FOUND') : '';
+  }
+
+  /** Returns the currently selected article. Uses a cached reference set on articleId change. */
+  getSelectedArticle(): StockItem | null {
+    return this._selectedArticle;
+  }
+
+  getAvailableStock(articleId: string): number {
+    return this.articles.find(a => a.id === articleId)?.quantity || 0;
+  }
+
+  private updateQuantityValidator(maxStock: number): void {
+    const qtyControl = this.itemForm.get('quantity');
+    if (!qtyControl) return;
+    const validators = [Validators.required, Validators.min(1)];
+    if (maxStock > 0) validators.push(Validators.max(maxStock));
+    qtyControl.setValidators(validators);
+    qtyControl.updateValueAndValidity();
+  }
+
+  // Used for checkArticleStock calls from openInlineItemEdit
+  checkArticleStock(articleId: string, _requestedQuantity: number): void {
+    const article = this.articles.find(a => a.id === articleId);
+    this.updateQuantityValidator(article?.quantity ?? 0);
+  }
+
+  getQuantityStep(unit?: string): number {
+    if (!unit) return 1;
+    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
+    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.1;
+  }
+
+  getQuantityMin(unit?: string): number {
+    if (!unit) return 1;
+    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
+    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.001;
+  }
+
+  getQuantityMax(): number {
+    return this._selectedArticle?.quantity ?? Infinity;
+  }
+
+  getUnitTranslation(): string {
+    const unit = this._selectedArticle?.unit;
+    if (!unit) return '';
+    return this.translate.instant(`ARTICLES.UNIT.${unit.toUpperCase()}`);
+  }
 }

@@ -1,11 +1,10 @@
 ﻿using ERP.AuthService.Application.DTOs.AuthUser;
 using ERP.AuthService.Application.DTOs.Role;
-using ERP.AuthService.Application.Exceptions.Role;
+using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
 
 namespace ERP.AuthService.Application.Services
 {
@@ -36,7 +35,7 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<List<RoleResponseDto>> GetAllAsync()
         {
-            var items= await _roleRepository.GetAllAsync();
+            var items = await _roleRepository.GetAllAsync();
             return items.Select(MapToDto).ToList();
         }
 
@@ -66,7 +65,7 @@ namespace ERP.AuthService.Application.Services
         }
         public async Task<RoleResponseDto> UpdateAsync(Guid id, RoleUpdateDto dto, Guid performedById)
         {
-            var role= await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
+            var role = await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
             var before = role.Libelle.ToString();
 
             role.UpdateRole(dto.Libelle);
@@ -76,10 +75,12 @@ namespace ERP.AuthService.Application.Services
                     AuditAction.RoleUpdated,
                     success: true,
                     performedBy: performedById,
-                    metadata: new() { 
-                                    ["before"] = before, 
-                                    ["after"] = dto.Libelle.ToString(),
-                                    ["performedBy"]= performedById.ToString() });
+                    metadata: new()
+                    {
+                        ["before"] = before,
+                        ["after"] = dto.Libelle.ToString(),
+                        ["performedBy"] = performedById.ToString()
+                    });
 
             return new RoleResponseDto(role.Id, role.Libelle);
         }

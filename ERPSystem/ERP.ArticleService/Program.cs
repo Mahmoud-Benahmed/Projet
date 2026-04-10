@@ -1,4 +1,3 @@
-using DotNetEnv;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Application.Services;
 using ERP.ArticleService.Infrastructure.Persistence;
@@ -21,6 +20,13 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // ── Database
 builder.Services.AddDbContext<ArticleDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // API responses normalization
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -67,6 +73,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ArticleDbContext>();
+    await context.Database.EnsureDeletedAsync();
     await context.Database.MigrateAsync();
 
     await context.ArticleCodes.IgnoreQueryFilters().ExecuteDeleteAsync();

@@ -1,5 +1,4 @@
 ﻿using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 
 public sealed class BonRetour : PieceStock
 {
@@ -39,9 +38,8 @@ public sealed class BonRetour : PieceStock
     }
 
     // ---------------- UPDATE BON ----------------
-    public void Update(Guid sourceId, string sourceType, string motif, string? observation )
+    public void Update(Guid sourceId, string sourceType, string motif, string? observation)
     {
-        GuardNotDeleted();
 
         if (string.IsNullOrWhiteSpace(motif))
             throw new ArgumentException("Motif is required.");
@@ -58,13 +56,11 @@ public sealed class BonRetour : PieceStock
 
     public void ClearLignes()
     {
-        GuardNotDeleted();
         _lignes.Clear();
     }
 
     public LigneRetour AddLigne(Guid articleId, decimal qty, decimal price)
     {
-        GuardNotDeleted();
 
         if (articleId == Guid.Empty)
             throw new ArgumentException("ArticleId is required.");
@@ -97,12 +93,6 @@ public sealed class BonRetour : PieceStock
     // ---------------- CALCULATE TOTAL ----------------
     public decimal CalculateTotal() => _lignes.Sum(l => l.CalculateTotalLigne());
 
-    // ---------------- GUARD ----------------
-    private void GuardNotDeleted()
-    {
-        if (IsDeleted)
-            throw new InvalidOperationException("Cannot modify a deleted BonRetour.");
-    }
 }
 
 public enum RetourSourceType { BonSortie, BonEntre }

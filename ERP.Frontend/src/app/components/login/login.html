@@ -1,4 +1,4 @@
-<div class="login-container">
+<div class="login-container" >
 
   <!-- Brand -->
   <div class="login-brand">
@@ -7,15 +7,64 @@
     <div class="login-brand__sub">Enterprise Resource Planning</div>
   </div>
 
+<div class="login-topbar">
+
+  <!-- Language toggle -->
+  <div class="lang-toggle">
+    <button class="lang-btn" [class.lang-btn--active]="userSettings.isEn"
+            (click)="userSettings.toggleLanguage()" type="button" title="English">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512">
+        <mask id="mask-en"><circle cx="256" cy="256" r="256" fill="#fff"/></mask>
+        <g mask="url(#mask-en)">
+          <path fill="#0052b4" d="M512 0v512H0l16-34l-16-34V336l64-80l-64-80V68L68 0h108l80 64l80-64h108l34 16z"/>
+          <path fill="#eee" d="m0 0l8 22l-8 23v23l108 108H0v32l32 48l-32 48v32h108L0 444v68L512 0l-23 8l-22-8h-23L336 108V0h-32l-48 32l-48-32h-32v108L68 0zm399 159l-7 15l-16-4l7 15l-12 10l16 4v16l12-10l13 10v-16l16-4l-13-10l7-15l-16 4zm57 51l-7 15l-15-4l7 15l-13 10l16 3v17 l12-10 l13 10 v-17 l16-3 l-13-10 l7-15 l-16 4 z"/>
+          <path fill="#d80027" d="m208 304l96-96V0h-96v208H0v96zm128-128L512 0h-45L336 131Zm-160 0L0 0v45l131 131z"/>
+        </g>
+      </svg>
+      <span class="lang-label">EN</span>
+    </button>
+    <button class="lang-btn" [class.lang-btn--active]="!userSettings.isEn"
+            (click)="userSettings.toggleLanguage()" type="button" title="Français">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512">
+        <mask id="mask-fr"><circle cx="256" cy="256" r="256" fill="#fff"/></mask>
+        <g mask="url(#mask-fr)">
+          <path fill="#eee" d="M167 0h178l25.9 252.3L345 512H167l-29.8-253.4z"/>
+          <path fill="#0052b4" d="M0 0h167v512H0z"/>
+          <path fill="#d80027" d="M345 0h167v512H345z"/>
+        </g>
+      </svg>
+      <span class="lang-label">FR</span>
+    </button>
+  </div>
+
+  <!-- Theme toggle -->
+  <button class="shell-topbar__theme-btn" (click)="userSettings.toggleTheme()" type="button"
+          [title]="userSettings.isDark ? ('TOGGLE_THEME.LIGHT' | translate) : ('TOGGLE_THEME.DARK' | translate)">
+    <svg *ngIf="userSettings.isDark" width="17" height="17" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/>
+    </svg>
+    <svg *ngIf="!userSettings.isDark" width="17" height="17" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  </button>
+
+</div>
+
   <!-- Card -->
   <div class="login-card">
-    <h1 class="login-card__title">Connexion</h1>
+    <h1 class="login-card__title">{{ 'LOGIN.TITLE' | translate }}</h1>
 
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
 
       <!-- Login -->
       <div class="field">
-        <label class="field__label" for="login">Login</label>
+        <label class="field__label" for="login">{{ 'LOGIN.LOGIN' | translate }}</label>
         <div class="field__wrapper">
           <span class="field__icon">
             <mat-icon>person_outline</mat-icon>
@@ -24,19 +73,19 @@
             id="login"
             type="text"
             name="login"
-            placeholder="Enter your login"
+            placeholder="{{ 'LOGIN.LOGIN_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.login"
             required
             #loginInput="ngModel" />
         </div>
         <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
-          Login required
+          {{ 'LOGIN.LOGIN_REQUIRED' | translate }}
         </span>
       </div>
 
       <!-- Password -->
       <div class="field">
-        <label class="field__label" for="password">Password</label>
+        <label class="field__label" for="password">{{ 'LOGIN.PASSWORD' | translate }}</label>
         <div class="field__wrapper">
           <span class="field__icon">
             <mat-icon>lock_outline</mat-icon>
@@ -45,7 +94,7 @@
             id="password"
             [type]="showPassword ? 'text' : 'password'"
             name="password"
-            placeholder="Enter your password"
+            placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.password"
             required
             #passwordInput="ngModel" />
@@ -54,7 +103,7 @@
           </button>
         </div>
         <span class="field__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
-          Password required
+          {{ 'LOGIN.PASSWORD_REQUIRED' | translate }}
         </span>
       </div>
 
@@ -67,10 +116,10 @@
         @if (isLoading) {
           <div class="btn-loading">
             <mat-progress-spinner diameter="18" mode="indeterminate" color="accent" />
-            Connexion...
+            {{ 'LOGIN.CONNECTING' | translate }}
           </div>
         } @else {
-          Sign In
+          {{ 'LOGIN.SIGN_IN' | translate }}
         }
 
       </button>
@@ -80,7 +129,7 @@
 
   <!-- Footer -->
   <div class="login-footer">
-    © 2026 ERPSuite
+    © {{year}} ERPSuite
   </div>
 
 </div>

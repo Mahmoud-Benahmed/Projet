@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ERP.ArticleService.Domain;
+﻿using ERP.ArticleService.Domain;
+using Microsoft.EntityFrameworkCore;
 namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 {
 

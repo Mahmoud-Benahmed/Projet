@@ -1,7 +1,8 @@
-﻿ using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Infrastructure.Persistence.Messaging;
+using ERP.StockService.Domain;
+using ERP.StockService.Infrastructure.Messaging;
 using ERP.StockService.Infrastructure.Persistence.Repositories;
 
 namespace ERP.StockService.Application.Services;
@@ -9,32 +10,35 @@ namespace ERP.StockService.Application.Services;
 public class BonSortieService : IBonSortieService
 {
     private readonly IBonSortieRepository _repo;
-    private readonly IArticleService _articleService;
-    private readonly IClientService _clientService;
+    private readonly IArticleServiceHttpClient _articleService;
+    private readonly IClientServiceHttpClient _clientService;
     private readonly IBonNumeroRepository _bonNumeroRepository;
+    private readonly IJournalStockRepository _journalStockRepository;
 
-    public BonSortieService(IBonSortieRepository repo, IArticleService articleService, 
-                            IClientService clientService, IBonNumeroRepository bonNumeroRepository)
+    public BonSortieService(IBonSortieRepository repo, IArticleServiceHttpClient articleService,
+                            IClientServiceHttpClient clientService, IBonNumeroRepository bonNumeroRepository,
+                            IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
         _clientService = clientService;
         _articleService = articleService;
         _bonNumeroRepository = bonNumeroRepository;
+        _journalStockRepository = journalStockRepository;
     }
 
     // =========================
     // CREATE
     // =========================
-    public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto)
+    public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto, Guid requesterId)
     {
-        await _clientService.ExistsByIdAsync(dto.ClientId);
+        await _clientService.GetByIdAsync(dto.ClientId);
 
         var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_SORTIE");
         var bon = BonSortie.Create(numero, dto.ClientId, dto.Observation);
 
         foreach (var l in dto.Lignes ?? [])
         {
-            await _articleService.ExistsByIdAsync(l.ArticleId);
+            await _articleService.GetByIdAsync(l.ArticleId);
             bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
         }
 
@@ -42,16 +46,36 @@ public class BonSortieService : IBonSortieService
 
         await _repo.AddAsync(bon);
         await _repo.SaveChangesAsync();
+
+        foreach (var ligne in bon.Lignes)
+        {
+            var stockBefore = ligne.Quantity;
+
+            var journal = JournalStock.Create(
+                ligne.ArticleId,
+                ligne.Id,
+                bon.Id,
+                ligne.Quantity,
+                stockBefore,
+                StockMovementType.BonEntre,
+                "StockService",
+                "CreateBonEntre",
+                requesterId
+            );
+
+            await _journalStockRepository.AddAsync(journal);
+            await _journalStockRepository.SaveChangesAsync();
+        }
         return bon.ToResponseDto();
     }
 
     // =========================
     // UPDATE
     // =========================
-    public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto)
+    public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto, Guid requesterId)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        await _clientService.ExistsByIdAsync(dto.ClientId);
+        await _clientService.GetByIdAsync(dto.ClientId);
 
         bon.Update(dto.ClientId, dto.Observation);
 
@@ -60,13 +84,36 @@ public class BonSortieService : IBonSortieService
             bon.ClearLignes();
             foreach (var l in dto.Lignes)
             {
-                await _articleService.ExistsByIdAsync(l.ArticleId);
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(l.ArticleId);
+                if (l.Quantity > stockBefore)
+                    throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
+
+                await _articleService.GetByIdAsync(l.ArticleId);
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
             }
             bon.ValidateLignes();
         }
-
         await _repo.SaveChangesAsync();
+
+        foreach (var ligne in bon.Lignes)
+        {
+            var stockBefore = ligne.Quantity;
+
+            var journal = JournalStock.Create(
+                ligne.ArticleId,
+                ligne.Id,
+                bon.Id,
+                ligne.Quantity,
+                stockBefore,
+                StockMovementType.BonSortie,
+                "StockService",
+                "CreateBonSortie",
+                requesterId
+            );
+
+            await _journalStockRepository.AddAsync(journal);
+            await _journalStockRepository.SaveChangesAsync();
+        }
         return bon.ToResponseDto();
     }
 
@@ -76,8 +123,7 @@ public class BonSortieService : IBonSortieService
     public async Task DeleteAsync(Guid id)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        bon.Delete();
-        await _repo.SaveChangesAsync();
+        await _repo.DeleteByIdAsync(id);
     }
 
     // =========================
@@ -97,19 +143,11 @@ public class BonSortieService : IBonSortieService
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
 
-    public async Task<PagedResultDto<BonSortieResponseDto>> GetPagedDeletedAsync(int page, int size)
-    {
-        ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedDeletedAsync(page, size);
-        return new PagedResultDto<BonSortieResponseDto>(
-            items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
-    }
-
     public async Task<PagedResultDto<BonSortieResponseDto>> GetPagedByClientAsync(
         Guid clientId, int page, int size)
     {
         ValidatePaging(page, size);
-        await _clientService.ExistsByIdAsync(clientId);
+        await _clientService.GetByIdAsync(clientId);
 
         var (items, total) = await _repo.GetPagedByClientAsync(clientId, page, size);
         return new PagedResultDto<BonSortieResponseDto>(

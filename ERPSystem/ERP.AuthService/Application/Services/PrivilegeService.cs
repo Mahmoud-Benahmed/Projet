@@ -1,9 +1,8 @@
 ﻿using ERP.AuthService.Application.DTOs.Role;
-using ERP.AuthService.Application.Exceptions.Role;
+using ERP.AuthService.Application.Exceptions;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
-using ERP.AuthService.Infrastructure.Persistence.Repositories;
 
 namespace ERP.AuthService.Application.Services
 {

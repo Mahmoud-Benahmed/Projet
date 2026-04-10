@@ -76,6 +76,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ClientDbContext>();
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
 
+    await db.Database.EnsureDeletedAsync();
     await db.Database.MigrateAsync();
     await seeder.SeedAsync();
 }

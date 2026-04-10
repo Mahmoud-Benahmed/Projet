@@ -452,7 +452,7 @@ docker-compose.override.yml
 *.env
 **/appsettings.Development.json
 **/appsettings.Docker.json
-
+**/docker-compose.yaml
 # ── Rider / JetBrains ─────────────────────────
 .idea/
 
@@ -462,7 +462,3 @@ docker-compose.override.yml
 # ── OS ────────────────────────────────────────
 .DS_Store
 Thumbs.db
-**/appsettings.Development.json 
-**/appsettings.Docker.json
-**/scripts/ 
-**/start-kafka.sh

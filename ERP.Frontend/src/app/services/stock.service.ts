@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
+import { ArticleResponseDto } from './articles/articles.service';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export enum RetourSourceType {
@@ -16,46 +17,6 @@ export interface PagedResult<T> {
   pageNumber: number;
   pageSize:   number;
   totalPages: number;
-}
-
-export interface FournisseurStatsDto {
-  totalFournisseurs:  number;
-  activeFournisseurs: number;
-  blockedFournisseurs: number;
-  deletedFournisseurs: number;
-}
-
-// ── Fournisseur ───────────────────────────────────────────────────────────────
-export interface FournisseurResponse {
-  id:         string;
-  name:       string;
-  address:    string;
-  phone:      string;
-  email:      string | null;
-  taxNumber:  string;
-  rib:        string;
-  isDeleted:  boolean;
-  isBlocked:  boolean;
-  createdAt:  string;
-  updatedAt:  string | null;
-}
-
-export interface CreateFournisseurRequest {
-  name:       string;
-  address:    string;
-  phone:      string;
-  taxNumber:  string;
-  rib:        string;
-  email?:     string | null;
-}
-
-export interface UpdateFournisseurRequest {
-  name:       string;
-  address:    string;
-  phone:      string;
-  taxNumber:  string;
-  rib:        string;
-  email?:     string | null;
 }
 
 // ── Lignes ────────────────────────────────────────────────────────────────────
@@ -78,10 +39,8 @@ export interface LigneRequestDto{
 export interface BonEntreResponse {
   id:              string;
   fournisseurId:   string;
-  fournisseurName: string;
   numero:          string;
-  observation:     string | null;
-  isDeleted:       boolean;
+  observation?:     string;
   createdAt:       string;
   updatedAt:       string | null;
   lignes:          LigneResponseDto[];
@@ -89,9 +48,9 @@ export interface BonEntreResponse {
 }
 
 export interface CreateBonEntreRequest {
-  numero:        string;
   fournisseurId: string;
   observation?:  string | null;
+  numero:        string;
   lignes?:       LigneRequestDto[] | null;
 }
 
@@ -107,7 +66,6 @@ export interface BonSortieResponse {
   clientId:    string;
   numero:      string;
   observation: string | null;
-  isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string | null;
   lignes:      LigneResponseDto[];
@@ -130,10 +88,9 @@ export interface BonRetourResponse {
   id:          string;
   sourceId:    string;
   sourceType:  RetourSourceType;
-  motif:       string;
   numero:      string;
+  motif:       string;
   observation: string | null;
-  isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string | null;
   lignes:      LigneResponseDto[];
@@ -142,8 +99,6 @@ export interface BonRetourResponse {
 
 export interface BonStatsDto {
   totalCount:  number;
-  activeCount: number;
-  deletedCount: number;
 }
 
 export interface CreateBonRetourRequest {
@@ -158,9 +113,25 @@ export interface UpdateBonRetourRequest {
   sourceId:     string;
   motif:        string;
   observation?: string | null;
+  lignes?:      LigneRequestDto[] | null;
 }
 
 export type BonRecord = BonEntreResponse | BonSortieResponse | BonRetourResponse;
+
+export interface StockItem extends ArticleResponseDto {
+  quantity: number;
+}
+
+export interface StockStatusResponse {
+  inStock: StockItem[];  // or IN_STOCK if your API returns uppercase
+  outStock: StockItem[]; // or OUT_STOCK
+}
+
+// If your API returns uppercase property names
+export interface StockStatusResponseUppercase {
+  IN_STOCK: StockItem[];
+  OUT_STOCK: StockItem[];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -176,80 +147,6 @@ export class StockService {
   }
 
   // ===========================================================================
-  // FOURNISSEURS
-  // ===========================================================================
-
-  getFournisseurs(page = 1, size = 10): Observable<PagedResult<FournisseurResponse>> {
-    return this.http.get<PagedResult<FournisseurResponse>>(
-      `${this.base}/fournisseurs`,
-      { params: this.pagedParams(page, size) }
-    );
-  }
-
-  getBlockedFournisseurs(page = 1, size = 10): Observable<PagedResult<FournisseurResponse>> {
-    return this.http.get<PagedResult<FournisseurResponse>>(
-      `${this.base}/fournisseurs`,
-      { params: this.pagedParams(page, size) }
-    ).pipe(
-      map((res) => ({
-        ...res,
-        items: res.items.filter((f) => f.isBlocked)
-      }))
-    );
-  }
-
-  getFournisseurById(id: string): Observable<FournisseurResponse> {
-    return this.http.get<FournisseurResponse>(`${this.base}/fournisseurs/${id}`);
-  }
-
-  getDeletedFournisseurs(page = 1, size = 10): Observable<PagedResult<FournisseurResponse>> {
-    return this.http.get<PagedResult<FournisseurResponse>>(
-      `${this.base}/fournisseurs/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
-  }
-
-  getFournisseursByName(name: string, page = 1, size = 10): Observable<PagedResult<FournisseurResponse>> {
-    const params = this.pagedParams(page, size).set('name', name);
-    return this.http.get<PagedResult<FournisseurResponse>>(
-      `${this.base}/fournisseurs/by-name`,
-      { params }
-    );
-  }
-
-  getFournisseurStats(): Observable<FournisseurStatsDto> {
-    return this.http.get<FournisseurStatsDto>(`${this.base}/fournisseurs/stats`);
-  }
-
-  createFournisseur(dto: CreateFournisseurRequest): Observable<FournisseurResponse> {
-    return this.http.post<FournisseurResponse>(`${this.base}/fournisseurs`, dto);
-  }
-
-  updateFournisseur(id: string, dto: UpdateFournisseurRequest): Observable<FournisseurResponse> {
-    return this.http.put<FournisseurResponse>(`${this.base}/fournisseurs/${id}`, dto);
-  }
-
-  deleteFournisseur(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/fournisseurs/${id}`);
-  }
-
-  restoreFournisseur(id: string): Observable<void> {
-    return this.http.patch<void>(`${this.base}/fournisseurs/${id}/restore`, null);
-  }
-
-  blockFournisseur(id: string): Observable<FournisseurResponse> {
-    return this.http.patch<FournisseurResponse>(`${this.base}/fournisseurs/${id}/block`, null);
-  }
-
-  unblockFournisseur(id: string): Observable<FournisseurResponse> {
-    return this.http.patch<FournisseurResponse>(`${this.base}/fournisseurs/${id}/unblock`, null);
-  }
-
-  toggleBlock(fournisseur: FournisseurResponse): Observable<FournisseurResponse> {
-    return fournisseur.isBlocked ? this.unblockFournisseur(fournisseur.id) : this.blockFournisseur(fournisseur.id);
-  }
-
-  // ===========================================================================
   // BON ENTRES
   // ===========================================================================
 
@@ -262,13 +159,6 @@ export class StockService {
 
   getBonEntreById(id: string): Observable<BonEntreResponse> {
     return this.http.get<BonEntreResponse>(`${this.base}/bon-entres/${id}`);
-  }
-
-  getDeletedBonEntres(page = 1, size = 10): Observable<PagedResult<BonEntreResponse>> {
-    return this.http.get<PagedResult<BonEntreResponse>>(
-      `${this.base}/bon-entres/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
   }
 
   getBonEntresByFournisseur(fournisseurId: string, page = 1, size = 10): Observable<PagedResult<BonEntreResponse>> {
@@ -321,13 +211,6 @@ export class StockService {
     return this.http.get<BonSortieResponse>(`${this.base}/bon-sorties/${id}`);
   }
 
-  getDeletedBonSorties(page = 1, size = 10): Observable<PagedResult<BonSortieResponse>> {
-    return this.http.get<PagedResult<BonSortieResponse>>(
-      `${this.base}/bon-sorties/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
-  }
-
   getBonSortiesByClient(clientId: string, page = 1, size = 10): Observable<PagedResult<BonSortieResponse>> {
     return this.http.get<PagedResult<BonSortieResponse>>(
       `${this.base}/bon-sorties/by-client/${clientId}`,
@@ -370,13 +253,6 @@ export class StockService {
 
   getBonRetourById(id: string): Observable<BonRetourResponse> {
     return this.http.get<BonRetourResponse>(`${this.base}/bon-retours/${id}`);
-  }
-
-  getDeletedBonRetours(page = 1, size = 10): Observable<PagedResult<BonRetourResponse>> {
-    return this.http.get<PagedResult<BonRetourResponse>>(
-      `${this.base}/bon-retours/deleted`,
-      { params: this.pagedParams(page, size) }
-    );
   }
 
   getBonRetoursBySource(sourceId: string, page = 1, size = 10): Observable<PagedResult<BonRetourResponse>> {
@@ -423,5 +299,22 @@ export class StockService {
 
   getBonRetourStats(): Observable<BonStatsDto> {
     return this.http.get<BonStatsDto>(`${this.base}/bon-retours/stats`);
+  }
+
+  // Quantity
+  getArticleCurrentStock(articleId: string): Observable<{ articleId: string; currentStock: number }> {
+    return this.http.get<{ articleId: string; currentStock: number }>(
+      `${this.base}/quantity/${articleId}`
+    );
+  }
+
+  getStockArticles(): Observable<StockStatusResponse> {
+    return this.http.get<StockStatusResponseUppercase>(`${this.base}/articles`)
+      .pipe(
+        map(response => ({
+          inStock: response.IN_STOCK || [],
+          outStock: response.OUT_STOCK || []
+        }))
+      );
   }
 }

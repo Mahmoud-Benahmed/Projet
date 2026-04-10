@@ -1,7 +1,6 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Domain;
 using MongoDB.Driver;
-using ZstdSharp.Unsafe;
 
 namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 {

@@ -7,12 +7,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PRIVILEGES, AuthService } from '../../../services/auth/auth.service';
 import {
-  StockService,
+  FournisseurService,
   FournisseurResponse,
   CreateFournisseurRequest,
   UpdateFournisseurRequest,
   FournisseurStatsDto,
-} from './../../../services/stock.service';
+} from '../../../services/fournisseur.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { MatDialog } from '@angular/material/dialog';
@@ -20,9 +20,9 @@ import { ModalComponent } from '../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaginationComponent } from "../../pagination/pagination";
 import { ActivatedRoute } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 type ViewMode = 'list' | 'list-deleted' | 'list-blocked' | 'create' | 'edit' | 'view';
-
 
 @Component({
   selector: 'app-fournisseur',
@@ -30,14 +30,17 @@ type ViewMode = 'list' | 'list-deleted' | 'list-blocked' | 'create' | 'edit' | '
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
-    PaginationComponent
-],
+    PaginationComponent,
+    TranslatePipe
+  ],
   templateUrl: './fournisseur.html',
   styleUrl: './fournisseur.scss',
   encapsulation: ViewEncapsulation.None,
 })
 export class FournisseurComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
+
   dataSource = new MatTableDataSource<FournisseurResponse>([]);
 
   pageNumber = signal(1);
@@ -59,7 +62,6 @@ export class FournisseurComponent implements OnInit {
   isEdit        = this.isMode('edit');
   isView        = this.isMode('view');
 
-
   errors: string[] = [];
   successMessage: string | null = null;
   searchQuery = '';
@@ -72,9 +74,8 @@ export class FournisseurComponent implements OnInit {
 
   selectedFournisseur: FournisseurResponse | null = null;
 
-
   constructor(
-    private stock: StockService,
+    private service: FournisseurService,
     public authService: AuthService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -86,11 +87,10 @@ export class FournisseurComponent implements OnInit {
       address:    ['', [Validators.required, Validators.minLength(5)]],
       phone:      ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-()]{8,50}$/)]],
       taxNumber:  ['', [Validators.required]],
-      rib:        ['', [Validators.required,Validators.pattern(/^[A-Za-z0-9]{10,34}$/)]],
-      email:     ['', [Validators.email]],
+      rib: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9\-]{10,50}$/)]],
+      email:      ['', [Validators.email]],
     });
   }
-
 
   ngOnInit(): void {
     this.dataSource.filterPredicate = (data, filter) =>
@@ -110,8 +110,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   private openFournisseurFromRoute(id: string): void {
-
-    this.stock.getFournisseurById(id).subscribe({
+    this.service.getFournisseurById(id).subscribe({
       next: (fournisseur) => {
         this.selectedFournisseur = fournisseur;
         this.setViewMode('view');
@@ -119,7 +118,7 @@ export class FournisseurComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        this.flash('error', 'Fournisseur not found.');
+        this.flash('error', this.translate.instant('ERRORS.FOURNISSEUR_NOT_FOUND'));
         this.setViewMode('list');
       }
     });
@@ -176,59 +175,57 @@ export class FournisseurComponent implements OnInit {
 
   // ── Data loading ───────────────────────────────────────────────────────────
   load(): void {
-    this.stock.getFournisseurs().subscribe({
+    this.service.getFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items.filter(f => !f.isDeleted && !f.isBlocked);
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
       error: (err) => {
-        const error= err.error as HttpError;
-        this.flash('error', error.message ?? 'Failed to load fournisseurs.');
+        const error = err.error as HttpError;
+        this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.LOAD_FAILED'));
       }
     });
   }
 
   loadDeleted(): void {
-    this.stock.getDeletedFournisseurs().subscribe({
+    this.service.getDeletedFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
-
       },
-      error:(err)=> {
-        const error= err.error as HttpError;
-        this.flash('error', error.message ?? 'Failed to load deleted fournisseurs.');
+      error: (err) => {
+        const error = err.error as HttpError;
+        this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.LOAD_DELETED_FAILED'));
       }
     });
   }
 
   loadBlocked(): void {
-    this.stock.getBlockedFournisseurs().subscribe({
+    this.service.getBlockedFournisseurs().subscribe({
       next: (res) => {
         this.dataSource.data = res.items;
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
-      error:(err)=> {
-        const error= err.error as HttpError;
-        this.flash('error', error.message ?? 'Failed to load blocked fournisseurs.');
+      error: (err) => {
+        const error = err.error as HttpError;
+        this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.LOAD_BLOCKED_FAILED'));
       }
     });
   }
 
   loadStats(): void {
-    this.stock.getFournisseurStats().subscribe({
-      next:(res)=>{
-        this.stats= res;
+    this.service.getFournisseurStats().subscribe({
+      next: (res) => {
+        this.stats = res;
         this.cdr.markForCheck();
       },
-      error:(err)=>{
-        const error= err.error as HttpError;
-        this.flash('error', error.message ?? 'Failed to load stats.');
+      error: (err) => {
+        const error = err.error as HttpError;
+        this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.LOAD_STATS_FAILED'));
       }
-
     });
   }
 
@@ -243,7 +240,6 @@ export class FournisseurComponent implements OnInit {
     this.loadStats();
     this.cdr.markForCheck();
   }
-
 
   openCreate(): void {
     if (this.isCreate()) return;
@@ -307,7 +303,6 @@ export class FournisseurComponent implements OnInit {
       this.previousMode === 'list-deleted' ||
       this.previousMode === 'list-blocked'
     )) {
-      // ✅ data may never have been loaded if we arrived via route navigation
       this.reloadForMode(this.previousMode);
       return this.previousMode;
     }
@@ -321,7 +316,6 @@ export class FournisseurComponent implements OnInit {
     return 'list';
   }
 
-  // ✅ new helper — loads the right dataset for any list mode
   private reloadForMode(mode: ViewMode): void {
     if (mode === 'list-deleted') {
       this.loadDeleted();
@@ -333,7 +327,6 @@ export class FournisseurComponent implements OnInit {
     this.loadStats();
   }
 
-
   get totalFournisseurs():   number { return this.stats?.totalFournisseurs   ?? 0; }
   get activeFournisseurs():  number { return this.stats?.activeFournisseurs  ?? 0; }
   get blockedFournisseurs(): number { return this.stats?.blockedFournisseurs ?? 0; }
@@ -343,27 +336,29 @@ export class FournisseurComponent implements OnInit {
   onPageSizeChange(): void { this.pageNumber.set(1); this.load(); }
 
   submit(): void {
+    if (this.fournisseurForm.invalid) return
     if (this.fournisseurForm.invalid) return;
     const val = this.fournisseurForm.value;
+
     if (this.isCreate()) {
       const dto: CreateFournisseurRequest = {
         name:        val.name,
         address:     val.address,
         phone:       val.phone,
         taxNumber:   val.taxNumber,
-        rib:         val.rib ,
+        rib:         val.rib,
         email:       val.email || undefined,
       };
 
-      this.stock.createFournisseur(dto).subscribe({
+      this.service.createFournisseur(dto).subscribe({
         next: () => {
           this.cancel();
           this.reload();
-          this.flash('success', `Fournisseur "${val.name}" created successfully.`);
+          this.flash('success', this.translate.instant('SUCCESS.FOURNISSEUR_CREATED', { name: val.name }));
         },
-        error: (err) =>{
-          const error= err.error as HttpError;
-          this.flash('error',  error.message ?? 'Failed to create fournisseur.')
+        error: (err) => {
+          const error = err.error as HttpError;
+          this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.CREATE_FAILED'));
         }
       });
     } else if (this.isEdit() && this.selectedFournisseur) {
@@ -372,18 +367,19 @@ export class FournisseurComponent implements OnInit {
         address:     val.address,
         phone:       val.phone,
         taxNumber:   val.taxNumber,
-        rib:         val.rib ,
+        rib:         val.rib,
         email:       val.email || undefined,
       };
 
-      this.stock.updateFournisseur(this.selectedFournisseur.id, dto).subscribe({
+      this.service.updateFournisseur(this.selectedFournisseur.id, dto).subscribe({
         next: () => {
           this.cancel();
           this.reload();
-          this.flash('success', `Fournisseur "${val.name}" updated successfully.`); },
-        error: (err) =>{
-          const error= err.error as HttpError;
-          this.flash('error', error.message ?? 'Failed to update client.');
+          this.flash('success', this.translate.instant('SUCCESS.FOURNISSEUR_UPDATED', { name: val.name }));
+        },
+        error: (err) => {
+          const error = err.error as HttpError;
+          this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.UPDATE_FAILED'));
         }
       });
     }
@@ -394,9 +390,9 @@ export class FournisseurComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Delete Fournisseur',
-        message:     `Fournisseur "${fournisseur.name}" will be soft-deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
+        title:       this.translate.instant('CONFIRMATION.DELETE_FOURNISSEUR_TITLE'),
+        message:     this.translate.instant('CONFIRMATION.DELETE_FOURNISSEUR', { name: fournisseur.name }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
         showCancel:  true,
         icon:        'auto_delete',
         iconColor:   'danger',
@@ -407,36 +403,43 @@ export class FournisseurComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
-        this.stock.deleteFournisseur(fournisseur.id).subscribe({
+        this.service.deleteFournisseur(fournisseur.id).subscribe({
           next: () => {
             if (this.isView()) this.cancel();
             this.reload();
-            this.flash('success', `Fournisseur "${fournisseur.name}" deleted successfully.`);
+            this.flash('success', this.translate.instant('SUCCESS.FOURNISSEUR_DELETED', { name: fournisseur.name }));
           },
           error: (err) => {
-            const error= err.error as HttpError;
-            this.flash('error', error.message ?? `Failed to delete fournisseur "${fournisseur.name}".`);
+            const error = err.error as HttpError;
+            this.flash('error', error.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.DELETE_FAILED', { name: fournisseur.name }));
           }
         });
       });
   }
 
   restore(id: string): void {
-    this.stock.restoreFournisseur(id).subscribe({
-      next: () => { this.flash('success', 'Fournisseur restored.'); this.reload(); },
-      error: (err) => { this.flash('error', err.error?.message ?? 'Restore failed.'); },
+    this.service.restoreFournisseur(id).subscribe({
+      next: () => {
+        this.flash('success', this.translate.instant('SUCCESS.FOURNISSEUR_RESTORED'));
+        this.reload();
+      },
+      error: (err) => {
+        this.flash('error', err.error?.message ?? this.translate.instant('STOCK.FOURNISSEURS.ERRORS.RESTORE_FAILED'));
+      },
     });
   }
 
   // ── Block / Unblock ────────────────────────────────────────────────────────
   toggleBlock(fournisseur: FournisseurResponse): void {
     const action = fournisseur.isBlocked ? 'Unblock' : 'Block';
+    const actionKey = fournisseur.isBlocked ? 'UNBLOCK' : 'BLOCK';
+
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       `${action} Fournisseur`,
-        message:     `Are you sure you want to ${action.toLowerCase()} "${fournisseur.name}"?`,
-        confirmText: action,
+        title:       this.translate.instant(`CONFIRMATION.${actionKey}_FOURNISSEUR_TITLE`),
+        message:     this.translate.instant(`CONFIRMATION.${actionKey}_FOURNISSEUR`, { name: fournisseur.name }),
+        confirmText: this.translate.instant(`COMMON.${actionKey}`),
         showCancel:  true,
         icon:        fournisseur.isBlocked ? 'lock_open' : 'block',
         iconColor:   fournisseur.isBlocked ? 'success' : 'warning',
@@ -447,13 +450,13 @@ export class FournisseurComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (!result) return;
-        this.stock.toggleBlock(fournisseur).subscribe({
+        this.service.toggleBlock(fournisseur).subscribe({
           next: (updated) => {
-            this.flash('success', `Fournisseur "${fournisseur.name}" ${action.toLowerCase()}ed successfully.`);
+            this.flash('success', this.translate.instant(`SUCCESS.FOURNISSEUR_${actionKey}ED`, { name: fournisseur.name }));
             if (this.selectedFournisseur?.id === fournisseur.id) this.selectedFournisseur = updated;
             this.reload();
           },
-          error: () => this.flash('error', `Failed to ${action.toLowerCase()} fournisseur.`),
+          error: () => this.flash('error', this.translate.instant(`STOCK.FOURNISSEURS.ERRORS.${actionKey}_FAILED`, { name: fournisseur.name })),
         });
       });
   }

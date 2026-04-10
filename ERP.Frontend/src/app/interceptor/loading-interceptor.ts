@@ -6,8 +6,13 @@ import { LoadingService } from '../services/loading.service';
 export const LoadingInterceptor: HttpInterceptorFn = (req, next) => {
   const loader = inject(LoadingService);
 
-  loader.show();
+  const isI18n = req.url.includes('/assets/i18n/')
+              || req.url.includes('/i18n/')
+              || req.url.endsWith('.json');  // ✅ catches all translation files
 
+  if (isI18n) return next(req);
+
+  loader.show();
   return next(req).pipe(
     finalize(() => loader.hide())
   );

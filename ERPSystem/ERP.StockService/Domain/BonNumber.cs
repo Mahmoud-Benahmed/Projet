@@ -19,7 +19,7 @@ public class BonNumber
             throw new ArgumentException("Prefix cannot be empty.", nameof(prefix));
         if (padding <= 0)
             throw new ArgumentOutOfRangeException(nameof(padding), "Padding must be greater than zero.");
-        
+
         Id = Guid.NewGuid();
         DocumentType = documentType.Trim().ToUpperInvariant();
         Prefix = prefix.Trim().ToUpperInvariant();

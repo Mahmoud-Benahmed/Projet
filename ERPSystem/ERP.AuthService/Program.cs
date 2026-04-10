@@ -4,10 +4,8 @@ using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Application.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Infrastructure.Configuration;
-using ERP.AuthService.Infrastructure.Messaging;
 using ERP.AuthService.Infrastructure.Persistence;
 using ERP.AuthService.Infrastructure.Persistence.Repositories;
-using ERP.AuthService.Infrastructure.Persistence.Seeder;
 using ERP.AuthService.Infrastructure.Security;
 using ERP.AuthService.Middleware;
 using ERPrivileges.AuthService.Infrastructure.Persistence.Seeder;
@@ -20,6 +18,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +35,10 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Enum Serializing (0 => "string")
+BsonSerializer.RegisterSerializer(new EnumSerializer<Theme>(BsonType.String));
+BsonSerializer.RegisterSerializer(new EnumSerializer<Language>(BsonType.String));
 
 // ── Mongo GUID Serializer
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
@@ -57,7 +60,7 @@ builder.Services.AddSingleton<MongoDbContext>(sp =>
 // ── Read JWT secret from env
 // ── JWT Settings
 builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("JwtSettings"));
+    builder.Configuration.GetSection("JWT"));
 
 // ── JWT Parsing (no validation, gateway already did it)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -75,14 +78,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
 
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? throw new Exception("JwtSettings:Secret not found"));
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new Exception("JWT:Secret not found"));
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? throw new Exception("JwtSettings:Secret not found"),
+            ValidIssuer = builder.Configuration["JWT:Issuer"] ?? throw new Exception("JWT:Secret not found"),
 
             ValidateAudience = true,
-            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? throw new Exception("JwtSettings:Secret not found"),
+            ValidAudience = builder.Configuration["JWT:Audience"] ?? throw new Exception("JWT:Secret not found"),
 
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(5),
@@ -126,6 +129,7 @@ builder.Services.AddScoped<IControleService, ControleService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPasswordHasher<AuthUser>, PasswordHasher<AuthUser>>();
 
+
 builder.Services.AddScoped<IAuditLogger, AuditLogger>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
@@ -135,22 +139,25 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// ── Initialize MongoDB indexes
-var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
-await MongoDbInitializer.InitializeAsync(mongoContext);
-
 // ── Seed data
 using (var scope = app.Services.CreateScope())
 {
-
     var services = scope.ServiceProvider;
+
+    var dbContext = services.GetRequiredService<MongoDbContext>();
+
+    // ── Initialize MongoDB indexes
+    await MongoDbInitializer.InitializeAsync(dbContext);
+
+    // ── Seed data
     await AuthServiceSeeder.SeedAsync(
+        dbContext,
         services.GetRequiredService<IAuditLogRepository>(),
         services.GetRequiredService<IAuthUserRepository>(),
         services.GetRequiredService<IRoleRepository>(),
         services.GetRequiredService<IControleRepository>(),
         services.GetRequiredService<IPrivilegeRepository>(),
-        services.GetRequiredService<IPasswordHasher<AuthUser>>(), // ← generic type
+        services.GetRequiredService<IPasswordHasher<AuthUser>>(),
         services.GetRequiredService<IConfiguration>()
     );
 }

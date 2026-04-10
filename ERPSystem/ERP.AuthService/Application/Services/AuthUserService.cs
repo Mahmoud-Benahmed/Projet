@@ -1,20 +1,15 @@
-﻿using Confluent.Kafka;
-using ERP.AuthService.Application.DTOs;
+﻿using ERP.AuthService.Application.DTOs;
 using ERP.AuthService.Application.DTOs.AuthUser;
-using ERP.AuthService.Application.Events;
 using ERP.AuthService.Application.Exceptions;
-using ERP.AuthService.Application.Exceptions.AuthUser;
 using ERP.AuthService.Application.Interfaces;
 using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
 using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
-using System.Security;
-using System.Security.Cryptography;
-using System.Text;
+using System.Security.Claims;
 
 
 namespace ERP.AuthService.Application.Services
@@ -42,8 +37,9 @@ namespace ERP.AuthService.Application.Services
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
             IPrivilegeRepository privilegeRepository
+
             )
-            //,IEventPublisher eventPublisher
+        //,IEventPublisher eventPublisher
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -65,7 +61,7 @@ namespace ERP.AuthService.Application.Services
         {
             ValidatePaging(pageNumber, pageSize);
 
-            var (items, totalCount)= await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
+            var (items, totalCount) = await _userRepository.GetAllAsync(pageNumber, pageSize, excludeId);
 
             var mapped = await Task.WhenAll(items.Select(MapToDtoAsync));
 
@@ -142,11 +138,9 @@ namespace ERP.AuthService.Application.Services
         // ===============================
         public async Task<AuthUserGetResponseDto> UpdateProfile(Guid id, UpdateProfileDto request)
         {
-            var user= await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
+            var user = await _userRepository.GetByIdAsync(id) ?? throw new UserNotFoundException(id);
             user.UpdateProfile(request.FullName, request.Email);
-
-
-            var updated= await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateAsync(user);
 
             await _auditLogger.LogAsync(
                 AuditAction.ProfileUpdated,
@@ -155,9 +149,23 @@ namespace ERP.AuthService.Application.Services
                 targetUserId: id,
                 metadata: new() { ["email"] = user.Email, ["fullName"] = user.FullName },
                 ipAddress: GetIp());
-            return await MapToDtoAsync(updated);
+
+            return await MapToDtoAsync(user);
         }
 
+        public async Task<UserSettingsResponseDto> UpdateSettings(Guid userId, UserSettingsRequestDto dto)
+        {
+            var user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new UserNotFoundException(userId);
+
+            user.UpdateSettings(dto.Theme.ToString(), dto.Language.ToString());
+            await _userRepository.UpdateAsync(user);
+
+            return new UserSettingsResponseDto(
+                Theme: user.Settings.Theme.ToString(),
+                Language: user.Settings.Language.ToString()
+            );
+        }
 
         public async Task<AuthUserGetResponseDto> RegisterAsync(RegisterRequestDto request, Guid performedById)
         {
@@ -184,10 +192,10 @@ namespace ERP.AuthService.Application.Services
                 targetUserId: user.Id,
                 metadata: new() { ["login"] = request.Login, ["email"] = request.Email },
                 ipAddress: GetIp());
-            
+
             return await MapToDtoAsync(user);
         }
-                
+
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
             try
@@ -226,7 +234,7 @@ namespace ERP.AuthService.Application.Services
                 await _auditLogger.LogAsync(
                         AuditAction.Login,
                         success: false,
-                        failureReason: "Invalid credentials",
+                        failureReason: ex.Message,
                         metadata: new() { ["login"] = request.Login },
                         ipAddress: GetIp(),
                         userAgent: GetUserAgent());
@@ -252,7 +260,7 @@ namespace ERP.AuthService.Application.Services
         public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
-                ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+                ?? throw new InvalidRefreshTokenException();
 
             if (token.IsExpired())
                 throw new UnauthorizedAccessException("Refresh token expired.");
@@ -274,7 +282,7 @@ namespace ERP.AuthService.Application.Services
             // Rotate token
             await RevokeRefreshTokenAsyncPrivate(token);// revoke the token to refresh before getting a fresh one
 
-            var result=await GenerateAuthResponseAsync(user);
+            var result = await GenerateAuthResponseAsync(user);
 
             await _auditLogger.LogAsync(
                     AuditAction.TokenRefreshed,
@@ -288,8 +296,7 @@ namespace ERP.AuthService.Application.Services
         public async Task RevokeRefreshTokenAsync(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken)
-               ?? throw new UnauthorizedAccessException("Invalid refresh token.");
-
+               ?? throw new InvalidRefreshTokenException();
             await RevokeRefreshTokenAsyncPrivate(token);
             await _auditLogger.LogAsync(
                 AuditAction.Logout,
@@ -322,39 +329,21 @@ namespace ERP.AuthService.Application.Services
                        ?? throw new InvalidOperationException("Role not found.");
 
             var privileges = await _privilegeRepository.GetByRoleIdAsync(user.RoleId);
-            
-            Console.WriteLine("=== RAW PRIVILEGES ===");
-            foreach (var p in privileges)
-            {
-                Console.WriteLine($"RoleId={p.RoleId}, ControleId={p.ControleId}, IsGranted={p.IsGranted}");
-            }
 
             var grantedControleIds = privileges
                 .Where(p => p.IsGranted)
                 .Select(p => p.ControleId)
                 .ToList();
 
-            Console.WriteLine("=== GRANTED IDS ===");
-            foreach (var id in grantedControleIds)
-            {
-                Console.WriteLine(id);
-            }
-
-
             var controles = await _controleRepository.GetByIdsAsync(grantedControleIds);
             var privilegeNames = controles.Select(c => c.Libelle).ToList();
-
-            Console.WriteLine("=== CONTROLES ===");
-            foreach (var c in controles)
-            {
-                Console.WriteLine($"Id={c.Id}, Libelle={c.Libelle}");
-            }
 
             var (accessToken, expiresAt) = _jwtGenerator.GenerateAccessToken(
                 user.Id,
                 user.Login,
                 role.Libelle,
-                privilegeNames
+                privilegeNames,
+                user.Settings
             );
 
             var refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
@@ -387,7 +376,7 @@ namespace ERP.AuthService.Application.Services
 
             if (request.CurrentPassword.Equals(request.NewPassword))
                 throw new ArgumentException("The new password cannot be the same as the current password.");
-            
+
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
             if (result == PasswordVerificationResult.Failed)
                 throw new InvalidCredentialsException();
@@ -403,7 +392,7 @@ namespace ERP.AuthService.Application.Services
                   success: true,
                   performedBy: id,
                   ipAddress: GetIp(),
-                  metadata: new() { ["login"]= user.Login });
+                  metadata: new() { ["login"] = user.Login });
         }
 
         public async Task ChangePasswordByAdminAsync(Guid userId, AdminChangeProfileRequest request, Guid adminId)
@@ -438,7 +427,7 @@ namespace ERP.AuthService.Application.Services
                        ?? throw new UserNotFoundException(authUserId);
 
 
-            var performedBy= await _userRepository.GetByIdAsync(performedById)
+            var performedBy = await _userRepository.GetByIdAsync(performedById)
                        ?? throw new UserNotFoundException(performedById);
 
             if (user.IsActive)
@@ -501,7 +490,7 @@ namespace ERP.AuthService.Application.Services
                     performedBy: performedById,
                     targetUserId: user.Id,
                     ipAddress: GetIp(),
-                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString()});
+                    metadata: new() { ["deleted"] = user.Login, ["deletedBy"] = performedById.ToString() });
         }
 
         public async Task RestoreAsync(Guid deletedId, Guid performedById)
@@ -553,6 +542,177 @@ namespace ERP.AuthService.Application.Services
             return await _userRepository.GetStatsAsync(excludeId);
         }
 
+        // Add this method to your AuthUserService class
+
+        /// <summary>
+        /// Validates a JWT token and returns the associated user if valid and exists
+        /// </summary>
+        /// <param name="token">The JWT access token</param>
+        /// <returns>User info if token is valid and user exists</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown when token is invalid or user doesn't exist</exception>
+        public async Task<TokenValidationResultDto> ValidateTokenAsync(string token)
+        {
+            try
+            {
+                var principal = _jwtGenerator.ValidateToken(token);
+
+                if (principal == null)
+                    throw new UnauthorizedAccessException("Invalid token signature or structure.");
+
+                var userIdClaim = principal.FindFirst("sub") ?? principal.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                    throw new UnauthorizedAccessException("Token does not contain a valid user identifier.");
+
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new UnauthorizedAccessException($"User with ID '{userId}' no longer exists.");
+
+                if (!user.IsActive)
+                    throw new UnauthorizedAccessException("User account is deactivated.");
+
+                if (user.IsDeleted)
+                    throw new UnauthorizedAccessException("User account has been deleted.");
+
+
+                await _auditLogger.LogAsync(
+                    AuditAction.TokenValidated,
+                    success: true,
+                    performedBy: userId,
+                    ipAddress: GetIp(),
+                    userAgent: GetUserAgent(),
+                    metadata: new() { ["token_validation"] = "success" }
+                );
+
+                // 8. Return validation result
+                return new TokenValidationResultDto(
+                    IsValid: true,
+                    UserId: user.Id,
+                    Login: user.Login,
+                    Email: user.Email,
+                    FullName: user.FullName,
+                    RoleId: user.RoleId,
+                    IsActive: user.IsActive,
+                    ExpirationReason: null
+                );
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                await LogTokenValidationFailure("Token expired", token);
+                return new TokenValidationResultDto(
+                    IsValid: false,
+                    UserId: null,
+                    Login: null,
+                    Email: null,
+                    FullName: null,
+                    RoleId: null,
+                    IsActive: false,
+                    ExpirationReason: "Token has expired"
+                );
+            }
+            catch (SecurityTokenValidationException ex)
+            {
+                await LogTokenValidationFailure($"Invalid token: {ex.Message}", token);
+                throw new UnauthorizedAccessException($"Token validation failed: {ex.Message}");
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                await LogTokenValidationFailure($"Validation error: {ex.Message}", token);
+                throw new UnauthorizedAccessException("Token validation failed due to internal error.");
+            }
+        }
+
+        /// <summary>
+        /// Validates a refresh token
+        /// </summary>
+        public async Task<RefreshTokenValidationResultDto> ValidateRefreshTokenAsync(string refreshToken)
+        {
+            try
+            {
+                // 1. Check if refresh token exists in database
+                var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+
+                if (token == null)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: null,
+                        ExpirationReason: "Refresh token not found"
+                    );
+
+                // 2. Check if token is expired
+                if (token.IsExpired())
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "Refresh token has expired"
+                    );
+
+                // 3. Check if token is revoked
+                if (token.IsRevoked)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "Refresh token has been revoked"
+                    );
+
+                // 4. Check if user still exists and is active
+                var user = await _userRepository.GetByIdAsync(token.UserId);
+                if (user == null)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "User associated with token no longer exists"
+                    );
+
+                if (!user.IsActive)
+                    return new RefreshTokenValidationResultDto(
+                        IsValid: false,
+                        UserId: token.UserId,
+                        ExpirationReason: "User account is deactivated"
+                    );
+
+                // 5. Return success
+                return new RefreshTokenValidationResultDto(
+                    IsValid: true,
+                    UserId: token.UserId,
+                    ExpirationReason: null
+                );
+            }
+            catch (Exception ex)
+            {
+                await _auditLogger.LogAsync(
+                    AuditAction.TokenValidationFailed,
+                    success: false,
+                    failureReason: ex.Message,
+                    ipAddress: GetIp(),
+                    metadata: new() { ["token_type"] = "refresh" }
+                );
+
+                return new RefreshTokenValidationResultDto(
+                    IsValid: false,
+                    UserId: null,
+                    ExpirationReason: $"Validation error: {ex.Message}"
+                );
+            }
+        }
+
+        private async Task LogTokenValidationFailure(string reason, string token)
+        {
+            // Only log first few characters of token for security
+            var tokenPreview = token?.Length > 20 ? token.Substring(0, 20) + "..." : token;
+
+            await _auditLogger.LogAsync(
+                AuditAction.TokenValidationFailed,
+                success: false,
+                failureReason: reason,
+                ipAddress: GetIp(),
+                userAgent: GetUserAgent(),
+                metadata: new()
+                {
+                    ["token_preview"] = tokenPreview,
+                    ["validation_type"] = "access_token"
+                }
+            );
+        }
 
         // ======================
         // DTO MAPPING HELPER
@@ -575,6 +735,14 @@ namespace ERP.AuthService.Application.Services
                 CreatedAt: user.CreatedAt,
                 UpdatedAt: user.UpdatedAt,
                 LastLoginAt: user.LastLoginAt
+            );
+        }
+
+        private UserSettingsResponseDto MapUserSettingsToDto(UserSettings settings)
+        {
+            return new UserSettingsResponseDto(
+                Theme: settings.Theme.ToString(),
+                Language: settings.Language.ToString()
             );
         }
 

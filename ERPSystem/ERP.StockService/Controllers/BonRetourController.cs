@@ -34,15 +34,6 @@ public class BonRetoursController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet(ApiRoutes.BonRetours.GetDeleted)]
-    public async Task<IActionResult> GetDeleted(
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 10)
-    {
-        var result = await _service.GetPagedDeletedAsync(page, size);
-        return Ok(result);
-    }
-
     [HttpGet(ApiRoutes.BonRetours.GetBySource)]
     public async Task<IActionResult> GetBySource(
         [FromRoute] Guid sourceId,
@@ -78,7 +69,10 @@ public class BonRetoursController : ControllerBase
     [HttpPost(ApiRoutes.BonRetours.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonRetourRequestDto dto)
     {
-        var result = await _service.CreateAsync(dto);
+        if (!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.CreateAsync(dto, requesterId);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -90,7 +84,10 @@ public class BonRetoursController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonRetourRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        if(!TryGetRequesterId(out var requesterId))
+            return Unauthorized();
+
+        var result = await _service.UpdateAsync(id, dto, requesterId);
         return Ok(result);
     }
 
@@ -99,5 +96,12 @@ public class BonRetoursController : ControllerBase
     {
         await _service.DeleteAsync(id);
         return NoContent();
+    }
+
+    private bool TryGetRequesterId(out Guid requesterId)
+    {
+        requesterId = Guid.Empty;
+        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
     }
 }

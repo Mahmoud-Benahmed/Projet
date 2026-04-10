@@ -35,12 +35,11 @@ public class GlobalExceptionMiddleware
     {
         var response = exception switch
         {
-            // ── Stock-specific not-found ──────────────────────────────────────
-            FournisseurNotFoundException ex => new ErrorResponse
+            InsufficientStockException ex => new ErrorResponse 
             {
-                Code = "STOCK_001",
-                Message = ex.Message,
-                StatusCode = (int)HttpStatusCode.NotFound
+                Code= "STOCK_001",
+                Message= ex.Message,
+                StatusCode=(int)HttpStatusCode.BadRequest
             },
 
             BonEntreNotFoundException ex => new ErrorResponse
@@ -62,14 +61,6 @@ public class GlobalExceptionMiddleware
                 Code = "STOCK_004",
                 Message = ex.Message,
                 StatusCode = (int)HttpStatusCode.NotFound
-            },
-
-            // ── Stock-specific business rules ─────────────────────────────────
-            FournisseurBlockedException ex => new ErrorResponse
-            {
-                Code = "STOCK_005",
-                Message = ex.Message,
-                StatusCode = (int)HttpStatusCode.Conflict
             },
 
             ArticleNotFoundException ex => new ErrorResponse

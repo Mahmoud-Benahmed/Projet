@@ -4,14 +4,21 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../../environment";
 import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../../interfaces/AuthDto";
-import { BehaviorSubject, Observable, take, tap } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, Subject, take, tap, throwError } from 'rxjs';
 
 interface JwtPayload {
   sub: string;
-  role: string;
   login: string;
+  role: string;
+  theme: 'light' | 'dark';
+  language: 'fr' | 'en';
   privilege: string | string[];
   exp: number;
+}
+
+export interface UserSettings{
+  theme: 'light' | 'dark';
+  language: 'fr' | 'en';
 }
 
 export const PRIVILEGES = {
@@ -80,6 +87,15 @@ export const PRIVILEGES = {
     ADD_ENTRY: "ADD_ENTRY",
     MANAGE_STOCK: "MANAGE_STOCK",
   },
+  FOURNISSEURS:{
+    VIEW_FOURNISSEURS: "VIEW_FOURNISSEURS",
+    CREATE_FOURNISSEUR: "CREATE_FOURNISSEUR",
+    UPDATE_FOURNISSEUR: "UPDATE_FOURNISSEUR",
+    DELETE_FOURNISSEUR: "DELETE_FOURNISSEUR",
+    RESTORE_FOURNISSEUR: "RESTORE_FOURNISSEUR",
+    BLOCK_FOURNISSEUR: "BLOCK_FOURNISSEUR",
+    UNBLOCK_FOURNISSEUR: "UNBLOCK_FOURNISSEUR",
+  },
   REPORTS: {
     VIEW_REPORTS: "VIEW_REPORTS",
     EXPORT_REPORTS: "EXPORT_REPORTS",
@@ -95,11 +111,19 @@ export class AuthService {
   private readonly PROFILE_KEY = 'userProfile';
   private _cachedPayload: JwtPayload | null = null;
   private _cachedToken: string | null = null;
+  private _isRefreshing = false;
+
+  get isRefreshing(): boolean { return this._isRefreshing; }
+
   private _userProfile$ = new BehaviorSubject<AuthUserGetResponseDto | null>(
     this.loadProfileFromStorage()  // rehydrate immediately on construction
   );
   readonly userProfile$ = this._userProfile$.asObservable();
   private _loggingOut = false;
+
+  private _onLogout$ = new Subject<void>();
+  readonly onLogout$ = this._onLogout$.asObservable();
+
 
 
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.auth}`;
@@ -140,9 +164,12 @@ export class AuthService {
     localStorage.removeItem('expiresAt');
     localStorage.removeItem('mustChangePassword');
     localStorage.removeItem(this.PROFILE_KEY);
+    this._cachedPayload = null;
+    this._cachedToken = null;
   }
 
   isLoggedIn(): boolean {
+    if (this._isRefreshing) return true;  // ← treat as logged in during refresh
     const token = this.getAccessToken();
     if (!token) return false;
     try {
@@ -153,10 +180,11 @@ export class AuthService {
     }
   }
 
+
   // =========================
   // CLAIM GETTERS
   // =========================
-  private getPayload(): JwtPayload | null {
+  get JwtPayload(): JwtPayload | null {
       const token = this.getAccessToken();
       if (!token) return null;
       if (token === this._cachedToken) return this._cachedPayload;
@@ -170,22 +198,29 @@ export class AuthService {
   }
 
   get UserId(): string | null {
-    return this.getPayload()?.sub ?? null;
-  }
-
-  get Role(): string | null {
-    return this.getPayload()?.role ?? null;
+    return this.JwtPayload?.sub ?? null;
   }
 
   get Login(): string | null {
-    return this.getPayload()?.login ?? null;
+    return this.JwtPayload?.login ?? null;
   }
 
+  get Role(): string | null {
+    return this.JwtPayload?.role ?? null;
+  }
+
+  get Theme(): 'light' | 'dark' {
+    return this.JwtPayload?.theme ?? 'light';
+  }
+
+  get Language(): 'fr' | 'en' {
+    return this.JwtPayload?.language ?? 'en';
+  }
   // =========================
   // PRIVILEGES
   // =========================
   get Privileges(): string[] {
-    const payload = this.getPayload();
+    const payload = this.JwtPayload;
     if (!payload?.privilege) return [];
     return Array.isArray(payload.privilege) ? payload.privilege : [payload.privilege];
   }
@@ -337,6 +372,10 @@ export class AuthService {
   update(id: string, request: UpdateProfileDto): Observable<AuthUserGetResponseDto>{
     return this.http.put<AuthUserGetResponseDto>(`${this.baseUrl}/update/${id}`, request);
   }
+
+  updateSettings(id: string, settings: UserSettings): Observable<UserSettings>{
+    return this.http.put<UserSettings>(`${this.baseUrl}/update/${id}/settings`, settings);
+  }
     // ── Auth: Activation ─────────────────────────────────────────────────────
 
   /** PATCH /auth/{id}/activate — Activate a user account */
@@ -376,10 +415,19 @@ export class AuthService {
   // REFRESH TOKEN
   // =========================
   refresh(request: RefreshTokenRequestDto): Observable<AuthResponseDto> {
+    this._isRefreshing = true;
     return this.http.post<AuthResponseDto>(`${this.baseUrl}/refresh`, request).pipe(
-      tap(response => this.storeTokens(response))
+      tap(response => {
+        this.storeTokens(response);
+        this._isRefreshing = false;
+      }),
+      catchError(err => {
+        this._isRefreshing = false;
+        return throwError(() => err);
+      })
     );
   }
+
 
   // =========================
   // REVOKE + LOGOUT
@@ -389,33 +437,27 @@ export class AuthService {
   }
 
   logout(): void {
-    if (this._loggingOut) return;
+  if (this._loggingOut || this._isRefreshing) return;
     this._loggingOut = true;
 
     const refreshToken = this.getRefreshToken();
-
-    // Clear session immediately so no further authenticated requests fire
-    this.clearSession();
-    this.clearUserProfile();
-
+    this._onLogout$.next();
     if (refreshToken) {
       this.revoke({ refreshToken })
         .pipe(take(1))
         .subscribe({
-          complete: () => {
-            this._loggingOut = false;
-            this.router.navigate(['/login']);
-          },
-          error: () => {
-            // Revoke failed (token already expired server-side) — that's fine,
-            // session is already cleared above
-            this._loggingOut = false;
-            this.router.navigate(['/login']);
-          }
+          complete: () => this.endSession(),
+          error: () => this.endSession()
         });
     } else {
-      this._loggingOut = false;
-      this.router.navigate(['/login']);
+      this.endSession();
     }
+  }
+
+  public endSession(): void {
+    this.clearSession();
+    this.clearUserProfile();
+    this._loggingOut = false;
+    this.router.navigate(['/login']);
   }
 }

@@ -1,5 +1,4 @@
 ﻿using ERP.ArticleService.Application.DTOs;
-using ERP.ArticleService.Domain;
 
 namespace ERP.ArticleService.Application.Interfaces
 {

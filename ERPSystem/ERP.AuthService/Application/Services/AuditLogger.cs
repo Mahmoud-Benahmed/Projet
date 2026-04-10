@@ -1,8 +1,6 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
 using ERP.AuthService.Application.Interfaces.Services;
-using ERP.AuthService.Domain;
 using ERP.AuthService.Domain.Logger;
-using Microsoft.Extensions.Logging;
 
 namespace ERP.AuthService.Application.Services
 {

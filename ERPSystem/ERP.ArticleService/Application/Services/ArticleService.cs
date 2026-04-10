@@ -36,7 +36,7 @@ namespace ERP.ArticleService.Application.Services
 
             var code = await _articleCodeService.GenerateArticleCodeAsync();
 
-            var article = new Article(code, request.Libelle, request.Prix, category, request.BarCode, request.TVA);
+            var article = new Article(code, request.Libelle, request.Prix, request.Unit, category, request.BarCode, request.TVA);
             await _articleRepository.AddAsync(article);
             await _articleRepository.SaveChangesAsync();
             return MapToDto(article);
@@ -74,7 +74,7 @@ namespace ERP.ArticleService.Application.Services
             var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new CategoryNotFoundException(request.CategoryId);
 
-            article.Update(request.Libelle, request.Prix, category, request.BarCode, request.TVA);
+            article.Update(request.Libelle, request.Prix, request.Unit,category, request.BarCode, request.TVA);
 
             await _articleRepository.SaveChangesAsync();
             return MapToDto(article);
@@ -119,7 +119,7 @@ namespace ERP.ArticleService.Application.Services
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
-        
+
         public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
@@ -129,8 +129,8 @@ namespace ERP.ArticleService.Application.Services
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
-        
-        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedDeletedAsync(int pageNumber,int pageSize)
+
+        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedDeletedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             var (items, totalCount) = await _articleRepository
@@ -139,8 +139,8 @@ namespace ERP.ArticleService.Application.Services
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
-        
-        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByLibelleAsync(string libelleFilter, int pageNumber,int pageSize)
+
+        public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByLibelleAsync(string libelleFilter, int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
             if (string.IsNullOrWhiteSpace(libelleFilter))
@@ -190,6 +190,7 @@ namespace ERP.ArticleService.Application.Services
             BarCode: article.BarCode,
             Libelle: article.Libelle,
             Prix: article.Prix,
+            Unit: article.Unit,
             TVA: article.TVA,
             IsDeleted: article.IsDeleted,
             CreatedAt: article.CreatedAt,

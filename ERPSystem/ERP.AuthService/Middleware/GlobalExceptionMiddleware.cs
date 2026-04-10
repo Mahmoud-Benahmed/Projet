@@ -1,65 +1,117 @@
 ﻿using ERP.AuthService.Application.Exceptions;
-using ERP.AuthService.Application.Exceptions.AuthUser;
-using ERP.AuthService.Application.Exceptions.Role;
-using Microsoft.AspNetCore.Mvc;
+using ERP.AuthService.Application.Interfaces.Services;
+using ERP.AuthService.Domain.Logger;
 using MongoDB.Driver;
 using System.Net;
 using System.Security;
 
-namespace ERP.AuthService.Middleware
+public class GlobalExceptionMiddleware
 {
-    public class GlobalExceptionMiddleware
+    private readonly RequestDelegate _next;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger;
+
+    public GlobalExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<GlobalExceptionMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
+        _next = next;
+        _logger = logger;
+    }
 
-        public GlobalExceptionMiddleware(RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, IAuditLogger auditLogger)
+    {
+        try
         {
-            _next = next;
+            await _next(context);
         }
-
-        public async Task InvokeAsync(HttpContext context)
+        catch (Exception ex)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex);
-            }
-        }
+            _logger.LogError(ex,
+                "Unhandled exception | {Method} {Path} | IP: {IP}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress);
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
-        {
-            var (statusCode, code, message) = exception switch
-            {
-                EmailAlreadyExistsException =>      ((int)HttpStatusCode.Conflict,      "AUTH_001", "Email already exists"),
-                InvalidCredentialsException =>      ((int)HttpStatusCode.Unauthorized,  "AUTH_002", exception.Message),
-                UserInactiveException =>            ((int)HttpStatusCode.Forbidden,     "AUTH_003", exception.Message),
-                UserActiveException =>              ((int)HttpStatusCode.Forbidden,     "AUTH_004", exception.Message),
-                TokenAlreadyRevokedException =>     ((int)HttpStatusCode.BadRequest,    "AUTH_005", "Refresh token already revoked"),
-                UnauthorizedAccessException =>      ((int)HttpStatusCode.Unauthorized,  "AUTH_006", exception.Message),
-                UnauthorizedOperationException =>   ((int)HttpStatusCode.Forbidden,     "AUTH_007", exception.Message ?? "Operation not authorized"),
-                SecurityException =>                ((int)HttpStatusCode.Unauthorized,  "AUTH_008", "Security violation detected"),
-                UserNotFoundException =>            ((int)HttpStatusCode.NotFound,      "AUTH_009", exception.Message),
-                RoleNotFoundException =>            ((int)HttpStatusCode.NotFound,      "AUTH_010", exception.Message),
-                ControleNotFoundException =>        ((int)HttpStatusCode.NotFound,      "AUTH_011", exception.Message),
-                PrivilegeNotFoundException =>       ((int)HttpStatusCode.NotFound,      "AUTH_012", exception.Message),
-                ArgumentException =>                ((int)HttpStatusCode.BadRequest,    "AUTH_013", exception.Message),
-                InvalidOperationException =>        ((int)HttpStatusCode.BadRequest,    "AUTH_014", exception.Message),
-                LoginAlreadyExsistException =>      ((int)HttpStatusCode.Conflict,      "AUTH_015", "Login already exists"),
-                FluentValidation.ValidationException vex
-                                                 => ((int)HttpStatusCode.BadRequest,    "AUTH_016", string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
-                PwnedPasswordException =>           ((int)HttpStatusCode.BadRequest,    "AUTH_017", exception.Message),
-                MongoWriteException mwx when mwx.WriteError?.Code == 11000
-                                        => ((int)HttpStatusCode.Conflict, "AUTH_018", "Invalid Argument"),
-                _ =>                                ((int)HttpStatusCode.InternalServerError, "INTERNAL_ERROR", exception.Message),
-            };
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = statusCode;
-            return context.Response.WriteAsJsonAsync(new { statusCode, code, message });
+            await LogAuditFailureAsync(context, ex, auditLogger);
+            await HandleExceptionAsync(context, ex);
         }
     }
 
+    private async Task LogAuditFailureAsync(
+        HttpContext context,
+        Exception exception,
+        IAuditLogger auditLogger)
+    {
+        try
+        {
+
+            var sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
+
+            Guid.TryParse(sub, out var performedBy);
+
+            var action = exception switch
+            {
+                InvalidCredentialsException => AuditAction.Login,
+                InvalidRefreshTokenException => AuditAction.TokenRefreshed,
+                TokenAlreadyRevokedException => AuditAction.TokenRevoked,
+
+                UserInactiveException => AuditAction.Login,
+                LoginAlreadyExsistException => AuditAction.UserRegistered,
+                EmailAlreadyExistsException => AuditAction.UserRegistered,
+
+                UnauthorizedOperationException => AuditAction.Unauthorized,
+                UserNotFoundException => AuditAction.UserNotFound,
+
+                _ => AuditAction.UnhandledError
+            };
+
+            await auditLogger.LogAsync(
+                action,
+                success: false,
+                performedBy: performedBy == Guid.Empty ? null : performedBy,
+                failureReason: exception.Message,
+                ipAddress: context.Connection.RemoteIpAddress?.ToString(),
+                metadata: new()
+                {
+                    ["exceptionType"] = exception.GetType().Name,
+                    ["path"] = context.Request.Path,
+                    ["method"] = context.Request.Method
+                });
+        }
+        catch
+        {
+            // ✅ closing brace was missing — never let audit failure break the response
+        }
+    }
+
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        var (statusCode, code, message) = exception switch
+        {
+            EmailAlreadyExistsException => ((int)HttpStatusCode.Conflict, "AUTH_001", "AUTH_001"),
+            InvalidCredentialsException => ((int)HttpStatusCode.Unauthorized, "AUTH_002", "AUTH_002"),
+            UserInactiveException => ((int)HttpStatusCode.Forbidden, "AUTH_003", "AUTH_003"),
+            UserActiveException => ((int)HttpStatusCode.Forbidden, "AUTH_004", "AUTH_004"),
+            TokenAlreadyRevokedException => ((int)HttpStatusCode.BadRequest, "AUTH_005", "AUTH_005"),
+            UnauthorizedAccessException => ((int)HttpStatusCode.Unauthorized, "AUTH_006", "AUTH_006"),
+            UnauthorizedOperationException => ((int)HttpStatusCode.Forbidden, "AUTH_007", "AUTH_007"),
+            SecurityException => ((int)HttpStatusCode.Unauthorized, "AUTH_008", "AUTH_008"),
+            UserNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_009", "AUTH_009"),
+            RoleNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_010", "AUTH_010"),
+            ControleNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_011", "AUTH_011"),
+            PrivilegeNotFoundException => ((int)HttpStatusCode.NotFound, "AUTH_012", "AUTH_012"),
+            ArgumentException => ((int)HttpStatusCode.BadRequest, "AUTH_013", "AUTH_013"),
+            InvalidOperationException => ((int)HttpStatusCode.BadRequest, "AUTH_014", "AUTH_014"),
+            LoginAlreadyExsistException => ((int)HttpStatusCode.Conflict, "AUTH_015", "AUTH_015"),
+            FluentValidation.ValidationException vex => ((int)HttpStatusCode.BadRequest, "AUTH_016", string.Join(", ", vex.Errors.Select(e => e.ErrorMessage))),
+            MongoWriteException mwx when mwx.WriteError?.Code == 11000 =>
+                                                                            ((int)HttpStatusCode.Conflict, "AUTH_017", "AUTH_017"),
+            InvalidRefreshTokenException => ((int)HttpStatusCode.Unauthorized, "AUTH_018", "AUTH_018"),
+            _ => ((int)HttpStatusCode.InternalServerError, "INTERNAL_ERROR", "AUTH_000")
+        };
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = statusCode;
+        return context.Response.WriteAsJsonAsync(new { statusCode, code, message });
+    }
 }

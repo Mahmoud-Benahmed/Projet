@@ -22,7 +22,7 @@ namespace ERP.AuthService.Api.Controllers
             => Ok(await _roleService.GetAllPagedAsync(pageNumber, pageSize));
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()=> Ok(await _roleService.GetAllAsync());
+        public async Task<IActionResult> GetAll() => Ok(await _roleService.GetAllAsync());
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)

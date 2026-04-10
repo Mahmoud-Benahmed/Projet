@@ -14,6 +14,7 @@ export interface ArticleResponseDto {
   barCode: string;
   libelle: string;
   prix: number;
+  unit: UnitEnum;
   tva: number;
   isDeleted: boolean;
   createdAt: string;
@@ -30,19 +31,31 @@ export interface ArticleStatsDto {
 export interface CreateArticleRequestDto {
   libelle: string;
   prix: number;
+  unit: UnitEnum;
   categoryId: string;
   barCode: string;
   tva?: number;
 }
+export interface UpdateArticleRequestDto extends CreateArticleRequestDto
+{}
 
-export interface UpdateArticleRequestDto {
-  libelle: string;
-  prix: number;
-  categoryId: string;
-  barCode?: string;
-  tva?: number;
+export enum UnitEnum
+{
+  Piece = 'Piece',
+  Gram = 'Gram',
+  Kilogram = 'Kilogram',
+  Milligram = 'Milligram',
+  Ton = 'Ton',
+  Milliliter = 'Milliliter',
+  Liter = 'Liter',
+  CubicMeter = 'CubicMeter',
+  Millimeter = 'Millimeter',
+  Centimeter = 'Centimeter',
+  Meter = 'Meter',
+  Kilometer = 'Kilometer',
+  Hour = 'Hour',
+  Day = 'Day',
 }
-
 export interface PagedResultDto<T> {
   items: T[];
   totalCount: number;

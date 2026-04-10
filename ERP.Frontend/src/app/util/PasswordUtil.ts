@@ -17,6 +17,41 @@
 // NIST §5.1.1.2: "commonly-used, expected, or compromised" passwords MUST be rejected.
 // Production: replace Set lookup with a k-anonymity HaveIBeenPwned API call
 // or an offline bloom filter over the full 500M+ breached password corpus.
+
+
+export interface PasswordValidationResult {
+  isValid: boolean;
+  strength: "weak" | "fair" | "strong" | "very strong";
+  errors: string[];
+  score: number;
+}
+
+export interface PasswordMessages {
+  minLength: (min: number) => string;
+  maxLength: (max: number) => string;
+  mustDiffer: string;
+  breached: string;
+  repeatedChar: string;
+}
+
+// Default English messages
+export const DEFAULT_ENGLISH_MESSAGES: PasswordMessages = {
+  minLength: (min) => `Password must be at least ${min} characters.`,
+  maxLength: (max) => `Password must be no more than ${max} characters.`,
+  mustDiffer: "New password must differ from the current one.",
+  breached: "This password appears in known data breaches and cannot be used. Choose a unique passphrase instead.",
+  repeatedChar: "Password cannot consist of a single repeated character.",
+};
+
+// French messages
+export const DEFAULT_FRENCH_MESSAGES: PasswordMessages = {
+  minLength: (min) => `Le mot de passe doit contenir au moins ${min} caractères.`,
+  maxLength: (max) => `Le mot de passe ne doit pas dépasser ${max} caractères.`,
+  mustDiffer: "Le nouveau mot de passe doit être différent de l'actuel.",
+  breached: "Ce mot de passe apparaît dans des fuites de données connues et ne peut pas être utilisé. Choisissez plutôt une phrase de passe unique.",
+  repeatedChar: "Le mot de passe ne peut pas consister en un seul caractère répété.",
+};
+
 const COMMON_PASSWORDS = new Set([
   "password", "password1", "password123", "12345678", "123456789",
   "qwerty123", "iloveyou", "admin123", "letmein", "welcome1",
@@ -61,6 +96,7 @@ export function checkPassword(
   password: string,
   currentPassword: string | null = null,
   rules: PasswordRules = DEFAULT_RULES,
+  messages: PasswordMessages = DEFAULT_ENGLISH_MESSAGES, // ← add messages parameter
 ): PasswordValidationResult {
   const { minLength, maxLength, checkCommonPasswords } = {
     ...DEFAULT_RULES,
@@ -74,13 +110,13 @@ export function checkPassword(
   // Only enforced when a current password is provided (i.e. self-service flow).
   // Admins resetting another user's password pass null — no reuse check needed.
   if (currentPassword !== null && password === currentPassword) {
-    errors.push("New password must differ from the current one.");
+    errors.push(messages.mustDiffer);
   }
 
   // ── 2. Length (NIST §5.1.1.1: minimum 8; no arbitrary short maximum) ──────
   // Length is the strongest single predictor of entropy — weight it heavily.
   if (password.length < minLength) {
-    errors.push(`Password must be at least ${minLength} characters.`);
+    errors.push(messages.minLength(minLength));
   } else {
     score += 1;                             // ≥ minLength
     if (password.length >= 12) score += 2;  // OWASP "recommended" minimum
@@ -89,22 +125,19 @@ export function checkPassword(
   }
 
   if (password.length > maxLength) {
-    errors.push(`Password must be no more than ${maxLength} characters.`);
+    errors.push(messages.maxLength(maxLength));
   }
 
   // ── 3. Breached / common password check (NIST §5.1.1.2 — MANDATORY) ───────
   if (checkCommonPasswords && COMMON_PASSWORDS.has(password.toLowerCase())) {
-    errors.push(
-      "This password appears in known data breaches and cannot be used. " +
-      "Choose a unique passphrase instead.",
-    );
+    errors.push(messages.breached);
   }
 
   // ── 4. Repetition / trivial pattern penalties ─────────────────────────────
   // NIST §5.1.1.2 explicitly permits rejecting "repetitive or sequential
   // characters" even while banning arbitrary composition rules.
   if (/^(.)\1+$/.test(password)) {
-    errors.push("Password cannot consist of a single repeated character.");
+    errors.push(messages.repeatedChar);
     score = Math.max(0, score - 3);
   }
 

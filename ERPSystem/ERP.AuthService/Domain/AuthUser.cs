@@ -2,140 +2,168 @@
 using MongoDB.Bson.Serialization.Attributes;
 
 
-namespace ERP.AuthService.Domain
+namespace ERP.AuthService.Domain;
+
+public class AuthUser
 {
-    public class AuthUser
+    [BsonId]
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    public Guid Id { get; private set; }
+
+    [BsonRequired]
+    public string Login { get; private set; }
+
+    public string Email { get; set; } = default!;
+
+    public string FullName { get; set; }
+
+    public string PasswordHash { get; set; } = default!;
+
+    public bool MustChangePassword { get; set; } = true;
+
+    public UserSettings Settings { get; set; }
+
+    public bool IsActive { get; private set; } = true; // Login control
+    public bool IsDeleted { get; private set; } = false; // alternative to hard delete: in case the instance has related records
+
+
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    public Guid RoleId { get; private set; }
+
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+
+    public DateTime? LastLoginAt { get; private set; }
+
+
+
+    private AuthUser() { }
+
+    public AuthUser(string login, string email, string fullName, Guid roleId, UserSettings? settings = null)
     {
-        [BsonId]
-        [BsonGuidRepresentation(GuidRepresentation.Standard)]
-        public Guid Id { get; private set; }
+        if (string.IsNullOrWhiteSpace(fullName))
+            throw new ArgumentNullException("FullName is required");
 
-        [BsonRequired]
-        public string Login { get; private set; }
+        if (string.IsNullOrWhiteSpace(login))
+            throw new ArgumentException("Username is required");
 
-        public string Email { get; set; } = default!;
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required");
 
-        public string FullName { get; set; }
-
-        public string PasswordHash { get; set; } = default!;
-
-        public bool MustChangePassword { get; set; } = true;
-
-        public bool IsActive { get; private set; } = true; // Login control
-        public bool IsDeleted { get; private set; } = false; // alternative to hard delete: in case the instance has related records
-
-
-        [BsonGuidRepresentation(GuidRepresentation.Standard)]
-        public Guid RoleId { get; private set; }
-
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? UpdatedAt { get; private set; }
-
-        public DateTime? LastLoginAt { get; private set; }
-
-
-
-        private AuthUser() { }
-
-        public AuthUser(string login, string email, string fullName, Guid roleId)
-        {
-            if (string.IsNullOrWhiteSpace(fullName))
-                throw new ArgumentNullException("FullName is required");
-
-            if (string.IsNullOrWhiteSpace(login))
-                throw new ArgumentException("Username is required");
-
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email is required");
-
-            Id = Guid.NewGuid();
-            Email = email;
-            Login = login;
-            FullName = fullName;
-            RoleId = roleId;
-            CreatedAt = DateTime.UtcNow;
-        }
-
-        public void UpdateProfile(string fullname, string email)
-        {
-            if (string.IsNullOrWhiteSpace(fullname))
-                throw new ArgumentException("FullName is required");
-
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email is required");
-
-            FullName = fullname;
-            Email = email;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void SetPasswordHash(string passwordHash)
-        {
-            if (string.IsNullOrWhiteSpace(passwordHash))
-                throw new ArgumentException("Password hash is required");
-            PasswordHash = passwordHash;
-        }
-
-        public void SetRole(Guid roleId)
-        {
-            RoleId = roleId;
-            UpdatedAt = DateTime.UtcNow;
-        }
-        public void Activate()
-        {
-            if(IsActive) return;
-            IsActive = true;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void Deactivate()
-        {
-            if(!IsActive) return;
-            IsActive = false;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void Delete()
-        {
-            if (IsDeleted) return;
-            IsDeleted = true;
-            IsActive = false;// enfore immediate Deactivating to prevent deleted user from logging-in but the inverse is not correct: Recover doesn't activate the deleted user in case he is deactivated (can be activated by Activate)
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void Restore()
-        {
-            if (!IsDeleted) return;
-            IsDeleted = false;// if user deactivated by the system, it can be activated by Activate() which not set here to prevent accidental activation for a deactivated user
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void ForcePasswordChange()
-        {
-            MustChangePassword = true;
-        }
-
-        public bool HasLoggedInBefore() => LastLoginAt != null;
-
-
-        public void ChangePassword(string newPasswordHash)
-        {
-            if (string.IsNullOrWhiteSpace(newPasswordHash))
-                throw new ArgumentException("Password hash is required");
-
-            PasswordHash = newPasswordHash;
-
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public bool CanLogin()
-        {
-            return IsActive && !IsDeleted;
-        }
-
-        public void RecordLogin()
-        {
-            LastLoginAt = DateTime.UtcNow;
-        }
+        Id = Guid.NewGuid();
+        Email = email;
+        Login = login;
+        FullName = fullName;
+        RoleId = roleId;
+        Settings = settings ?? new UserSettings { Theme = Theme.light, Language = Language.en };
+        CreatedAt = DateTime.UtcNow;
     }
+
+    public void UpdateSettings(string theme, string language)
+    {
+        Settings.Theme = Enum.TryParse<Theme>(theme, true, out var t) ? t : Theme.light;
+        Settings.Language = Enum.TryParse<Language>(language, true, out var l) ? l : Language.en;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateProfile(string fullname, string email)
+    {
+        if (string.IsNullOrWhiteSpace(fullname))
+            throw new ArgumentException("FullName is required");
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required");
+
+        FullName = fullname;
+        Email = email;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetPasswordHash(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required");
+        PasswordHash = passwordHash;
+    }
+
+    public void SetRole(Guid roleId)
+    {
+        RoleId = roleId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public void Activate()
+    {
+        if (IsActive) return;
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        if (!IsActive) return;
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Delete()
+    {
+        if (IsDeleted) return;
+        IsDeleted = true;
+        IsActive = false;// enfore immediate Deactivating to prevent deleted user from logging-in but the inverse is not correct: Recover doesn't activate the deleted user in case he is deactivated (can be activated by Activate)
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        if (!IsDeleted) return;
+        IsDeleted = false;// if user deactivated by the system, it can be activated by Activate() which not set here to prevent accidental activation for a deactivated user
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ForcePasswordChange()
+    {
+        MustChangePassword = true;
+    }
+
+    public bool HasLoggedInBefore() => LastLoginAt != null;
+
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            throw new ArgumentException("Password hash is required");
+
+        PasswordHash = newPasswordHash;
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public bool CanLogin()
+    {
+        return IsActive && !IsDeleted;
+    }
+
+    public void RecordLogin()
+    {
+        LastLoginAt = DateTime.UtcNow;
+    }
+}
+
+public class UserSettings
+{
+    public Theme Theme { get; set; }
+    public Language Language { get; set; }
+}
+
+
+public enum Theme
+{
+    light,
+    dark
+}
+
+public enum Language
+{
+    en,
+    fr
 }

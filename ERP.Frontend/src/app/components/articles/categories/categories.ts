@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslateService } from '@ngx-translate/core';
 
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { ModalComponent } from '../../modal/modal';
@@ -11,18 +12,20 @@ import { PaginationComponent } from '../../pagination/pagination';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { CategoryRequestDto, ArticleCategoryResponseDto, CategoryService, ArticleCategoryStatsDto } from '../../../services/articles/categories.service';
 import { MatTableDataSource } from '@angular/material/table';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
 
 @Component({
   selector: 'app-article-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, TranslatePipe],
   templateUrl: './categories.html',
   styleUrls: ['./categories.scss'],
 })
 export class ArticleCategoriesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
 
   dataSource = new MatTableDataSource<ArticleCategoryResponseDto>([]);
   stats: ArticleCategoryStatsDto | null = null;
@@ -75,11 +78,11 @@ export class ArticleCategoriesComponent implements OnInit {
   // ── Page title ────────────────────────────────────────────────────────────
 
   get pageTitle(): string {
-    if (this.isCreate())      return 'Add Category';
-    if (this.isEdit())        return 'Edit Category';
-    if (this.isView())        return 'Category Details';
-    if (this.isDeletedList()) return 'Deleted Categories';
-    return 'List Categories';
+    if (this.isCreate())      return 'ARTICLES_CATEGORIES.TITLE_ADD';
+    if (this.isEdit())        return 'ARTICLES_CATEGORIES.TITLE_EDIT';
+    if (this.isView())        return 'ARTICLES_CATEGORIES.TITLE_DETAILS';
+    if (this.isDeletedList()) return 'ARTICLES_CATEGORIES.TITLE_DELETED';
+    return 'ARTICLES_CATEGORIES.TITLE_LIST';
   }
 
   // ── Search ────────────────────────────────────────────────────────────────
@@ -141,7 +144,7 @@ export class ArticleCategoriesComponent implements OnInit {
         this.totalCount = res.totalCount;
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load categories.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
@@ -152,7 +155,7 @@ export class ArticleCategoriesComponent implements OnInit {
         this.totalCount = result.totalCount;
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load deleted categories.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
@@ -167,7 +170,7 @@ export class ArticleCategoriesComponent implements OnInit {
         }
         this.cdr.markForCheck();
       },
-      error: () => this.flash('error', 'Failed to load stats.'),
+      error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
   }
 
@@ -205,15 +208,14 @@ export class ArticleCategoriesComponent implements OnInit {
     this.categoryForm.reset({ name: '', tva: null });
   }
 
-
   openEdit(category: ArticleCategoryResponseDto): void {
     if (this.isEdit()) return;
     this.previousMode = this.viewMode();
     this.selectedCategory = category;
     this.setViewMode('edit');
     this.categoryForm.patchValue({
-      name:               category.name,
-      tva:                category.tva
+      name: category.name,
+      tva:  category.tva
     });
     this.cdr.markForCheck();
   }
@@ -264,15 +266,16 @@ export class ArticleCategoriesComponent implements OnInit {
   }
 
   restore(cat: ArticleCategoryResponseDto): void {
+    const message = this.translate.instant('SUCCESS.CATEGORY_RESTORED', { name: cat.name });
     this.categoryService.restore(cat.id).subscribe({
       next: () => {
-        this.flash('success', `Category "${cat.name}" has been restored. You can find it in the Categories page.`);
+        this.flash('success', message);
         if (this.isView()) this.cancel();
         this.reload();
       },
       error: (error) => {
         const err = error.error as HttpError;
-        this.flash('error', err?.message ?? error.message);
+        this.flash('error', err?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR'));
       },
     });
   }
@@ -283,13 +286,21 @@ export class ArticleCategoriesComponent implements OnInit {
 
     if (this.isCreate()) {
       this.categoryService.create(dto).subscribe({
-        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" created successfully.`); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to create category.'),
+        next: () => {
+          this.cancel();
+          this.reload();
+          this.flash('success', this.translate.instant('SUCCESS.CATEGORY_CREATED', { name: dto.name }));
+        },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR')),
       });
     } else if (this.isEdit() && this.selectedCategory) {
       this.categoryService.update(this.selectedCategory.id, dto).subscribe({
-        next: () => { this.cancel(); this.reload(); this.flash('success', `Category "${dto.name}" updated successfully.`); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? 'Failed to update category.'),
+        next: () => {
+          this.cancel();
+          this.reload();
+          this.flash('success', this.translate.instant('SUCCESS.CATEGORY_UPDATED', { name: dto.name }));
+        },
+        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR')),
       });
     }
   }
@@ -298,9 +309,9 @@ export class ArticleCategoriesComponent implements OnInit {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '400px',
       data: {
-        title:       'Delete Category',
-        message:     `Category "${category.name}" will be permanently deleted. Do you want to proceed?`,
-        confirmText: 'Delete',
+        title:       this.translate.instant('CONFIRMATION.DELETE_CATEGORY_TITLE'),
+        message:     this.translate.instant('CONFIRMATION.DELETE_CATEGORY', { name: category.name }),
+        confirmText: this.translate.instant('COMMON.DELETE'),
         showCancel:  true,
         icon:        'auto_delete',
         iconColor:   'danger',
@@ -314,10 +325,10 @@ export class ArticleCategoriesComponent implements OnInit {
         this.categoryService.delete(category.id).subscribe({
           next: () => {
             if (this.isView()) this.cancel();
-            this.flash('success', `Category "${category.name}" deleted successfully.`);
+            this.flash('success', this.translate.instant('SUCCESS.CATEGORY_DELETED', { name: category.name }));
             this.reload();
           },
-          error: () => this.flash('error', `Failed to delete category "${category.name}".`),
+          error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
         });
       });
   }

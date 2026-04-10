@@ -2,9 +2,7 @@
 using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
-using Microsoft.AspNetCore.Components;
 using Sprache;
-using System.Reflection.Metadata.Ecma335;
 
 namespace ERP.ArticleService.Application.Services
 {
@@ -59,7 +57,7 @@ namespace ERP.ArticleService.Application.Services
             if (tva <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
-            var result= await _categoryRepository.GetBelowTVAAsync(tva);
+            var result = await _categoryRepository.GetBelowTVAAsync(tva);
             return result.Select(MapToDto).ToList();
         }
 
@@ -68,7 +66,7 @@ namespace ERP.ArticleService.Application.Services
             if (tva <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
-            var result= await _categoryRepository.GetHigherThanTVAAsync(tva);
+            var result = await _categoryRepository.GetHigherThanTVAAsync(tva);
             return result.Select(MapToDto).ToList();
         }
 
@@ -81,7 +79,7 @@ namespace ERP.ArticleService.Application.Services
             if (min > max)
                 throw new ArgumentException("'min' TVA must be less than or equal to 'max' TVA.");
 
-            var result= await _categoryRepository.GetBetweenTVAAsync(min, max);
+            var result = await _categoryRepository.GetBetweenTVAAsync(min, max);
             return result.Select(MapToDto).ToList();
         }
 
@@ -93,7 +91,7 @@ namespace ERP.ArticleService.Application.Services
             var existing = await _categoryRepository.GetByNameAsync(dto.Name);
             if (existing is not null && existing.Id != id)
                 throw new CategoryAlreadyExistsException(dto.Name);
-            
+
             var category = await _categoryRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
             category.Update(dto.Name, dto.TVA);
             await _categoryRepository.SaveChangesAsync();

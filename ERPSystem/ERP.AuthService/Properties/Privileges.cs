@@ -1,36 +1,29 @@
 ﻿public static class Privileges
 {
-    // ── Auth
     public static class Users
     {
+        public const string MANAGE_USERS = "MANAGE_USERS";
         public const string VIEW_USERS = "VIEW_USERS";
         public const string CREATE_USER = "CREATE_USER";
-        public const string ACTIVATE_USER = "ACTIVATE_USER";
-        public const string DEACTIVATE_USER = "DEACTIVATE_USER";
         public const string UPDATE_USER = "UPDATE_USER";
         public const string DELETE_USER = "DELETE_USER";
         public const string RESTORE_USER = "RESTORE_USER";
-        public const string MANAGE_USERS = "MANAGE_USERS";
+        public const string ACTIVATE_USER = "ACTIVATE_USER";
+        public const string DEACTIVATE_USER = "DEACTIVATE_USER";
         public const string ASSIGN_ROLES = "ASSIGN_ROLES";
-
-        public const string MANAGE_ROLES = "MANAGE_ROLES";
         public const string CREATE_ROLE = "CREATE_ROLE";
         public const string UPDATE_ROLE = "UPDATE_ROLE";
         public const string DELETE_ROLE = "DELETE_ROLE";
-
-        public const string MANAGE_CONTROLES = "MANAGE_CONTROLES";
         public const string CREATE_CONTROLE = "CREATE_CONTROLE";
         public const string UPDATE_CONTROLE = "UPDATE_CONTROLE";
         public const string DELETE_CONTROLE = "DELETE_CONTROLE";
     }
 
-    // ── Audit
     public static class Audit
     {
         public const string MANAGE_AUDITLOGS = "MANAGE_AUDITLOGS";
     }
 
-    // ── Clients
     public static class Clients
     {
         public const string MANAGE_CLIENTS = "MANAGE_CLIENTS";
@@ -45,7 +38,6 @@
         public const string RESTORE_CLIENT_CATEGORIES = "RESTORE_CLIENT_CATEGORIES";
     }
 
-    // ── Articles
     public static class Articles
     {
         public const string MANAGE_ARTICLES = "MANAGE_ARTICLES";
@@ -60,7 +52,6 @@
         public const string RESTORE_ARTICLE_CATEGORIES = "RESTORE_ARTICLE_CATEGORIES";
     }
 
-    // ── Invoices
     public static class Invoices
     {
         public const string MANAGE_INVOICES = "MANAGE_INVOICES";
@@ -71,7 +62,6 @@
         public const string RESTORE_INVOICE = "RESTORE_INVOICE";
     }
 
-    // ── Payments
     public static class Payments
     {
         public const string MANAGE_PAYMENTS = "MANAGE_PAYMENTS";
@@ -81,7 +71,6 @@
         public const string RESTORE_PAYMENT = "RESTORE_PAYMENT";
     }
 
-    // ── Stock
     public static class Stock
     {
         public const string MANAGE_STOCK = "MANAGE_STOCK";
@@ -90,7 +79,42 @@
         public const string ADD_ENTRY = "ADD_ENTRY";
     }
 
-    // Reports
+    public static class Fournisseurs
+    {
+        public const string MANAGE_FOURNISSEURS = "MANAGE_FOURNISSEURS";  // was MANAGE_STOCK
+        public const string VIEW_FOURNISSEURS = "VIEW_FOURNISSEURS";
+        public const string CREATE_FOURNISSEUR = "CREATE_FOURNISSEUR";
+        public const string UPDATE_FOURNISSEUR = "UPDATE_FOURNISSEUR";
+        public const string DELETE_FOURNISSEUR = "DELETE_FOURNISSEUR";
+        public const string RESTORE_FOURNISSEUR = "RESTORE_FOURNISSEUR";
+        public const string BLOCK_FOURNISSEUR = "BLOCK_FOURNISSEUR";
+        public const string UNBLOCK_FOURNISSEUR = "UNBLOCK_FOURNISSEUR";
+    }
+
+    public static class BonsEntree
+    {
+        public const string MANAGE_BONS_ENTREE = "MANAGE_BONS_ENTREE";
+        public const string VIEW_BONS_ENTREE = "VIEW_BONS_ENTREE";
+        public const string CREATE_BON_ENTREE = "CREATE_BON_ENTREE";
+        public const string UPDATE_BON_ENTREE = "UPDATE_BON_ENTREE";
+    }
+
+    public static class BonsSortie
+    {
+        public const string MANAGE_BONS_SORTIE = "MANAGE_BONS_SORTIE";
+        public const string VIEW_BONS_SORTIE = "VIEW_BONS_SORTIE";
+        public const string CREATE_BON_SORTIE = "CREATE_BON_SORTIE";
+        public const string UPDATE_BON_SORTIE = "UPDATE_BON_SORTIE";
+    }
+
+    public static class BonsRetour
+    {
+        public const string MANAGE_BONS_RETOUR = "MANAGE_BONS_RETOUR";
+        public const string VIEW_BONS_RETOUR = "VIEW_BONS_RETOUR";
+        public const string CREATE_BON_RETOUR = "CREATE_BON_RETOUR";
+        public const string UPDATE_BON_RETOUR = "UPDATE_BON_RETOUR";
+    }
+
     public static class Reports
     {
         public const string MANAGE_REPORTS = "MANAGE_REPORTS";

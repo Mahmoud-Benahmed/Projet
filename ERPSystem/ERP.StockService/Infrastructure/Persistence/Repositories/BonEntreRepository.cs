@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories
 {
@@ -31,7 +32,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         private IQueryable<BonEntre> ActiveQuery() =>
             _context.BonEntres
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)   // joined via filtered context
                 .AsSplitQuery();               // avoids cartesian explosion on Lignes
 
         // For Fournisseur navigation: if the Fournisseur itself may be soft-deleted
@@ -39,12 +39,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         // Use a manual join instead of navigation include to bypass the filter.
         private IQueryable<BonEntre> ActiveQueryWithFournisseur() =>
             _context.BonEntres
-                .Include(b => b.Lignes)
-                // IgnoreQueryFilters on the full query bypasses BOTH BonEntre and
-                // Fournisseur filters, so we add the BonEntre filter back manually.
-                .IgnoreQueryFilters()
-                .Where(b => !b.IsDeleted)
-                .Include(b => b.Fournisseur)   // now loads even soft-deleted fournisseurs
+                .Include(b => b.Lignes)   // now loads even soft-deleted fournisseurs
                 .AsSplitQuery();
 
         // ── single record ─────────────────────────────────────────────────────
@@ -56,9 +51,8 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             await _context.BonEntres
                 .IgnoreQueryFilters()
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(b => b.Id == id && b.IsDeleted);
+                .FirstOrDefaultAsync(b => b.Id == id);
 
         // ── list queries ──────────────────────────────────────────────────────
         public async Task<(List<BonEntre> Items, int TotalCount)> GetAllAsync(int page, int size)
@@ -99,9 +93,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             var query = _context.BonEntres
                 .IgnoreQueryFilters()
                 .Include(b => b.Lignes)
-                .Include(b => b.Fournisseur)
                 .AsSplitQuery()
-                .Where(b => b.IsDeleted)
                 .OrderByDescending(b => b.CreatedAt);
 
             var total = await query.CountAsync();
@@ -130,24 +122,27 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
             return (items, total);
         }
 
+        public async Task DeleteByIdAsync(Guid id)
+        {
+            var bon = await _context.BonEntres.FindAsync(id);
+            if (bon != null)
+            {
+                _context.Remove(bon);
+                await _context.SaveChangesAsync();
+            }
+        }
+
         // ── stats ─────────────────────────────────────────────────────────────
         public async Task<BonStatsDto> GetStatsAsync()
         {
-            var counts = await _context.BonEntres.IgnoreQueryFilters()
-                .GroupBy(_ => 1)
-                .Select(g => new
-                {
-                    Total = g.Count(),
-                    Active = g.Count(b => !b.IsDeleted),
-                    Deleted = g.Count(b => b.IsDeleted),
-                })
-                .FirstOrDefaultAsync();
+            var count = await _context.BonRetours.CountAsync();
 
             return new BonStatsDto(
-                TotalCount: counts?.Total ?? 0,
-                ActiveCount: counts?.Active ?? 0,
-                DeletedCount: counts?.Deleted ?? 0
+                TotalCount: count
             );
         }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+            => await _context.Database.BeginTransactionAsync();
     }
 }

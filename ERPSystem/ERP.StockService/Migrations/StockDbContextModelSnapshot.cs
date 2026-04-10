@@ -34,9 +34,6 @@ namespace ERP.StockService.Migrations
                     b.Property<Guid>("FournisseurId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Numero")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -51,12 +48,9 @@ namespace ERP.StockService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FournisseurId");
-
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonEntres_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonEntres_Numero");
 
                     b.ToTable("BonEntres", (string)null);
                 });
@@ -69,9 +63,6 @@ namespace ERP.StockService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Motif")
                         .IsRequired()
@@ -102,8 +93,7 @@ namespace ERP.StockService.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonRetours_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonRetours_Numero");
 
                     b.ToTable("BonRetours", (string)null);
                 });
@@ -119,9 +109,6 @@ namespace ERP.StockService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Numero")
                         .IsRequired()
@@ -139,8 +126,7 @@ namespace ERP.StockService.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique()
-                        .HasDatabaseName("IX_BonSorties_Numero")
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasDatabaseName("IX_BonSorties_Numero");
 
                     b.ToTable("BonSorties", (string)null);
                 });
@@ -199,61 +185,59 @@ namespace ERP.StockService.Migrations
                     b.ToTable("LigneEntres", (string)null);
                 });
 
-            modelBuilder.Entity("ERP.StockService.Domain.Fournisseur", b =>
+            modelBuilder.Entity("ERP.StockService.Domain.JournalStock", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<Guid>("ArticleId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<Guid>("LigneId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsBlocked")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("MovementType")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Phone")
+                    b.Property<Guid?>("PerformedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PieceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("SourceOperation")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("RIB")
+                    b.Property<string>("SourceService")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("TaxNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<decimal>("StockAfter")
+                        .HasColumnType("decimal(18,3)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<decimal>("StockBefore")
+                        .HasColumnType("decimal(18,3)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TaxNumber")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Fournisseurs_TaxNumber")
-                        .HasFilter("[IsDeleted] = 0");
+                    b.HasIndex("ArticleId");
 
-                    b.ToTable("Fournisseurs", (string)null);
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("MovementType");
+
+                    b.ToTable("JournalStocks", (string)null);
                 });
 
             modelBuilder.Entity("LigneRetour", b =>
@@ -312,17 +296,6 @@ namespace ERP.StockService.Migrations
                     b.HasIndex("BonSortieId");
 
                     b.ToTable("LigneSorties", (string)null);
-                });
-
-            modelBuilder.Entity("BonEntre", b =>
-                {
-                    b.HasOne("ERP.StockService.Domain.Fournisseur", "Fournisseur")
-                        .WithMany()
-                        .HasForeignKey("FournisseurId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Fournisseur");
                 });
 
             modelBuilder.Entity("ERP.StockService.Domain.Entre.LigneEntre", b =>

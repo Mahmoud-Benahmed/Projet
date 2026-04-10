@@ -26,13 +26,20 @@
         UserRestored,
 
         // Role
-        RoleCreated, 
-        RoleUpdated, 
+        RoleCreated,
+        RoleUpdated,
         RoleDeleted,
 
         // Controle
-        ControleCreated, 
-        ControleUpdated, 
-        ControleDeleted
+        ControleCreated,
+        ControleUpdated,
+        ControleDeleted,
+
+        Unauthorized,
+        UserNotFound,
+        UnhandledError,
+
+        TokenValidated,
+        TokenValidationFailed,
     }
 }

@@ -5,13 +5,14 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter } from 'rxjs/operators';
-import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
+import { UserSettingsService } from '../../services/user-settings.service';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule, TranslatePipe],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
   encapsulation: ViewEncapsulation.None,
@@ -39,13 +40,15 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly PRIVILEGES= PRIVILEGES;
 
 
-  constructor(private router: Router, public authService: AuthService, private cdr: ChangeDetectorRef, public theme: ThemeService) {
+  constructor(private router: Router, public authService: AuthService, 
+              private cdr: ChangeDetectorRef, 
+              public userSettings: UserSettingsService, 
+              public translate: TranslateService
+  ) {
   }
 
 
   ngOnInit(): void {
-    this.theme.init();
-
     this.subs.add(
       this.router.events.pipe(
         filter(e => e instanceof NavigationEnd)
@@ -82,9 +85,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   private getBreadcrumbs(url: string): { label: string; link?: string }[] {
-    if (url.startsWith('/change-password/')) {
-      return [{ label: 'Users', link: '/users' }, { label: 'Reset Password' }];
-    }
+    if (url.startsWith('/change-password/'))  return [{ label: 'Users', link: '/users' }, { label: 'Reset Password' }];
+
     if (url.startsWith('/users/register'))    return [{ label: 'Users', link: '/users' }, { label: 'Register' }];
     if (url.startsWith('/users/deactivated')) return [{ label: 'Users', link: '/users' }, { label: 'Deactivated' }];
     if (url.startsWith('/users/deleted'))     return [{ label: 'Users', link: '/users' }, { label: 'Deleted' }];
@@ -93,13 +95,18 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/users/'))            return [{ label: 'Users', link: '/users' }, { label: 'Profile' }];
     if (url.startsWith('/users'))             return [{ label: 'Users' }];
 
-    if (url.startsWith('/articles/categories'))  return [{ label: 'Articles', link: '/articles/categories' }, { label: 'Categories' }];
-    if (url.startsWith('/articles'))          return [{ label: 'Articles' }];
+    if (url.startsWith('/articles/categories'))   return [{ label: 'Articles', link: '/articles/categories' }, { label: 'Categories' }];
+    if (url.startsWith('/articles'))              return [{ label: 'Articles' }];
 
-    if (url.startsWith('/clients/categories'))  return [{ label: 'Clients', link: '/clients/categories' }, { label: 'Categories' }];
-    if (url.startsWith('/clients'))           return [{ label: 'Clients' }];
+    if (url.startsWith('/clients/categories'))    return [{ label: 'Clients', link: '/clients/categories' }, { label: 'Categories' }];
+    if (url.startsWith('/clients'))               return [{ label: 'Clients' }];
 
-    if (url.startsWith('/invoices'))          return [{ label: 'Invoices' }];
+    if (url.startsWith('/invoices'))              return [{ label: this.translate.instant('NAV.INVOICES'), link:'/invoices' }];
+    
+    if (url.startsWith('/stock/fournisseurs'))    return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock/fournisseurs'}, {label: this.translate.instant('NAV.FOURNISSEURS')}];
+    if (url.startsWith('/stock/bons'))            return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock/bons'}, {label: this.translate.instant('NAV.BONS')}];
+    if (url.startsWith('/stock'))                 return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock'}];
+
 
     if (url.startsWith('/permissions'))       return [{ label: 'Permissions' }];
     if (url.startsWith('/audit-log'))         return [{ label: 'Audit Log' }];

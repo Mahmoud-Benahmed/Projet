@@ -1,4 +1,6 @@
 ﻿using ERP.AuthService.Domain;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace ERP.AuthService.Application.Interfaces
 {
@@ -8,8 +10,24 @@ namespace ERP.AuthService.Application.Interfaces
             Guid userId,
             string login,
             string role,
-            IEnumerable<string> privileges);
+            IEnumerable<string> privileges,
+            UserSettings settings);
 
         string GenerateRefreshToken();
+
+        // Basic validation - returns ClaimsPrincipal if valid, null if invalid
+        ClaimsPrincipal? ValidateToken(string token);
+
+        // Detailed validation - returns TokenValidationResult with error information
+        CustomTokenValidationResult ValidateTokenWithDetails(string token);
+
+        // Read token without validation (for debugging)
+        JwtSecurityToken? ReadToken(string token);
+
+        // Quick expiration check
+        bool IsTokenExpired(string token);
+
+        // Get remaining lifetime in seconds
+        double GetTokenRemainingLifetime(string token);
     }
 }

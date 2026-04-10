@@ -1,5 +1,3 @@
-using System;
-
 namespace InvoiceService.Domain
 {
     public class InvoiceItem
@@ -34,7 +32,7 @@ namespace InvoiceService.Domain
         public InvoiceItem(
             Guid invoiceId,
             Guid articleId,
-            string articleName,
+            string articleLibelle,
             string articleBarCode,
             int quantity,
             decimal uniPriceHT,
@@ -49,14 +47,14 @@ namespace InvoiceService.Domain
                 throw new InvoiceDomainException("Unit price cannot be negative.");
 
             if (taxRate < 0 || taxRate > 1)
-                throw new InvoiceDomainException("Tax rate must be between 0 and 1.");
+            throw new InvoiceDomainException("Tax rate must be between 0 and 1.");
 
             // ──── INITIALIZATION ────
 
             Id = Guid.NewGuid();
             InvoiceId = invoiceId;
             ArticleId = articleId;
-            ArticleName = articleName;
+            ArticleName = articleLibelle;
             ArticleBarCode = articleBarCode;
             Quantity = quantity;
             UniPriceHT = uniPriceHT;

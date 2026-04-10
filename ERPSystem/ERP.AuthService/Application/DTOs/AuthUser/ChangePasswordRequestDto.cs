@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using System.ComponentModel.DataAnnotations;
 
 namespace ERP.AuthService.Application.DTOs.AuthUser
 {

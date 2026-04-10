@@ -7,14 +7,15 @@ namespace ERP.AuthService.Infrastructure.Persistence
     public class MongoDbContext
     {
         private readonly IMongoDatabase _database;
+        private readonly MongoClient _client;
 
         public MongoDbContext(string connectionString, string dbName)
         {
-            var client = new MongoClient(connectionString);
-            _database = client.GetDatabase(dbName);
+            _client = new MongoClient(connectionString);
+            _database = _client.GetDatabase(dbName);
         }
 
-        public IMongoCollection<AuditLog> AuditLogs => 
+        public IMongoCollection<AuditLog> AuditLogs =>
             _database.GetCollection<AuditLog>("AuditLogs");
 
         public IMongoCollection<AuthUser> AuthUsers =>
@@ -31,5 +32,11 @@ namespace ERP.AuthService.Infrastructure.Persistence
 
         public IMongoCollection<Privilege> Privileges =>
             _database.GetCollection<Privilege>("Privileges");
+
+        // MongoDbContext.cs
+        public async Task DropCollectionAsync(string collectionName)
+            => await _database.DropCollectionAsync(collectionName);
+
+        public async Task DropDatabaseAsync() => await _client.DropDatabaseAsync(_database.DatabaseNamespace.DatabaseName);
     }
 }
