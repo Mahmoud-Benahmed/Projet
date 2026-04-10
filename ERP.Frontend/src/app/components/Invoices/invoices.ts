@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, DestroyRef, ViewChild, ElementRef, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,15 +7,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, firstValueFrom, forkJoin, Observable, of } from 'rxjs';
 
 import { AuthService, PRIVILEGES } from '../../services/auth/auth.service';
 import { InvoiceService, InvoiceDto, CreateInvoiceDto, InvoiceStatsDto } from '../../services/invoices/invoice.service';
 import { ClientsService, ClientResponseDto } from '../../services/clients/clients.service';
-import { ArticleService, ArticleResponseDto } from '../../services/articles/articles.service';
+import { ArticleService, UnitEnum } from '../../services/articles/articles.service';
 import { PaginationComponent } from '../pagination/pagination';
 import { ModalComponent } from '../modal/modal';
 import { HttpError } from '../../interfaces/ErrorDto';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { StockItem, StockService } from '../../services/stock.service';
 
 interface PendingItem {
   _localId: string;
@@ -39,9 +41,10 @@ export interface InvoiceValidationResult {
   discountRate?: number;
 }
 
-type ViewMode = 'list' | 'list-deleted' | 'create' | 'view' | 'stats';
+type ViewMode = 'list' | 'list-deleted' | 'create'|'edit' | 'view' | 'stats';
 
 Chart.register(...registerables);
+
 @Component({
   selector: 'app-invoices',
   standalone: true,
@@ -59,11 +62,14 @@ Chart.register(...registerables);
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',
 })
-export class InvoicesComponent implements OnInit {
+export class InvoicesComponent implements OnInit, OnDestroy{
   @ViewChild('monthlyChart') monthlyChartRef!: ElementRef<HTMLCanvasElement>;
   private chart: Chart | null = null;
+  private themeObserver: MutationObserver | null = null;
   private readonly destroyRef = inject(DestroyRef);
   private translate = inject(TranslateService);
+  private cdr = inject(ChangeDetectorRef);
+  
 
   creditWarning: string | null = null;
   discountInfo = {
@@ -77,26 +83,31 @@ export class InvoicesComponent implements OnInit {
   selectedClientForValidation: ClientResponseDto | null = null;
 
   readonly PRIVILEGES = PRIVILEGES;
+  readonly units = UnitEnum;
+
+  articles: StockItem[] = [];
+  private originalArticles: StockItem[] = [];
+  private usedQuantities: Map<string, number> = new Map();
 
   // ── View mode ──────────────────────────────────────────────────────────────
   viewMode = signal<ViewMode>('list');
   private previousMode: ViewMode = 'list';
 
-  // Computed properties for mode checking
   isMode = (mode: ViewMode) => computed(() => this.viewMode() === mode);
 
   isList = this.isMode('list');
   isDeletedList = this.isMode('list-deleted');
   isCreate = this.isMode('create');
+  isEdit = this.isMode('edit');
   isView = this.isMode('view');
   isStats = this.isMode('stats');
 
   // ── Invoice list state ─────────────────────────────────────────────────────
-  invoices: InvoiceDto[]             = [];
-  deletedInvoices: InvoiceDto[]      = [];
+  invoices: InvoiceDto[] = [];
+  deletedInvoices: InvoiceDto[] = [];
   selectedInvoice: InvoiceDto | null = null;
 
-  totalCount  = 0;
+  totalCount = 0;
   currentPage = 1;
   currentSize = 10;
   readonly pageSizeOptions = [5, 10, 25, 50];
@@ -110,9 +121,9 @@ export class InvoicesComponent implements OnInit {
   statsLoading = false;
 
   // ── Filters / sort ────────────────────────────────────────────────────────
-  searchQuery   = '';
-  statusFilter  = 'ALL';
-  sortColumn    = '';
+  searchQuery = '';
+  statusFilter = 'ALL';
+  sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
   get sortedData(): InvoiceDto[] {
@@ -143,58 +154,64 @@ export class InvoicesComponent implements OnInit {
   invoiceForm!: FormGroup;
   itemForm!: FormGroup;
 
-  // ── Clients / articles ────────────────────────────────────────────────────
-  clients: ClientResponseDto[]         = [];
+  // ── Clients ───────────────────────────────────────────────────────────────
+  clients: ClientResponseDto[] = [];
   filteredClients: ClientResponseDto[] = [];
-  clientSearchQuery                    = '';
-  articles: ArticleResponseDto[]       = [];
+  clientSearchQuery = '';
 
   // ── Pending line items (create view) ──────────────────────────────────────
   pendingItems: PendingItem[] = [];
-  inlineItemOpen    = false;
+  inlineItemOpen = false;
   inlineItemLocalId = '';
 
+  // Cached selected article for template bindings to avoid repeated find() per CD cycle
+  private _selectedArticle: StockItem | null = null;
+
   constructor(
-    public  authService:    AuthService,
+    public authService: AuthService,
     private invoiceService: InvoiceService,
     private clientsService: ClientsService,
     private articleService: ArticleService,
-    private fb:             FormBuilder,
-    private dialog:         MatDialog,
+    private fb: FormBuilder,
+    private dialog: MatDialog,
+    private stock: StockService
   ) {}
 
   ngAfterViewInit(): void {
-    if (this.invoiceStats?.monthlyBreakdown) {
-      this.renderStatusPieChart();
-    }
     this.observeThemeChanges();
   }
 
   ngOnInit(): void {
     this.buildForms();
     this.reload();
-    
+  }
+
+  ngOnDestroy(): void {
+    this.themeObserver?.disconnect();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
   }
 
   // ── Page title ────────────────────────────────────────────────────────────
   get pageTitle(): string {
-    if (this.isCreate())      return 'INVOICES.TITLE_NEW';
-    if (this.isView())        return 'INVOICES.TITLE_DETAILS';
+    if (this.isCreate()) return 'INVOICES.TITLE_NEW';
+    if (this.isView()) return 'INVOICES.TITLE_DETAILS';
     if (this.isDeletedList()) return 'INVOICES.TITLE_DELETED';
-    if (this.isStats())       return 'INVOICES.TITLE_ANALYTICS';
+    if (this.isStats()) return 'INVOICES.TITLE_ANALYTICS';
     return 'INVOICES.TITLE_LIST';
   }
 
   get duePaymentPeriodHint(): string {
-    if (!this.selectedClientForValidation?.duePaymentPeriod) {
-      return '';
-    }
-    return `Due date calculated: ${this.selectedClientForValidation.duePaymentPeriod} days after invoice date`;
+    if (!this.selectedClientForValidation?.duePaymentPeriod) return '';
+    return this.translate.instant('INVOICES.FORM.DUE_DATE_HINT', {
+      days: this.selectedClientForValidation.duePaymentPeriod
+    });
   }
 
   // ── Forms ─────────────────────────────────────────────────────────────────
   private buildForms(): void {
-    // Remove invoiceNumber - backend will generate it
     this.invoiceForm = this.fb.group({
       invoiceDate:     ['', Validators.required],
       dueDate:         ['', Validators.required],
@@ -203,49 +220,38 @@ export class InvoicesComponent implements OnInit {
       clientAddress:   ['', Validators.required],
       additionalNotes: [null],
     });
-    
+
     this.itemForm = this.fb.group({
       articleId:  ['', Validators.required],
       quantity:   [1,  [Validators.required, Validators.min(1)]],
       uniPriceHT: [0,  [Validators.required, Validators.min(0)]],
       taxRate:    [19, [Validators.required, Validators.min(0), Validators.max(100)]],
     });
-    
-    // Listen to invoice date changes to auto-update due date
+
     this.invoiceForm.get('invoiceDate')?.valueChanges.subscribe(() => {
       this.onInvoiceDateChange();
     });
-  }
 
-  checkFormValidity(): void {
-    console.log('Form valid:', this.invoiceForm.valid);
-    console.log('Form errors:', this.invoiceForm.errors);
-    Object.keys(this.invoiceForm.controls).forEach(key => {
-      const control = this.invoiceForm.get(key);
-      console.log(`${key}: valid=${control?.valid}, errors=`, control?.errors);
+    // Clear cached selected article when articleId changes
+    this.itemForm.get('articleId')?.valueChanges.subscribe(id => {
+      this._selectedArticle = id ? (this.articles.find(a => a.id === id) ?? null) : null;
     });
   }
 
   // ── Load data ─────────────────────────────────────────────────────────────
   load(): void {
-    if (this.statusFilter === 'ALL') {
-      this.invoiceService.getAll(this.currentPage, this.currentSize).subscribe({
-        next: res => {
-          this.invoices = res.items;
-          this.totalCount = res.totalCount;
-          this.refreshStats();
-        },
-        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED')),
-      });
-    } else {
-      this.invoiceService.getByStatus(this.statusFilter, this.currentPage, this.currentSize).subscribe({
-        next: res => {
-          this.invoices = res.items;
-          this.totalCount = res.totalCount;
-        },
-        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED')),
-      });
-    }
+    const req$ = this.statusFilter === 'ALL'
+      ? this.invoiceService.getAll(this.currentPage, this.currentSize)
+      : this.invoiceService.getByStatus(this.statusFilter, this.currentPage, this.currentSize);
+
+    req$.subscribe({
+      next: res => {
+        this.invoices = res.items;
+        this.totalCount = res.totalCount;
+        if (this.statusFilter === 'ALL') this.refreshStats();
+      },
+      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED')),
+    });
   }
 
   loadDeletedInvoices(): void {
@@ -265,11 +271,47 @@ export class InvoicesComponent implements OnInit {
     });
   }
 
-  loadArticles(): void {
-    this.articleService.getAll(1, 1000).subscribe({
-      next: res => { this.articles = res.items; },
-      error: () => {},
+  private loadArticlesWithStock(): void {
+    forkJoin({
+      articles: this.articleService.getAll(1, 1000).pipe(catchError(() => of({ items: [] }))),
+      stock: this.stock.getStockArticles().pipe(catchError(() => of({ inStock: [], outStock: [] })))
+    }).subscribe({
+      next: (results) => {
+        const allArticles = results.articles.items || [];
+        const stockData = results.stock || { inStock: [], outStock: [] };
+
+        const stockMap = new Map<string, number>();
+        stockData.inStock.forEach((s: any) => {
+          stockMap.set(s.articleId || s.id, s.quantity);
+        });
+
+        // Store original articles (never modified)
+        this.originalArticles = allArticles
+          .filter((a: any) => stockMap.has(a.id))
+          .map((a: any) => ({ ...a, quantity: stockMap.get(a.id) || 0 }));
+        
+        // Initialize available articles as a copy
+        this.resetAvailableArticles();
+
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.originalArticles = [];
+        this.articles = [];
+      }
     });
+  }
+
+  // Reset available articles based on original stock
+  private resetAvailableArticles(): void {
+    // Create a deep copy of original articles
+    this.articles = this.originalArticles.map(article => ({
+      ...article,
+      quantity: article.quantity // Keep original stock quantity
+    }));
+    
+    // Reset used quantities tracking
+    this.usedQuantities.clear();
   }
 
   loadStats(): void {
@@ -279,7 +321,7 @@ export class InvoicesComponent implements OnInit {
       next: stats => {
         this.invoiceStats = stats;
         this.statsLoading = false;
-        setTimeout(() => this.renderStatusPieChart(), 100); // Render after view update
+        setTimeout(() => this.renderStatusPieChart(), 100);
       },
       error: () => {
         this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_STATS_FAILED'));
@@ -306,6 +348,9 @@ export class InvoicesComponent implements OnInit {
   }
 
   reload(): void {
+    this.loadClients();
+    this.loadArticlesWithStock();
+
     if (this.isDeletedList()) {
       this.loadDeletedInvoices();
     } else if (this.isStats()) {
@@ -313,23 +358,9 @@ export class InvoicesComponent implements OnInit {
     } else {
       this.load();
     }
-    this.loadClients();
-    this.loadArticles();
   }
 
   // ── Navigation / Mode Management ──────────────────────────────────────────
-
-  onActiveCardClick(): void {
-    if (this.isList()) return;
-    this.setViewMode('list');
-    this.load();
-  }
-
-  onDeletedCardClick(): void {
-    if (this.isDeletedList() || this.stats.deleted < 1) return;
-    this.setViewMode('list-deleted');
-    this.loadDeletedInvoices();
-  }
 
   openStats(): void {
     if (this.isStats()) return;
@@ -343,17 +374,67 @@ export class InvoicesComponent implements OnInit {
     this.previousMode = this.viewMode();
     this.setViewMode('create');
     this.resetCreateForm();
-    
-    // Set default dates
+
     const today = new Date();
-    const defaultInvoiceDate = today.toISOString().split('T')[0];
+    this.invoiceForm.patchValue({ invoiceDate: today.toISOString().split('T')[0] });
+  }
+
+  openEdit(invoice: InvoiceDto): void {
+    if (this.isEdit()) return;
     
-    this.invoiceForm.patchValue({
-      invoiceDate: defaultInvoiceDate,
+    // Reset available articles first
+    this.resetAvailableArticles();
+    
+    this.previousMode = this.viewMode();
+    this.setViewMode('edit');
+    this.selectedInvoice = invoice;
+    
+    // Track used quantities from existing invoice items
+    invoice.items.forEach(item => {
+      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
+      this.usedQuantities.set(item.articleId, currentUsed + item.quantity);
+      
+      // Update available stock
+      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
+      if (articleToUpdate) {
+        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - (currentUsed + item.quantity);
+      }
     });
     
-    // Mark fields as touched to show validation errors if needed
-    // But don't mark as touched immediately to avoid showing errors
+    // Format dates
+    const formattedInvoiceDate = invoice.invoiceDate ? new Date(invoice.invoiceDate).toISOString().split('T')[0] : '';
+    const formattedDueDate = invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : '';
+    
+    // Populate form
+    this.invoiceForm.patchValue({
+      invoiceDate: formattedInvoiceDate,
+      dueDate: formattedDueDate,
+      clientId: invoice.clientId,
+      clientFullName: invoice.clientFullName,
+      clientAddress: invoice.clientAddress,
+      additionalNotes: invoice.additionalNotes,
+    });
+    
+    // Populate pending items
+    this.pendingItems = invoice.items.map(item => ({
+      _localId: crypto.randomUUID(),
+      articleId: item.articleId,
+      articleName: item.articleName,
+      articleBarCode: item.articleBarCode,
+      quantity: item.quantity,
+      uniPriceHT: item.uniPriceHT,
+      taxRate: item.taxRate,
+      totalHT: item.totalHT,
+      totalTTC: item.totalTTC
+    }));
+    
+    // Find and set the selected client
+    const client = this.clients.find(c => c.id === invoice.clientId);
+    if (client) {
+      this.selectedClientForValidation = client;
+    }
+    
+    this.cdr.markForCheck();
   }
 
   openView(invoice: InvoiceDto): void {
@@ -367,41 +448,25 @@ export class InvoicesComponent implements OnInit {
     const target = this.resolveCancel();
     this.setViewMode(target);
 
-    if (target !== 'view') {
-      this.selectedInvoice = null;
-    }
-
-    if (target !== 'create') {
-      this.resetCreateForm();
-    }
+    if (target !== 'view') this.selectedInvoice = null;
+    if (target !== 'create') this.resetCreateForm();
 
     this.reload();
   }
 
-private resolveCancel(): ViewMode {
-  const current = this.viewMode();
-
-  // view → list / list-deleted (go back to where we came from)
-  if (current === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted')) {
-    return this.previousMode;
-  }
-
-  // create → previous mode (list or list-deleted)
-  if (current === 'create') {
-    return this.previousMode ?? 'list';
-  }
-
-  // stats → list
-  if (current === 'stats') {
+  private resolveCancel(): ViewMode {
+    const current = this.viewMode();
+    if (current === 'view' && (this.previousMode === 'list' || this.previousMode === 'list-deleted')) {
+      return this.previousMode;
+    }
+    if (current === 'create') return this.previousMode ?? 'list';
+    if (current === 'stats') return 'list';
+    this.resetCreateForm();
     return 'list';
   }
 
-  // fallback
-  return 'list';
-}
-
   private resetCreateForm(): void {
-    // Reset form with empty values
+    // Reset form values
     this.invoiceForm.reset({
       invoiceDate: '',
       dueDate: '',
@@ -411,6 +476,19 @@ private resolveCancel(): ViewMode {
       additionalNotes: null,
     });
     
+    // Mark form as pristine and untouched
+    this.invoiceForm.markAsPristine();
+    this.invoiceForm.markAsUntouched();
+    
+    // Reset all form controls individually
+    Object.keys(this.invoiceForm.controls).forEach(key => {
+      const control = this.invoiceForm.get(key);
+      control?.markAsPristine();
+      control?.markAsUntouched();
+      control?.setErrors(null);
+    });
+    
+    // Clear pending items
     this.pendingItems = [];
     this.inlineItemOpen = false;
     this.inlineItemLocalId = '';
@@ -419,6 +497,13 @@ private resolveCancel(): ViewMode {
     this.creditWarning = null;
     this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
     this.selectedClientForValidation = null;
+    this._selectedArticle = null;
+    
+    // Reset available articles to original stock
+    this.resetAvailableArticles();
+    
+    
+    this.cdr.markForCheck();
   }
 
   setViewMode(mode: ViewMode): void {
@@ -429,12 +514,8 @@ private resolveCancel(): ViewMode {
 
   setStatusFilter(status: string): void {
     this.statusFilter = status;
-    this.currentPage  = 1;
+    this.currentPage = 1;
     this.load();
-  }
-
-  applyFilter(): void {
-    // Search is already handled by sortedData getter
   }
 
   sortBy(col: string): void {
@@ -460,10 +541,7 @@ private resolveCancel(): ViewMode {
   // ── Client autocomplete ───────────────────────────────────────────────────
 
   filterClients(query: string): void {
-    if (!query || query.length < 2) {
-      this.filteredClients = [];
-      return;
-    }
+    if (!query || query.length < 2) { this.filteredClients = []; return; }
     const q = query.toLowerCase();
     this.filteredClients = this.clients
       .filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
@@ -472,83 +550,80 @@ private resolveCancel(): ViewMode {
 
   selectClient(client: ClientResponseDto): void {
     this.selectedClientForValidation = client;
-    
-    // Get current invoice date or use today
+
     let invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
     if (!invoiceDate) {
-      const today = new Date();
-      invoiceDate = today.toISOString().split('T')[0];
-      this.invoiceForm.patchValue({ invoiceDate: invoiceDate });
+      invoiceDate = new Date().toISOString().split('T')[0];
+      this.invoiceForm.patchValue({ invoiceDate });
     }
-    
-    // Calculate due date based on client's duePaymentPeriod
-    const dueDate = this.calculateDueDate(invoiceDate, client.duePaymentPeriod);
-    
+
     this.invoiceForm.patchValue({
       clientId: client.id,
       clientFullName: client.name,
       clientAddress: client.address ?? '',
-      dueDate: dueDate,
+      dueDate: this.calculateDueDate(invoiceDate, client.duePaymentPeriod),
     });
+
+    // Mark form as dirty to trigger unsaved changes detection
+    this.invoiceForm.markAsDirty();
     
     this.clientSearchQuery = client.name;
     this.filteredClients = [];
-    
-    // Check limits and discount immediately
     this.checkClientLimitsAndDiscount();
-    
-    // Log form validity for debugging
-    console.log('Form valid after client selection:', this.invoiceForm.valid);
+  }
+
+  onClientSelectChange(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    const client = this.clients.find(c => c.id === id);
+    if (client) this.selectClient(client);
   }
 
   // ── Article selection ─────────────────────────────────────────────────────
 
   onArticleSelectChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const id = select.value;
+    const id = (event.target as HTMLSelectElement).value;
     const article = this.articles.find(a => a.id === id);
     this.onArticleSelected(article);
   }
 
-  onArticleSelected(article: ArticleResponseDto | undefined): void {
+  onArticleSelected(article: StockItem | undefined): void {
     if (!article) return;
+    this._selectedArticle = article;
     this.itemForm.patchValue({
       uniPriceHT: article.prix ?? 0,
-      taxRate: article.tva ?? 19
+      taxRate: article.tva ?? 19,
     });
-  }
-
-  onClientSelectChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const clientId = select.value;
-    const selectedClient = this.clients.find(c => c.id === clientId);
-    if (selectedClient) {
-      this.selectClient(selectedClient);
-    }
+    this.updateQuantityValidator(article.quantity ?? 0);
   }
 
   // ── Inline item form ──────────────────────────────────────────────────────
 
   openInlineItemAdd(): void {
-    this.itemForm.reset({ quantity: 1, uniPriceHT: 0, taxRate: 19 });
+    this.itemForm.reset({ articleId: '', quantity: 1, uniPriceHT: 0, taxRate: 19 });
+    this._selectedArticle = null;
     this.inlineItemLocalId = '';
-    this.inlineItemOpen    = true;
+    this.inlineItemOpen = true;
   }
 
   openInlineItemEdit(item: PendingItem): void {
+    this._selectedArticle = this.articles.find(a => a.id === item.articleId) ?? null;
     this.itemForm.patchValue({
       articleId: item.articleId,
       quantity: item.quantity,
       uniPriceHT: item.uniPriceHT,
-      taxRate: item.taxRate,
+      taxRate: item.taxRate<1 ? item.taxRate* 100 : item.taxRate,
     });
+    if (this._selectedArticle) {
+      this.updateQuantityValidator(this._selectedArticle.quantity ?? 0);
+    }
     this.inlineItemLocalId = item._localId;
-    this.inlineItemOpen    = true;
+    this.inlineItemOpen = true;
   }
 
   closeInlineItem(): void {
-    this.inlineItemOpen    = false;
+    this.inlineItemOpen = false;
     this.inlineItemLocalId = '';
+    this._selectedArticle = null;
     this.itemForm.reset();
   }
 
@@ -558,11 +633,23 @@ private resolveCancel(): ViewMode {
       return;
     }
 
-    const { articleId, quantity, uniPriceHT, taxRate } = this.itemForm.value;
+    const { articleId, quantity, uniPriceHT, taxRate} = {...this.itemForm.value, taxRate: this.itemForm.get('taxRate')?.value};
     const article = this.articles.find(a => a.id === articleId);
 
     if (!article) {
       this.flash('error', this.translate.instant('ERRORS.ARTICLE_NOT_FOUND'));
+      return;
+    }
+
+    // Check available stock from availableArticles (which reflects already used quantities)
+    const currentAvailableStock = article.quantity;
+    const alreadyUsed = this.usedQuantities.get(articleId) || 0;
+    const maxAllowed = currentAvailableStock + alreadyUsed;
+    
+    if (quantity > maxAllowed) {
+      this.flash('error', this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK', {
+        max: maxAllowed, requested: quantity
+      }));
       return;
     }
 
@@ -571,64 +658,161 @@ private resolveCancel(): ViewMode {
     const totalTTC = totalHT * (1 + taxRateDecimal);
 
     if (this.inlineItemLocalId) {
+      // Editing existing item - adjust used quantities
       const idx = this.pendingItems.findIndex(i => i._localId === this.inlineItemLocalId);
       if (idx !== -1) {
+        const oldQuantity = this.pendingItems[idx].quantity;
+        const quantityDiff = quantity - oldQuantity;
+        
+        // Update used quantities
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantityDiff;
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock for this article
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
         this.pendingItems[idx] = {
           ...this.pendingItems[idx],
-          articleId,
-          articleName: article.libelle ?? '',
+          articleId, articleName: article.libelle ?? '',
           articleBarCode: article.barCode ?? '',
-          quantity,
-          uniPriceHT,
-          taxRate,
-          totalHT,
-          totalTTC,
+          quantity, uniPriceHT, taxRate, totalHT, totalTTC,
         };
       }
     } else {
-      this.pendingItems.push({
-        _localId: crypto.randomUUID(),
-        articleId,
-        articleName: article.libelle ?? '',
-        articleBarCode: article.barCode ?? '',
-        quantity,
-        uniPriceHT,
-        taxRate,
-        totalHT,
-        totalTTC,
-      });
+      // Adding new item
+      const existingIndex = this.pendingItems.findIndex(i => i.articleId === articleId);
+      if (existingIndex !== -1) {
+        // Merge with existing item
+        const existing = this.pendingItems[existingIndex];
+        const newQuantity = existing.quantity + quantity;
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
+        
+        if (newQuantity > maxAllowed) {
+          this.flash('error', this.translate.instant('STOCK.ERRORS.MERGED_QUANTITY_EXCEEDS_STOCK', {
+            article: article.libelle, total: newQuantity, max: maxAllowed
+          }));
+          return;
+        }
+        
+        // Update used quantities
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
+        this.pendingItems[existingIndex] = {
+          ...existing,
+          quantity: newQuantity,
+          totalHT: newQuantity * existing.uniPriceHT,
+          totalTTC: newQuantity * existing.uniPriceHT * (1 + existing.taxRate / 100),
+        };
+      } else {
+        // Add new item
+        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
+        this.usedQuantities.set(articleId, newUsed);
+        
+        // Update available stock
+        const articleToUpdate = this.articles.find(a => a.id === articleId);
+        if (articleToUpdate) {
+          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
+        }
+        
+        this.pendingItems.push({
+          _localId: crypto.randomUUID(),
+          articleId, articleName: article.libelle ?? '',
+          articleBarCode: article.barCode ?? '',
+          quantity, uniPriceHT, taxRate, totalHT, totalTTC,
+        });
+      }
     }
+    
+    this.pendingItems = [...this.pendingItems];
+    this.invoiceForm.markAsDirty();
     this.closeInlineItem();
     this.checkClientLimitsAndDiscount();
   }
 
+  // Helper to get original stock quantity
+  private getOriginalStock(articleId: string): number {
+    const original = this.originalArticles.find(a => a.id === articleId);
+    return original?.quantity ?? 0;
+  }
+
   removePendingItem(localId: string): void {
+    const item = this.pendingItems.find(i => i._localId === localId);
+    if (item) {
+      // Restore the used quantity back to available stock
+      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
+      const newUsed = Math.max(0, currentUsed - item.quantity);
+      
+      if (newUsed === 0) {
+        this.usedQuantities.delete(item.articleId);
+      } else {
+        this.usedQuantities.set(item.articleId, newUsed);
+      }
+      
+      // Restore available stock
+      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
+      if (articleToUpdate) {
+        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - newUsed;
+      }
+    }
+    
     this.pendingItems = this.pendingItems.filter(i => i._localId !== localId);
     this.checkClientLimitsAndDiscount();
   }
 
   get canSubmit(): boolean {
-    // Check basic form validity
     if (this.invoiceForm.invalid) return false;
-    
-    // Check if there are items
     if (this.pendingItems.length === 0) return false;
-    
-    // Check if credit limit is exceeded (has credit warning)
     if (this.creditWarning) return false;
-    
-    // Check if validation is in progress
     if (this.isValidating) return false;
-    
     return true;
   }
 
   getSubmitButtonTooltip(): string {
-    if (this.isValidating) return 'Processing...';
-    if (this.invoiceForm.invalid) return 'Please fill all required fields';
-    if (this.pendingItems.length === 0) return 'Please add at least one item';
-    if (this.creditWarning) return 'Credit limit exceeded. Cannot create invoice';
+    if (this.isValidating) return this.translate.instant('COMMON.PROCESSING');
+    if (this.invoiceForm.invalid) return this.translate.instant('VALIDATION.REQUIRED');
+    if (this.pendingItems.length === 0) return this.translate.instant('INVOICES.FORM.NO_ITEMS_YET');
+    if (this.creditWarning) return this.translate.instant('INVOICES.ERRORS.CREDIT_LIMIT_EXCEEDED');
     return '';
+  }
+
+  async validateAllItemsStock(): Promise<boolean> {
+    const stockChecks = this.pendingItems.map(async (item) => {
+      try {
+        const response = await firstValueFrom(this.stock.getArticleCurrentStock(item.articleId));
+        const currentStock = response?.currentStock ?? 0;
+        if (currentStock < item.quantity) {
+          return { valid: false, articleName: item.articleName, requested: item.quantity, available: currentStock };
+        }
+        return { valid: true };
+      } catch {
+        return { valid: true };
+      }
+    });
+
+    const results = await Promise.all(stockChecks);
+    const failures = results.filter(r => !r.valid);
+
+    if (failures.length > 0) {
+      const msgs = failures.map(f =>
+        this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK_DETAIL', {
+          article: (f as any).articleName,
+          requested: (f as any).requested,
+          available: (f as any).available,
+        })
+      );
+      this.flash('error', msgs.join('; '));
+      return false;
+    }
+    return true;
   }
 
   // ── CRUD actions ──────────────────────────────────────────────────────────
@@ -637,23 +821,21 @@ private resolveCancel(): ViewMode {
       this.flash('error', this.translate.instant('VALIDATION.REQUIRED'));
       return;
     }
-
     if (this.pendingItems.length === 0) {
       this.flash('error', this.translate.instant('INVOICES.FORM.NO_ITEMS_YET'));
       return;
     }
 
+    const stockValid = await this.validateAllItemsStock();
+    if (!stockValid) return;
+
     const formValue = this.invoiceForm.value;
-    const clientId = formValue.clientId;
-    
-    // Find the selected client
-    const selectedClient = this.clients.find(c => c.id === clientId);
+    const selectedClient = this.clients.find(c => c.id === formValue.clientId);
     if (!selectedClient) {
-      this.flash('error', 'Client not found');
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_NOT_FOUND'));
       return;
     }
 
-    // Prepare items for validation
     const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
       articleId: rest.articleId,
       quantity: rest.quantity,
@@ -661,15 +843,10 @@ private resolveCancel(): ViewMode {
       taxRate: rest.taxRate,
     }));
 
-    // Show loading state
     this.isValidating = true;
 
     try {
-      // Validate before submission
-      const validation = await this.invoiceService.validateInvoiceBeforeSubmission(
-        selectedClient,
-        items
-      );
+      const validation = await this.invoiceService.validateInvoiceBeforeSubmission(selectedClient, items);
 
       if (!validation.isValid) {
         this.flash('error', validation.errors.join(', '));
@@ -677,33 +854,24 @@ private resolveCancel(): ViewMode {
         return;
       }
 
-      // Show warnings
-      if (validation.warnings.length > 0) {
-        validation.warnings.forEach(warning => {
-          this.flash('success', warning);
-        });
-      }
+      validation.warnings.forEach(w => this.flash('success', w));
 
-      // Apply discount to items if applicable
       let finalItems = items;
       if (validation.discountRate && validation.discountRate > 0) {
         finalItems = this.invoiceService.applyDiscountToItems(items, validation.discountRate);
       }
 
-      // Create the DTO
       const dto: CreateInvoiceDto = {
         invoiceDate: formValue.invoiceDate,
         dueDate: formValue.dueDate,
-        clientId: clientId,
+        clientId: formValue.clientId,
         additionalNotes: formValue.additionalNotes,
         items: finalItems,
       };
 
-      // Submit to backend
       this.invoiceService.create(dto).subscribe({
         next: () => {
           this.flash('success', this.translate.instant('INVOICES.SUCCESS.CREATED'));
-          this.isValidating = false;
           this.cancel();
         },
         error: (err) => {
@@ -712,19 +880,17 @@ private resolveCancel(): ViewMode {
           this.isValidating = false;
         },
       });
-    } catch (error) {
-      console.error('Validation error:', error);
-      this.flash('error', 'Validation failed. Please try again.');
+    } catch {
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.VALIDATION_FAILED'));
       this.isValidating = false;
     }
   }
 
   finalize(invoice: InvoiceDto): void {
+    this.setViewMode('edit');
     this.invoiceService.finalize(invoice.id).subscribe({
       next: (updated) => {
-        if (this.isView() && this.selectedInvoice?.id === updated.id) {
-          this.selectedInvoice = updated;
-        }
+        if (this.isEdit() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.FINALIZED'));
         this.reload();
       },
@@ -735,9 +901,7 @@ private resolveCancel(): ViewMode {
   markAsPaid(invoice: InvoiceDto): void {
     this.invoiceService.markAsPaid(invoice.id).subscribe({
       next: (updated) => {
-        if (this.isView() && this.selectedInvoice?.id === updated.id) {
-          this.selectedInvoice = updated;
-        }
+        if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.MARKED_PAID'));
         this.reload();
       },
@@ -749,8 +913,7 @@ private resolveCancel(): ViewMode {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '420px',
       data: {
-        icon: 'cancel',
-        iconColor: 'warn',
+        icon: 'cancel', iconColor: 'warn',
         title: this.translate.instant('INVOICES.DIALOG.CANCEL_INVOICE_TITLE'),
         message: this.translate.instant('INVOICES.DIALOG.CANCEL_INVOICE_MESSAGE', { number: invoice.invoiceNumber }),
         confirmText: this.translate.instant('INVOICES.DIALOG.CANCEL_CONFIRM'),
@@ -758,30 +921,24 @@ private resolveCancel(): ViewMode {
         showCancel: true,
       },
     });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(confirmed => {
-        if (!confirmed) return;
-        this.invoiceService.cancel(invoice.id).subscribe({
-          next: (updated) => {
-            if (this.isView() && this.selectedInvoice?.id === updated.id) {
-              this.selectedInvoice = updated;
-            }
-            this.flash('success', this.translate.instant('INVOICES.SUCCESS.CANCELLED'));
-            this.reload();
-          },
-          error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.CANCEL_FAILED')),
-        });
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.invoiceService.cancel(invoice.id).subscribe({
+        next: (updated) => {
+          if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+          this.flash('success', this.translate.instant('INVOICES.SUCCESS.CANCELLED'));
+          this.reload();
+        },
+        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.CANCEL_FAILED')),
       });
+    });
   }
 
   delete(invoice: InvoiceDto): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '420px',
       data: {
-        icon: 'delete',
-        iconColor: 'warn',
+        icon: 'delete', iconColor: 'warn',
         title: this.translate.instant('INVOICES.DIALOG.DELETE_INVOICE_TITLE'),
         message: this.translate.instant('INVOICES.DIALOG.DELETE_INVOICE_MESSAGE', { number: invoice.invoiceNumber }),
         confirmText: this.translate.instant('INVOICES.DIALOG.DELETE_CONFIRM'),
@@ -789,20 +946,17 @@ private resolveCancel(): ViewMode {
         showCancel: true,
       },
     });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(confirmed => {
-        if (!confirmed) return;
-        this.invoiceService.delete(invoice.id).subscribe({
-          next: () => {
-            this.flash('success', this.translate.instant('INVOICES.SUCCESS.DELETED'));
-            if (this.isView()) this.cancel();
-            this.reload();
-          },
-          error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.DELETE_FAILED')),
-        });
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.invoiceService.delete(invoice.id).subscribe({
+        next: () => {
+          this.flash('success', this.translate.instant('INVOICES.SUCCESS.DELETED'));
+          if (this.isView()) this.cancel();
+          this.reload();
+        },
+        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.DELETE_FAILED')),
       });
+    });
   }
 
   restore(invoice: InvoiceDto): void {
@@ -810,15 +964,56 @@ private resolveCancel(): ViewMode {
       next: () => {
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.RESTORED'));
         if (this.isView()) this.cancel();
-        if (this.isDeletedList()) {
-          this.loadDeletedInvoices();
-        } else {
-          this.reload();
-        }
+        if (this.isDeletedList()) this.loadDeletedInvoices();
+        else this.reload();
       },
       error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.RESTORE_FAILED')),
     });
   }
+
+  updateInvoice(): void {
+    if (this.invoiceForm.invalid) {
+      this.flash('error', this.translate.instant('VALIDATION.REQUIRED'));
+      return;
+    }
+    if (this.pendingItems.length === 0) {
+      this.flash('error', this.translate.instant('INVOICES.FORM.NO_ITEMS_YET'));
+      return;
+    }
+
+    this.isValidating = true;
+    const formValue = this.invoiceForm.value;
+
+    const items = this.pendingItems.map(item => ({
+      articleId: item.articleId,
+      quantity: item.quantity,
+      uniPriceHT: item.uniPriceHT,
+      taxRate: item.taxRate, // This should already be in percentage (0-100)
+    }));
+
+    const updateDto = {
+      invoiceDate: formValue.invoiceDate,
+      dueDate: formValue.dueDate,
+      clientId: formValue.clientId,
+      clientAddress: formValue.clientAddress,
+      additionalNotes: formValue.additionalNotes,
+      items: items
+    };
+
+    this.invoiceService.update(this.selectedInvoice!.id, updateDto).subscribe({
+      next: () => {
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.UPDATED'));
+        this.cancel();
+        this.reload();
+      },
+      error: (err) => {
+        const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.UPDATE_FAILED');
+        this.flash('error', errorMsg);
+        this.isValidating = false;
+      },
+    });
+  }
+
 
   // ── Feedback ──────────────────────────────────────────────────────────────
 
@@ -832,9 +1027,7 @@ private resolveCancel(): ViewMode {
     }
   }
 
-  dismissError(): void {
-    this.errors = [];
-  }
+  dismissError(): void { this.errors = []; }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -856,210 +1049,185 @@ private resolveCancel(): ViewMode {
     };
   }
 
-  get pendingTotalHT(): number {
-    return this.pendingItems.reduce((s, i) => s + i.totalHT, 0);
-  }
-
-  get pendingTotalTTC(): number {
-    return this.pendingItems.reduce((s, i) => s + i.totalTTC, 0);
-  }
-
-  get pendingTotalTVA(): number {
-    return this.pendingTotalTTC - this.pendingTotalHT;
-  }
-
-  monthName(month: number): string {
-    return new Date(2000, month - 1).toLocaleString('default', { month: 'short' });
-  }
+  get pendingTotalHT(): number { return this.pendingItems.reduce((s, i) => s + i.totalHT, 0); }
+  get pendingTotalTTC(): number { return this.pendingItems.reduce((s, i) => s + i.totalTTC, 0); }
+  get pendingTotalTVA(): number { return this.pendingTotalTTC - this.pendingTotalHT; }
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(amount);
   }
 
-  trackById(_: number, item: { id: string }) {
-    return item.id;
-  }
+  trackById(_: number, item: { id: string }) { return item.id; }
+  trackByLocalId(_: number, item: PendingItem) { return item._localId; }
 
-  trackByLocalId(_: number, item: PendingItem) {
-    return item._localId;
-  }
-
-  trackByMonth(_: number, item: { month: number }) {
-    return item.month;
-  }
-
-  private getCSSVariable(variableName: string, fallback: string = '#ffffff'): string {
-    const styles = getComputedStyle(document.documentElement);
-    const value = styles.getPropertyValue(variableName).trim();
-    return value || fallback;
+  private getCSSVariable(variableName: string, fallback = '#ffffff'): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim() || fallback;
   }
 
   private renderStatusPieChart(): void {
-  if (!this.monthlyChartRef || !this.invoiceStats) return;
+    if (!this.monthlyChartRef || !this.invoiceStats) return;
+    if (this.chart) { this.chart.destroy(); }
 
-  if (this.chart) {
-    this.chart.destroy();
-  }
+    const textHi = this.getCSSVariable('--text-hi', '#ffffff');
+    const statusLabels = [
+      this.translate.instant('INVOICES.STATUS.DRAFT'),
+      this.translate.instant('INVOICES.STATUS.UNPAID'),
+      this.translate.instant('INVOICES.STATUS.PAID'),
+      this.translate.instant('INVOICES.STATUS.CANCELLED'),
+    ];
+    const statusCounts = [
+      this.invoiceStats.draftCount,
+      this.invoiceStats.unpaidCount,
+      this.invoiceStats.paidCount,
+      this.invoiceStats.cancelledCount,
+    ];
 
-  const textHi = this.getCSSVariable('--text-hi', '#ffffff');
-  const textMid = this.getCSSVariable('--text-mid', '#8b92a8');
-
-  // Status data
-  const statusLabels = [
-    this.translate.instant('INVOICES.STATUS.DRAFT'),
-    this.translate.instant('INVOICES.STATUS.UNPAID'),
-    this.translate.instant('INVOICES.STATUS.PAID'),
-    this.translate.instant('INVOICES.STATUS.CANCELLED')
-  ];
-
-  const statusCounts = [
-    this.invoiceStats.draftCount,
-    this.invoiceStats.unpaidCount,
-    this.invoiceStats.paidCount,
-    this.invoiceStats.cancelledCount
-  ];
-
-  const statusColors = [
-    '#f5a623', // amber - DRAFT
-    '#e05252', // red - UNPAID
-    '#3ecf8e', // green - PAID
-    '#8b92a8'  // grey - CANCELLED
-  ];
-
-  const config: ChartConfiguration = {
-    type: 'doughnut',
-    data: {
-      labels: statusLabels,
-      datasets: [
-        {
+    const config: ChartConfiguration = {
+      type: 'doughnut',
+      data: {
+        labels: statusLabels,
+        datasets: [{
           data: statusCounts,
-          backgroundColor: statusColors,
+          backgroundColor: ['#f5a623', '#e05252', '#3ecf8e', '#8b92a8'],
           borderColor: '#fff',
           borderWidth: 2,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            color: textHi,
-            font: { family: 'Outfit, sans-serif', size: 12 },
-            usePointStyle: true,
-            boxWidth: 10,
-            padding: 15,
-          }
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { color: textHi, font: { family: 'Outfit, sans-serif', size: 12 }, usePointStyle: true, boxWidth: 10, padding: 15 },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const total = statusCounts.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((ctx.raw as number / total) * 100).toFixed(1) : 0;
+                return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+              },
+            },
+          },
         },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const label = context.label || '';
-              const value = context.raw as number;
-              const total = statusCounts.reduce((a, b) => a + b, 0);
-              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-              return `${label}: ${value} (${percentage}%)`;
-            }
-          }
-        }
-      }
-    }
-  };
+      },
+    };
 
-  this.chart = new Chart(this.monthlyChartRef.nativeElement, config);
-}
+    this.chart = new Chart(this.monthlyChartRef.nativeElement, config);
+  }
 
   private observeThemeChanges(): void {
-    const observer = new MutationObserver(() => {
-      this.renderStatusPieChart(); // Re-render chart when theme changes
+    this.themeObserver = new MutationObserver(() => {
+      if (this.isStats() && this.invoiceStats) this.renderStatusPieChart();
     });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme']
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['class', 'data-theme'],
     });
   }
 
-
-  // Add this method to check credit limit and discount in real-time
   async checkClientLimitsAndDiscount(): Promise<void> {
-      if (!this.selectedClientForValidation || this.pendingItems.length === 0) {
-        this.creditWarning = null;
-        this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
-        return;
-      }
-
-      const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
-        articleId: rest.articleId,
-        quantity: rest.quantity,
-        uniPriceHT: rest.uniPriceHT,
-        taxRate: rest.taxRate,
-      }));
-
-      // Calculate discount
-      const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
-      const { originalTotalTTC, discountedTotalTTC, discountAmount } = this.invoiceService.calculateDiscountedTotals(items, discountRate);
-      
-      this.discountInfo = {
-        applies,
-        rate: discountRate,
-        discountAmount,
-        originalTotal: originalTotalTTC,
-        discountedTotal: discountedTotalTTC
-      };
-
-      // Check credit limit
-      try {
-        const currentOutstanding = await this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id).toPromise();
-        const creditCheck = this.invoiceService.validateCreditLimit(
-          this.selectedClientForValidation, 
-          discountedTotalTTC, 
-          currentOutstanding || 0
-        );
-        
-        if (!creditCheck.hasSufficientCredit) {
-          this.creditWarning = creditCheck.message;
-        } else {
-          this.creditWarning = null;
-        }
-      } catch (error) {
-        console.error('Credit check failed:', error);
-      }
-  }
-
-
-  // Calculate due date based on invoice date and payment period
-  calculateDueDate(invoiceDate: string | Date | null | undefined, paymentPeriod: number | null | undefined): string {
-    // Default to 30 days if no payment period
-    const daysToAdd = paymentPeriod || 30;
-    
-    let date: Date;
-    if (!invoiceDate) {
-      date = new Date();
-    } else {
-      date = new Date(invoiceDate);
+    if (!this.selectedClientForValidation || this.pendingItems.length === 0) {
+      this.creditWarning = null;
+      this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
+      return;
     }
-    
-    const dueDate = new Date(date);
-    dueDate.setDate(date.getDate() + daysToAdd);
-    return dueDate.toISOString().split('T')[0];
+
+    const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
+      articleId: rest.articleId, quantity: rest.quantity,
+      uniPriceHT: rest.uniPriceHT, taxRate: rest.taxRate,
+    }));
+
+    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
+    const { originalTotalTTC, discountedTotalTTC, discountAmount } =
+      this.invoiceService.calculateDiscountedTotals(items, discountRate);
+
+    this.discountInfo = { applies, rate: discountRate, discountAmount, originalTotal: originalTotalTTC, discountedTotal: discountedTotalTTC };
+
+    try {
+      const outstanding = await firstValueFrom(this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id));
+      const creditCheck = this.invoiceService.validateCreditLimit(this.selectedClientForValidation, discountedTotalTTC, outstanding || 0);
+      this.creditWarning = creditCheck.hasSufficientCredit ? null : creditCheck.message;
+    } catch {
+      // silently ignore credit check failures
+    }
   }
-  shouldShowError(controlName: string): boolean {
-    const control = this.invoiceForm.get(controlName);
-    return control ? (control.invalid && (control.dirty || control.touched)) : false;
+
+  calculateDueDate(invoiceDate: string | Date | null | undefined, paymentPeriod: number | null | undefined): string {
+    const daysToAdd = paymentPeriod || 30;
+    const date = invoiceDate ? new Date(invoiceDate) : new Date();
+    const due = new Date(date);
+    due.setDate(date.getDate() + daysToAdd);
+    return due.toISOString().split('T')[0];
   }
 
   onInvoiceDateChange(): void {
     const invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
     if (this.selectedClientForValidation && invoiceDate) {
-      const dueDate = this.calculateDueDate(invoiceDate, this.selectedClientForValidation.duePaymentPeriod);
-      this.invoiceForm.patchValue({ dueDate: dueDate });
+      this.invoiceForm.patchValue({
+        dueDate: this.calculateDueDate(invoiceDate, this.selectedClientForValidation.duePaymentPeriod),
+      });
     }
   }
 
+  getStockStatusClass(availableStock: number): string {
+    if (availableStock === 0) return 'stock-out';
+    if (availableStock <= 5) return 'stock-critical';
+    if (availableStock <= 10) return 'stock-low';
+    return 'stock-normal';
+  }
 
+  isLowStock(stock: number): boolean { return stock > 0 && stock <= 10; }
+  isCriticalStock(stock: number): boolean { return stock > 0 && stock <= 5; }
+  isOutOfStock(stock: number): boolean { return stock === 0; }
 
+  getAddButtonTooltip(): string {
+    return this.articles.length === 0 ? this.translate.instant('STOCK.ERRORS.ARTICLES_NOT_FOUND') : '';
+  }
 
+  /** Returns the currently selected article. Uses a cached reference set on articleId change. */
+  getSelectedArticle(): StockItem | null {
+    return this._selectedArticle;
+  }
+
+  getAvailableStock(articleId: string): number {
+    return this.articles.find(a => a.id === articleId)?.quantity || 0;
+  }
+
+  private updateQuantityValidator(maxStock: number): void {
+    const qtyControl = this.itemForm.get('quantity');
+    if (!qtyControl) return;
+    const validators = [Validators.required, Validators.min(1)];
+    if (maxStock > 0) validators.push(Validators.max(maxStock));
+    qtyControl.setValidators(validators);
+    qtyControl.updateValueAndValidity();
+  }
+
+  // Used for checkArticleStock calls from openInlineItemEdit
+  checkArticleStock(articleId: string, _requestedQuantity: number): void {
+    const article = this.articles.find(a => a.id === articleId);
+    this.updateQuantityValidator(article?.quantity ?? 0);
+  }
+
+  getQuantityStep(unit?: string): number {
+    if (!unit) return 1;
+    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
+    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.1;
+  }
+
+  getQuantityMin(unit?: string): number {
+    if (!unit) return 1;
+    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
+    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.001;
+  }
+
+  getQuantityMax(): number {
+    return this._selectedArticle?.quantity ?? Infinity;
+  }
+
+  getUnitTranslation(): string {
+    const unit = this._selectedArticle?.unit;
+    if (!unit) return '';
+    return this.translate.instant(`ARTICLES.UNIT.${unit.toUpperCase()}`);
+  }
 }
