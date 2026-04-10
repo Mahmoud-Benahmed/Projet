@@ -1,6 +1,7 @@
 ﻿// IFournisseurRepository
 using ERP.StockService.Application.DTOs;
 using ERP.StockService.Domain;
+using ERP.StockService.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
 public interface IBonNumeroRepository
@@ -65,4 +66,5 @@ public interface IJournalStockRepository
     Task SaveChangesAsync();
     Task<List<JournalStock>> GetByArticleAsync(Guid articleId);
     Task<decimal> GetCurrentStockAsync(Guid articleId);
+    Task<Dictionary<string, List<StockItem>>> GetArticlesWithStockAsync();
 }
