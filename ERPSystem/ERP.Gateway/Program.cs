@@ -40,6 +40,11 @@ builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 // JWT Authentication
 //////////////////////////////////////////////////
 
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"JWT:Secret: '{config["JWT:Secret"]}'");
+Console.WriteLine($"JWT:Secret Length: {config["JWT:Secret"]?.Length}");
+
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

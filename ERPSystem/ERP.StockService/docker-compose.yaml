@@ -1,5 +1,5 @@
 services:
-  erp-invoice:
+  erp-stock:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,9 +10,9 @@ services:
           ignore:
             - bin/
             - obj/
-    container_name: erp-invoice-service
+    container_name: erp-stock-service
     ports:
-      - "5005:8080"
+      - "5006:8080"
     env_file:
       - .env
     depends_on:
@@ -23,13 +23,13 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: erp-invoice-sqlserver
+    container_name: erp-stock-sqlserver
     environment:
       SA_PASSWORD: ${SQLSERVER__SA_PASSWORD}
       ACCEPT_EULA: "Y"
       MSSQL_PID: "Express"
     ports:
-      - "1437:1433"
+      - "1438:1433"
     healthcheck:
       test: "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${SQLSERVER__SA_PASSWORD}' -Q 'SELECT 1' -C"
       interval: 10s
