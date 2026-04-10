@@ -1,0 +1,7 @@
+Gateway			5000
+AuthService		5001
+ArticleService		5002:1434
+ClientService		5003:1435
+FournisseurService	5004:1436
+InvoiceService		5005:1437
+StockService		5006:1438
