@@ -2,10 +2,8 @@ export const environment = {
   production: false,
   docker: false,
 
-  get apiUrl(): string {
-    return this.docker ? 'http://localhost:5000' : 'http://localhost:5031';
-  },
-
+  apiUrl: 'http://localhost:5000',
+  
   routes: {
     auth:        '/auth',
     roles:       '/auth/roles',
