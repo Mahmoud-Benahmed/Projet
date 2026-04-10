@@ -41,45 +41,21 @@ export interface UpdateArticleRequestDto extends CreateArticleRequestDto
 
 export enum UnitEnum
 {
-    // ── Pieces / Countable Items ─────────────────────────
-    Piece,          // single item
-    Dozen,          // 12 pieces
-    Pair,           // 2 pieces
-    Set,            // a group sold together
-
-    // ── Packaging Units ────────────────────────────────
-    Box,            // container with multiple pieces
-    Carton,         // larger packaging
-    Pack,           // small bundle
-    Roll,           // fabric, paper, etc.
-    Bag,            // bagged items
-    Crate,          // crate of items
-    Pallet,         // large shipment unit
-
-    // ── Weight Units ──────────────────────────────────
-    Gram,
-    Kilogram,
-    Milligram,
-    Ton,            // metric ton
-
-    // ── Volume Units ──────────────────────────────────
-    Milliliter,
-    Liter,
-    CubicMeter,     // e.g., liquids, bulk materials
-
-    // ── Length / Distance Units ───────────────────────
-    Millimeter,
-    Centimeter,
-    Meter,
-    Kilometer,
-
-    // ── Misc / Special Units ─────────────────────────
-    Hour,           // used for labor tracking
-    Day,            // rental periods or project durations
-    Service,        // intangible unit, e.g., consulting
-    Item,           // generic placeholder
+  Piece = 'Piece',
+  Gram = 'Gram',
+  Kilogram = 'Kilogram',
+  Milligram = 'Milligram',
+  Ton = 'Ton',
+  Milliliter = 'Milliliter',
+  Liter = 'Liter',
+  CubicMeter = 'CubicMeter',
+  Millimeter = 'Millimeter',
+  Centimeter = 'Centimeter',
+  Meter = 'Meter',
+  Kilometer = 'Kilometer',
+  Hour = 'Hour',
+  Day = 'Day',
 }
-
 export interface PagedResultDto<T> {
   items: T[];
   totalCount: number;
