@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, firstValueFrom } from 'rxjs';
-import { environment } from '../../environment';
+import { environment } from '../environment'; 
+import { TranslateService } from '@ngx-translate/core';
 
 // ── DTOs ─────────────────────────────────────────────
 
@@ -112,9 +113,14 @@ export class InvoiceService {
   // Uses the dedicated invoice microservice on port 5037
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.invoices}`;
 
-  constructor(private readonly http: HttpClient) { }
+  constructor(private readonly http: HttpClient, 
+              private readonly translate: TranslateService) { }
+
 
   // ── Helpers ───────────────────────────────────────
+  private t(key: string, params?: any): string {
+    return this.translate.instant(key, params);
+  }
 
   private paginate<T>(items: T[], page: number, size: number): PagedResultDto<T> {
     const start = (page - 1) * size;
@@ -302,18 +308,22 @@ export class InvoiceService {
       };
     }
     
-    const totalAfterInvoice = currentOutstanding + invoiceTotalTTC;
-    const hasSufficientCredit = totalAfterInvoice <= client.creditLimit;
+    const totalWithOutstanding = currentOutstanding + invoiceTotalTTC;
+    const hasSufficientCredit = totalWithOutstanding <= client.creditLimit;
     const remainingCredit = Math.max(0, client.creditLimit - currentOutstanding);
     
     return {
-      hasSufficientCredit,
-      currentUsage: currentOutstanding,
-      remainingCredit,
-      message: hasSufficientCredit
-        ? `Credit available: ${remainingCredit.toFixed(2)} TND`
-        : `Credit limit exceeded. Limit: ${client.creditLimit.toFixed(2)} TND, Current outstanding: ${currentOutstanding.toFixed(2)} TND, This invoice: ${invoiceTotalTTC.toFixed(2)} TND`
-    };
+        hasSufficientCredit,
+        currentUsage: currentOutstanding,
+        remainingCredit,
+        message: hasSufficientCredit
+          ? this.t('INVOICES.ERRORS.HAS_SUFFICIENT_CREDIT', { remainingCredit: remainingCredit.toFixed(2) })
+          : this.t('INVOICES.ERRORS.INSUFFICIENT_CREDIT', {
+        creditLimit: client.creditLimit.toFixed(2),
+        currentOutstanding: currentOutstanding.toFixed(2),
+        invoiceTotal: invoiceTotalTTC.toFixed(2)
+      })
+    }
   }
 
   // Full validation before submission
