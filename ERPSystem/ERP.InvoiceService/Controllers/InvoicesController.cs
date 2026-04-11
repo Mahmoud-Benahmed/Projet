@@ -69,6 +69,16 @@ namespace InvoiceService.API.Controllers
         }
 
         // ════════════════════════════════════════════════════════════════════════════
+        // POST OPERATIONS - Create/Add
+        // ════════════════════════════════════════════════════════════════════════════
+        [HttpPut(ApiRoutes.Invoices.Update)]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateInvoiceDto dto)
+        {
+            var invoice = await _invoiceService.UpdateAsync(id, dto);
+            return Ok(invoice);
+        }
+
+        // ════════════════════════════════════════════════════════════════════════════
         // DELETE OPERATIONS
         // ════════════════════════════════════════════════════════════════════════════
         [HttpDelete(ApiRoutes.Invoices.RemoveItem)]

@@ -7,34 +7,34 @@ namespace InvoiceService.Application.DTOs;
 // ════════════════════════════════════════════════════════════════════════════
 
 public record InvoiceDto(
-    [property: Required] Guid Id,
-    [property: Required][property: MinLength(1)][property: MaxLength(50)] string InvoiceNumber,
-    [property: Required] DateTime InvoiceDate,
-    [property: Required] DateTime DueDate,
-    [property: Range(0, double.MaxValue)] decimal TotalHT,
-    [property: Range(0, double.MaxValue)] decimal TotalTVA,
-    [property: Range(0, double.MaxValue)] decimal TotalTTC,
-    [property: Required][property: MinLength(1)] string Status,
-    [property: Required] Guid ClientId,
-    [property: Required][property: MinLength(1)][property: MaxLength(200)] string ClientFullName,
-    [property: Required][property: MinLength(1)][property: MaxLength(500)] string ClientAddress,
-    [property: MaxLength(1000)] string? AdditionalNotes,
-    [property: Required] DateTime CreatedAt,
-    [property: Required] DateTime UpdatedAt,
-    [property: Required] bool IsDeleted,
-    [property: Required][property: MinLength(1)] List<InvoiceItemDto> Items
+    [Required] Guid Id,
+    [Required][MinLength(1)][MaxLength(50)] string InvoiceNumber,
+    [Required] DateTime InvoiceDate,
+    [Required] DateTime DueDate,
+    [Range(0, double.MaxValue)] decimal TotalHT,
+    [Range(0, double.MaxValue)] decimal TotalTVA,
+    [Range(0, double.MaxValue)] decimal TotalTTC,
+    [Required][MinLength(1)] string Status,
+    [Required] Guid ClientId,
+    [Required][MinLength(1)][MaxLength(200)] string ClientFullName,
+    [Required][MinLength(1)][MaxLength(500)] string ClientAddress,
+    [MaxLength(1000)] string? AdditionalNotes,
+    [Required] DateTime CreatedAt,
+    [Required] DateTime UpdatedAt,
+    [Required] bool IsDeleted,
+    [Required][MinLength(1)] List<InvoiceItemDto> Items
 );
 
 public record InvoiceItemDto(
-    [property: Required] Guid Id,
-    [property: Required] Guid ArticleId,
-    [property: Required][property: MinLength(1)][property: MaxLength(200)] string ArticleName,
-    [property: Required][property: MinLength(1)][property: MaxLength(50)] string ArticleBarCode,
-    [property: Required][property: Range(1, int.MaxValue)] int Quantity,
-    [property: Required][property: Range(0, double.MaxValue)] decimal UniPriceHT,
-    [property: Required][property: Range(0, 1)] decimal TaxRate,
-    [property: Required][property: Range(0, double.MaxValue)] decimal TotalHT,
-    [property: Required][property: Range(0, double.MaxValue)] decimal TotalTTC
+    [Required] Guid Id,
+    [Required] Guid ArticleId,
+    [Required][MinLength(1)][MaxLength(200)] string ArticleName,
+    [Required][MinLength(1)][MaxLength(50)] string ArticleBarCode,
+    [Required][Range(1, double.MaxValue)] decimal Quantity,
+    [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
+    [Required][Range(0, 100)] decimal TaxRate,
+    [Required][Range(0, double.MaxValue)] decimal TotalHT,
+    [Required][Range(0, double.MaxValue)] decimal TotalTTC
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -42,25 +42,41 @@ public record InvoiceItemDto(
 // ════════════════════════════════════════════════════════════════════════════
 
 public record CreateInvoiceDto(
-    [property: Required] DateTime InvoiceDate,
-    [property: Required] DateTime DueDate,
-    [property: Required] Guid ClientId,
-    [property: MaxLength(1000)] string? AdditionalNotes,
-    [property: Required][property: MinLength(1)] List<CreateInvoiceItemDto> Items
+    [Required] DateTime InvoiceDate,
+    [Required] DateTime DueDate,
+    [Required] Guid ClientId,
+    [MaxLength(1000)] string? AdditionalNotes,
+    [Required][MinLength(1)] List<CreateInvoiceItemDto> Items
 );
 
 public record CreateInvoiceItemDto(
-    [property: Required] Guid ArticleId,
-    [property: Required][property: Range(1, int.MaxValue)] int Quantity,
-    [property: Required][property: Range(0, double.MaxValue)] decimal UniPriceHT,
-    [property: Required][property: Range(0, 1)] decimal TaxRate
+    [Required] Guid ArticleId,
+    [Required][Range(1, double.MaxValue)] decimal Quantity,
+    [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
+    [Required][Range(0, 100)] decimal TaxRate
+);
+
+// ✅ FIXED: Move validation attributes to constructor parameters
+public record UpdateInvoiceDto(
+    [Required] DateTime InvoiceDate,
+    [Required] DateTime DueDate,
+    [Required] Guid ClientId,
+    [MaxLength(1000)] string? AdditionalNotes,
+    [Required][MinLength(1)] List<UpdateInvoiceItemDto> Items
+);
+
+public record UpdateInvoiceItemDto(
+    [Required] Guid ArticleId,
+    [Required][Range(1, double.MaxValue)] decimal Quantity,
+    [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
+    [Required][Range(0, 100)] decimal TaxRate
 );
 
 public record AddInvoiceItemDto(
-    [property: Required] Guid ArticleId,
-    [property: Required][property: Range(1, int.MaxValue)] int Quantity,
-    [property: Required][property: Range(0, double.MaxValue)] decimal UniPriceHT,
-    [property: Required][property: Range(0, 1)] decimal TaxRate
+    [Required] Guid ArticleId,
+    [Required][Range(1, double.MaxValue)] decimal Quantity,
+    [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
+    [Required][Range(0, 100)] decimal TaxRate
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -68,38 +84,38 @@ public record AddInvoiceItemDto(
 // ════════════════════════════════════════════════════════════════════════════
 
 public record InvoiceStatsDto(
-    [property: Range(0, int.MaxValue)] int TotalInvoices,
-    [property: Range(0, int.MaxValue)] int DraftCount,
-    [property: Range(0, int.MaxValue)] int UnpaidCount,
-    [property: Range(0, int.MaxValue)] int PaidCount,
-    [property: Range(0, int.MaxValue)] int CancelledCount,
-    [property: Range(0, int.MaxValue)] int DeletedCount,
-    [property: Range(0, int.MaxValue)] int OverdueCount,
-    [property: Range(0, double.MaxValue)] decimal TotalRevenueHT,
-    [property: Range(0, double.MaxValue)] decimal TotalRevenueTTC,
-    [property: Range(0, double.MaxValue)] decimal TotalTVACollected,
-    [property: Range(0, double.MaxValue)] decimal OutstandingHT,
-    [property: Range(0, double.MaxValue)] decimal OutstandingTTC,
-    [property: Range(0, double.MaxValue)] decimal OverdueHT,
-    [property: Range(0, double.MaxValue)] decimal OverdueTTC,
-    [property: Range(0, double.MaxValue)] decimal AverageInvoiceValueHT,
-    [property: Range(0, double.MaxValue)] double AveragePaymentDays,
+    [Range(0, int.MaxValue)] int TotalInvoices,
+    [Range(0, int.MaxValue)] int DraftCount,
+    [Range(0, int.MaxValue)] int UnpaidCount,
+    [Range(0, int.MaxValue)] int PaidCount,
+    [Range(0, int.MaxValue)] int CancelledCount,
+    [Range(0, int.MaxValue)] int DeletedCount,
+    [Range(0, int.MaxValue)] int OverdueCount,
+    [Range(0, double.MaxValue)] decimal TotalRevenueHT,
+    [Range(0, double.MaxValue)] decimal TotalRevenueTTC,
+    [Range(0, double.MaxValue)] decimal TotalTVACollected,
+    [Range(0, double.MaxValue)] decimal OutstandingHT,
+    [Range(0, double.MaxValue)] decimal OutstandingTTC,
+    [Range(0, double.MaxValue)] decimal OverdueHT,
+    [Range(0, double.MaxValue)] decimal OverdueTTC,
+    [Range(0, double.MaxValue)] decimal AverageInvoiceValueHT,
+    [Range(0, double.MaxValue)] double AveragePaymentDays,
     IReadOnlyList<ClientRevenueDto> TopClients,
     IReadOnlyList<MonthlyStatsDto> MonthlyBreakdown
 );
 
 public record ClientRevenueDto(
-    [property: Required] Guid ClientId,
-    [property: Required][property: MinLength(1)][property: MaxLength(200)] string ClientFullName,
-    [property: Range(0, int.MaxValue)] int InvoiceCount,
-    [property: Range(0, double.MaxValue)] decimal RevenueTTC
+    [Required] Guid ClientId,
+    [Required][MinLength(1)][MaxLength(200)] string ClientFullName,
+    [Range(0, int.MaxValue)] int InvoiceCount,
+    [Range(0, double.MaxValue)] decimal RevenueTTC
 );
 
 public record MonthlyStatsDto(
-    [property: Range(1, 9999)] int Year,
-    [property: Range(1, 12)] int Month,
-    [property: Range(0, int.MaxValue)] int IssuedCount,
-    [property: Range(0, int.MaxValue)] int PaidCount,
-    [property: Range(0, double.MaxValue)] decimal IssuedTTC,
-    [property: Range(0, double.MaxValue)] decimal PaidTTC
+    [Range(1, 9999)] int Year,
+    [Range(1, 12)] int Month,
+    [Range(0, int.MaxValue)] int IssuedCount,
+    [Range(0, int.MaxValue)] int PaidCount,
+    [Range(0, double.MaxValue)] decimal IssuedTTC,
+    [Range(0, double.MaxValue)] decimal PaidTTC
 );

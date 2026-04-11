@@ -12,6 +12,8 @@ namespace InvoiceService.Application.Interfaces
         Task<IEnumerable<InvoiceDto>> GetByClientIdAsync(Guid clientId);
         Task<IEnumerable<InvoiceDto>> GetByStatusAsync(InvoiceStatus status);
         Task<InvoiceDto> CreateAsync(CreateInvoiceDto dto);
+        Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto);
+
         Task<InvoiceDto> AddItemAsync(Guid invoiceId, AddInvoiceItemDto dto);
         Task RemoveItemAsync(Guid invoiceId, Guid itemId);
         Task<InvoiceDto> FinalizeAsync(Guid id);

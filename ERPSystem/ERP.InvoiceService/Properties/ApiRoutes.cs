@@ -14,6 +14,8 @@ public static class ApiRoutes
         // ──── POST ROUTES ────
         public const string Create = Root;
         public const string AddItem = $"{Root}/{{id:guid}}/items";
+        // ──── PUT ROUTE ──── 
+        public const string Update = $"{Root}/update/{{id:guid}}";
         // ──── DELETE ROUTES ────
         public const string RemoveItem = $"{Root}/{{id:guid}}/items/{{itemId:guid}}";
         public const string Finalize = $"{Root}/{{id:guid}}/finalize";

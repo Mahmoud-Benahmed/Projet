@@ -32,6 +32,7 @@
         DateTime CreatedAt,
         DateTime? UpdatedAt
     );
+
     public record ArticleResponseDto(
         Guid Id,
         CategoryResponseDto Category,
@@ -44,6 +45,7 @@
         DateTime CreatedAt,
         DateTime? UpdatedAt
         );
+
 
     public sealed class PagedResultDto<T>
     {

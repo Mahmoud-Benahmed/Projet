@@ -37,7 +37,7 @@ namespace InvoiceService.Application.DTOs
                 ArticleBarCode: item.ArticleBarCode,
                 Quantity: item.Quantity,
                 UniPriceHT: item.UniPriceHT,
-                TaxRate: item.TaxRate,
+                TaxRate: item.TaxRate * 100,
                 TotalHT: item.TotalHT,
                 TotalTTC: item.TotalTTC
             );
