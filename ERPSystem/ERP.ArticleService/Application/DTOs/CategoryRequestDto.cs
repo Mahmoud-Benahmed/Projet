@@ -7,14 +7,14 @@ namespace ERP.ArticleService.Application.DTOs
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters")]
         string Name,
 
-        [Range(0.0, 1.0, ErrorMessage = "TVA must be between 0 and 1 (0% – 100%).")]
-        decimal TVA
+        [Range(0, 100, ErrorMessage = "TVA must be between 0 and 100 (0% – 100%).")]
+        int TVA
     );
 
     public record CategoryResponseDto(
         Guid Id,
         string Name,
-        decimal TVA,
+        int TVA,
         bool IsDeleted,
         DateTime CreatedAt,
         DateTime? UpdatedAt

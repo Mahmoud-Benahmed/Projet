@@ -47,7 +47,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                       .HasDefaultValue(false);
 
                 entity.Property(a => a.TVA)
-                      .HasPrecision(5, 2);
+                      .HasColumnType("int");
 
                 entity.Property(a => a.BarCode)
                       .HasMaxLength(13);
@@ -116,8 +116,8 @@ namespace ERP.ArticleService.Infrastructure.Persistence
                       .IsRequired()
                       .HasMaxLength(100);
 
-                entity.Property(c => c.TVA)
-                      .HasPrecision(5, 2);
+                entity.Property(a => a.TVA)
+                      .HasColumnType("int");
 
                 // Unique index on Name
                 entity.HasIndex(c => c.Name)

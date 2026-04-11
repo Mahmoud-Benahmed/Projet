@@ -28,49 +28,60 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
             var seedData = new[]
             {
-                // Électronique
-                ("Écran 27 pouces Full HD",               1299.99m, "Électronique"),
-                ("Clavier mécanique sans fil",              349.99m, "Électronique"),
-                ("Souris ergonomique Bluetooth",            199.99m, "Électronique"),
+                // Électronique (TVA 19%)
+                ("Écran 27 pouces Full HD",               1299.99m, "Électronique", UnitEnum.Piece, 19),
+                ("Clavier mécanique sans fil",              349.99m, "Électronique", UnitEnum.Piece, 19),
+                ("Souris ergonomique Bluetooth",            199.99m, "Électronique", UnitEnum.Piece, 19),
 
-                // Informatique
-                ("Laptop Core i7 16Go RAM",               5499.99m, "Informatique"),
-                ("SSD 1To NVMe",                           599.99m, "Informatique"),
-                ("Station d'accueil USB-C",                799.99m, "Informatique"),
+                // Informatique (TVA 19%)
+                ("Laptop Core i7 16Go RAM",               5499.99m, "Informatique", UnitEnum.Piece, 19),
+                ("SSD 1To NVMe",                           599.99m, "Informatique", UnitEnum.Piece, 19),
+                ("Station d'accueil USB-C",                799.99m, "Informatique", UnitEnum.Piece, 19),
 
-                // Fournitures de bureau
-                ("Ramette papier A4 500 feuilles",          49.99m, "Fournitures de bureau"),
-                ("Stylos bille lot de 10",                  29.99m, "Fournitures de bureau"),
-                ("Classeur à levier A4",                    19.99m, "Fournitures de bureau"),
+                // Fournitures de bureau (TVA 19%)
+                ("Ramette papier A4 500 feuilles",          49.99m, "Fournitures de bureau", UnitEnum.Piece, 19),
+                ("Stylos bille lot de 10",                  29.99m, "Fournitures de bureau", UnitEnum.Piece, 19),
+                ("Classeur à levier A4",                    19.99m, "Fournitures de bureau", UnitEnum.Piece, 19),
 
-                // Mobilier
-                ("Bureau réglable en hauteur",            2999.99m, "Mobilier"),
-                ("Chaise ergonomique de bureau",          1899.99m, "Mobilier"),
-                ("Étagère modulable 5 niveaux",            699.99m, "Mobilier"),
+                // Mobilier (TVA 19%)
+                ("Bureau réglable en hauteur",            2999.99m, "Mobilier", UnitEnum.Piece, 19),
+                ("Chaise ergonomique de bureau",          1899.99m, "Mobilier", UnitEnum.Piece, 19),
+                ("Étagère modulable 5 niveaux",            699.99m, "Mobilier", UnitEnum.Piece, 19),
 
-                // Consommables
-                ("Cartouche d'encre noire HP",              89.99m, "Consommables"),
-                ("Toner laser Brother",                    149.99m, "Consommables"),
-                ("Papier photo brillant A4 x50",            59.99m, "Consommables"),
+                // Consommables (TVA 19%)
+                ("Cartouche d'encre noire HP",              89.99m, "Consommables", UnitEnum.Piece, 19),
+                ("Toner laser Brother",                    149.99m, "Consommables", UnitEnum.Piece, 19),
+                ("Papier photo brillant A4 x50",            59.99m, "Consommables", UnitEnum.Piece, 19),
 
-                // Logiciels
-                ("Licence Microsoft Office 2024",         1199.99m, "Logiciels"),
-                ("Antivirus Pro 1 an",                     199.99m, "Logiciels"),
-                ("Suite Adobe Creative Cloud",            2999.99m, "Logiciels"),
+                // Logiciels (TVA 19%)
+                ("Licence Microsoft Office 2024",         1199.99m, "Logiciels", UnitEnum.Piece, 19),
+                ("Antivirus Pro 1 an",                     199.99m, "Logiciels", UnitEnum.Piece, 19),
+                ("Suite Adobe Creative Cloud",            2999.99m, "Logiciels", UnitEnum.Piece, 19),
 
-                // Réseaux & Télécommunications
-                ("Switch 24 ports Gigabit",               1499.99m, "Réseaux & Télécommunications"),
-                ("Routeur Wi-Fi 6 AX3000",                 899.99m, "Réseaux & Télécommunications"),
-                ("Câble RJ45 Cat6 10m",                     49.99m, "Réseaux & Télécommunications"),
+                // Réseaux & Télécommunications (TVA 19%)
+                ("Switch 24 ports Gigabit",               1499.99m, "Réseaux & Télécommunications", UnitEnum.Piece, 19),
+                ("Routeur Wi-Fi 6 AX3000",                 899.99m, "Réseaux & Télécommunications", UnitEnum.Piece, 19),
+                ("Câble RJ45 Cat6 10m",                     49.99m, "Réseaux & Télécommunications", UnitEnum.Meter, 19),
                 
-                // Outillage
-                ("Tournevis électrique sans fil",          299.99m, "Outillage"),
-                ("Multimètre numérique",                   149.99m, "Outillage"),
-                ("Kit d'outils informatiques",              99.99m, "Outillage"),
+                // Outillage (TVA 19%)
+                ("Tournevis électrique sans fil",          299.99m, "Outillage", UnitEnum.Piece, 19),
+                ("Multimètre numérique",                   149.99m, "Outillage", UnitEnum.Piece, 19),
+                ("Kit d'outils informatiques",              99.99m, "Outillage", UnitEnum.Piece, 19),
+
+                // Food items (TVA 7% - reduced rate)
+                ("Café en grains 1kg",                      89.99m, "Alimentation", UnitEnum.Kilogram, 7),
+                ("Thé vert 500g",                           49.99m, "Alimentation", UnitEnum.Gram, 7),
+                ("Eau minérale 1.5L x 6",                   19.99m, "Alimentation", UnitEnum.Liter, 7),
+
+                // Services (TVA 19%)
+                ("Heure de consulting IT",                 150.00m, "Services", UnitEnum.Hour,  19),
+                ("Journée de formation",                   800.00m, "Services", UnitEnum.Day,   19),
             };
 
+            var usedBarcodes = new HashSet<string>();
             var random = new Random();
-            foreach (var (libelle, prix, categoryName) in seedData)
+
+            foreach (var (libelle, prix, categoryName, unit, tva) in seedData)
             {
                 if (!categoryMap.TryGetValue(categoryName, out var categoryId))
                 {
@@ -82,27 +93,37 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
                 try
                 {
+                    // Generate unique barcode
+                    string barCode;
+                    do
+                    {
+                        barCode = GenerateEAN13();
+                    } while (usedBarcodes.Contains(barCode));
+                    usedBarcodes.Add(barCode);
 
-                    var tva = Math.Round((decimal)random.NextDouble(), 2);
-                    var barCode = GenerateEAN13();
-                    var randomUnit = (UnitEnum)Enum.GetValues(typeof(UnitEnum)).GetValue(random.Next(Enum.GetValues(typeof(UnitEnum)).Length));
+                    // Ensure TVA is valid (must be > 0)
+                    var validTva = tva > 0 ? tva : 19;
 
-                    var article = await _articleService.CreateAsync(new CreateArticleRequestDto(
+                    var createRequest = new CreateArticleRequestDto(
                         Libelle: libelle,
                         Prix: prix,
-                        randomUnit,
+                        Unit: unit,
                         CategoryId: categoryId,
                         BarCode: barCode,
-                        TVA: tva
-                    ));
+                        TVA: validTva
+                    );
+
+                    var article = await _articleService.CreateAsync(createRequest);
 
                     _logger.LogInformation(
-                        "Seeded article: '{Code}' - {Libelle}", article.CodeRef, article.Libelle);
+                        "Seeded article: '{Code}' - {Libelle} (TVA: {TVA}%, Unit: {Unit})",
+                        article.CodeRef, article.Libelle, article.TVA, article.Unit);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex,
-                        "Failed to seed article '{Libelle}'.", libelle);
+                        "Failed to seed article '{Libelle}' for category '{CategoryName}'.",
+                        libelle, categoryName);
                 }
             }
         }
@@ -111,13 +132,21 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
         {
             var random = new Random();
             var digits = new int[12];
-            for (int i = 0; i < 12; i++)
+
+            // Ensure first digit is not zero (EAN-13 standard)
+            digits[0] = random.Next(1, 10);
+
+            for (int i = 1; i < 12; i++)
                 digits[i] = random.Next(0, 10);
 
-            // Calculate check digit
+            // Calculate check digit using EAN-13 algorithm
             int sum = 0;
             for (int i = 0; i < 12; i++)
-                sum += digits[i] * (i % 2 == 0 ? 1 : 3);
+            {
+                // Multiply by 1 for odd positions (1,3,5,7,9,11) and 3 for even positions (2,4,6,8,10,12)
+                int multiplier = (i % 2 == 0) ? 1 : 3;
+                sum += digits[i] * multiplier;
+            }
 
             int checkDigit = (10 - (sum % 10)) % 10;
 

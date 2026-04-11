@@ -21,8 +21,8 @@ namespace ERP.ArticleService.Application.DTOs
         [StringLength(13, MinimumLength = 8, ErrorMessage = "BarCode must be between 8 and 13 characters.")]
         string BarCode,
 
-        [Range(0.01, 1, ErrorMessage = "TVA must be between 0.01 and 1.")]
-        decimal? TVA
+        [Range(0, 100, ErrorMessage = "TVA must be between 0 and 100.")]
+        int? TVA
     );
 
     public record UpdateArticleRequestDto(
@@ -41,10 +41,10 @@ namespace ERP.ArticleService.Application.DTOs
         Guid CategoryId,
 
         [StringLength(13, MinimumLength = 8, ErrorMessage = "BarCode must be between 8 and 13 characters.")]
-        string? BarCode,
+        string BarCode,
 
-        [Range(0.0, 1.0, ErrorMessage = "TVA must be between 0 and 1 (0% – 100%).")]
-        decimal? TVA
+        [Range(0, 100, ErrorMessage = "TVA must be between 0 and 100 (0% – 100%).")]
+        int? TVA
     );
 
     public record ArticleStatsDto(
@@ -62,7 +62,7 @@ namespace ERP.ArticleService.Application.DTOs
         string Libelle,
         decimal Prix,
         UnitEnum Unit,
-        decimal TVA,
+        int TVA,
         bool IsDeleted,
         DateTime CreatedAt,
         DateTime? UpdatedAt

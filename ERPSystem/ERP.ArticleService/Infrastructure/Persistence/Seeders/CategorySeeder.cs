@@ -33,7 +33,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
             {
                 try
                 {
-                    var tva = Math.Round((decimal)random.NextDouble(), 2);
+                    var tva = random.Next(1, 100);
                     var dto = new CategoryRequestDto(name, tva);
                     await _categoryService.CreateAsync(dto);
                     _logger.LogInformation("Seeded category: '{Name}'", name);

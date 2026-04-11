@@ -4,14 +4,14 @@
     {
         public Guid Id { get; private set; }
         public string Name { get; private set; }
-        public decimal TVA { get; private set; }
+        public int TVA { get; private set; }
         public bool IsDeleted { get; private set; } = false;
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 
         private Category() { }
 
-        public Category(string name, decimal tva)
+        public Category(string name, int tva)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Category name is required");
@@ -25,7 +25,7 @@
             CreatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string name, decimal tva)
+        public void Update(string name, int tva)
         {
             if (tva < 0)
                 throw new ArgumentException("TVA cannot be below 0");

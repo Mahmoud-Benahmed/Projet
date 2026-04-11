@@ -12,7 +12,7 @@
 
         public string Libelle { get; private set; }
         public decimal Prix { get; private set; }
-        public decimal TVA { get; private set; }
+        public int TVA { get; private set; }
         public UnitEnum Unit { get; private set; }
 
         public bool IsDeleted { get; private set; } = false;
@@ -22,7 +22,7 @@
 
         private Article() { }
 
-        public Article(string code, string libelle, decimal prix, UnitEnum unit,Category category, string barCode, decimal? tva)
+        public Article(string code, string libelle, decimal prix, UnitEnum unit,Category category, string barCode, int? tva)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentException("Code is required");
@@ -49,7 +49,7 @@
             CreatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string libelle, decimal prix, UnitEnum unit,Category category, string barCode, decimal? tva)
+        public void Update(string libelle, decimal prix, UnitEnum unit,Category category, string barCode, int? tva)
         {
             if (string.IsNullOrWhiteSpace(libelle))
                 throw new ArgumentException("Libelle is required");
