@@ -44,3 +44,10 @@ public record ArticleResponseDto(
     DateTime CreatedAt,
     DateTime? UpdatedAt
     );
+
+
+public sealed record FournisseurResponseDto(
+Guid Id, string Name, string Address, string Phone,
+string? Email, string TaxNumber, string RIB,
+bool IsDeleted, bool IsBlocked,
+DateTime CreatedAt, DateTime? UpdatedAt);

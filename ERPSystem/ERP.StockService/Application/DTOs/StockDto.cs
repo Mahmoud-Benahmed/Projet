@@ -68,7 +68,7 @@ public record UpdateBonRetourRequestDto(
 
 public sealed record BonRetourResponseDto(
     Guid Id, Guid SourceId, RetourSourceType SourceType,
-    string numero, string Motif, string? Observation,
+    string Numero, string Motif, string? Observation,
     DateTime CreatedAt, DateTime? UpdatedAt,
     List<LigneResponseDto> Lignes, decimal Total);
 

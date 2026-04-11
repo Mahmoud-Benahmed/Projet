@@ -50,6 +50,14 @@ builder.Services.AddHttpClient<IClientServiceHttpClient, ClientServiceHttpClient
                 "Services:ClientService:BaseUrl is not configured."));
 });
 
+builder.Services.AddHttpClient<IFournisseurServiceHttpClient, FournisseurServiceHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:FournisseurService:BaseUrl"]
+            ?? throw new InvalidOperationException(
+                "Services:FournisseurService:BaseUrl is not configured."));
+});
+
 // =========================
 // DEPENDENCY INJECTION
 // =========================
