@@ -58,9 +58,8 @@ namespace ERP.ArticleService.Migrations
                     b.Property<decimal>("Prix")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("TVA")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<int>("TVA")
+                        .HasColumnType("int");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -133,9 +132,8 @@ namespace ERP.ArticleService.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal>("TVA")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<int>("TVA")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

@@ -31,7 +31,7 @@ namespace ERP.ArticleService.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    TVA = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    TVA = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -51,7 +51,7 @@ namespace ERP.ArticleService.Migrations
                     BarCode = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
                     Libelle = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     Prix = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TVA = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
+                    TVA = table.Column<int>(type: "int", nullable: false),
                     Unit = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
