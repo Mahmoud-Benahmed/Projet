@@ -704,7 +704,7 @@
             <label class="form__label">{{ 'STOCK.BONS.FORM.QUANTITY' | translate }}</label>
             <input class="form__input" formControlName="quantity" type="number" min="1" step="1"
                    [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"
-                   [max]="articleMaxQty.get(ligneForm.get('articleId')?.value) ?? null"
+                   [max]="getArticleMaxQty(ligneForm.get('articleId')?.value)"
             />
             <span class="form__error" *ngIf="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched">
               {{ 'VALIDATION.INVALID_QUANTITY' | translate }}
@@ -712,7 +712,7 @@
 
             <span class="form__error"
                   *ngIf="ligneForm.get('quantity')?.errors?.['max'] && ligneForm.get('quantity')?.touched">
-              {{ 'VALIDATION.MAX_QUANTITY' | translate : { max: articleMaxQty.get(ligneForm.get('articleId')?.value) } }}
+              {{ 'VALIDATION.MAX_QUANTITY' | translate : { max: getArticleMaxQty(ligneForm.get('articleId')?.value) } }}
             </span>
           </div>
 

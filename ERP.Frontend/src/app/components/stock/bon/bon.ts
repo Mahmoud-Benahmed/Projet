@@ -91,7 +91,12 @@ export class BonsComponent implements OnInit {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   stats: BonStatsDto | null = null;
-  articleMaxQty = new Map<string, number>();
+
+  // ADD:
+  private masterArticles: ArticleResponseDto[] = [];
+  articles: ArticleResponseDto[] = []; // already exists, now driven by sync
+  private masterStockMap = new Map<string, number>();   // articleId → warehouse stock (sortie)
+  private masterRetourMap = new Map<string, number>();  //
 
   // ── View mode ──────────────────────────────────────────────────────────────
   viewMode = signal<ViewMode>('list');
@@ -133,8 +138,7 @@ export class BonsComponent implements OnInit {
   // ── Ligne modal (kept for VIEW panel only) ─────────────────────────────────
   editingLigneId: string | null = null;
   isLigneSubmitting = false;
-
-  articles: ArticleResponseDto[] = [];
+  
   articleSearchQuery = '';
 
   fournisseurs: FournisseurResponse[] = [];
@@ -365,40 +369,39 @@ export class BonsComponent implements OnInit {
   }
 
   loadArticles(): void {
-    this.articleService.getAll(1, 1000).subscribe({
-      next: (res) => {
-        this.articles = res.items.filter(a => !a.isDeleted);
-        this.cdr.markForCheck();
-      },
-      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
-    });
+    if (this.activeBonType === 'sortie') {
+      forkJoin({
+        arts: this.articleService.getAll(1, 1000),
+        stock: this.stock.getStockArticles(),
+      }).subscribe({
+        next: ({ arts, stock }) => {
+          this.masterArticles = arts.items.filter(a => !a.isDeleted);
+          this.masterStockMap.clear();
+          stock.inStock.forEach((s: any) => {
+            this.masterStockMap.set(s.articleId ?? s.id, s.quantity);
+          });
+          this.syncArticles();
+        },
+        error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
+      });
+    } else {
+      this.articleService.getAll(1, 1000).subscribe({
+        next: res => {
+          this.masterArticles = res.items.filter(a => !a.isDeleted);
+          this.syncArticles();
+        },
+        error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
+      });
+    }
   }
-
+  
   onArticleSelected(articleId: string): void {
-    const article = this.articles.find(a => a.id === articleId);
+    const article = this.masterArticles.find(a => a.id === articleId);
     if (article) {
       this.ligneForm.patchValue({ price: article.prix });
     }
-
-    // Only enforce max for sortie
-    if (this.activeBonType === 'sortie') {
-      this.stock.getArticleCurrentStock(articleId).subscribe({
-        next: ({ currentStock }) => {
-          this.articleMaxQty.set(articleId, currentStock);
-          this.updateQuantityValidator(currentStock);
-        },
-        error: () => this.updateQuantityValidator(null)
-      });
-    }
-
-    // For retour: max = qty from source bon ligne
-    if (this.activeBonType === 'retour') {
-      const sourceLigne = this.pendingLignes.find(l => l.articleId === articleId)
-                      ?? this.editLignes.find(l => l.articleId === articleId);
-      const max = sourceLigne?.quantity ?? null;
-      this.articleMaxQty.set(articleId, max ?? Infinity);
-      this.updateQuantityValidator(max);
-    }
+    const max = this.getArticleMaxQty(articleId);
+    this.updateQuantityValidator(max === Infinity ? null : max);
   }
 
   private updateQuantityValidator(max: number | null): void {
@@ -496,6 +499,11 @@ export class BonsComponent implements OnInit {
 
             // Convert map to array
             this.pendingLignes = Array.from(aggregated.values());
+            this.masterRetourMap.clear();
+            for (const [id, ligne] of aggregated) {
+              this.masterRetourMap.set(id, ligne.quantity);
+            }
+            this.syncArticles();
             this.cdr.markForCheck();
           },
           error: (err) => {
@@ -514,7 +522,7 @@ export class BonsComponent implements OnInit {
   // ── Navigation ─────────────────────────────────────────────────────────────
   openCreate(): void {
     if (this.isCreate()) return;
-    this.articleMaxQty.clear();
+    this.syncArticles();
 
     this.previousMode = this.viewMode();
     this.headerForm.reset({ numero: '', observation: '', sourceType: RetourSourceType.BonEntre });
@@ -531,7 +539,7 @@ export class BonsComponent implements OnInit {
 
   openView(bon: BonRecord): void {
     if (this.isView()) return;
-    this.articleMaxQty.clear();
+    this.syncArticles();
     this.previousMode = this.viewMode();
 
     
@@ -545,11 +553,9 @@ export class BonsComponent implements OnInit {
 
   openEdit(bon: BonRecord): void {
     if (this.isEdit()) return;
-    this.articleMaxQty.clear();
+    this.syncArticles();
     this.previousMode = this.viewMode();
 
-    // ← always source from dataSource.data to get the pristine server copy,
-    //   never from selectedBon which may already be mutated
     
     const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
 
@@ -627,23 +633,17 @@ export class BonsComponent implements OnInit {
     this.ligneForm = this.buildLigneForm();
     if (isLocal) {
       const pl = ligne as PendingLigne;
-      this.inlineLigneLocalId = pl._localId;
-      this.ligneForm.patchValue({
-        articleId: pl.articleId,
-        quantity:  pl.quantity,
-        price:     pl.price,
-        remarque:  pl.remarque ?? '',
-      });
+      this.inlineLigneLocalId = pl._localId;   // set BEFORE sync
+      this.syncArticles();
+      this.ligneForm.patchValue({ articleId: pl.articleId, quantity: pl.quantity, price: pl.price, remarque: pl.remarque ?? '' });
     } else {
       const sl = ligne as LigneResponseDto;
-      this.inlineLigneLocalId = sl.id;   // reuse field to store saved id
-      this.ligneForm.patchValue({
-        articleId: sl.articleId,
-        quantity:  sl.quantity,
-        price:     sl.price,
-        remarque:  (sl as any).remarque ?? '',
-      });
+      this.inlineLigneLocalId = sl.id;          // set BEFORE sync
+      this.syncArticles();
+      this.ligneForm.patchValue({ articleId: sl.articleId, quantity: sl.quantity, price: sl.price, remarque: (sl as any).remarque ?? '' });
     }
+    const max = this.getArticleMaxQty(this.ligneForm.get('articleId')!.value);
+    this.updateQuantityValidator(max === Infinity ? null : max);
     this.inlineLigneOpen = true;
     this.cdr.markForCheck();
   }
@@ -652,110 +652,132 @@ export class BonsComponent implements OnInit {
     this.inlineLigneOpen    = false;
     this.inlineLigneLocalId = null;
     this.ligneForm = this.buildLigneForm();
+    this.syncArticles();
   }
 
   submitInlineLigne(): void {
     if (this.ligneForm.invalid || this.isInlineLigneSubmitting) return;
     const val = this.ligneForm.value;
 
-    // ── CREATE mode: manage pendingLignes locally ──────────────────────────
-    if (this.isCreate()) {
-      const article = this.articles.find(a => a.id === val.articleId);
-      const label   = article ? `${article.codeRef} — ${article.libelle}` : val.articleId;
+    const master = this.masterArticles.find(a => a.id === val.articleId);
+    if (!master) {
+      this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.ARTICLE_NOT_FOUND'));
+      return;
+    }
 
+    const label = `${master.codeRef} — ${master.libelle}`;
+
+    // Active lignes for the current mode
+    const activeLignes: any[] = this.isCreate()
+      ? this.pendingLignes
+      : (this.selectedBon?.lignes ?? []);
+
+    // How much is already consumed by OTHER lignes (excluding the one being edited)
+    const alreadyConsumed = activeLignes
+      .filter(l => {
+        const lid = (l as any)._localId ?? (l as any).id;
+        return l.articleId === val.articleId && lid !== this.inlineLigneLocalId;
+      })
+      .reduce((sum, l) => sum + l.quantity, 0);
+
+    // Ceiling from syncArticles (Infinity for entre, warehouse-stock or source-bon qty for sortie/retour)
+    const max = this.getArticleMaxQty(val.articleId);
+
+    if (max !== Infinity) {
+      // The real ceiling for THIS input = master ceiling - what others already use
+      const effectiveMax = max; // syncArticles already subtracted alreadyConsumed from master
+
+      if (val.quantity > effectiveMax) {
+        this.flash('error', this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK', {
+          max: effectiveMax, requested: val.quantity
+        }));
+        return;
+      }
+
+      // Merge: adding a new ligne for an article that already has one — check combined total
+      if (!this.inlineLigneLocalId && alreadyConsumed > 0) {
+        const combined = alreadyConsumed + val.quantity;
+        const masterMax = this.activeBonType === 'sortie'
+          ? (this.masterStockMap.get(val.articleId) ?? 0)
+          : (this.masterRetourMap.get(val.articleId) ?? 0);
+
+        if (combined > masterMax) {
+          this.flash('error', this.translate.instant('STOCK.ERRORS.MERGED_QUANTITY_EXCEEDS_STOCK', {
+            article: master.libelle, total: combined, max: masterMax
+          }));
+          return;
+        }
+      }
+    }
+
+    // ── CREATE mode ───────────────────────────────────────────────────────────
+    if (this.isCreate()) {
       if (this.inlineLigneLocalId) {
-        // editing existing pending ligne
         const idx = this.pendingLignes.findIndex(l => l._localId === this.inlineLigneLocalId);
         if (idx !== -1) {
           this.pendingLignes[idx] = {
             ...this.pendingLignes[idx],
-            articleId:    val.articleId,
-            articleLabel: label,
-            quantity:     val.quantity,
-            price:        val.price,
-            remarque:     val.remarque || null,
-            total:        val.quantity * val.price,
+            articleId: val.articleId, articleLabel: label,
+            quantity: val.quantity, price: val.price,
+            remarque: val.remarque || null,
+            total: val.quantity * val.price,
           };
         }
-        this.closeInlineLigne();
-        this.cdr.markForCheck();
-        return;
       } else {
         const existingIndex = this.pendingLignes.findIndex(l => l.articleId === val.articleId);
-
         if (existingIndex !== -1) {
-          // Merge with existing ligne of the same article
           const existing = this.pendingLignes[existingIndex];
-          const newQuantity = existing.quantity + val.quantity;
+          const newQty = existing.quantity + val.quantity;
           this.pendingLignes[existingIndex] = {
-            ...existing,
-            quantity: newQuantity,
-            total: newQuantity * existing.price,
+            ...existing, quantity: newQty, total: newQty * existing.price,
           };
         } else {
           this.pendingLignes.push({
             _localId: crypto.randomUUID(),
-            articleId: val.articleId,
-            articleLabel: label,
-            quantity: val.quantity,
-            price: val.price,
+            articleId: val.articleId, articleLabel: label,
+            quantity: val.quantity, price: val.price,
             remarque: val.remarque || null,
             total: val.quantity * val.price,
           });
         }
-        this.closeInlineLigne();
-        this.cdr.markForCheck();
-        return;
       }
+      this.closeInlineLigne();
+      this.syncArticles();
+      this.cdr.markForCheck();
+      return;
     }
-    // ── EDIT mode: modify selectedBon.lignes directly ──────────────────────
-    else if (this.isEdit() && this.selectedBon) {
-      const article = this.articles.find(a => a.id === val.articleId);
-      const label   = article ? `${article.codeRef} — ${article.libelle}` : val.articleId;
 
-      // Editing an existing ligne (either saved or previously added)
+    // ── EDIT mode ─────────────────────────────────────────────────────────────
+    if (this.isEdit() && this.selectedBon) {
       if (this.inlineLigneLocalId) {
         const idx = this.selectedBon.lignes.findIndex(l => l.id === this.inlineLigneLocalId);
         if (idx !== -1) {
-          // Update the ligne in place
           this.selectedBon.lignes[idx] = {
             ...this.selectedBon.lignes[idx],
-            articleId: val.articleId,
-            quantity:  val.quantity,
-            price:     val.price,
-            remarque:  val.remarque || null,
-            total:     val.quantity * val.price,
+            articleId: val.articleId, quantity: val.quantity,
+            price: val.price, remarque: val.remarque || null,
+            total: val.quantity * val.price,
           };
         }
-      }
-      // Adding a new ligne
-      else {
+      } else {
         const existingIndex = this.selectedBon.lignes.findIndex(l => l.articleId === val.articleId);
         if (existingIndex !== -1) {
-          // Merge with existing ligne of the same article
           const existing = this.selectedBon.lignes[existingIndex];
-          const newQuantity = existing.quantity + val.quantity;
+          const newQty = existing.quantity + val.quantity;
           this.selectedBon.lignes[existingIndex] = {
-            ...existing,
-            quantity: newQuantity,
-            total: newQuantity * existing.price,
+            ...existing, quantity: newQty, total: newQty * existing.price,
           };
         } else {
-          // Create a new ligne with a temporary ID
-          const newLigne: LigneResponseDto = {
-            id:        `temp_${crypto.randomUUID()}`,
-            articleId: val.articleId,
-            quantity:  val.quantity,
-            price:     val.price,
-            remarque:  val.remarque || null,
-            total: val.quantity * val.price
-          } as LigneResponseDto;
-          this.selectedBon.lignes.push(newLigne);
+          this.selectedBon.lignes.push({
+            id: `temp_${crypto.randomUUID()}`,
+            articleId: val.articleId, quantity: val.quantity,
+            price: val.price, remarque: val.remarque || null,
+            total: val.quantity * val.price,
+          } as LigneResponseDto);
         }
       }
-
-      // Close the inline form and refresh the view
       this.closeInlineLigne();
+      this.syncArticles();
       this.cdr.markForCheck();
       return;
     }
@@ -999,4 +1021,58 @@ export class BonsComponent implements OnInit {
       delete:      id     => this.stock.deleteBonRetour(id)
     },
   };
+
+  private syncArticles(): void {
+    // Build consumed map from current lignes, excluding the one being edited
+    const consumed = new Map<string, number>();
+    const editingId = this.inlineLigneLocalId;
+
+    const activeLignes = this.isCreate()
+      ? this.pendingLignes
+      : (this.selectedBon?.lignes ?? []) as any[];
+
+    for (const l of activeLignes) {
+      const lid = (l as any)._localId ?? (l as any).id;
+      if (lid === editingId) continue;
+      const prev = consumed.get(l.articleId) ?? 0;
+      consumed.set(l.articleId, prev + l.quantity);
+    }
+
+    this.articles = this.masterArticles
+      .map(a => {
+        let maxQty: number;
+
+        if (this.activeBonType === 'sortie') {
+          const warehouseStock = this.masterStockMap.get(a.id) ?? 0;
+          const used = consumed.get(a.id) ?? 0;
+          maxQty = warehouseStock - used;
+        } else if (this.activeBonType === 'retour') {
+          const sourceMax = this.masterRetourMap.get(a.id) ?? 0;
+          const used = consumed.get(a.id) ?? 0;
+          maxQty = sourceMax - used;
+        } else {
+          // entre: no upper limit on qty, all articles available
+          maxQty = Infinity;
+        }
+
+        return { ...a, _maxQty: maxQty };
+      })
+      .filter(a => {
+        if (this.activeBonType === 'entre') return true;
+        // keep the article being edited even if its remaining hits 0
+        const lid = this.inlineLigneLocalId;
+        const isEditing = lid && activeLignes.some(
+          (l: any) => ((l as any)._localId ?? (l as any).id) === lid && l.articleId === a.id
+        );
+        return (a as any)._maxQty > 0 || isEditing;
+      });
+
+    this.cdr.markForCheck();
+  }
+
+  // Helper used in template and validator
+  getArticleMaxQty(articleId: string): number {
+    const a = this.articles.find(x => x.id === articleId);
+    return (a as any)?._maxQty ?? Infinity;
+  }
 }
