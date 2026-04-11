@@ -474,18 +474,37 @@
                   <span>{{ 'INVOICES.FORM.CLIENT_NAME_LABEL' | translate }}</span>
                   <strong>{{ selectedClientForValidation.name }}</strong>
                 </div>
-                <div class="info-row">
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
                   <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_LABEL' | translate }}</span>
-                  <strong [class.text-warning]="selectedClientForValidation.creditLimit">
-                    {{ selectedClientForValidation.creditLimit
-                        ? (selectedClientForValidation.creditLimit | number:'1.2-2') + ' TND'
-                        : ('INVOICES.FORM.NO_LIMIT' | translate) }}
+                  <strong>{{ selectedClientForValidation.creditLimit | number:'1.2-2' }} TND</strong>
+                </div>
+
+                <!-- Current Outstanding (always show if client has credit limit) -->
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
+                  <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_CURRENT_USAGE' | translate }}</span>
+                  <strong [class.text-danger]="creditLimitInfo.currentUsage > 0">
+                    {{ creditLimitInfo.currentUsage | number:'1.2-2' }} TND
                   </strong>
+                </div>
+
+                <!-- Remaining Credit (show when credit limit exists) -->
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
+                  <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_REMAINING' | translate }}</span>
+                  <strong [class.text-success]="creditLimitInfo.remainingCredit > 0"
+                          [class.text-danger]="creditLimitInfo.remainingCredit <= 0">
+                    {{ creditLimitInfo.remainingCredit | number:'1.2-2' }} TND
+                  </strong>
+                </div>
+
+                <!-- Warning when credit limit is exceeded (only show when insufficient credit) -->
+                <div class="alert alert-danger mt-2" *ngIf="!creditLimitInfo.hasSufficientCredit && selectedClientForValidation.creditLimit">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  {{ 'INVOICES.ERRORS.CREDIT_LIMIT_EXCEEDED' | translate }}
                 </div>
                 <div class="info-row">
                   <span>{{ 'INVOICES.FORM.BULK_PRICING_LABEL' | translate }}</span>
-                  <strong [class.text-success]="selectedClientForValidation.categories.some(c => c.useBulkPricing)">
-                    {{ selectedClientForValidation.categories.some(c => c.useBulkPricing)
+                  <strong [class.text-success]="selectedClientForValidation.categories?.some(c => c.useBulkPricing)">
+                    {{ selectedClientForValidation.categories?.some(c => c.useBulkPricing)
                         ? ('INVOICES.FORM.BULK_ELIGIBLE' | translate)
                         : ('INVOICES.FORM.BULK_NOT_ELIGIBLE' | translate) }}
                   </strong>
@@ -579,7 +598,7 @@
           </div>
         </div>
         <!-- Add Item button — only shown when form is closed -->
-        <button class="btn-add" (click)="openInlineItemAdd()" *ngIf="!inlineItemOpen">
+        <button class="btn-add" (click)="openInlineItemAdd()" *ngIf="!inlineItemOpen" [disabled]="!creditLimitInfo.hasSufficientCredit && selectedClientForValidation.creditLimit">
           {{ 'INVOICES.FORM.ADD_ITEM' | translate }}
         </button>
       </div>
@@ -596,7 +615,7 @@
                         (change)="onArticleSelectChange($event)">
                   <option value="" selected disabled>{{ 'INVOICES.FORM.SELECT_ARTICLE' | translate }}</option>
                   <option *ngFor="let a of articles" [value]="a.id">
-                    {{ a.libelle }} ({{ a.barCode }}) — {{ 'STOCK.LABELS.STOCK' | translate }}: {{ a.quantity }}
+                    {{ a.libelle }} ({{ a.barCode }}) — {{ 'INVOICES.FORM.STOCK' | translate }}: {{ a.quantity }}
                   </option>
                 </select>
               </div>
@@ -609,7 +628,7 @@
                   <mat-icon>inventory_2</mat-icon>
                   <span>{{ 'STOCK.LABELS.AVAILABLE_STOCK' | translate }}:
                     <strong [ngClass]="getStockStatusClass(getSelectedArticle()!.quantity)">
-                      {{ getSelectedArticle()!.quantity }} {{ 'STOCK.LABELS.UNITS' | translate }}
+                      {{ getSelectedArticle()!.quantity | number:'1.2-2' }} {{ 'STOCK.LABELS.UNITS' | translate }}
                     </strong>
                   </span>
                 </div>
@@ -632,8 +651,7 @@
                 </div>
                 <div *ngIf="itemForm.get('quantity')?.hasError('max') && itemForm.get('quantity')?.touched" class="form__error form__error--stock">
                   <mat-icon>error</mat-icon>
-                  {{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: getSelectedArticle()?.quantity ?? 0 } }}
-                </div>
+{{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: (getSelectedArticle()?.quantity ?? 0) | number:'1.2-2' } }}                </div>
               </div>
 
               <div class="form__field">
@@ -642,7 +660,7 @@
                 <!-- Unit hint -->
                 <small class="form__hint" *ngIf="getSelectedArticle()">
                   {{ getUnitTranslation() }}
-                  <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 1">— {{ 'STOCK.LABELS.WHOLE_NUMBERS_ONLY' | translate }}</span>
+                  <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 1">— {{ 'INVOICES.FORM.WHOLE_NUMBERS_ONLY' | translate }}</span>
                   <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 0.1">— {{ 'INVOICES.FORM.DECIMALS_ALLOWED' | translate }}</span>
                 </small>
               </div>
@@ -699,7 +717,7 @@
                   <tr class="table__row" *ngFor="let item of pendingItems; trackBy: trackByLocalId">
                     <td class="td--name">{{ item.articleName }}</td>
                     <td class="td--barCode">{{ item.articleBarCode }}</td>
-                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-center">{{ item.quantity | number:'1.2-2' }}</td>
                     <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
                     <td class="text-center">{{ item.taxRate | number:'1.0-0' }}%</td>
                     <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
@@ -721,6 +739,7 @@
                     <td class="td--price text-center totals-value">{{ pendingTotalTTC | number:'1.2-2' }} TND</td>
                     <td></td>
                   </tr>
+                  
                   <ng-container *ngIf="discountInfo.applies && discountInfo.rate > 0">
                     <tr class="totals-row">
                       <td colspan="5" class="totals-label">{{ 'INVOICES.FORM.ORIGINAL_TOTAL' | translate }}</td>
@@ -728,6 +747,7 @@
                       <td class="td--price text-center">{{ discountInfo.originalTotal | number:'1.2-2' }} TND</td>
                       <td></td>
                     </tr>
+                    
                     <tr class="discount-row">
                       <td colspan="5" class="totals-label discount-label">
                         {{ 'INVOICES.FORM.DISCOUNT_ROW' | translate: { rate: discountInfo.rate } }}
@@ -736,6 +756,7 @@
                       <td class="td--price text-center discount-amount">- {{ discountInfo.discountAmount | number:'1.2-2' }} TND</td>
                       <td></td>
                     </tr>
+                    
                     <tr class="totals-row final-totals">
                       <td colspan="5" class="totals-label final-label">
                         <strong>{{ 'INVOICES.FORM.FINAL_TOTALS' | translate }}</strong>
@@ -946,9 +967,9 @@
               <tr class="table__row" *ngFor="let item of selectedInvoice.items; trackBy: trackById">
                 <td class="td--name">{{ item.articleName }}</td>
                 <td class="td--barCode">{{ item.articleBarCode }}</td>
-                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-center">{{ item.quantity | number:'1.2-2' }}</td>
                 <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
-                <td class="text-center">{{ (item.taxRate * 100) | number:'1.0-0' }}%</td>
+                <td class="text-center">{{ (item.taxRate) | number:'1.0-0' }}%</td>
                 <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
                 <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
               </tr>
@@ -972,6 +993,7 @@
   <!-- ══════════════════════════════════════════════
      EDIT VIEW
      ══════════════════════════════════════════════ -->
+
   <ng-container *ngIf="isEdit() && selectedInvoice">
     <div class="page-header">
       <div>
@@ -981,7 +1003,7 @@
       <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
 
-    <!-- Edit Invoice details panel -->
+    <!-- Invoice details panel -->
     <div class="panel">
       <div class="panel__header">
         <div class="panel__title-wrap">
@@ -994,39 +1016,148 @@
       </div>
       <div class="panel__body">
         <form [formGroup]="invoiceForm" class="form">
+
           <div class="form__field">
             <label class="form__label">{{ 'INVOICES.FORM.CLIENT' | translate }}</label>
-            <select class="form__input form__select" formControlName="clientId"
-                    (change)="onClientSelectChange($event)">
+
+            <select class="form__input form__select"
+                    (change)="onClientSelectChange($event)"
+                    [value]="invoiceForm.get('clientId')?.value">
+              <option value="" disabled>{{ 'INVOICES.FORM.SELECT_CLIENT' | translate }}</option>
               <option *ngFor="let c of clients" [value]="c.id">{{ c.name }} - {{ c.email }}</option>
             </select>
+
+            <!-- Client Info Card -->
+            <div *ngIf="selectedClientForValidation" class="client-info-card">
+              <div class="client-info-header">
+                <mat-icon>business</mat-icon>
+                <span>{{ 'INVOICES.FORM.SELECTED_CLIENT' | translate }}</span>
+              </div>
+              <div class="client-info-body">
+                <div class="info-row">
+                  <span>{{ 'INVOICES.FORM.CLIENT_NAME_LABEL' | translate }}</span>
+                  <strong>{{ selectedClientForValidation.name }}</strong>
+                </div>
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
+                  <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_LABEL' | translate }}</span>
+                  <strong>{{ selectedClientForValidation.creditLimit | number:'1.2-2' }} TND</strong>
+                </div>
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
+                  <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_CURRENT_USAGE' | translate }}</span>
+                  <strong [class.text-danger]="creditLimitInfo.currentUsage > 0">
+                    {{ creditLimitInfo.currentUsage | number:'1.2-2' }} TND
+                  </strong>
+                </div>
+                <div class="info-row" *ngIf="selectedClientForValidation.creditLimit">
+                  <span>{{ 'INVOICES.FORM.CREDIT_LIMIT_REMAINING' | translate }}</span>
+                  <strong [class.text-success]="creditLimitInfo.remainingCredit > 0"
+                          [class.text-danger]="creditLimitInfo.remainingCredit <= 0">
+                    {{ creditLimitInfo.remainingCredit | number:'1.2-2' }} TND
+                  </strong>
+                </div>
+                <div class="alert alert-danger mt-2"
+                    *ngIf="!creditLimitInfo.hasSufficientCredit && selectedClientForValidation.creditLimit">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  {{ 'INVOICES.ERRORS.CREDIT_LIMIT_EXCEEDED' | translate }}
+                </div>
+                <div class="info-row">
+                  <span>{{ 'INVOICES.FORM.BULK_PRICING_LABEL' | translate }}</span>
+                  <strong [class.text-success]="selectedClientForValidation.categories?.some(c => c.useBulkPricing)">
+                    {{ selectedClientForValidation.categories?.some(c => c.useBulkPricing)
+                        ? ('INVOICES.FORM.BULK_ELIGIBLE' | translate)
+                        : ('INVOICES.FORM.BULK_NOT_ELIGIBLE' | translate) }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Discount Info Banner -->
+            <div *ngIf="discountInfo.applies && discountInfo.rate > 0" class="discount-banner">
+              <div class="discount-banner__content">
+                <mat-icon>local_offer</mat-icon>
+                <div>
+                  <strong>{{ 'INVOICES.FORM.BULK_DISCOUNT_APPLIED' | translate }}</strong>
+                  <span>{{ 'INVOICES.FORM.DISCOUNT_RATE' | translate: { rate: discountInfo.rate } }}</span>
+                </div>
+                <div class="discount-amount">
+                  {{ 'INVOICES.FORM.YOU_SAVE' | translate: { amount: (discountInfo.discountAmount | number:'1.2-2') } }}
+                </div>
+              </div>
+              <div class="discount-banner__details">
+                <div class="detail-row">
+                  <span>{{ 'INVOICES.FORM.ORIGINAL_TOTAL' | translate }}</span>
+                  <span>{{ discountInfo.originalTotal | number:'1.2-2' }} TND</span>
+                </div>
+                <div class="detail-row discount">
+                  <span>{{ 'INVOICES.FORM.DISCOUNT_ROW' | translate: { rate: discountInfo.rate } }}</span>
+                  <span>- {{ discountInfo.discountAmount | number:'1.2-2' }} TND</span>
+                </div>
+                <div class="detail-row final">
+                  <span>{{ 'INVOICES.FORM.FINAL_TOTAL_TTC' | translate }}</span>
+                  <span>{{ discountInfo.discountedTotal | number:'1.2-2' }} TND</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Credit Limit Warning -->
+            <div *ngIf="creditWarning" class="credit-warning">
+              <mat-icon>warning_amber</mat-icon>
+              <div class="warning-content">
+                <strong>{{ 'INVOICES.FORM.CREDIT_LIMIT_WARNING' | translate }}</strong>
+                <span>{{ creditWarning }}</span>
+              </div>
+            </div>
           </div>
 
           <div class="form__row form__row--2">
             <div class="form__field">
               <label class="form__label">{{ 'INVOICES.FORM.INVOICE_DATE' | translate }}</label>
-              <input class="form__input" type="date" formControlName="invoiceDate" />
+              <input class="form__input" type="date" formControlName="invoiceDate"
+                    [class.form__input--error]="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched" />
+              <span class="form__error"
+                    *ngIf="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+              </span>
             </div>
             <div class="form__field">
               <label class="form__label">{{ 'INVOICES.FORM.DUE_DATE' | translate }}</label>
-              <input class="form__input" type="date" formControlName="dueDate" readonly />
+              <input class="form__input" type="date" formControlName="dueDate"
+                    [class.form__input--error]="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched"
+                    readonly
+                    [matTooltip]="'INVOICES.FORM.DUE_DATE_AUTO_TOOLTIP' | translate" />
+              <span class="form__error"
+                    *ngIf="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+              </span>
+              <small class="form__hint" *ngIf="selectedClientForValidation?.duePaymentPeriod">
+                {{ duePaymentPeriodHint }}
+              </small>
             </div>
           </div>
 
-          <div class="form__field">
-            <label class="form__label">{{ 'INVOICES.FORM.CLIENT_ADDRESS' | translate }}</label>
-            <input class="form__input" formControlName="clientAddress" />
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">{{ 'INVOICES.FORM.CLIENT_ADDRESS' | translate }}</label>
+              <input class="form__input" formControlName="clientAddress"
+                    [placeholder]="'INVOICES.FORM.CLIENT_ADDRESS_PLACEHOLDER' | translate"
+                    [class.form__input--error]="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched" />
+              <span class="form__error"
+                    *ngIf="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+              </span>
+            </div>
+            <div class="form__field">
+              <label class="form__label">{{ 'INVOICES.FORM.ADDITIONAL_NOTES' | translate }}</label>
+              <input class="form__input" formControlName="additionalNotes"
+                    [placeholder]="'INVOICES.FORM.ADDITIONAL_NOTES_PLACEHOLDER' | translate" />
+            </div>
           </div>
 
-          <div class="form__field">
-            <label class="form__label">{{ 'INVOICES.FORM.ADDITIONAL_NOTES' | translate }}</label>
-            <input class="form__input" formControlName="additionalNotes" />
-          </div>
         </form>
       </div>
     </div>
 
-    <!-- Edit Line items panel -->
+    <!-- Line items panel -->
     <div class="panel">
       <div class="panel__header">
         <div class="panel__title-wrap">
@@ -1036,16 +1167,17 @@
             <p class="panel__subtitle">{{ 'INVOICES.FORM.ITEMS_COUNT' | translate:{ht: (pendingTotalHT | number:'1.2-2'), ttc: (pendingTotalTTC | number:'1.2-2') } }}</p>
           </div>
         </div>
-        <button class="btn-add" (click)="openInlineItemAdd()" *ngIf="!inlineItemOpen">
+        <button class="btn-add" (click)="openInlineItemAdd()" *ngIf="!inlineItemOpen"
+                [disabled]="!creditLimitInfo.hasSufficientCredit && selectedClientForValidation?.creditLimit">
           {{ 'INVOICES.FORM.ADD_ITEM' | translate }}
         </button>
       </div>
 
       <div class="panel__body">
+
         <!-- Inline item form -->
         <div class="inline-item-form" *ngIf="inlineItemOpen">
           <form [formGroup]="itemForm" class="form">
-            <!-- Same form fields as create view -->
             <div class="form__row form__row--4">
               <div class="form__field form__field--span2">
                 <label class="form__label">{{ 'INVOICES.FORM.ARTICLE' | translate }}</label>
@@ -1053,26 +1185,42 @@
                         (change)="onArticleSelectChange($event)">
                   <option value="" selected disabled>{{ 'INVOICES.FORM.SELECT_ARTICLE' | translate }}</option>
                   <option *ngFor="let a of articles" [value]="a.id">
-                    {{ a.libelle }} ({{ a.barCode }}) — {{ 'STOCK.LABELS.STOCK' | translate }}: {{ a.quantity }}
+                    {{ a.libelle }} ({{ a.barCode }}) — {{ 'INVOICES.FORM.STOCK' | translate }}: {{ a.quantity }}
                   </option>
                 </select>
               </div>
 
               <div class="form__field">
                 <label class="form__label">{{ 'INVOICES.FORM.QUANTITY' | translate }}</label>
+
                 <div class="stock-info-badge" *ngIf="getSelectedArticle()">
                   <mat-icon>inventory_2</mat-icon>
                   <span>{{ 'STOCK.LABELS.AVAILABLE_STOCK' | translate }}:
                     <strong [ngClass]="getStockStatusClass(getSelectedArticle()!.quantity)">
-                      {{ getSelectedArticle()!.quantity }} {{ 'STOCK.LABELS.UNITS' | translate }}
+                      {{ getSelectedArticle()!.quantity | number:'1.2-2' }} {{ 'STOCK.LABELS.UNITS' | translate }}
                     </strong>
                   </span>
                 </div>
+
                 <input type="number" formControlName="quantity" class="form__input"
-                  [class.form__input--error]="itemForm.get('quantity')?.invalid && itemForm.get('quantity')?.touched"
-                  [min]="getQuantityMin(getSelectedArticle()?.unit)"
-                  [max]="getQuantityMax()"
-                  [step]="getQuantityStep(getSelectedArticle()?.unit)" />
+                      [class.form__input--error]="itemForm.get('quantity')?.invalid && itemForm.get('quantity')?.touched"
+                      [min]="getQuantityMin(getSelectedArticle()?.unit)"
+                      [max]="getQuantityMax()"
+                      [step]="getQuantityStep(getSelectedArticle()?.unit)" />
+
+                <div *ngIf="itemForm.get('quantity')?.hasError('required') && itemForm.get('quantity')?.touched"
+                    class="form__error">
+                  {{ 'VALIDATION.REQUIRED' | translate }}
+                </div>
+                <div *ngIf="itemForm.get('quantity')?.hasError('min') && itemForm.get('quantity')?.touched"
+                    class="form__error">
+                  {{ 'VALIDATION.MIN_VALUE' | translate: { min: getQuantityMin(getSelectedArticle()?.unit) } }}
+                </div>
+                <div *ngIf="itemForm.get('quantity')?.hasError('max') && itemForm.get('quantity')?.touched"
+                    class="form__error form__error--stock">
+                  <mat-icon>error</mat-icon>
+                  {{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: (getSelectedArticle()?.quantity ?? 0) | number:'1.2-2' } }}
+                </div>
               </div>
 
               <div class="form__field">
@@ -1080,6 +1228,8 @@
                 <input class="form__input" type="number" min="0" step="0.01" formControlName="uniPriceHT" />
                 <small class="form__hint" *ngIf="getSelectedArticle()">
                   {{ getUnitTranslation() }}
+                  <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 1">— {{ 'INVOICES.FORM.WHOLE_NUMBERS_ONLY' | translate }}</span>
+                  <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 0.1">— {{ 'INVOICES.FORM.DECIMALS_ALLOWED' | translate }}</span>
                 </small>
               </div>
             </div>
@@ -1087,7 +1237,7 @@
             <div class="form__row">
               <div class="form__field">
                 <label class="form__label">{{ 'INVOICES.FORM.TAX_RATE' | translate }} (%)</label>
-                <input type="number" class="form__input" formControlName="taxRate" min="0" max="100" step="1"/>
+                <input type="number" class="form__input" formControlName="taxRate" min="0" max="100" step="1" />
               </div>
               <div class="form__field item-calc-preview"
                   *ngIf="itemForm.get('quantity')?.value && itemForm.get('uniPriceHT')?.value">
@@ -1110,6 +1260,7 @@
 
         <!-- Pending items table -->
         <ng-container *ngIf="!inlineItemOpen">
+
           <div class="empty-items" *ngIf="pendingItems.length === 0">
             <mat-icon>inbox</mat-icon>
             <p>{{ 'INVOICES.FORM.NO_ITEMS_YET' | translate }}</p>
@@ -1120,7 +1271,6 @@
               <table class="table">
                 <thead>
                   <tr>
-                    <th>{{ 'INVOICES.DETAILS.ARTICLE' | translate }}</th>
                     <th>{{ 'INVOICES.DETAILS.BAR_CODE' | translate }}</th>
                     <th class="text-center">{{ 'INVOICES.DETAILS.QTY' | translate }}</th>
                     <th class="text-center">{{ 'INVOICES.DETAILS.UNIT_HT' | translate }}</th>
@@ -1132,30 +1282,60 @@
                 </thead>
                 <tbody>
                   <tr class="table__row" *ngFor="let item of pendingItems; trackBy: trackByLocalId">
-                    <td class="td--name">{{ item.articleName }}</td>
                     <td class="td--barCode">{{ item.articleBarCode }}</td>
-                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-center">{{ item.quantity | number:'1.2-2' }}</td>
                     <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
-                    <td class="text-center">{{ (item.taxRate < 1 ? item.taxRate * 100 : item.taxRate) | number:'1.0' }}%</td>
+                    <td class="text-center">{{ item.taxRate | number:'1.0-0' }}%</td>
                     <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
                     <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
                     <td class="td--actions">
-                      <button class="icon-btn icon-btn--edit" (click)="openInlineItemEdit(item)">
-                        <mat-icon>edit</mat-icon>
+                      <button class="icon-btn icon-btn--edit" [matTooltip]="'COMMON.EDIT' | translate"
+                              (click)="openInlineItemEdit(item)">
+                        <mat-icon style="font-size:15px;width:15px;height:15px;">edit</mat-icon>
                       </button>
-                      <button class="icon-btn icon-btn--delete" (click)="removePendingItem(item._localId)">
-                        <mat-icon>delete_outline</mat-icon>
+                      <button class="icon-btn icon-btn--delete" [matTooltip]="'COMMON.DELETE' | translate"
+                              (click)="removePendingItem(item._localId)">
+                        <mat-icon style="font-size:15px;width:15px;height:15px;">delete_outline</mat-icon>
                       </button>
                     </td>
                   </tr>
                 </tbody>
                 <tfoot>
-                  <tr class="totals-row">
+                  <tr class="totals-row" *ngIf="!discountInfo.applies || discountInfo.rate === 0">
                     <td colspan="5" class="totals-label">{{ 'INVOICES.DETAILS.TOTALS' | translate }}</td>
                     <td class="td--price text-center totals-value">{{ pendingTotalHT | number:'1.2-2' }} TND</td>
                     <td class="td--price text-center totals-value">{{ pendingTotalTTC | number:'1.2-2' }} TND</td>
                     <td></td>
                   </tr>
+
+                  <ng-container *ngIf="discountInfo.applies && discountInfo.rate > 0">
+                    <tr class="totals-row">
+                      <td colspan="5" class="totals-label">{{ 'INVOICES.FORM.ORIGINAL_TOTAL' | translate }}</td>
+                      <td class="td--price text-center">{{ pendingTotalHT | number:'1.2-2' }} TND</td>
+                      <td class="td--price text-center">{{ discountInfo.originalTotal | number:'1.2-2' }} TND</td>
+                      <td></td>
+                    </tr>
+                    <tr class="discount-row">
+                      <td colspan="5" class="totals-label discount-label">
+                        {{ 'INVOICES.FORM.DISCOUNT_ROW' | translate: { rate: discountInfo.rate } }}
+                      </td>
+                      <td class="td--price text-center discount-amount">- {{ (pendingTotalHT * discountInfo.rate / 100) | number:'1.2-2' }} TND</td>
+                      <td class="td--price text-center discount-amount">- {{ discountInfo.discountAmount | number:'1.2-2' }} TND</td>
+                      <td></td>
+                    </tr>
+                    <tr class="totals-row final-totals">
+                      <td colspan="5" class="totals-label final-label">
+                        <strong>{{ 'INVOICES.FORM.FINAL_TOTALS' | translate }}</strong>
+                      </td>
+                      <td class="td--price text-center totals-value final-value">
+                        <strong>{{ (pendingTotalHT * (1 - discountInfo.rate / 100)) | number:'1.2-2' }} TND</strong>
+                      </td>
+                      <td class="td--price text-center totals-value final-value">
+                        <strong>{{ discountInfo.discountedTotal | number:'1.2-2' }} TND</strong>
+                      </td>
+                      <td></td>
+                    </tr>
+                  </ng-container>
                 </tfoot>
               </table>
             </div>
@@ -1163,12 +1343,19 @@
 
           <div class="panel__actions">
             <button class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
-            <button class="btn-add" [disabled]="!canSubmit" (click)="updateInvoice()">
-              {{ 'COMMON.SAVE_CHANGES' | translate }}
+            <button class="btn-add"
+                    [disabled]="!canSubmit"
+                    [class.disabled]="!canSubmit"
+                    [matTooltip]="getSubmitButtonTooltip()"
+                    (click)="updateInvoice()">
+              <span *ngIf="!isValidating">{{ 'COMMON.SAVE_CHANGES' | translate }}</span>
+              <span *ngIf="isValidating">{{ 'COMMON.SAVING' | translate }}...</span>
             </button>
           </div>
+
         </ng-container>
       </div>
     </div>
+
   </ng-container>
 </div>

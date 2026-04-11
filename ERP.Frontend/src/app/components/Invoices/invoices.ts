@@ -7,10 +7,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, firstValueFrom, forkJoin, Observable, of } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 
 import { AuthService, PRIVILEGES } from '../../services/auth/auth.service';
-import { InvoiceService, InvoiceDto, CreateInvoiceDto, InvoiceStatsDto } from '../../services/invoices/invoice.service';
+import { InvoiceService, InvoiceDto, CreateInvoiceDto, InvoiceStatsDto } from '../../services/invoice.service';
 import { ClientsService, ClientResponseDto } from '../../services/clients/clients.service';
 import { ArticleService, UnitEnum } from '../../services/articles/articles.service';
 import { PaginationComponent } from '../pagination/pagination';
@@ -40,6 +40,13 @@ export interface InvoiceValidationResult {
   discountApplied?: number;
   discountRate?: number;
 }
+
+type CreditLimitInfo= {
+    hasSufficientCredit: boolean,
+    currentUsage: number,
+    remainingCredit: number
+};
+
 
 type ViewMode = 'list' | 'list-deleted' | 'create'|'edit' | 'view' | 'stats';
 
@@ -72,6 +79,12 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   
 
   creditWarning: string | null = null;
+  creditLimitInfo: CreditLimitInfo = {
+    hasSufficientCredit: true,
+    currentUsage: 0,
+    remainingCredit: 0
+  };
+
   discountInfo = {
     applies: false,
     rate: 0,
@@ -85,9 +98,18 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   readonly PRIVILEGES = PRIVILEGES;
   readonly units = UnitEnum;
 
+  private masterArticles: StockItem[] = [];
   articles: StockItem[] = [];
-  private originalArticles: StockItem[] = [];
-  private usedQuantities: Map<string, number> = new Map();
+
+  // Instead of getter, use signal
+  invoiceTotalTTC = computed(() => {
+    if (this.discountInfo.applies && this.discountInfo.discountedTotal > 0) {
+      return this.discountInfo.discountedTotal;
+    }
+    return this.pendingTotalTTC;
+  });
+
+
 
   // ── View mode ──────────────────────────────────────────────────────────────
   viewMode = signal<ViewMode>('list');
@@ -210,6 +232,33 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     });
   }
 
+  loadCreditLimitInfo(): void {
+    if (!this.selectedClientForValidation?.id) return;
+
+    this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id).subscribe({
+      next: (currentOutstanding) => {
+        const result = this.invoiceService.validateCreditLimit(
+          this.selectedClientForValidation,
+          this.invoiceTotalTTC(),  // Note the parentheses for signal
+          currentOutstanding
+        );
+        
+        this.creditLimitInfo = {
+          hasSufficientCredit: result.hasSufficientCredit,
+          currentUsage: result.currentUsage,
+          remainingCredit: result.remainingCredit
+        };
+      },
+      error: () => {
+        this.creditLimitInfo = {
+          hasSufficientCredit: false,
+          currentUsage: 0,
+          remainingCredit: 0
+        };
+      }
+    });
+  }
+
   // ── Forms ─────────────────────────────────────────────────────────────────
   private buildForms(): void {
     this.invoiceForm = this.fb.group({
@@ -286,32 +335,19 @@ export class InvoicesComponent implements OnInit, OnDestroy{
         });
 
         // Store original articles (never modified)
-        this.originalArticles = allArticles
-          .filter((a: any) => stockMap.has(a.id))
-          .map((a: any) => ({ ...a, quantity: stockMap.get(a.id) || 0 }));
-        
-        // Initialize available articles as a copy
-        this.resetAvailableArticles();
+        this.masterArticles = allArticles
+          .filter((a: any) => stockMap.has(a.id) && stockMap.get(a.id)! > 0)
+          .map((a: any) => ({ ...a, quantity: stockMap.get(a.id)! }));
+
+        this.syncArticles();
 
         this.cdr.markForCheck();
       },
       error: () => {
-        this.originalArticles = [];
+        this.syncArticles();
         this.articles = [];
       }
     });
-  }
-
-  // Reset available articles based on original stock
-  private resetAvailableArticles(): void {
-    // Create a deep copy of original articles
-    this.articles = this.originalArticles.map(article => ({
-      ...article,
-      quantity: article.quantity // Keep original stock quantity
-    }));
-    
-    // Reset used quantities tracking
-    this.usedQuantities.clear();
   }
 
   loadStats(): void {
@@ -382,24 +418,10 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   openEdit(invoice: InvoiceDto): void {
     if (this.isEdit()) return;
     
-    // Reset available articles first
-    this.resetAvailableArticles();
-    
     this.previousMode = this.viewMode();
     this.setViewMode('edit');
     this.selectedInvoice = invoice;
     
-    // Track used quantities from existing invoice items
-    invoice.items.forEach(item => {
-      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
-      this.usedQuantities.set(item.articleId, currentUsed + item.quantity);
-      
-      // Update available stock
-      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
-      if (articleToUpdate) {
-        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - (currentUsed + item.quantity);
-      }
-    });
     
     // Format dates
     const formattedInvoiceDate = invoice.invoiceDate ? new Date(invoice.invoiceDate).toISOString().split('T')[0] : '';
@@ -427,6 +449,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
       totalHT: item.totalHT,
       totalTTC: item.totalTTC
     }));
+    this.syncArticles();
     
     // Find and set the selected client
     const client = this.clients.find(c => c.id === invoice.clientId);
@@ -500,7 +523,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this._selectedArticle = null;
     
     // Reset available articles to original stock
-    this.resetAvailableArticles();
+    this.syncArticles();
     
     
     this.cdr.markForCheck();
@@ -576,6 +599,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     const id = (event.target as HTMLSelectElement).value;
     const client = this.clients.find(c => c.id === id);
     if (client) this.selectClient(client);
+    this.loadCreditLimitInfo();
   }
 
   // ── Article selection ─────────────────────────────────────────────────────
@@ -606,17 +630,16 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   }
 
   openInlineItemEdit(item: PendingItem): void {
-    this._selectedArticle = this.articles.find(a => a.id === item.articleId) ?? null;
+    this.inlineItemLocalId = item._localId;  // set BEFORE syncArticles
+    this._selectedArticle = this.masterArticles.find(a => a.id === item.articleId) ?? null;
+    this.syncArticles();                     // now the editing line is excluded from consumed
     this.itemForm.patchValue({
-      articleId: item.articleId,
-      quantity: item.quantity,
+      articleId:  item.articleId,
+      quantity:   item.quantity,
       uniPriceHT: item.uniPriceHT,
-      taxRate: item.taxRate<1 ? item.taxRate* 100 : item.taxRate,
+      taxRate:    item.taxRate,
     });
-    if (this._selectedArticle) {
-      this.updateQuantityValidator(this._selectedArticle.quantity ?? 0);
-    }
-    this.inlineItemLocalId = item._localId;
+    if (this._selectedArticle) this.updateQuantityValidator(this._selectedArticle.quantity);
     this.inlineItemOpen = true;
   }
 
@@ -625,6 +648,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this.inlineItemLocalId = '';
     this._selectedArticle = null;
     this.itemForm.reset();
+    this.syncArticles();
   }
 
   submitInlineItem(): void {
@@ -633,19 +657,22 @@ export class InvoicesComponent implements OnInit, OnDestroy{
       return;
     }
 
-    const { articleId, quantity, uniPriceHT, taxRate} = {...this.itemForm.value, taxRate: this.itemForm.get('taxRate')?.value};
-    const article = this.articles.find(a => a.id === articleId);
+    const { articleId, quantity, uniPriceHT, taxRate } = this.itemForm.value;
 
-    if (!article) {
+    // Use masterArticles for the real stock ceiling
+    const master = this.masterArticles.find(a => a.id === articleId);
+    if (!master) {
       this.flash('error', this.translate.instant('ERRORS.ARTICLE_NOT_FOUND'));
       return;
     }
 
-    // Check available stock from availableArticles (which reflects already used quantities)
-    const currentAvailableStock = article.quantity;
-    const alreadyUsed = this.usedQuantities.get(articleId) || 0;
-    const maxAllowed = currentAvailableStock + alreadyUsed;
-    
+    // Total already consumed by OTHER pending lines (excluding the one being edited)
+    const alreadyConsumed = this.pendingItems
+      .filter(i => i.articleId === articleId && i._localId !== this.inlineItemLocalId)
+      .reduce((sum, i) => sum + i.quantity, 0);
+
+    const maxAllowed = master.quantity - alreadyConsumed;
+
     if (quantity > maxAllowed) {
       this.flash('error', this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK', {
         max: maxAllowed, requested: quantity
@@ -653,118 +680,60 @@ export class InvoicesComponent implements OnInit, OnDestroy{
       return;
     }
 
-    const taxRateDecimal = taxRate / 100;
-    const totalHT = quantity * uniPriceHT;
-    const totalTTC = totalHT * (1 + taxRateDecimal);
+    const totalHT  = quantity * uniPriceHT;
+    const totalTTC = totalHT * (1 + (taxRate / 100));
 
     if (this.inlineItemLocalId) {
-      // Editing existing item - adjust used quantities
+      // Editing existing line
       const idx = this.pendingItems.findIndex(i => i._localId === this.inlineItemLocalId);
       if (idx !== -1) {
-        const oldQuantity = this.pendingItems[idx].quantity;
-        const quantityDiff = quantity - oldQuantity;
-        
-        // Update used quantities
-        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantityDiff;
-        this.usedQuantities.set(articleId, newUsed);
-        
-        // Update available stock for this article
-        const articleToUpdate = this.articles.find(a => a.id === articleId);
-        if (articleToUpdate) {
-          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
-        }
-        
         this.pendingItems[idx] = {
           ...this.pendingItems[idx],
-          articleId, articleName: article.libelle ?? '',
-          articleBarCode: article.barCode ?? '',
+          articleId, articleName: master.libelle ?? '',
+          articleBarCode: master.barCode ?? '',
           quantity, uniPriceHT, taxRate, totalHT, totalTTC,
         };
       }
     } else {
-      // Adding new item
+      // Adding — merge if same article already exists
       const existingIndex = this.pendingItems.findIndex(i => i.articleId === articleId);
       if (existingIndex !== -1) {
-        // Merge with existing item
-        const existing = this.pendingItems[existingIndex];
+        const existing   = this.pendingItems[existingIndex];
         const newQuantity = existing.quantity + quantity;
-        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
-        
+
         if (newQuantity > maxAllowed) {
           this.flash('error', this.translate.instant('STOCK.ERRORS.MERGED_QUANTITY_EXCEEDS_STOCK', {
-            article: article.libelle, total: newQuantity, max: maxAllowed
+            article: master.libelle, total: newQuantity, max: maxAllowed
           }));
           return;
         }
-        
-        // Update used quantities
-        this.usedQuantities.set(articleId, newUsed);
-        
-        // Update available stock
-        const articleToUpdate = this.articles.find(a => a.id === articleId);
-        if (articleToUpdate) {
-          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
-        }
-        
+
         this.pendingItems[existingIndex] = {
           ...existing,
-          quantity: newQuantity,
-          totalHT: newQuantity * existing.uniPriceHT,
-          totalTTC: newQuantity * existing.uniPriceHT * (1 + existing.taxRate / 100),
+          quantity:  newQuantity,
+          totalHT:   newQuantity * existing.uniPriceHT,
+          totalTTC:  newQuantity * existing.uniPriceHT * (1 + (existing.taxRate / 100)),
         };
       } else {
-        // Add new item
-        const newUsed = (this.usedQuantities.get(articleId) || 0) + quantity;
-        this.usedQuantities.set(articleId, newUsed);
-        
-        // Update available stock
-        const articleToUpdate = this.articles.find(a => a.id === articleId);
-        if (articleToUpdate) {
-          articleToUpdate.quantity = this.getOriginalStock(articleId) - newUsed;
-        }
-        
         this.pendingItems.push({
           _localId: crypto.randomUUID(),
-          articleId, articleName: article.libelle ?? '',
-          articleBarCode: article.barCode ?? '',
+          articleId, articleName: master.libelle ?? '',
+          articleBarCode: master.barCode ?? '',
           quantity, uniPriceHT, taxRate, totalHT, totalTTC,
         });
       }
     }
-    
+
     this.pendingItems = [...this.pendingItems];
     this.invoiceForm.markAsDirty();
     this.closeInlineItem();
+    this.syncArticles();
     this.checkClientLimitsAndDiscount();
   }
 
-  // Helper to get original stock quantity
-  private getOriginalStock(articleId: string): number {
-    const original = this.originalArticles.find(a => a.id === articleId);
-    return original?.quantity ?? 0;
-  }
-
   removePendingItem(localId: string): void {
-    const item = this.pendingItems.find(i => i._localId === localId);
-    if (item) {
-      // Restore the used quantity back to available stock
-      const currentUsed = this.usedQuantities.get(item.articleId) || 0;
-      const newUsed = Math.max(0, currentUsed - item.quantity);
-      
-      if (newUsed === 0) {
-        this.usedQuantities.delete(item.articleId);
-      } else {
-        this.usedQuantities.set(item.articleId, newUsed);
-      }
-      
-      // Restore available stock
-      const articleToUpdate = this.articles.find(a => a.id === item.articleId);
-      if (articleToUpdate) {
-        articleToUpdate.quantity = this.getOriginalStock(item.articleId) - newUsed;
-      }
-    }
-    
     this.pendingItems = this.pendingItems.filter(i => i._localId !== localId);
+    this.syncArticles();
     this.checkClientLimitsAndDiscount();
   }
 
@@ -773,10 +742,17 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     if (this.pendingItems.length === 0) return false;
     if (this.creditWarning) return false;
     if (this.isValidating) return false;
+    if(!this.creditLimitInfo.hasSufficientCredit && this.selectedClientForValidation?.creditLimit) return false;
+
     return true;
   }
 
   getSubmitButtonTooltip(): string {
+    if(!this.creditLimitInfo.hasSufficientCredit && this.selectedClientForValidation?.creditLimit) return this.translate.instant('INVOICES.ERRORS.INSUFFICIENT_CREDIT', {
+        creditLimit: this.selectedClientForValidation.creditLimit.toFixed(2),
+        currentOutstanding: this.creditLimitInfo.currentUsage.toFixed(2),
+        invoiceTotal: this.invoiceTotalTTC()
+      });
     if (this.isValidating) return this.translate.instant('COMMON.PROCESSING');
     if (this.invoiceForm.invalid) return this.translate.instant('VALIDATION.REQUIRED');
     if (this.pendingItems.length === 0) return this.translate.instant('INVOICES.FORM.NO_ITEMS_YET');
@@ -837,10 +813,10 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     }
 
     const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
-      articleId: rest.articleId,
-      quantity: rest.quantity,
-      uniPriceHT: rest.uniPriceHT,
-      taxRate: rest.taxRate,
+      articleId: rest.articleId,  // Ensure this is string
+      quantity: Number(rest.quantity),  // Force to number
+      uniPriceHT: Number(rest.uniPriceHT),  // Force to number
+      taxRate: Number(rest.taxRate),  // Force to number
     }));
 
     this.isValidating = true;
@@ -887,7 +863,6 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   }
 
   finalize(invoice: InvoiceDto): void {
-    this.setViewMode('edit');
     this.invoiceService.finalize(invoice.id).subscribe({
       next: (updated) => {
         if (this.isEdit() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
@@ -1003,6 +978,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this.invoiceService.update(this.selectedInvoice!.id, updateDto).subscribe({
       next: () => {
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.UPDATED'));
+        this.isValidating = false; // ✅ add this
         this.cancel();
         this.reload();
       },
@@ -1229,5 +1205,53 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     const unit = this._selectedArticle?.unit;
     if (!unit) return '';
     return this.translate.instant(`ARTICLES.UNIT.${unit.toUpperCase()}`);
+  }
+
+
+  private syncArticles(): void {
+    const consumed = new Map<string, number>();
+    for (const item of this.pendingItems) {
+      if (item._localId === this.inlineItemLocalId) continue;
+      consumed.set(item.articleId, (consumed.get(item.articleId) ?? 0) + item.quantity);
+    }
+
+    const editingId = this._selectedArticle?.id ?? null;
+
+    this.articles = this.masterArticles
+      .map(master => ({
+        ...master,
+        quantity: master.quantity - (consumed.get(master.id) ?? 0),
+      }))
+      .filter(a => a.quantity > 0 || a.id === editingId);
+
+    this.cdr.markForCheck();
+    this.loadCreditLimitInfo();
+  }
+
+  getCreditLimitMessage(): string {
+    // No credit limit set
+    if (!this.selectedClientForValidation?.creditLimit) {
+      return this.translate.instant('INVOICES.FORM.NO_LIMIT');
+    }
+    
+    // Has sufficient credit
+    if (this.creditLimitInfo.hasSufficientCredit) {
+      return this.translate.instant('INVOICES.ERRORS.HAS_SUFFICIENT_CREDIT', {
+        remainingCredit: this.creditLimitInfo.remainingCredit.toFixed(2)
+      });
+    }
+    
+    // Insufficient credit
+    return this.translate.instant('INVOICES.ERRORS.INSUFFICIENT_CREDIT', {
+      creditLimit: this.selectedClientForValidation.creditLimit.toFixed(2),
+      currentOutstanding: this.creditLimitInfo.currentUsage.toFixed(2),
+      invoiceTotal: this.invoiceTotalTTC().toFixed(2)
+    });
+  }
+
+  getCreditLimitClass(): string {
+    if (!this.selectedClientForValidation?.creditLimit) return 'text-muted';
+    if (this.creditLimitInfo.hasSufficientCredit) return 'text-success';
+    return 'text-danger';
   }
 }
