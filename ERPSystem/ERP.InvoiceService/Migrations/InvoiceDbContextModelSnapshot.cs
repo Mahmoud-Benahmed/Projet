@@ -109,8 +109,8 @@ namespace ERP.InvoiceService.Migrations
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("TaxRate")
                         .HasColumnType("decimal(5,4)");

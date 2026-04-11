@@ -63,10 +63,14 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 entity.HasMany(i => i.Items)
                       .WithOne()
                       .HasForeignKey(ii => ii.InvoiceId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired();
 
 
                 entity.HasQueryFilter(i => !i.IsDeleted);
+                modelBuilder.Entity<InvoiceItem>()
+                .Property<Guid>("InvoiceId")
+                .IsRequired();
             });
 
 
@@ -83,6 +87,10 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 entity.Property(ii => ii.ArticleName)
                       .IsRequired()
                       .HasMaxLength(200);
+
+                entity.Property(ii => ii.Quantity)
+                      .HasColumnType("decimal(18,4)")
+                      .IsRequired();
 
                 entity.Property(ii => ii.ArticleBarCode)
                       .IsRequired()

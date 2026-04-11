@@ -60,7 +60,7 @@ namespace ERP.InvoiceService.Migrations
                     ArticleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ArticleName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ArticleBarCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     UniPriceHT = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     TaxRate = table.Column<decimal>(type: "decimal(5,4)", nullable: false),
                     TotalHT = table.Column<decimal>(type: "decimal(18,4)", nullable: false),

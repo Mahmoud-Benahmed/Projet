@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ERP.InvoiceService.Migrations
 {
     [DbContext(typeof(InvoiceDbContext))]
-    [Migration("20260407010525_InitialCreate")]
+    [Migration("20260411010504_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -112,8 +112,8 @@ namespace ERP.InvoiceService.Migrations
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("TaxRate")
                         .HasColumnType("decimal(5,4)");
