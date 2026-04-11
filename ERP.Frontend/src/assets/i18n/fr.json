@@ -741,12 +741,22 @@
       "TOTALS": "Totaux"
     },
     "FORM": {
+      "FINAL_TOTAL_TTC":"TOTAL FINAL (TVA incluse)",
+      "BULK_DISCOUNT_APPLIED": "Facturation en lot appliqué",
+      "DISCOUNT_RATE":"Taux de remise (%)",
+      "YOU_SAVE": "Montant remisé",
+      "CREDIT_LIMIT_REMAINING": "Crédit permis restant :",
+      "CREDIT_LIMIT_CURRENT_USAGE": "Encours actuel :",
+      "CREDIT_LIMIT_WARNING":"Alterte limite de crédit",
+      "NO_LIMIT":"Sans limite",
+      "STOCK":"Qté en stock",
+      "BULK_NOT_ELIGIBLE":"Non admissible",
       "EDIT_INVOICE_INFO": "Modification facture",
       "ORIGINAL_TOTAL":"Montant initiale",
       "DISCOUNT_ROW": "Montant en remise",
       "FINAL_TOTALS":"Prix finale",
       "SELECTED_CLIENT": "Détails client",
-      "BULK_PRICING_LABEL": "Prix en lot",
+      "BULK_PRICING_LABEL": "Facturation en lot",
       "CREDIT_LIMIT_LABEL":"Limite de crédit",
       "DECIMALS_ALLOWED":"Valeurs décimales permis.",
       "WHOLE_NUMBERS_ONLY":"Numeros entiers.",
@@ -761,6 +771,8 @@
       "INVOICE_DATE": "Date facture *",
       "DUE_DATE": "Date d'échéance *",
       "DUE_DATE_AUTO_TOOLTIP":"La date d'échéance de la facture est pré-calculée en se basant sur la période de paiement du client séléctionné.",
+      "DUE_DATE_HINT": "La date d'échéance: {{days}} depuis la date de facturation.",
+
       "CLIENT": "Client *",
       "CLIENT_ADDRESS": "Adresse client *",
       "ADDITIONAL_NOTES": "Notes supplémentaires",
@@ -803,7 +815,10 @@
       "DELETE_CONFIRM": "Supprimer",
       "GO_BACK": "Retour"
     },
-    "ERRORS": {
+    "ERRORS": {    
+      "HAS_SUFFICIENT_CREDIT": "Crédit disponible : {{remainingCredit}} TND",
+      "INSUFFICIENT_CREDIT": "Limite de crédit dépassée. Limite : {{creditLimit}} TND, Encours actuel : {{currentOutstanding}} TND, Cette facture : {{invoiceTotal}} TND",
+      "CREDIT_LIMIT_EXCEEDED": "Impossible de créer la facture pour cet client. Sa totale dépasse le limite le client acquis. ",
       "LOAD_FAILED": "Échec du chargement des factures.",
       "LOAD_DELETED_FAILED": "Échec du chargement des factures supprimées.",
       "LOAD_STATS_FAILED": "Échec du chargement des statistiques.",

@@ -750,6 +750,16 @@
       "TOTALS": "Totals"
     },
     "FORM": {
+      "FINAL_TOTAL_TTC":"FINAL TOTAL (VAT included)",
+      "BULK_DISCOUNT_APPLIED": "Bulk discount applied",
+      "DISCOUNT_RATE":"Discount Rate (%)",
+      "YOU_SAVE": "Amount saved",
+      "CREDIT_LIMIT_REMAINING": "Remaining Credit:",
+      "CREDIT_LIMIT_CURRENT_USAGE": "Current Outstanding:",
+      "NO_LIMIT":"No credit limit set",
+      "CREDIT_LIMIT_WARNING":"Credit limit warning",
+      "STOCK":"Qty in stock",
+      "BULK_NOT_ELIGIBLE": "Not eligible",
       "EDIT_INVOICE_INFO": "Edit invoice information",
       "ORIGINAL_TOTAL": "Original total",
       "DISCOUNT_ROW":"Discounted amount",
@@ -813,7 +823,9 @@
       "UNSAVED_CHANGES_TITLE": "Unsaved Changes",
       "UNSAVED_CHANGES_MESSAGE": "You have unsaved changes. Do you really want to leave?"
     },
-    "ERRORS": {
+    "ERRORS": {    
+      "HAS_SUFFICIENT_CREDIT": "Credit available: {{remainingCredit}} TND",
+      "INSUFFICIENT_CREDIT": "Credit limit exceeded. Limit: {{creditLimit}} TND, Current outstanding: {{currentOutstanding}} TND, This invoice: {{invoiceTotal}} TND",
       "LOAD_FAILED": "Failed to load invoices.",
       "LOAD_DELETED_FAILED": "Failed to load deleted invoices.",
       "LOAD_STATS_FAILED": "Failed to load statistics.",
