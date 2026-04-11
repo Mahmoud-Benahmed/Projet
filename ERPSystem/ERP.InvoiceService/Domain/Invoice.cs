@@ -148,5 +148,26 @@ namespace InvoiceService.Domain
             IsDeleted = false;
             UpdatedAt = DateTime.UtcNow;
         }
+
+        public void Update(
+            DateTime invoiceDate,
+            DateTime dueDate,
+            Guid clientId,
+            string clientFullName,
+            string clientAddress,
+            string? additionalNotes)
+        {
+            if (Status != InvoiceStatus.DRAFT)
+                throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
+
+            // Update header
+            InvoiceDate = invoiceDate;
+            DueDate = dueDate;
+            ClientId = clientId;
+            ClientFullName = clientFullName;
+            ClientAddress = clientAddress;
+            AdditionalNotes = additionalNotes;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

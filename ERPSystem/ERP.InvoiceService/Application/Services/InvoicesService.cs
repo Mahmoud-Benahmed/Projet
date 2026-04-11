@@ -4,6 +4,7 @@ using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Exceptions;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
+using Microsoft.JSInterop.Infrastructure;
 
 namespace InvoiceService.Application.Services
 {
@@ -57,7 +58,7 @@ namespace InvoiceService.Application.Services
         {
             var client = await _clientServiceHttpClient.GetByIdAsync(dto.ClientId);
 
-            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + i.TaxRate));
+            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate /100m)));
 
             await CheckClientCreditLimit(client.Id, invoiceTotalTTC);
 
@@ -97,6 +98,48 @@ namespace InvoiceService.Application.Services
             return invoice.ToDto();
         }
 
+        // InvoicesService.cs
+        public async Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto)
+        {
+            var invoice = await _invoiceRepository.GetByIdWithItemsAsync(id)
+                ?? throw new InvoiceNotFoundException(id);
+
+            if (invoice.Status != InvoiceStatus.DRAFT)
+                throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
+
+            var client = await _clientServiceHttpClient.GetByIdAsync(dto.ClientId);
+
+            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate / 100m)));
+            await CheckClientCreditLimit(client.Id, invoiceTotalTTC);
+
+            // Update header only
+            invoice.Update(
+                invoiceDate: dto.InvoiceDate,
+                dueDate: dto.DueDate,
+                clientId: dto.ClientId,
+                clientFullName: client.Name,
+                clientAddress: client.Address,
+                additionalNotes: dto.AdditionalNotes
+            );
+
+            // ✅ No RemoveItem loop — repository.UpdateAsync will ExecuteDeleteAsync first
+            foreach (var itemDto in dto.Items)
+            {
+                var article = await _articleServiceHttpClient.GetByIdAsync(itemDto.ArticleId);
+                invoice.AddItem(new InvoiceItem(
+                    invoice.Id,
+                    itemDto.ArticleId,
+                    article.Libelle,
+                    article.BarCode,
+                    itemDto.Quantity,
+                    itemDto.UniPriceHT,
+                    itemDto.TaxRate));
+            }
+
+            await _invoiceRepository.UpdateAsync(invoice);
+            return invoice.ToDto();
+        }
+
         public async Task<InvoiceDto> AddItemAsync(Guid invoiceId, AddInvoiceItemDto dto)
         {
 
@@ -107,7 +150,7 @@ namespace InvoiceService.Application.Services
 
 
             var client = await _clientServiceHttpClient.GetByIdAsync(invoice.ClientId);
-            var itemTotalTTC = dto.Quantity * dto.UniPriceHT * (1 + dto.TaxRate);
+            var itemTotalTTC = dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate /100m));
 
             await CheckClientCreditLimit(client.Id, itemTotalTTC);
 

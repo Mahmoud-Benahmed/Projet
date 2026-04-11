@@ -10,7 +10,7 @@ namespace InvoiceService.Domain
         public Guid ArticleId { get; private set; }
         public string ArticleName { get; private set; }
         public string ArticleBarCode { get; private set; }
-        public int Quantity { get; private set; }
+        public decimal Quantity { get; private set; }
         public decimal UniPriceHT { get; private set; }
         public decimal TaxRate { get; private set; }
         public decimal TotalHT { get; private set; }
@@ -27,14 +27,14 @@ namespace InvoiceService.Domain
         /// <param name="articleBarCode">Bar code of the article</param>
         /// <param name="quantity">Number of units (must be > 0)</param>
         /// <param name="uniPriceHT">Unit price before tax (must be >= 0)</param>
-        /// <param name="taxRate">Tax rate as decimal (must be 0-1, e.g., 0.2 for 20%)</param>
+        /// <param name="taxRate">Tax rate as int (must be 0-100, e.g., 20 for 20%)</param>
         /// <exception cref="InvoiceDomainException">Thrown if validation fails</exception>
         public InvoiceItem(
             Guid invoiceId,
             Guid articleId,
             string articleLibelle,
             string articleBarCode,
-            int quantity,
+            decimal quantity,
             decimal uniPriceHT,
             decimal taxRate)
         {
@@ -46,8 +46,8 @@ namespace InvoiceService.Domain
             if (uniPriceHT < 0)
                 throw new InvoiceDomainException("Unit price cannot be negative.");
 
-            if (taxRate < 0 || taxRate > 1)
-            throw new InvoiceDomainException("Tax rate must be between 0 and 1.");
+            if (taxRate < 0 || taxRate > 100)
+                throw new InvoiceDomainException("Tax rate must be between 0 and 100.");
 
             // ──── INITIALIZATION ────
 
@@ -58,7 +58,7 @@ namespace InvoiceService.Domain
             ArticleBarCode = articleBarCode;
             Quantity = quantity;
             UniPriceHT = uniPriceHT;
-            TaxRate = taxRate;
+            TaxRate = taxRate / 100m;
 
             // ──── CALCULATE TOTALS ────
             CalculateSubtotal();
@@ -68,6 +68,14 @@ namespace InvoiceService.Domain
         //METHODS
         // ────────────────────────────────────────────────────────────────────────
 
+        public void Update(decimal quantity, decimal uniPriceHT, decimal taxRate)
+        {
+            Quantity = quantity;
+            UniPriceHT = uniPriceHT;
+            TaxRate = taxRate;
+            CalculateSubtotal();
+
+        }
         public void CalculateSubtotal()
         {
             TotalHT = Quantity * UniPriceHT;

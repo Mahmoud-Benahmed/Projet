@@ -90,7 +90,20 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
         public async Task UpdateAsync(Invoice invoice)
         {
-            _context.Invoices.Update(invoice);
+            await _context.InvoiceItems
+                .Where(i => i.InvoiceId == invoice.Id)
+                .ExecuteDeleteAsync();
+
+            foreach (var entry in _context.ChangeTracker.Entries<InvoiceItem>().ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+
+            foreach (var item in invoice.Items)
+            {
+                _context.InvoiceItems.Add(item);
+            }
+
             await _context.SaveChangesAsync();
         }
 
