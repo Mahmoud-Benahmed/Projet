@@ -12,7 +12,7 @@ BUILD_FLAG=""
 
 if [ "$1" = "build" ] || [ "$1" = "--build" ]; then
 
-  BUILD_FLAG="--build"
+  BUILD_FLAG="--build --remove-orphans"
 
 fi
 
