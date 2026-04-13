@@ -2,16 +2,19 @@
 using ERP.ClientService.Application.Exceptions;
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
+using ERP.ClientService.Infrastructure.Messaging;
 
 namespace ERP.ClientService.Application.Services;
 
 public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IEventPublisher _eventPublisher;
 
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(ICategoryRepository categoryRepository, IEventPublisher eventPublisher)
     {
         _categoryRepository = categoryRepository;
+        _eventPublisher = eventPublisher;
     }
 
     // =========================
@@ -29,7 +32,10 @@ public class CategoryService : ICategoryService
 
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangesAsync();
-        return MapToDto(category);
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Created, res);
+        return res;
     }
 
     // =========================
@@ -65,7 +71,10 @@ public class CategoryService : ICategoryService
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
 
         await _categoryRepository.SaveChangesAsync();
-        return MapToDto(category);
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
+        return res;
     }
 
     // =========================
@@ -80,6 +89,9 @@ public class CategoryService : ICategoryService
 
         category.Delete();
         await _categoryRepository.SaveChangesAsync();
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Deleted, res);
     }
 
     // =========================
@@ -95,6 +107,9 @@ public class CategoryService : ICategoryService
 
         category.Restore();
         await _categoryRepository.SaveChangesAsync();
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Restored, res);
     }
 
     // =========================
@@ -108,7 +123,10 @@ public class CategoryService : ICategoryService
 
         category.Activate();
         await _categoryRepository.SaveChangesAsync();
-        return MapToDto(category);
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
+        return res;
     }
 
     public async Task<CategoryResponseDto> DeactivateAsync(Guid id)
@@ -119,6 +137,9 @@ public class CategoryService : ICategoryService
 
         category.Deactivate();
         await _categoryRepository.SaveChangesAsync();
+
+        var res = category.ToResponseDto();
+        await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
         return MapToDto(category);
     }
 
@@ -193,8 +214,7 @@ public class CategoryService : ICategoryService
             IsActive: category.IsActive,
             IsDeleted: category.IsDeleted,
             CreatedAt: category.CreatedAt,
-            UpdatedAt: category.UpdatedAt,
-            ClientCount: category.ClientCategories.Count(cc => !cc.Client.IsDeleted)
+            UpdatedAt: category.UpdatedAt
         );
     }
 }

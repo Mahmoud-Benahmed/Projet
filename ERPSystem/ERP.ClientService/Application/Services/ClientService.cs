@@ -2,6 +2,7 @@
 using ERP.ClientService.Application.Exceptions;
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
+using ERP.ClientService.Infrastructure.Messaging;
 
 namespace ERP.ClientService.Application.Services;
 
@@ -9,11 +10,15 @@ public class ClientService : IClientService
 {
     private readonly IClientRepository _clientRepository;
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IEventPublisher _eventPublisher;
 
-    public ClientService(IClientRepository clientRepository, ICategoryRepository categoryRepository)
+    public ClientService(IClientRepository clientRepository, 
+                        ICategoryRepository categoryRepository, 
+                        IEventPublisher eventPublisher)
     {
         _clientRepository = clientRepository;
         _categoryRepository = categoryRepository;
+        _eventPublisher = eventPublisher;
     }
 
     // =========================
@@ -37,7 +42,9 @@ public class ClientService : IClientService
 
         await _clientRepository.AddAsync(client);
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var res= client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Created, res);
+        return res;
     }
 
     // =========================
@@ -83,7 +90,9 @@ public class ClientService : IClientService
             client.ClearDelaiRetour();
 
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var res = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
+        return res;
     }
 
     // =========================
@@ -95,6 +104,8 @@ public class ClientService : IClientService
 
         client.Delete();
         await _clientRepository.SaveChangesAsync();
+        var res = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Deleted, res);
     }
 
     // =========================
@@ -109,6 +120,8 @@ public class ClientService : IClientService
 
         client.Restore();
         await _clientRepository.SaveChangesAsync();
+        var res = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Restored, res);
     }
 
     // =========================
@@ -120,7 +133,9 @@ public class ClientService : IClientService
 
         client.Block();
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var res = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
+        return res;
     }
 
     public async Task<ClientResponseDto> UnblockAsync(Guid id)
@@ -129,7 +144,9 @@ public class ClientService : IClientService
 
         client.Unblock();
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var res = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
+        return res;
     }
 
 
@@ -145,7 +162,9 @@ public class ClientService : IClientService
 
         client.AddCategory(category, assignedById);
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var dto = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Updated, dto);
+        return dto;
     }
 
     public async Task<ClientResponseDto> RemoveCategoryAsync(Guid clientId, Guid categoryId)
@@ -157,7 +176,9 @@ public class ClientService : IClientService
 
         client.RemoveCategory(category);
         await _clientRepository.SaveChangesAsync();
-        return client.ToResponseDto();
+        var dto = client.ToResponseDto();
+        await _eventPublisher.PublishAsync(ClientTopics.Updated, dto);
+        return dto;
     }
 
     // =========================

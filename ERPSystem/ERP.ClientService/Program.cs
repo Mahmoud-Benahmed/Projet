@@ -1,5 +1,6 @@
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Application.Services;
+using ERP.ClientService.Infrastructure.Messaging;
 using ERP.ClientService.Infrastructure.Persistence;
 using ERP.ClientService.Infrastructure.Persistence.Repositories;
 using ERP.ClientService.Infrastructure.Persistence.Seeders;
@@ -28,6 +29,11 @@ builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+
+builder.Services.AddScoped<CategorySeeder>();
+builder.Services.AddScoped<ClientSeeder>();
 
 // =========================
 // CONTROLLERS & API

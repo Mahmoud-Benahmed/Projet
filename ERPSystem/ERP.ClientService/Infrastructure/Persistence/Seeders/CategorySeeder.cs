@@ -1,115 +1,80 @@
-﻿using ERP.ClientService.Domain;
-using Microsoft.EntityFrameworkCore;
+﻿using ERP.ClientService.Application.DTOs;
+using ERP.ClientService.Application.Interfaces;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
 
 public class CategorySeeder
 {
-    private readonly ClientDbContext _context;
+    private readonly ICategoryService _categoryService;
     private readonly ILogger<CategorySeeder> _logger;
 
-    public CategorySeeder(ClientDbContext context, ILogger<CategorySeeder> logger)
+    public CategorySeeder(ICategoryService categoryService, ILogger<CategorySeeder> logger)
     {
-        _context = context;
+        _categoryService = categoryService;
         _logger = logger;
     }
 
-    public async Task SeedAsync()
+    public async Task<List<CategoryResponseDto>> SeedAsync()
     {
-        if (await _context.Categories.AnyAsync())
+        // Check if categories already exist
+        var existingCategories = await _categoryService.GetAllAsync();
+        if (existingCategories.Any())
         {
-            _logger.LogInformation("Categories already seeded — skipping.");
-            return;
+            _logger.LogInformation("Categories already seeded — returning existing.");
+            return existingCategories;
         }
 
-        var categories = BuildCategories();
+        var categories = BuildCategoryRequests();
+        var createdCategories = new List<CategoryResponseDto>();
 
-        await _context.Categories.AddRangeAsync(categories);
-        await _context.SaveChangesAsync();
+        foreach (var request in categories)
+        {
+            try
+            {
+                var category = await _categoryService.CreateAsync(request);
+                createdCategories.Add(category);
+                _logger.LogInformation("Seeded category: {Name} (Code: {Code}, Id: {Id})",
+                    category.Name, category.Code, category.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to seed category: {Name}", request.Name);
+            }
+        }
 
-        _logger.LogInformation("Seeded {Count} categories.", categories.Count);
+        // Create and deactivate Legacy category
+        try
+        {
+            var legacyRequest = new CreateCategoryRequestDto(
+                Name: "Legacy",
+                Code: "LGC",
+                DelaiRetour: 10,
+                DuePaymentPeriod: 30,
+                UseBulkPricing: false,
+                DiscountRate: null,
+                CreditLimitMultiplier: null);
+
+            var legacy = await _categoryService.CreateAsync(legacyRequest);
+            await _categoryService.DeactivateAsync(legacy.Id);
+            createdCategories.Add(legacy);
+            _logger.LogInformation("Seeded and deactivated category: Legacy (Id: {Id})", legacy.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to seed Legacy category");
+        }
+
+        _logger.LogInformation("Category seeding completed. Created {Count} categories.", createdCategories.Count);
+        return createdCategories;
     }
 
-    // ── Seed data ─────────────────────────────────────────────────────────────
-
-    private static List<Category> BuildCategories() =>
+    private List<CreateCategoryRequestDto> BuildCategoryRequests() =>
     [
-        // Standard retail client — no special pricing
-        Category.Create(
-        name:                  "Standard",
-        code:                  "STD",
-        delaiRetour:           15,
-        duePaymentPeriod:      30,
-        useBulkPricing:        false,
-        discountRate:          null,
-        creditLimitMultiplier: null),
-
-        // VIP — generous return window, 10% discount, 150% credit multiplier
-        Category.Create(
-            name:                  "VIP",
-            code:                  "VIP",
-            delaiRetour:           60,
-            duePaymentPeriod:      60,
-            useBulkPricing:        true,
-            discountRate:          0.10m,
-            creditLimitMultiplier: 1.5m),
-
-        // Wholesale — bulk pricing, 15% discount, doubled credit limit
-        Category.Create(
-            name:                  "Wholesale",
-            code:                  "WHL",
-            delaiRetour:           30,
-            duePaymentPeriod:      45,
-            useBulkPricing:        true,
-            discountRate:          0.15m,
-            creditLimitMultiplier: 2.0m),
-
-        // Public sector — no discount but extended return window
-        Category.Create(
-            name:                  "Public Sector",
-            code:                  "PUB",
-            delaiRetour:           45,
-            duePaymentPeriod:      60,
-            useBulkPricing:        false,
-            discountRate:          null,
-            creditLimitMultiplier: 1.2m),
-
-        // Reseller — bulk pricing, 20% discount
-        Category.Create(
-            name:                  "Reseller",
-            code:                  "RSL",
-            delaiRetour:           30,
-            duePaymentPeriod:      45,
-            useBulkPricing:        true,
-            discountRate:          0.20m,
-            creditLimitMultiplier: 1.8m),
-
-        // New client — restricted: short return window, no credit multiplier
-        Category.Create(
-            name:                  "New Client",
-            code:                  "NEW",
-            delaiRetour:           7,
-            duePaymentPeriod:      15,
-            useBulkPricing:        false,
-            discountRate:          null,
-            creditLimitMultiplier: null),
-
-        // Inactive category — to test deactivation logic
-        BuildInactiveCategory(),
+        new("Standard", "STD", 15, 30, false, null, null),
+        new("VIP", "VIP", 60, 60, true, 0.10m, 1.5m),
+        new("Wholesale", "WHL", 30, 45, true, 0.15m, 2.0m),
+        new("Public Sector", "PUB", 45, 60, false, null, 1.2m),
+        new("Reseller", "RSL", 30, 45, true, 0.20m, 1.8m),
+        new("New Client", "NEW", 7, 15, false, null, null),
     ];
-
-    private static Category BuildInactiveCategory()
-    {
-        var cat = Category.Create(
-            name: "Legacy",
-            code: "LGC",
-            delaiRetour: 10,
-            duePaymentPeriod: 30,
-            useBulkPricing: false,
-            discountRate: null,
-            creditLimitMultiplier: null);
-
-        cat.Deactivate();
-        return cat;
-    }
 }

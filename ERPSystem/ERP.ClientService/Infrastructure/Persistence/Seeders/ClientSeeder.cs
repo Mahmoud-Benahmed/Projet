@@ -1,214 +1,262 @@
-﻿using ERP.ClientService.Domain;
-using Microsoft.EntityFrameworkCore;
+﻿using ERP.ClientService.Application.DTOs;
+using ERP.ClientService.Application.Interfaces;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
 
 public class ClientSeeder
 {
-    private readonly ClientDbContext _context;
+    private readonly IClientService _clientService;
+    private readonly ICategoryService _categoryService;
     private readonly ILogger<ClientSeeder> _logger;
 
-    // System user ID used for AssignedById on category assignments
-    private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    private static readonly Guid SystemUserId = Guid.NewGuid();
 
-    public ClientSeeder(ClientDbContext context, ILogger<ClientSeeder> logger)
+    public ClientSeeder(
+        IClientService clientService,
+        ICategoryService categoryService,
+        ILogger<ClientSeeder> logger)
     {
-        _context = context;
+        _clientService = clientService;
+        _categoryService = categoryService;
         _logger = logger;
     }
 
-    public async Task SeedAsync()
+    public async Task SeedAsync(List<CategoryResponseDto> categories)
     {
-        if (await _context.Clients.AnyAsync())
+        // Check if clients already exist
+        var existingClients = await _clientService.GetAllAsync(1, 10);
+        if (existingClients.Items.Any())
         {
             _logger.LogInformation("Clients already seeded — skipping.");
             return;
         }
 
-        // Categories must exist before we can assign them
-        var categories = await _context.Categories.ToListAsync();
-        if (!categories.Any())
+        if (categories == null || !categories.Any())
         {
-            _logger.LogWarning("No categories found — run CategorySeeder first.");
+            _logger.LogError("No categories provided. Cannot seed clients without categories.");
             return;
         }
 
-        // Build a lookup by code for easy access
+        // Build lookup by code for easy access
         var byCode = categories.ToDictionary(c => c.Code);
 
-        var clients = BuildClients(byCode);
+        // Get count of the dictionary (number of key-value pairs)
+        int dictCount = byCode.Count;
 
-        await _context.Clients.AddRangeAsync(clients);
-        await _context.SaveChangesAsync();
+        var clientRequests = BuildClientRequests(byCode);
+        Random random = new Random();
 
-        _logger.LogInformation("Seeded {Count} clients.", clients.Count);
+        if (dictCount > 0)
+        {
+            foreach (var request in clientRequests)
+            {
+                try
+                {
+                    int randomIndex = random.Next(dictCount);// random amount of categories to assign (0 to dictCount-1)
+                    var indexList= new List<int>();
+
+                    for(int i=0; i<randomIndex; i++)
+                    {
+                        indexList.Add(random.Next(dictCount));// random index to select a category from the dictionary
+                    }
+
+                    var distinctIndexes = indexList.Distinct().ToList(); // Ensure unique category assignments
+
+                    var CategoryIdsToAssign = new List<Guid>();
+
+                    foreach (var index in distinctIndexes)
+                    {
+                        var categoryId = byCode.Values.ElementAt(index).Id;
+                        if(!CategoryIdsToAssign.Contains(categoryId))
+                            CategoryIdsToAssign.Add(categoryId);
+                    }
+
+                    // Create client via service (publishes event)
+                    var client = await _clientService.CreateAsync(request);
+                    _logger.LogInformation("Seeded client: {Name} (Email: {Email}, Id: {Id})",
+                                                             client.Name, client.Email, client.Id);
+
+                    foreach (var categoryId in CategoryIdsToAssign)
+                    {
+                        try
+                        {
+                            await _clientService.AddCategoryAsync(client.Id, categoryId, SystemUserId);
+                            var category = byCode.Values.FirstOrDefault(c => c.Id == categoryId);
+                            _logger.LogInformation("  Assigned category '{Category}' to client {Client}",
+                                category?.Name ?? categoryId.ToString(), client.Name);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "  Failed to assign category {CategoryId} to client {Client}",
+                                categoryId, client.Name);
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to seed client: {Name}", request.Name);
+                }
+            }
+        }
+
+        // Handle blocked client separately (after creation)
+        await CreateBlockedClient(byCode);
+
+        // Handle soft-deleted client separately
+        await CreateDeletedClient(byCode);
+
+        _logger.LogInformation("Client seeding completed.");
     }
 
-    // ── Seed data ─────────────────────────────────────────────────────────────
-
-    private static List<Client> BuildClients(Dictionary<string, Category> byCode)
+    private async Task CreateBlockedClient(Dictionary<string, CategoryResponseDto> byCode)
     {
-        Random rnd = new Random();
-        int[] periods = [30, 45, 60, 90, 120];
+        try
+        {
+            var blockedRequest = new CreateClientRequestDto(
+                Name: "Riadh Mansouri",
+                Email: "riadh.mansouri@blocked.tn",
+                Address: "Bardo, Tunis 2000",
+                Phone: "+216 71 000 008",
+                TaxNumber: null,
+                CreditLimit: 10000m,
+                DelaiRetour: null,
+                DuePaymentPeriod: 30);
 
-        var clients = new List<Client>();
+            var blocked = await _clientService.CreateAsync(blockedRequest);
+            await _clientService.BlockAsync(blocked.Id);
+            _logger.LogInformation("Seeded and blocked client: {Name}", blocked.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to seed blocked client");
+        }
+    }
 
-        // ── 1. Standard retail client ──────────────────────────────────────────
-        var alice = Client.Create(
-            name: "Alice Martin",
-            email: "alice.martin@example.com",
-            address: "12 Rue de la Paix, Tunis 1001",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 001",
-            taxNumber: null,
-            creditLimit: 5_000m,
-            delaiRetour: null);   // falls back to category DelaiRetour
+    private async Task CreateDeletedClient(Dictionary<string, CategoryResponseDto> byCode)
+    {
+        try
+        {
+            var deletedRequest = new CreateClientRequestDto(
+                Name: "Société Fantôme",
+                Email: "contact@fantome.tn",
+                Address: "Adresse inconnue",
+                Phone: null,
+                TaxNumber: null,
+                CreditLimit: null,
+                DelaiRetour: null,
+                DuePaymentPeriod: 30);
 
-        AssignCategory(alice, byCode, "STD");
-        clients.Add(alice);
+            var deleted = await _clientService.CreateAsync(deletedRequest);
+            await _clientService.DeleteAsync(deleted.Id);
+            _logger.LogInformation("Seeded and soft-deleted client: {Name}", deleted.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to seed deleted client");
+        }
+    }
 
-        // ── 2. VIP client with personal credit override ────────────────────────
-        var omar = Client.Create(
-            name: "Omar Ben Salah",
-            email: "omar.bensalah@acmecorp.tn",
-            address: "45 Avenue Habib Bourguiba, Sfax 3000",
-            phone: "+216 74 000 002",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            taxNumber: "TN12345678",
-            creditLimit: 50_000m,
-            delaiRetour: null);
+    private List<CreateClientRequestDto> BuildClientRequests(Dictionary<string, CategoryResponseDto> byCode)
+    {
+        var clients = new List<CreateClientRequestDto>();
 
-        AssignCategory(omar, byCode, "VIP");
-        clients.Add(omar);
+        // Helper to get category ID by code
+        Guid? GetCategoryId(string code) => byCode.TryGetValue(code, out var cat) ? cat.Id : (Guid?)null;
 
-        // ── 3. Wholesale company — bulk pricing, large credit ──────────────────
-        var globalTrade = Client.Create(
-            name: "Global Trade SARL",
-            email: "contact@globaltrade.tn",
-            address: "Zone Industrielle, Monastir 5000",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 73 000 003",
-            taxNumber: "TN98765432",
-            creditLimit: 200_000m,
-            delaiRetour: null);
+        // 1. Standard retail client
+        clients.Add(new CreateClientRequestDto(
+            Name: "Alice Martin",
+            Email: "alice.martin@example.com",
+            Address: "12 Rue de la Paix, Tunis 1001",
+            Phone: "+216 71 000 001",
+            TaxNumber: null,
+            CreditLimit: 5000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 30));
 
-        AssignCategory(globalTrade, byCode, "WHL");
-        clients.Add(globalTrade);
+        // 2. VIP client
+        clients.Add(new CreateClientRequestDto(
+            Name: "Omar Ben Salah",
+            Email: "omar.bensalah@acmecorp.tn",
+            Address: "45 Avenue Habib Bourguiba, Sfax 3000",
+            Phone: "+216 74 000 002",
+            TaxNumber: "TN12345678",
+            CreditLimit: 50000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 45));
 
-        // ── 4. Public sector client ────────────────────────────────────────────
-        var ministry = Client.Create(
-            name: "Ministère de l'Éducation",
-            email: "achats@education.gov.tn",
-            address: "Boulevard Bab Benat, Tunis 1008",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 004",
-            taxNumber: "TN00000001",
-            creditLimit: 500_000m,
-            delaiRetour: null);
+        // 3. Wholesale company
+        clients.Add(new CreateClientRequestDto(
+            Name: "Global Trade SARL",
+            Email: "contact@globaltrade.tn",
+            Address: "Zone Industrielle, Monastir 5000",
+            Phone: "+216 73 000 003",
+            TaxNumber: "TN98765432",
+            CreditLimit: 200000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 60));
 
-        AssignCategory(ministry, byCode, "PUB");
-        clients.Add(ministry);
+        // 4. Public sector client
+        clients.Add(new CreateClientRequestDto(
+            Name: "Ministère de l'Éducation",
+            Email: "achats@education.gov.tn",
+            Address: "Boulevard Bab Benat, Tunis 1008",
+            Phone: "+216 71 000 004",
+            TaxNumber: "TN00000001",
+            CreditLimit: 500000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 90));
 
-        // ── 5. Reseller — assigned two categories ──────────────────────────────
-        var techResell = Client.Create(
-            name: "TechResell Pro",
-            email: "info@techresell.tn",
-            address: "Centre Urbain Nord, Tunis 1082",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 005",
-            taxNumber: "TN11223344",
-            creditLimit: 80_000m,
-            delaiRetour: null);
+        // 5. Reseller with two categories
+        var resellerCategories = new List<Guid>();
+        if (GetCategoryId("RSL").HasValue) resellerCategories.Add(GetCategoryId("RSL").Value);
+        if (GetCategoryId("WHL").HasValue) resellerCategories.Add(GetCategoryId("WHL").Value);
 
-        AssignCategory(techResell, byCode, "RSL");
-        AssignCategory(techResell, byCode, "WHL");   // also qualifies for wholesale
-        clients.Add(techResell);
+        clients.Add(new CreateClientRequestDto(
+            Name: "TechResell Pro",
+            Email: "info@techresell.tn",
+            Address: "Centre Urbain Nord, Tunis 1082",
+            Phone: "+216 71 000 005",
+            TaxNumber: "TN11223344",
+            CreditLimit: 80000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 45
+        ));
 
-        // ── 6. New client — minimal profile, short return window ───────────────
-        var newbie = Client.Create(
-            name: "Yasmine Trabelsi",
-            email: "yasmine.trabelsi@gmail.com",
-            address: "Cité El Khadra, Tunis 1003",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: null,
-            taxNumber: null,
-            creditLimit: 1_000m,
-            delaiRetour: null);
+        // 6. New client
+        clients.Add(new CreateClientRequestDto(
+            Name: "Yasmine Trabelsi",
+            Email: "yasmine.trabelsi@gmail.com",
+            Address: "Cité El Khadra, Tunis 1003",
+            Phone: null,
+            TaxNumber: null,
+            CreditLimit: 1000m,
+            DelaiRetour: null,
+            DuePaymentPeriod: 15));
 
-        AssignCategory(newbie, byCode, "NEW");
-        clients.Add(newbie);
+        // 7. Client with personal DelaiRetour override
+        clients.Add(new CreateClientRequestDto(
+            Name: "Karim Jebali",
+            Email: "karim.jebali@premium.tn",
+            Address: "Les Berges du Lac, Tunis 1053",
+            Phone: "+216 71 000 007",
+            TaxNumber: null,
+            CreditLimit: 30000m,
+            DelaiRetour: 90,
+            DuePaymentPeriod: 60));
 
-        // ── 7. Client with a personal DelaiRetour override ─────────────────────
-        var premiumLoyalty = Client.Create(
-            name: "Karim Jebali",
-            email: "karim.jebali@premium.tn",
-            address: "Les Berges du Lac, Tunis 1053",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 007",
-            taxNumber: null,
-            creditLimit: 30_000m,
-            delaiRetour: 90);   // personal 90-day override — wins over any category
-
-        AssignCategory(premiumLoyalty, byCode, "VIP");
-        clients.Add(premiumLoyalty);
-
-        // ── 8. Blocked client ──────────────────────────────────────────────────
-        var blocked = Client.Create(
-            name: "Riadh Mansouri",
-            email: "riadh.mansouri@blocked.tn",
-            address: "Bardo, Tunis 2000",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 008",
-            taxNumber: null,
-            creditLimit: 10_000m,
-            delaiRetour: null);
-
-        AssignCategory(blocked, byCode, "STD");
-        blocked.Block();   // simulate a client blocked for payment issues
-        clients.Add(blocked);
-
-        // ── 9. Soft-deleted client — to test GetPagedDeleted ──────────────────
-        var deleted = Client.Create(
-            name: "Société Fantôme",
-            email: "contact@fantome.tn",
-            address: "Adresse inconnue",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: null,
-            taxNumber: null,
-            creditLimit: null,
-            delaiRetour: null);
-
-        deleted.Delete();
-        clients.Add(deleted);
-
-        // ── 10. Client without any category — tests null return window ─────────
-        var noCat = Client.Create(
-            name: "Slim Bouaziz",
-            email: "slim.bouaziz@nocategory.tn",
-            address: "Ariana 2080",
-            duePaymentPeriod: periods[rnd.Next(periods.Length)],
-            phone: "+216 71 000 010",
-            taxNumber: null,
-            creditLimit: null,
-            delaiRetour: null);
-
-        clients.Add(noCat);
+        // 8. Client without any category
+        clients.Add(new CreateClientRequestDto(
+            Name: "Slim Bouaziz",
+            Email: "slim.bouaziz@nocategory.tn",
+            Address: "Ariana 2080",
+            Phone: "+216 71 000 010",
+            TaxNumber: null,
+            CreditLimit: null,
+            DelaiRetour: null,
+            DuePaymentPeriod: 30));
 
         return clients;
-    }
-
-    // ── Helper — safely assigns a category only if the code exists ────────────
-    private static void AssignCategory(
-        Client client,
-        Dictionary<string, Category> byCode,
-        string code)
-    {
-        if (!byCode.TryGetValue(code, out var category))
-            return;  // category not found in DB — skip silently
-
-        if (!category.IsActive)
-            return;  // inactive categories cannot be assigned (domain guard)
-
-        client.AddCategory(category, SystemUserId);
     }
 }

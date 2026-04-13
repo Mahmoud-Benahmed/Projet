@@ -33,8 +33,9 @@ public class DatabaseSeeder
 
         _logger.LogInformation("Starting database seed...");
 
-        await _categorySeeder.SeedAsync();
-        await _clientSeeder.SeedAsync();
+        var categories = await _categorySeeder.SeedAsync();
+
+        await _clientSeeder.SeedAsync(categories);
 
         _logger.LogInformation("Database seed complete.");
     }

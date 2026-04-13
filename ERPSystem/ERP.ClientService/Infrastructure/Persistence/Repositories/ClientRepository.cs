@@ -1,0 +1,148 @@
+﻿using ERP.ClientService.Application.DTOs;
+using ERP.ClientService.Application.Interfaces;
+using ERP.ClientService.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace ERP.ClientService.Infrastructure.Persistence.Repositories;
+
+public class ClientRepository : IClientRepository
+{
+    private readonly ClientDbContext _context;
+
+    public ClientRepository(ClientDbContext context) => _context = context;
+
+    public async Task AddAsync(Client client) =>
+        await _context.Clients.AddAsync(client);
+
+    public Task SaveChangesAsync() =>
+        _context.SaveChangesAsync();
+
+    public Task<Client?> GetByIdAsync(Guid id) =>
+        _context.Clients
+                .Include(c => c.ClientCategories)
+                    .ThenInclude(cc => cc.Category)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+    public Task<Client?> GetByIdDeletedAsync(Guid id) =>
+        _context.Clients
+                .IgnoreQueryFilters()
+                .Include(c => c.ClientCategories)
+                    .ThenInclude(cc => cc.Category)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+    public Task<Client?> GetByEmailAsync(string email) =>
+        _context.Clients
+                .FirstOrDefaultAsync(c =>
+                    c.Email == email.Trim().ToLowerInvariant());
+
+    public async Task<(List<Client> Items, int TotalCount)> GetAllAsync(
+        int pageNumber, int pageSize)
+    {
+        var query = _context.Clients.OrderBy(c => c.Name);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<(List<Client> Items, int TotalCount)> GetPagedByCategoryIdAsync(
+        Guid categoryId, int pageNumber, int pageSize)
+    {
+        var query = _context.Clients
+                            .Where(c => c.ClientCategories
+                                .Any(cc => cc.CategoryId == categoryId))
+                            .OrderBy(c => c.Name);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<(List<Client> Items, int TotalCount)> GetPagedDeletedAsync(
+        int pageNumber, int pageSize)
+    {
+        var query = _context.Clients
+                            .IgnoreQueryFilters()
+                            .Where(c => c.IsDeleted)
+                            .OrderByDescending(c => c.UpdatedAt);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<(List<Client> Items, int TotalCount)> GetPagedByNameAsync(
+        string nameFilter, int pageNumber, int pageSize)
+    {
+        var term = nameFilter.Trim().ToLower();
+        var query = _context.Clients
+                            .Where(c => c.Name.ToLower().Contains(term))
+                            .OrderBy(c => c.Name);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Include(c => c.ClientCategories)
+                .ThenInclude(cc => cc.Category)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<ClientStatsDto> GetStatsAsync()
+    {
+        var counts = await _context.Clients
+            .IgnoreQueryFilters()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(c => !c.IsDeleted),
+                Active = g.Count(c => !c.IsBlocked && !c.IsDeleted),
+                Blocked = g.Count(c => c.IsBlocked && !c.IsDeleted),
+                Deleted = g.Count(c => c.IsDeleted),
+            })
+            .FirstOrDefaultAsync();
+
+        var perCategory = await _context.Categories
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                ClientCount = c.ClientCategories.Count()
+            })
+            .OrderByDescending(x => x.ClientCount)
+            .ToListAsync();
+
+        var perCategoryDto = perCategory
+            .Select(x => new CategoryClientCountDto(x.Id, x.Name, x.ClientCount))
+            .ToList();
+
+        return counts is null
+            ? new ClientStatsDto(0, 0, 0, 0, perCategoryDto)
+            : new ClientStatsDto(
+                counts.Total,
+                counts.Active,
+                counts.Blocked,
+                counts.Deleted,
+                perCategoryDto);
+    }
+}
