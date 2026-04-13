@@ -36,22 +36,14 @@ services:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command: |
-      "
       echo 'Resetting consumer group offsets...'
-      kafka-consumer-groups \
-        --bootstrap-server kafka:9092 \
-        --group user-service-group \
-        --topic UserRegistered \
-        --reset-offsets \
-        --to-latest \
-        --execute
+      kafka-consumer-groups --bootstrap-server kafka:9092 --group user-service-group --topic UserRegistered --reset-offsets --to-latest --execute
       echo 'Done.'
-      "
     networks:
       - erp-network
-    restart: "no"  # run once and exit
+    restart: "no"
 
 networks:
   erp-network:
-    name: erp-network
     driver: bridge
+    name: erp-network
