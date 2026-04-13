@@ -300,10 +300,6 @@
           </span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.CLIENT_COUNT' | translate }}</span>
-          <span class="detail-value">{{ selectedCategory.clientCount }}</span>
-        </div>
-        <div class="detail-item">
           <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.STATUS' | translate }}</span>
           <span class="badge" [ngClass]="selectedCategory.isActive ? 'badge--active' : 'badge--blocked'">
             {{ selectedCategory.isActive ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}

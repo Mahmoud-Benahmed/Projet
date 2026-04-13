@@ -9,7 +9,6 @@ export interface AssignedCategoryDto {
   id: string;
   name: string;
   code: string;
-  assignedAt: string;
   delaiRetour: number;
   duePaymentPeriod: number;
   discountRate: number | null;
@@ -17,6 +16,8 @@ export interface AssignedCategoryDto {
   useBulkPricing: boolean;
   isActive: boolean;
   isDeleted: boolean;
+  createdAt: string,
+  updatedAt?: string
 }
 export interface ClientResponseDto {
   id: string;

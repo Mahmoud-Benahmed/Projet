@@ -307,7 +307,7 @@ export class ArticleComponent implements OnInit {
         unit:       val.unit,
         categoryId: val.categoryId,
         barCode:    val.barCode,
-        tva: val.tva != null ? val.tva / 100 : undefined,      };
+        tva: val.tva};
       this.articleService.create(dto).subscribe({
         next: () => {
           this.reload();
@@ -324,7 +324,7 @@ export class ArticleComponent implements OnInit {
         unit:       val.unit,
         categoryId: val.categoryId,
         barCode:    val.barCode ?? undefined,
-        tva: val.tva != null ? val.tva / 100 : undefined,
+        tva: val.tva,
       };
       this.articleService.update(this.selectedArticle.id, dto).subscribe({
         next: () => {

@@ -11,14 +11,13 @@ export interface ClientCategoryResponseDto {
   code: string;
   delaiRetour: number;
   duePaymentPeriod: number;
-  discountRate?: number | null;
-  creditLimitMultiplier?: number | null;
+  discountRate?: number;
+  creditLimitMultiplier?: number;
   useBulkPricing: boolean;
   isActive: boolean;
   isDeleted: boolean;
   createdAt: string;
   updatedAt?: string;
-  clientCount: number;
 }
 
 export interface CreateCategoryRequestDto {
