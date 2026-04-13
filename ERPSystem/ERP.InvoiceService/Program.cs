@@ -1,14 +1,22 @@
-
-
-using ERP.InvoiceService.Infrastructure.Messaging;
+using ERP.InvoiceService.Application.Interfaces;
+using ERP.InvoiceService.Application.Services.LocalCache;
+using ERP.InvoiceService.Application.Services.LocalCache.ArticleCache;
+using ERP.InvoiceService.Application.Services.LocalCache.ClientCache;
+using ERP.InvoiceService.Infrastructure.Messaging.ArticleEvents.Article;
+using ERP.InvoiceService.Infrastructure.Messaging.ClientEvents.Category;
+using ERP.InvoiceService.Infrastructure.Messaging.ClientEvents.Client;
 using ERP.InvoiceService.Infrastructure.Persistence;
+using ERP.InvoiceService.Infrastructure.Persistence.Repositories;
+using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache;
+using ERP.InvoiceService.Infrastructure.Messaging.ArticleEvents.Category;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Application.Services;
-using InvoiceService.Infrastructure.Seeders;
 using InvoiceService.Middleware;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
+using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ClientCache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,25 +70,30 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
 builder.Services.AddScoped<IInvoicesService, InvoicesService>();
 
+// Article cache dependencies
+builder.Services.AddScoped<IArticleCacheRepository, ArticleCacheRepository>();
+builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
+builder.Services.AddScoped<IArticleEventHandler, ArticleEventHandler>();
+builder.Services.AddHostedService<ArticleEventConsumer>();
 
-// =========================
-// HTTP CLIENTS
-// =========================
-builder.Services.AddHttpClient<IArticleServiceHttpClient, ArticleServiceHttpClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:ArticleService:BaseUrl"]
-            ?? throw new InvalidOperationException(
-                "Services:ArticleService:BaseUrl is not configured."));
-});
+// Article categories cache dependencies
+builder.Services.AddScoped<ICategoryCacheRepository, CategoryCacheRepository>();
+builder.Services.AddScoped<ICategoryCacheService, CategoryCacheService>();
+builder.Services.AddScoped<ICategoryEventHandler, CategoryEventHandler>();
+builder.Services.AddHostedService<CategoryEventConsumer>();
 
-builder.Services.AddHttpClient<IClientServiceHttpClient, ClientServiceHttpClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:ClientService:BaseUrl"]
-            ?? throw new InvalidOperationException(
-                "Services:ClientService:BaseUrl is not configured."));
-});
+// Client cache dependencies
+builder.Services.AddScoped<IClientCacheRepository, ClientCacheRepository>();
+builder.Services.AddScoped<IClientCacheService, ClientCacheService>();
+builder.Services.AddScoped<IClientEventHandler, ClientEventHandler>();
+builder.Services.AddHostedService<ClientEventConsumer>();
+
+// Client category cache dependencies
+builder.Services.AddScoped<IClientCategoryCacheRepository, ClientCategoryCacheRepository>();
+builder.Services.AddScoped<IClientCategoryCacheService, ClientCategoryCacheService>();
+builder.Services.AddScoped<IClientCategoryEventHandler, ClientCategoryEventHandler>();
+builder.Services.AddHostedService<ClientCategoryEventConsumer>();
+
 
 // =========================
 // CONTROLLERS & API
@@ -89,7 +102,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddDatabaseSeeders();
 
 var app = builder.Build();
 
@@ -111,12 +123,9 @@ app.UseExceptionHandler(
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<InvoiceDbContext>();
-    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
 
     await context.Database.EnsureDeletedAsync();
     await context.Database.MigrateAsync();
-    await seeder.SeedAsync();
-
 }
 app.UseSwagger();
 app.UseSwaggerUI();

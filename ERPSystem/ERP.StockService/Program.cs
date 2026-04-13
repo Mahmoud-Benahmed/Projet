@@ -1,9 +1,21 @@
-using ERP.InvoiceService.Infrastructure.Messaging;
+
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Application.Services;
+using ERP.StockService.Application.Services.LocalCache;
+using ERP.StockService.Application.Services.LocalCache.ArticleCache;
+using ERP.StockService.Application.Services.LocalCache.ClientCache;
+using ERP.StockService.Application.Services.LocalCache.Fournisseur;
 using ERP.StockService.Infrastructure.Messaging;
+using ERP.StockService.Infrastructure.Messaging.ArticleEvents.Article;
+using ERP.StockService.Infrastructure.Messaging.ArticleEvents.Category;
+using ERP.StockService.Infrastructure.Messaging.ClientEvents.Category;
+using ERP.StockService.Infrastructure.Messaging.ClientEvents.Client;
+using ERP.StockService.Infrastructure.Messaging.FournisseurEvents;
 using ERP.StockService.Infrastructure.Persistence;
 using ERP.StockService.Infrastructure.Persistence.Repositories;
+using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache;
+using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
+using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache.ClientCache;
 using ERP.StockService.Infrastructure.Persistence.Seeders;
 using ERP.StockService.Middleware;
 using Microsoft.AspNetCore.Mvc;
@@ -26,37 +38,9 @@ builder.Services.AddDbContext<StockDbContext>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(
-            new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
-
-
-// =========================
-// HTTP CLIENTS
-// =========================
-builder.Services.AddHttpClient<IArticleServiceHttpClient, ArticleServiceHttpClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:ArticleService:BaseUrl"]
-            ?? throw new InvalidOperationException(
-                "Services:ArticleService:BaseUrl is not configured."));
-});
-
-builder.Services.AddHttpClient<IClientServiceHttpClient, ClientServiceHttpClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:ClientService:BaseUrl"]
-            ?? throw new InvalidOperationException(
-                "Services:ClientService:BaseUrl is not configured."));
-});
-
-builder.Services.AddHttpClient<IFournisseurServiceHttpClient, FournisseurServiceHttpClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:FournisseurService:BaseUrl"]
-            ?? throw new InvalidOperationException(
-                "Services:FournisseurService:BaseUrl is not configured."));
-});
 
 // =========================
 // DEPENDENCY INJECTION
@@ -73,6 +57,38 @@ builder.Services.AddScoped<IBonSortieService, BonSortieService>();
 builder.Services.AddScoped<IBonRetourService, BonRetourService>();
 builder.Services.AddScoped<IJournalStockRepository, JournalStockRepository>();
 
+// Article cache dependencies
+builder.Services.AddScoped<IArticleCacheRepository, ArticleCacheRepository>();
+builder.Services.AddScoped<IArticleCacheService, ArticleCacheService>();
+builder.Services.AddScoped<IArticleEventHandler, ArticleEventHandler>();
+builder.Services.AddHostedService<ArticleEventConsumer>();
+
+// Category cache dependencies
+builder.Services.AddScoped<ICategoryCacheRepository, CategoryCacheRepository>();
+builder.Services.AddScoped<ICategoryCacheService, CategoryCacheService>();
+builder.Services.AddScoped<ICategoryEventHandler, CategoryEventHandler>();
+builder.Services.AddHostedService<CategoryEventConsumer>();
+
+// Client cache dependencies
+builder.Services.AddScoped<IClientCacheRepository, ClientCacheRepository>();
+builder.Services.AddScoped<IClientCacheService, ClientCacheService>();
+builder.Services.AddScoped<IClientEventHandler, ClientEventHandler>();
+builder.Services.AddHostedService<ClientEventConsumer>();
+
+builder.Services.AddScoped<IClientCategoryCacheRepository, ClientCategoryCacheRepository>();
+builder.Services.AddScoped<IClientCategoryCacheService, ClientCategoryCacheService>();
+builder.Services.AddScoped<IClientCategoryEventHandler, ClientCategoryEventHandler>();
+builder.Services.AddHostedService<ClientCategoryEventConsumer>();
+
+builder.Services.AddScoped<IFournisseurCacheRepository, FournisseurCacheRepository>();
+builder.Services.AddScoped<IFournisseurCacheService, FournisseurCacheService>();
+builder.Services.AddScoped<IFournisseurEventHandler, FournisseurEventHandler>();
+builder.Services.AddHostedService<FournisseurEventConsumer>();
+
+
+
+
+
 // =========================
 // SEEDERS
 // =========================
@@ -84,11 +100,6 @@ builder.Services.AddStockSeeders(); // Add this line!
 builder.Services
     .AddControllers(options =>
         options.SuppressAsyncSuffixInActionNames = false)
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    })
     .ConfigureApiBehaviorOptions(options =>
     {
         // Unified validation error response — Data Annotations return this shape

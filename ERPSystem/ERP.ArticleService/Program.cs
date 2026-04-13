@@ -1,5 +1,6 @@
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Application.Services;
+using ERP.ArticleService.Infrastructure.Messaging;
 using ERP.ArticleService.Infrastructure.Persistence;
 using ERP.ArticleService.Infrastructure.Persistence.Seeders;
 using ERP.ArticleService.Middleware;
@@ -61,6 +62,15 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IArticleCodeService, ArticleCodeService>();
 
 // =========================
+// MESSAGING
+// =========================
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+
+builder.Services.AddScoped<ArticleCodeSeeder>();
+builder.Services.AddScoped<CategorySeeder>();
+builder.Services.AddScoped<ArticleSeeder>();
+
+// =========================
 // CONTROLLERS & API
 // =========================
 builder.Services.AddControllers();
@@ -72,30 +82,45 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ArticleDbContext>();
-    await context.Database.EnsureDeletedAsync();
-    await context.Database.MigrateAsync();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
-    await context.ArticleCodes.IgnoreQueryFilters().ExecuteDeleteAsync();
-    await context.Articles.IgnoreQueryFilters().ExecuteDeleteAsync();
-    await context.Categories.IgnoreQueryFilters().ExecuteDeleteAsync();
+    try
+    {
+        var context = services.GetRequiredService<ArticleDbContext>();
 
-    var articleCodeSeeder = new ArticleCodeSeeder(
-        context,
-        scope.ServiceProvider.GetRequiredService<ILogger<ArticleCodeSeeder>>());
-    await articleCodeSeeder.SeedAsync();
+        logger.LogInformation("Resetting database...");
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.MigrateAsync();
 
-    var categorySeeder = new CategorySeeder(
-        scope.ServiceProvider.GetRequiredService<ICategoryService>(),
-        scope.ServiceProvider.GetRequiredService<ILogger<CategorySeeder>>());
-    await categorySeeder.SeedAsync();
+        logger.LogInformation("Clearing existing data...");
+        await context.ArticleCodes.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await context.Articles.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await context.Categories.IgnoreQueryFilters().ExecuteDeleteAsync();
 
-    var articleSeeder = new ArticleSeeder(
-        scope.ServiceProvider.GetRequiredService<IArticleService>(),
-        scope.ServiceProvider.GetRequiredService<ICategoryService>(),
-        scope.ServiceProvider.GetRequiredService<ILogger<ArticleSeeder>>());
-    await articleSeeder.SeedAsync();
+        // ✅ RESOLVE SEEDERS FROM DI (NOT using 'new')
+        logger.LogInformation("Seeding article codes...");
+        var articleCodeSeeder = services.GetRequiredService<ArticleCodeSeeder>();
+        await articleCodeSeeder.SeedAsync();
+
+        logger.LogInformation("Seeding categories...");
+        var categorySeeder = services.GetRequiredService<CategorySeeder>();
+        await categorySeeder.SeedAsync();
+
+        logger.LogInformation("Seeding articles...");
+        var articleSeeder = services.GetRequiredService<ArticleSeeder>();
+        await articleSeeder.SeedAsync();
+
+        logger.LogInformation("✅ All seeding completed successfully!");
+    }
+    catch (Exception ex)
+    {
+
+        logger.LogError(ex, "❌ An error occurred while seeding the database.");
+        throw;
+    }
 }
+
 
 // =========================
 // PIPELINE
