@@ -68,6 +68,12 @@ namespace InvoiceService.Domain
             CalculateTotals();
             UpdatedAt = DateTime.UtcNow;
         }
+
+        public void ClearItems()
+        {
+            _items.Clear();
+        }
+
         /// <param name="itemId">ID of the item to remove</param>
         /// <exception cref="InvoiceDomainException">Thrown if invoice is not in DRAFT status or item not found</exception>
         public void RemoveItem(Guid itemId)
@@ -160,6 +166,7 @@ namespace InvoiceService.Domain
             if (Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
+            ClearItems();
             // Update header
             InvoiceDate = invoiceDate;
             DueDate = dueDate;

@@ -199,7 +199,7 @@ public sealed class Category
     private static void ValidateCreditLimitMultiplier(decimal? multiplier)
     {
         if (!multiplier.HasValue) return;
-        if (multiplier <= 0)
+        if (multiplier < 0)
             throw new ArgumentException(
                 "Credit limit multiplier must be positive.",
                 nameof(multiplier));

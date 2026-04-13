@@ -1,122 +1,272 @@
+using ERP.InvoiceService.Domain.LocalCache.Article;
+using ERP.InvoiceService.Domain.LocalCache.Client;
 using InvoiceService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence
 {
-
     public class InvoiceDbContext : DbContext
     {
-
         public InvoiceDbContext(DbContextOptions<InvoiceDbContext> options)
             : base(options) { }
+
         public DbSet<Invoice> Invoices => Set<Invoice>();
         public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
         public DbSet<InvoiceSequence> InvoiceSequences { get; set; }
+
+        public DbSet<ArticleCache> ArticleCaches => Set<ArticleCache>();
+        public DbSet<Domain.LocalCache.Article.CategoryCache> ArticleCategoryCaches => Set<Domain.LocalCache.Article.CategoryCache>();
+
+        public DbSet<ClientCache> ClientCaches => Set<ClientCache>();
+        public DbSet<Domain.LocalCache.Client.CategoryCache> ClientCategoryMasterCaches => Set<Domain.LocalCache.Client.CategoryCache>();
+        public DbSet<ClientCategoryCache> ClientCategoryAssignments => Set<ClientCategoryCache>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ════════════════════════════════════════════════════════════════════
-            // INVOICE ENTITY CONFIGURATION
-            // ════════════════════════════════════════════════════════════════════
+            modelBuilder.ApplyConfiguration(new InvoiceConfiguration());
+            modelBuilder.ApplyConfiguration(new InvoiceItemConfiguration());
+            modelBuilder.ApplyConfiguration(new InvoiceSequenceConfiguration());
+            modelBuilder.ApplyConfiguration(new ArtCategoryCacheConfiguration());
+            modelBuilder.ApplyConfiguration(new ArticleCacheConfiguration());
+            modelBuilder.ApplyConfiguration(new ClientCacheConfiguration());
+            modelBuilder.ApplyConfiguration(new CltCategoryCacheConfiguration());
+            modelBuilder.ApplyConfiguration(new ClientCategoryConfiguration());
+        }
+    }
 
-            modelBuilder.Entity<Invoice>(entity =>
-            {
-                // ──── TABLE ────
-                entity.ToTable("Invoices");
+    // ═══════════════════════════════════════════════════════════════════════════
+    // INVOICE CONFIGURATIONS
+    // ═══════════════════════════════════════════════════════════════════════════
 
+    internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
+    {
+        public void Configure(EntityTypeBuilder<Invoice> entity)
+        {
+            entity.ToTable("Invoices");
 
-                entity.HasKey(i => i.Id);
+            entity.HasKey(i => i.Id);
 
+            entity.Property(i => i.InvoiceNumber)
+                  .IsRequired()
+                  .HasMaxLength(50);
 
-                entity.Property(i => i.InvoiceNumber)
-                      .IsRequired()
-                      .HasMaxLength(50);
+            entity.Property(i => i.ClientFullName)
+                  .IsRequired()
+                  .HasMaxLength(200);
 
-                entity.Property(i => i.ClientFullName)
-                      .IsRequired()
-                      .HasMaxLength(200);
+            entity.Property(i => i.ClientAddress)
+                  .IsRequired()
+                  .HasMaxLength(500);
 
-                entity.Property(i => i.ClientAddress)
-                      .IsRequired()
-                      .HasMaxLength(500);
+            entity.Property(i => i.AdditionalNotes)
+                  .HasMaxLength(1000);
 
-                entity.Property(i => i.AdditionalNotes)
-                      .HasMaxLength(1000);
+            entity.Property(i => i.TotalHT)
+                  .HasColumnType("decimal(18,4)");
 
+            entity.Property(i => i.TotalTVA)
+                  .HasColumnType("decimal(18,4)");
 
-                entity.Property(i => i.TotalHT)
-                      .HasColumnType("decimal(18,4)");
+            entity.Property(i => i.TotalTTC)
+                  .HasColumnType("decimal(18,4)");
 
-                entity.Property(i => i.TotalTVA)
-                      .HasColumnType("decimal(18,4)");
+            entity.Property(i => i.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20);
 
-                entity.Property(i => i.TotalTTC)
-                      .HasColumnType("decimal(18,4)");
+            entity.HasIndex(i => i.InvoiceNumber).IsUnique();
 
-                entity.Property(i => i.Status)
-                      .HasConversion<string>()
-                      .HasMaxLength(20);
-                entity.HasIndex(i => i.InvoiceNumber).IsUnique();
+            entity.HasMany(i => i.Items)
+                  .WithOne()
+                  .HasForeignKey(ii => ii.InvoiceId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .IsRequired();
 
-                entity.HasMany(i => i.Items)
-                      .WithOne()
-                      .HasForeignKey(ii => ii.InvoiceId)
-                      .OnDelete(DeleteBehavior.Cascade)
-                      .IsRequired();
+            entity.HasQueryFilter(i => !i.IsDeleted);
+        }
+    }
 
+    internal sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
+    {
+        public void Configure(EntityTypeBuilder<InvoiceItem> entity)
+        {
+            entity.ToTable("InvoiceItems");
 
-                entity.HasQueryFilter(i => !i.IsDeleted);
-                modelBuilder.Entity<InvoiceItem>()
-                .Property<Guid>("InvoiceId")
-                .IsRequired();
-            });
+            entity.HasKey(ii => ii.Id);
 
+            entity.Property(ii => ii.ArticleName)
+                  .IsRequired()
+                  .HasMaxLength(200);
 
-            modelBuilder.Entity<InvoiceItem>(entity =>
-            {
-                // ──── TABLE ────
-                entity.ToTable("InvoiceItems");
+            entity.Property(ii => ii.Quantity)
+                  .HasColumnType("decimal(18,4)")
+                  .IsRequired();
 
-                // ──── PRIMARY KEY ────
-                entity.HasKey(ii => ii.Id);
+            entity.Property(ii => ii.ArticleBarCode)
+                  .IsRequired()
+                  .HasMaxLength(100);
 
-                // ──── COLUMNS ────
+            entity.Property(ii => ii.UniPriceHT)
+                  .HasColumnType("decimal(18,4)");
 
-                entity.Property(ii => ii.ArticleName)
-                      .IsRequired()
-                      .HasMaxLength(200);
+            entity.Property(ii => ii.TaxRate)
+                  .HasColumnType("decimal(5,4)");
 
-                entity.Property(ii => ii.Quantity)
-                      .HasColumnType("decimal(18,4)")
-                      .IsRequired();
+            entity.Property(ii => ii.TotalHT)
+                  .HasColumnType("decimal(18,4)");
 
-                entity.Property(ii => ii.ArticleBarCode)
-                      .IsRequired()
-                      .HasMaxLength(100);
+            entity.Property(ii => ii.TotalTTC)
+                  .HasColumnType("decimal(18,4)");
 
-                // Decimal columns with precision
-                entity.Property(ii => ii.UniPriceHT)
-                      .HasColumnType("decimal(18,4)");
+            entity.Property<Guid>("InvoiceId").IsRequired();
+        }
+    }
 
-                entity.Property(ii => ii.TaxRate)
-                      .HasColumnType("decimal(5,4)");
+    internal sealed class InvoiceSequenceConfiguration : IEntityTypeConfiguration<InvoiceSequence>
+    {
+        public void Configure(EntityTypeBuilder<InvoiceSequence> entity)
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Year).IsUnique();
+            entity.Property(e => e.Year).IsRequired();
+            entity.Property(e => e.CurrentNumber).IsRequired();
+        }
+    }
 
-                entity.Property(ii => ii.TotalHT)
-                      .HasColumnType("decimal(18,4)");
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CACHE CONFIGURATIONS
+    // ═══════════════════════════════════════════════════════════════════════════
 
-                entity.Property(ii => ii.TotalTTC)
-                      .HasColumnType("decimal(18,4)");
-            });
+    internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Article.CategoryCache>
+    {
+        public void Configure(EntityTypeBuilder<Domain.LocalCache.Article.CategoryCache> b)
+        {
+            b.ToTable("ArticleCategoryCache");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).ValueGeneratedNever();
+            b.Property(c => c.Name).IsRequired().HasMaxLength(100);
+            b.Property(c => c.TVA).HasPrecision(5, 2);
+            b.Property(c => c.IsDeleted).HasDefaultValue(false);
+            b.Property(c => c.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.Property(c => c.UpdatedAt).IsRequired(false);
 
-            modelBuilder.Entity<InvoiceSequence>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.Year).IsUnique();
-                entity.Property(e => e.Year).IsRequired();
-                entity.Property(e => e.CurrentNumber).IsRequired();
-            });
+            b.HasIndex(c => c.Name).IsUnique();
+        }
+    }
+
+    internal sealed class ArticleCacheConfiguration : IEntityTypeConfiguration<ArticleCache>
+    {
+        public void Configure(EntityTypeBuilder<ArticleCache> b)
+        {
+            b.ToTable("ArticleCache");
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Id).ValueGeneratedNever();
+            b.Property(a => a.CodeRef).IsRequired().HasMaxLength(50);
+            b.Property(a => a.BarCode).IsRequired().HasMaxLength(13);
+            b.Property(a => a.Libelle).IsRequired().HasMaxLength(200);
+            b.Property(a => a.Prix).HasPrecision(18, 4);
+            b.Property(a => a.TVA).HasPrecision(5, 2);
+            b.Property(a => a.Unit).IsRequired().HasMaxLength(50);
+            b.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            b.Property(a => a.UpdatedAt).IsRequired(false);
+
+            // FK to CategoryCache
+            b.Property(a => a.CategoryId).IsRequired();
+            b.HasOne(a => a.Category)
+             .WithMany()
+             .HasForeignKey(a => a.CategoryId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            // Unique on active rows only
+            b.HasIndex(a => a.CodeRef)
+             .IsUnique()
+             .HasFilter("[IsDeleted] = 0");
+
+            b.HasIndex(a => a.BarCode)
+             .IsUnique()
+             .HasFilter("[IsDeleted] = 0");
+
+            b.HasIndex(a => a.IsDeleted);
+            b.HasIndex(a => a.CategoryId);
+        }
+    }
+
+    internal sealed class ClientCacheConfiguration : IEntityTypeConfiguration<ClientCache>
+    {
+        public void Configure(EntityTypeBuilder<ClientCache> b)
+        {
+            b.ToTable("ClientCache");
+            b.HasKey(c => c.Id);
+
+            b.Property(c => c.Name).IsRequired().HasMaxLength(200);
+            b.Property(c => c.Email).IsRequired().HasMaxLength(200);
+            b.Property(c => c.Address).IsRequired().HasMaxLength(500);
+            b.Property(c => c.Phone).HasMaxLength(20);
+            b.Property(c => c.TaxNumber).HasMaxLength(50);
+            b.Property(c => c.CreditLimit).HasPrecision(18, 4);
+            b.Property(c => c.DelaiRetour);        // nullable int — no IsRequired
+            b.Property(c => c.DuePaymentPeriod);   // nullable int — no IsRequired
+            b.Property(c => c.IsBlocked).IsRequired();
+            b.Property(c => c.IsDeleted).IsRequired();
+            b.Property(c => c.CreatedAt).IsRequired();
+
+            b.HasIndex(c => c.Email)
+             .IsUnique()
+             .HasFilter("[IsDeleted] = 0");
+
+            b.HasIndex(c => c.IsBlocked);
+        }
+    }
+
+    internal sealed class CltCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Client.CategoryCache>
+    {
+        public void Configure(EntityTypeBuilder<Domain.LocalCache.Client.CategoryCache> b)
+        {
+            b.ToTable("ClientCategoryCache");
+            b.HasKey(c => c.Id);
+
+            b.Property(c => c.Name).IsRequired().HasMaxLength(200);
+            b.Property(c => c.Code).IsRequired().HasMaxLength(50);
+            b.Property(c => c.DelaiRetour).IsRequired();
+            b.Property(c => c.DuePaymentPeriod).IsRequired();
+            b.Property(c => c.DiscountRate).HasPrecision(5, 4);
+            b.Property(c => c.CreditLimitMultiplier).HasPrecision(8, 4);
+            b.Property(c => c.UseBulkPricing).IsRequired();
+            b.Property(c => c.IsActive).IsRequired();
+            b.Property(c => c.IsDeleted).IsRequired();
+            b.Property(c => c.CreatedAt).IsRequired();
+
+            b.HasIndex(c => c.Code)
+             .IsUnique()
+             .HasFilter("[IsDeleted] = 0");
+
+            b.HasIndex(c => c.IsActive);
+        }
+    }
+
+    internal sealed class ClientCategoryConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Client.ClientCategoryCache>
+    {
+        public void Configure(EntityTypeBuilder<Domain.LocalCache.Client.ClientCategoryCache> b)
+        {
+            b.ToTable("ClientCategoriesCache");
+
+            b.HasKey(cc => new { cc.ClientId, cc.CategoryId });
+            b.Property(cc => cc.AssignedAt).IsRequired();
+
+            b.HasOne(cc => cc.Client)
+             .WithMany(c => c.ClientCategories)
+             .HasForeignKey(cc => cc.ClientId)
+             .IsRequired()
+             .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(cc => cc.Category)
+             .WithMany()
+             .HasForeignKey(cc => cc.CategoryId)
+             .IsRequired()
+             .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

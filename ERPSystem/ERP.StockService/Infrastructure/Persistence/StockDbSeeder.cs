@@ -1,8 +1,8 @@
-﻿using ERP.InvoiceService.Infrastructure.Messaging;
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Domain;
-using ERP.StockService.Infrastructure.Messaging;
+using ERP.StockService.Domain.LocalCache.Article;
+using ERP.StockService.Domain.LocalCache.Client;
+using ERP.StockService.Domain.LocalCache.Fournisseur;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Seeders;
@@ -10,35 +10,37 @@ namespace ERP.StockService.Infrastructure.Persistence.Seeders;
 public class StockDbSeeder
 {
     private readonly StockDbContext _dbContext;
-    private readonly IArticleServiceHttpClient _articleServiceHttpClient;
-    private readonly IClientServiceHttpClient _clientServiceHttpClient;
-    private readonly IFournisseurServiceHttpClient _fournisseurServiceHttpClient;
+    //private readonly IArticleServiceHttpClient _articleServiceHttpClient;
+
+    private readonly IArticleCacheRepository _articleCacheRepository;
+    private readonly IClientCacheRepository _clientCacheRepository;
+    private readonly IFournisseurCacheRepository _fournisseurCacheRepository;
     private readonly IBonEntreService _bonEntreService;
     private readonly IBonSortieService _bonSortieService;
     private readonly IBonRetourService _bonRetourService;
     private readonly ILogger<StockDbSeeder>? _logger;
 
-    private List<ArticleResponseDto> _articles = new();
-    private List<ClientResponseDto> _clients = new();
-    private List<FournisseurResponseDto> _fournisseurs = new();
+    private List<ArticleCache> _articles = new();
+    private List<ClientCache> _clients = new();
+    private List<FournisseurCache> _fournisseurs = new();
 
     public StockDbSeeder(
         StockDbContext dbContext,
-        IArticleServiceHttpClient articleServiceHttpClient,
-        IClientServiceHttpClient clientServiceHttpClient,
-        IFournisseurServiceHttpClient fournisseurServiceHttpClient,
+        IArticleCacheRepository articleCacheRepository,
+        IClientCacheRepository clientCacheRepository,
+        IFournisseurCacheRepository fournisseurCacheRepository,
         IBonEntreService bonEntreService,
         IBonSortieService bonSortieService,
         IBonRetourService bonRetourService,
         ILogger<StockDbSeeder>? logger = null)
     {
         _dbContext = dbContext;
-        _articleServiceHttpClient = articleServiceHttpClient;
-        _clientServiceHttpClient = clientServiceHttpClient;
+        _articleCacheRepository = articleCacheRepository;
+        _clientCacheRepository = clientCacheRepository;
         _bonEntreService = bonEntreService;
         _bonSortieService = bonSortieService;
         _bonRetourService = bonRetourService;
-        _fournisseurServiceHttpClient = fournisseurServiceHttpClient;
+        _fournisseurCacheRepository = fournisseurCacheRepository;
         _logger = logger;
     }
 
@@ -55,6 +57,8 @@ public class StockDbSeeder
 
         // Fetch external data
         await LoadExternalDataAsync();
+
+        _articles= (await _articleCacheRepository.GetAllAsync()).ToList();
 
         if (!_articles.Any() || !_clients.Any())
         {
@@ -86,18 +90,15 @@ public class StockDbSeeder
         try
         {
             _logger?.LogInformation("Fetching articles from Article Service...");
-            var articlesPaged = await _articleServiceHttpClient.GetAllPagedAsync(pageNumber: 1, pageSize: 100);
-            _articles = articlesPaged.Items?.ToList() ?? new List<ArticleResponseDto>();
+            _articles = await _articleCacheRepository.GetAllAsync();
             _logger?.LogInformation("Loaded {Count} articles", _articles.Count);
 
             _logger?.LogInformation("Fetching clients from Client Service...");
-            var clientsPaged = await _clientServiceHttpClient.GetAllPagedAsync(pageNumber: 1, pageSize: 100);
-            _clients = clientsPaged.Items?.ToList() ?? new List<ClientResponseDto>();
+            _clients = await _clientCacheRepository.GetAllAsync();
             _logger?.LogInformation("Loaded {Count} clients", _clients.Count);
 
             _logger?.LogInformation("Fetching fournisseurs from Fournisseurs Service...");
-            var fournisseursPaged = await _fournisseurServiceHttpClient.GetAllPagedAsync(pageNumber: 1, pageSize: 100);
-            _fournisseurs = fournisseursPaged.Items?.ToList() ?? new List<FournisseurResponseDto>();
+            _fournisseurs = await _fournisseurCacheRepository.GetAllAsync();
             _logger?.LogInformation("Loaded {Count} Fournisseurs", _fournisseurs.Count);
         }
         catch (Exception ex)

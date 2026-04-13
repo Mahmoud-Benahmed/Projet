@@ -94,5 +94,7 @@ internal sealed class ClientCategoryConfiguration : IEntityTypeConfiguration<Cli
          .HasForeignKey(cc => cc.CategoryId)
          .IsRequired()
          .OnDelete(DeleteBehavior.Restrict);
+
+        b.HasQueryFilter(cc => !cc.Category!.IsDeleted);
     }
 }
