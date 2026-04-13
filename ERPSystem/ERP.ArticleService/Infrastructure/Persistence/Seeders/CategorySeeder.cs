@@ -16,32 +16,21 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
         public async Task SeedAsync()
         {
-            var categoryNames = new[]
-            {
-                "Électronique",
-                "Informatique",
-                "Fournitures de bureau",
-                "Mobilier",
-                "Consommables",
-                "Logiciels",
-                "Réseaux & Télécommunications",
-                "Outillage",
-            };
-
-            var random = new Random();
-            foreach (var name in categoryNames)
+            foreach (var (name, tva) in SeedDataConstants.Categories.All)
             {
                 try
                 {
-                    var tva = random.Next(1, 100);
                     var dto = new CategoryRequestDto(name, tva);
                     await _categoryService.CreateAsync(dto);
-                    _logger.LogInformation("Seeded category: '{Name}'", name);
+                    _logger.LogInformation("✓ Seeded category: '{Name}' (TVA: {TVA}%)", name, tva);
                 }
                 catch (InvalidOperationException)
                 {
-                    // CreateAsync throws if name already exists — safe to skip
-                    _logger.LogInformation("Category '{Name}' already exists, skipping.", name);
+                    _logger.LogInformation("→ Category '{Name}' already exists, skipping.", name);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "✗ Failed to seed category '{Name}'", name);
                 }
             }
         }

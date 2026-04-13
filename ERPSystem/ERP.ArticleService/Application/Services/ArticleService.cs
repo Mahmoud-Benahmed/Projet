@@ -2,6 +2,8 @@
 using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
+using ERP.ArticleService.Infrastructure.Messaging;
+using System.Text.Json;
 
 namespace ERP.ArticleService.Application.Services
 {
@@ -10,15 +12,21 @@ namespace ERP.ArticleService.Application.Services
         private readonly IArticleRepository _articleRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IArticleCodeService _articleCodeService;
+        private readonly IEventPublisher _eventPublisher;
+        private readonly ILogger<ArticleService> logger;
 
         public ArticleService(
             IArticleRepository articleRepository,
             ICategoryRepository categoryRepository,
-            IArticleCodeService articleCodeService)
+            IArticleCodeService articleCodeService,
+            IEventPublisher eventPublisher,
+            ILogger<ArticleService> logger)
         {
             _articleRepository = articleRepository;
             _categoryRepository = categoryRepository;
             _articleCodeService = articleCodeService;
+            _eventPublisher = eventPublisher;
+            this.logger = logger;
         }
 
         // =========================
@@ -39,7 +47,19 @@ namespace ERP.ArticleService.Application.Services
             var article = new Article(code, request.Libelle, request.Prix, request.Unit, category, request.BarCode, request.TVA);
             await _articleRepository.AddAsync(article);
             await _articleRepository.SaveChangesAsync();
-            return MapToDto(article);
+            var dto = MapToDto(article);
+
+
+            // Add this logging
+            logger.LogInformation("Publishing article event: {@Article}", dto);
+            logger.LogInformation("Category in event: Id={CategoryId}, Name={CategoryName}, TVA={CategoryTVA}",
+                dto.Category?.Id, dto.Category?.Name, dto.Category?.TVA);
+
+            var json = JsonSerializer.Serialize(dto);
+            logger.LogInformation("Serialized JSON: {Json}", json);
+
+            await _eventPublisher.PublishAsync(ArticleTopics.Created, dto);
+            return dto;
         }
 
         // =========================
@@ -77,7 +97,10 @@ namespace ERP.ArticleService.Application.Services
             article.Update(request.Libelle, request.Prix, request.Unit,category, request.BarCode, request.TVA);
 
             await _articleRepository.SaveChangesAsync();
-            return MapToDto(article);
+            var dto = MapToDto(article);
+            await _eventPublisher.PublishAsync(ArticleTopics.Updated, dto);
+
+            return dto;
         }
 
         // =========================
@@ -91,6 +114,10 @@ namespace ERP.ArticleService.Application.Services
 
             article.Restore();
             await _articleRepository.SaveChangesAsync();
+
+            var dto = MapToDto(article);
+            await _eventPublisher.PublishAsync(ArticleTopics.Restored, dto);
+
         }
 
 
@@ -105,6 +132,10 @@ namespace ERP.ArticleService.Application.Services
 
             article.Delete();
             await _articleRepository.SaveChangesAsync();
+
+            var dto = MapToDto(article);
+            await _eventPublisher.PublishAsync(ArticleTopics.Deleted, dto);
+
         }
 
         // =========================
@@ -190,7 +221,7 @@ namespace ERP.ArticleService.Application.Services
             BarCode: article.BarCode,
             Libelle: article.Libelle,
             Prix: article.Prix,
-            Unit: article.Unit,
+            Unit: article.Unit.ToString(),
             TVA: article.TVA,
             IsDeleted: article.IsDeleted,
             CreatedAt: article.CreatedAt,

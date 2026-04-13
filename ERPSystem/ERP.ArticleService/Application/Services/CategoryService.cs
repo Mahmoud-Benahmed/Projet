@@ -2,6 +2,7 @@
 using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
+using ERP.ArticleService.Infrastructure.Messaging;
 using Sprache;
 
 namespace ERP.ArticleService.Application.Services
@@ -9,10 +10,12 @@ namespace ERP.ArticleService.Application.Services
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IEventPublisher _eventPublisher;
 
-        public CategoryService(ICategoryRepository categoryRepository)
+        public CategoryService(ICategoryRepository categoryRepository, IEventPublisher eventPublisher)
         {
             _categoryRepository = categoryRepository;
+            _eventPublisher = eventPublisher;
         }
 
         // =========================
@@ -27,7 +30,10 @@ namespace ERP.ArticleService.Application.Services
             var category = new Category(dto.Name, dto.TVA);
             await _categoryRepository.AddAsync(category);
             await _categoryRepository.SaveChangesAsync();
-            return MapToDto(category);
+            var res= MapToDto(category);
+
+            await _eventPublisher.PublishAsync(CategoryTopics.Created, res);
+            return res;
         }
 
         // =========================
@@ -92,10 +98,12 @@ namespace ERP.ArticleService.Application.Services
             if (existing is not null && existing.Id != id)
                 throw new CategoryAlreadyExistsException(dto.Name);
 
-            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
+            var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
             category.Update(dto.Name, dto.TVA);
             await _categoryRepository.SaveChangesAsync();
-            return MapToDto(category);
+            var res= MapToDto(category);
+            await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
+            return res;
         }
 
         // =========================
@@ -109,6 +117,8 @@ namespace ERP.ArticleService.Application.Services
 
             category.Delete();
             await _categoryRepository.SaveChangesAsync();
+            var dto= MapToDto(category);
+            await _eventPublisher.PublishAsync(CategoryTopics.Deleted, dto);
         }
 
         // =========================
@@ -124,6 +134,8 @@ namespace ERP.ArticleService.Application.Services
 
             category.Restore();
             await _categoryRepository.SaveChangesAsync();
+            var dto = MapToDto(category);
+            await _eventPublisher.PublishAsync(CategoryTopics.Restored, dto);
         }
 
         // =========================
