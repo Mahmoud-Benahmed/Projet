@@ -61,7 +61,7 @@ namespace ERP.ArticleService.Application.DTOs
         string BarCode,
         string Libelle,
         decimal Prix,
-        UnitEnum Unit,
+        string Unit,
         int TVA,
         bool IsDeleted,
         DateTime CreatedAt,

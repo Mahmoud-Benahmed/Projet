@@ -10,18 +10,19 @@ namespace ERP.StockService.Application.Services;
 public class BonSortieService : IBonSortieService
 {
     private readonly IBonSortieRepository _repo;
-    private readonly IArticleServiceHttpClient _articleService;
-    private readonly IClientServiceHttpClient _clientService;
+    private readonly IArticleCacheRepository _articleCacheRepository;
+    private readonly IClientCacheRepository _clientCacheRepository;
     private readonly IBonNumeroRepository _bonNumeroRepository;
     private readonly IJournalStockRepository _journalStockRepository;
 
-    public BonSortieService(IBonSortieRepository repo, IArticleServiceHttpClient articleService,
-                            IClientServiceHttpClient clientService, IBonNumeroRepository bonNumeroRepository,
-                            IJournalStockRepository journalStockRepository)
+    public BonSortieService(IBonSortieRepository repo, 
+        IArticleCacheRepository articleCacheRepository,
+        IClientCacheRepository clientCacheRepository, IBonNumeroRepository bonNumeroRepository,
+        IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
-        _clientService = clientService;
-        _articleService = articleService;
+        _articleCacheRepository = articleCacheRepository;
+        _clientCacheRepository = clientCacheRepository;
         _bonNumeroRepository = bonNumeroRepository;
         _journalStockRepository = journalStockRepository;
     }
@@ -31,14 +32,14 @@ public class BonSortieService : IBonSortieService
     // =========================
     public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto, Guid requesterId)
     {
-        await _clientService.GetByIdAsync(dto.ClientId);
+        var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
 
         var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_SORTIE");
         var bon = BonSortie.Create(numero, dto.ClientId, dto.Observation);
 
         foreach (var l in dto.Lignes ?? [])
         {
-            await _articleService.GetByIdAsync(l.ArticleId);
+            //await _articleService.GetByIdAsync(l.ArticleId);
             bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
         }
 
@@ -75,7 +76,7 @@ public class BonSortieService : IBonSortieService
     public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto, Guid requesterId)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        await _clientService.GetByIdAsync(dto.ClientId);
+        var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
 
         bon.Update(dto.ClientId, dto.Observation);
 
@@ -88,7 +89,7 @@ public class BonSortieService : IBonSortieService
                 if (l.Quantity > stockBefore)
                     throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
 
-                await _articleService.GetByIdAsync(l.ArticleId);
+                //await _articleService.GetByIdAsync(l.ArticleId);
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
             }
             bon.ValidateLignes();
@@ -147,7 +148,7 @@ public class BonSortieService : IBonSortieService
         Guid clientId, int page, int size)
     {
         ValidatePaging(page, size);
-        await _clientService.GetByIdAsync(clientId);
+        var client = await _clientCacheRepository.GetByIdAsync(clientId) ?? throw new KeyNotFoundException($"Client with Id {clientId} not found");
 
         var (items, total) = await _repo.GetPagedByClientAsync(clientId, page, size);
         return new PagedResultDto<BonSortieResponseDto>(

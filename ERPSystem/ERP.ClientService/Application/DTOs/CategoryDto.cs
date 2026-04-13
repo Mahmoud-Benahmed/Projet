@@ -25,18 +25,18 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, 720, ErrorMessage = "Return delay must be at least 1 day.")]
+        [Range(1, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(1, 120, ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
-        int DuePaymentPeriod,                   // ← added
+        [Range(1,180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
+        int DuePaymentPeriod,               // ← added
 
         bool UseBulkPricing = false,
 
         [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
         decimal? DiscountRate = null,
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
         decimal? CreditLimitMultiplier = null
     );
 
@@ -51,10 +51,10 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, 720, ErrorMessage = "Return delay must be at least 1 day.")]
+        [Range(1, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(1, 120, ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+        [Range(1, 180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
         int DuePaymentPeriod,
 
         bool UseBulkPricing = false,
@@ -62,7 +62,7 @@ namespace ERP.ClientService.Application.DTOs
         [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
         decimal? DiscountRate = null,
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
         decimal? CreditLimitMultiplier = null
     );
     public sealed record CategoryResponseDto(
@@ -77,7 +77,6 @@ namespace ERP.ClientService.Application.DTOs
         bool IsActive,
         bool IsDeleted,
         DateTime CreatedAt,
-        DateTime? UpdatedAt,
-        int ClientCount
+        DateTime? UpdatedAt
     );
 }

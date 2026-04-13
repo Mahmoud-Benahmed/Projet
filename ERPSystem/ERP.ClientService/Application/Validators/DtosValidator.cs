@@ -35,7 +35,7 @@ public class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRe
             .When(x => x.DiscountRate.HasValue);
 
         RuleFor(x => x.CreditLimitMultiplier)
-            .GreaterThan(0m)
+            .GreaterThanOrEqualTo(0m)
                 .WithMessage("Credit limit multiplier must be positive.")
             .When(x => x.CreditLimitMultiplier.HasValue);
     }
@@ -69,7 +69,7 @@ public class UpdateCategoryRequestValidator : AbstractValidator<UpdateCategoryRe
             .When(x => x.DiscountRate.HasValue);
 
         RuleFor(x => x.CreditLimitMultiplier)
-            .GreaterThan(0m)
+            .GreaterThanOrEqualTo(0m)
                 .WithMessage("Credit limit multiplier must be positive.")
             .When(x => x.CreditLimitMultiplier.HasValue);
     }

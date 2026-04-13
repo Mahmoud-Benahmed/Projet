@@ -17,7 +17,6 @@ public static class CategoryMappings
             IsActive: category.IsActive,
             IsDeleted: category.IsDeleted,
             CreatedAt: category.CreatedAt,
-            UpdatedAt: category.UpdatedAt,
-            ClientCount: category.ClientCategories.Count
+            UpdatedAt: category.UpdatedAt
         );
 }

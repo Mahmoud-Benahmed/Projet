@@ -20,18 +20,19 @@ public static class ClientMappings
             CreatedAt: client.CreatedAt,
             UpdatedAt: client.UpdatedAt,
             Categories: (client.ClientCategories ?? new List<ClientCategory>())
-                                    .Select(cc => new ClientCategoryResponseDto(
+                                    .Select(cc => new CategoryResponseDto(
                                         Id: cc.CategoryId,
                                         Name: cc.Category?.Name ?? string.Empty,
                                         Code: cc.Category?.Code ?? string.Empty,
-                                        DelaiRetour: cc.Category.DelaiRetour,
-                                        DuePaymentPeriod: cc.Category.DuePaymentPeriod,
-                                        DiscountRate: cc.Category.DiscountRate ?? 0,
-                                        CreditLimitMultiplier: cc.Category.CreditLimitMultiplier ?? 0,
-                                        UseBulkPricing: cc.Category.UseBulkPricing,
-                                        IsDeleted: cc.Category.IsDeleted,
-                                        IsActive: cc.Category.IsActive,                                        
-                                        AssignedAt: cc.AssignedAt))
-                                    .ToList()
+                                        DelaiRetour: cc.Category?.DelaiRetour ?? 0,
+                                        DuePaymentPeriod: cc.Category?.DuePaymentPeriod ?? 0,
+                                        DiscountRate: cc.Category?.DiscountRate ?? 0,
+                                        CreditLimitMultiplier: cc.Category?.CreditLimitMultiplier ?? 0,
+                                        UseBulkPricing: cc.Category?.UseBulkPricing ?? false,
+                                        IsDeleted: cc.Category?.IsDeleted ?? false,
+                                        IsActive: cc.Category?.IsActive ?? false,
+                                        CreatedAt: cc.Category?.CreatedAt ?? DateTime.MinValue,
+                                        UpdatedAt: cc.Category?.UpdatedAt ?? DateTime.MinValue)
+                                    ).ToList()
         );
 }

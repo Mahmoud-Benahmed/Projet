@@ -12,8 +12,8 @@ public class BonRetourService : IBonRetourService
     private readonly IBonRetourRepository _repo;
     private readonly IBonSortieRepository _bonSortieRepo;
     private readonly IBonEntreRepository _bonEntreRepo;
-    private readonly IArticleServiceHttpClient _articleService;
-    private readonly IClientServiceHttpClient _clientService;
+    private readonly IArticleCacheRepository _articleCacheRepository;
+    private readonly IClientCacheRepository _clientCacheRepository;
     private readonly IBonNumeroRepository _bonNumeroRepository;
     private readonly IJournalStockRepository _journalStockRepository;
 
@@ -22,16 +22,16 @@ public class BonRetourService : IBonRetourService
         IBonRetourRepository repo,
         IBonSortieRepository bonSortieRepo,
         IBonEntreRepository bonEntreRepo,
-        IArticleServiceHttpClient articleService,
-        IClientServiceHttpClient clientService,
+        IArticleCacheRepository articleCacheRepository,
+        IClientCacheRepository clientCacheRepository,
         IBonNumeroRepository bonNumeroRepository,
         IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
         _bonSortieRepo = bonSortieRepo;
         _bonEntreRepo = bonEntreRepo;
-        _articleService = articleService;
-        _clientService = clientService;
+        _articleCacheRepository= articleCacheRepository;
+        _clientCacheRepository = clientCacheRepository;
         _bonNumeroRepository = bonNumeroRepository;
         _journalStockRepository = journalStockRepository;
     }
@@ -54,7 +54,7 @@ public class BonRetourService : IBonRetourService
         // 2. Validate and add lignes
         foreach (var l in dto.Lignes ?? [])
         {
-            await _articleService.GetByIdAsync(l.ArticleId);
+            var article = await _articleCacheRepository.GetByIdAsync(l.ArticleId) ?? throw new KeyNotFoundException($"Article with Id {l.ArticleId} not found");
 
             var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == l.ArticleId)
                 ?? throw new ArticleNotInSourceBonException(l.ArticleId, dto.SourceId);
@@ -96,7 +96,7 @@ public class BonRetourService : IBonRetourService
                 if (l.Quantity > stockBefore)
                     throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
 
-                await _articleService.GetByIdAsync(l.ArticleId);
+                //await _articleService.GetByIdAsync(l.ArticleId);
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
             }
             bon.ValidateLignes();
@@ -185,7 +185,7 @@ public class BonRetourService : IBonRetourService
     {
         var bonSortie = await _bonSortieRepo.GetByIdAsync(sourceId)
             ?? throw new BonSortieNotFoundException(sourceId);
-        await _clientService.GetByIdAsync(bonSortie.ClientId);
+        var client = await _clientCacheRepository.GetByIdAsync(bonSortie.ClientId) ?? throw new KeyNotFoundException($"Client with Id {bonSortie.ClientId} not found");
         return bonSortie.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
 

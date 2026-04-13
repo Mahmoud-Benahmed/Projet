@@ -12,15 +12,14 @@ namespace ERP.StockService.Application.Services;
 public class BonEntreService : IBonEntreService
 {
     private readonly IBonEntreRepository _repo;
-    private readonly IArticleServiceHttpClient _articleService;
     private readonly IBonNumeroRepository _bonNumberRepo;
     private readonly IJournalStockRepository _journalStockRepository;
 
-    public BonEntreService(IBonEntreRepository repo, IArticleServiceHttpClient articleService, 
+    public BonEntreService(IBonEntreRepository repo,
         IBonNumeroRepository bonNumberRepository, IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
-        _articleService = articleService;
+        //_articleService = articleService;
         _bonNumberRepo = bonNumberRepository;
         _journalStockRepository = journalStockRepository;
     }
@@ -36,7 +35,7 @@ public class BonEntreService : IBonEntreService
 
         foreach (var l in dto.Lignes ?? [])
         {
-            await _articleService.GetByIdAsync(l.ArticleId);
+            //await _articleService.GetByIdAsync(l.ArticleId);
             bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
         }
 
@@ -107,7 +106,7 @@ public class BonEntreService : IBonEntreService
 
         foreach (var l in dto.Lignes)
         {
-            await _articleService.GetByIdAsync(l.ArticleId);
+            //await _articleService.GetByIdAsync(l.ArticleId);
             bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
         }
 
