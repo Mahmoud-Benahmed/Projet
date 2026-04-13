@@ -2,14 +2,20 @@
 using ERP.FournisseurService.Application.Interfaces;
 using ERP.FournisseurService.Domain;
 using ERP.FournisseurService.Application.Exceptions;
+using ERP.FournisseurService.Infrastructure.Messaging;
 
 namespace ERP.FournisseurService.Application.Services;
 
 public class FournisseurService : IFournisseurService
 {
     private readonly IFournisseurRepository _repo;
+    private readonly IEventPublisher _eventPublisher;
 
-    public FournisseurService(IFournisseurRepository repo) => _repo = repo;
+    public FournisseurService(IFournisseurRepository repo, IEventPublisher eventPublisher)
+    {
+        _repo = repo;
+        _eventPublisher = eventPublisher;
+    }
 
     // =========================
     // CREATE
@@ -21,7 +27,9 @@ public class FournisseurService : IFournisseurService
             dto.TaxNumber, dto.RIB, dto.Email);
         await _repo.AddAsync(f);
         await _repo.SaveChangesAsync();
-        return f.ToResponseDto();
+        var res= f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Created, res);
+        return res;
     }
 
     // =========================
@@ -32,7 +40,9 @@ public class FournisseurService : IFournisseurService
         var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Update(dto.Name, dto.Address, dto.Phone, dto.TaxNumber, dto.RIB, dto.Email);
         await _repo.SaveChangesAsync();
-        return f.ToResponseDto();
+        var res = f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
+        return res;
     }
 
     // =========================
@@ -43,6 +53,8 @@ public class FournisseurService : IFournisseurService
         var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Delete();
         await _repo.SaveChangesAsync();
+        var res = f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Deleted, res);
     }
 
     public async Task RestoreAsync(Guid id)
@@ -51,6 +63,8 @@ public class FournisseurService : IFournisseurService
         if (!f.IsDeleted) return;
         f.Restore();
         await _repo.SaveChangesAsync();
+        var res = f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Restored, res);
     }
 
     // =========================
@@ -61,7 +75,9 @@ public class FournisseurService : IFournisseurService
         var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Block();
         await _repo.SaveChangesAsync();
-        return f.ToResponseDto();
+        var res = f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
+        return res;
     }
 
     public async Task<FournisseurResponseDto> UnblockAsync(Guid id)
@@ -69,7 +85,9 @@ public class FournisseurService : IFournisseurService
         var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Unblock();
         await _repo.SaveChangesAsync();
-        return f.ToResponseDto();
+        var res = f.ToResponseDto();
+        await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
+        return res;
     }
 
     // =========================

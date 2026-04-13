@@ -1,5 +1,8 @@
-﻿using ERP.FournisseurService.Domain;
+﻿using ERP.FournisseurService.Application.DTOs;
+using ERP.FournisseurService.Application.Interfaces;
+using ERP.FournisseurService.Domain;
 using Microsoft.EntityFrameworkCore;
+using static ERP.FournisseurService.Properties.ApiRoutes;
 
 namespace ERP.FournisseurService.Infrastructure.Persistence.Seeders;
 
@@ -7,11 +10,15 @@ public class FournisseurSeeder
 {
     private readonly FournisseurDbContext _context;
     private readonly ILogger<FournisseurSeeder> _logger;
+    private readonly IFournisseurService _fournisseurService;
 
-    public FournisseurSeeder(FournisseurDbContext context, ILogger<FournisseurSeeder> logger)
+    public FournisseurSeeder(FournisseurDbContext context, 
+                            ILogger<FournisseurSeeder> logger,
+                            IFournisseurService fournisseurService)
     {
         _context = context;
         _logger = logger;
+        _fournisseurService = fournisseurService;
     }
 
     public async Task SeedAsync()
@@ -23,9 +30,10 @@ public class FournisseurSeeder
         }
 
         var fournisseurs = BuildFournisseurs();
-
-        await _context.Fournisseurs.AddRangeAsync(fournisseurs);
-        await _context.SaveChangesAsync();
+        foreach(Fournisseur f in fournisseurs){
+            var dto = MapToDto(f);
+            await _fournisseurService.CreateAsync(dto);
+        }
 
         _logger.LogInformation("Seeded {Count} fournisseurs.", fournisseurs.Count);
     }
@@ -150,4 +158,13 @@ public class FournisseurSeeder
 
         return fournisseurs;
     }
+
+    private static CreateFournisseurRequestDto MapToDto(Fournisseur f) => new CreateFournisseurRequestDto(
+            Name: f.Name,
+            Address: f.Address,
+            Phone: f.Phone,
+            Email: f.Email,
+            TaxNumber: f.TaxNumber,
+            RIB: f.RIB
+        );
 }

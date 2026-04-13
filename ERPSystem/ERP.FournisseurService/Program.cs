@@ -1,5 +1,6 @@
 using ERP.FournisseurService.Application.Interfaces;
 using ERP.FournisseurService.Application.Services;
+using ERP.FournisseurService.Infrastructure.Messaging;
 using ERP.FournisseurService.Infrastructure.Persistence;
 using ERP.FournisseurService.Infrastructure.Persistence.Repositories;
 using ERP.FournisseurService.Infrastructure.Persistence.Seeders;
@@ -26,6 +27,9 @@ builder.Services.AddDbContext<FournisseurDbContext>(options =>
 // =========================
 builder.Services.AddScoped<IFournisseurRepository, FournisseurRepository>();
 builder.Services.AddScoped<IFournisseurService, FournisseurService>();
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+
+builder.Services.AddScoped<FournisseurSeeder>();
 
 // =========================
 // CONTROLLERS & API
