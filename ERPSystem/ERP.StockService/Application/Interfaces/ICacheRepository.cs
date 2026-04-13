@@ -1,0 +1,102 @@
+﻿using ERP.StockService.Application.Services.LocalCache.ArticleCache;
+using ERP.StockService.Domain.LocalCache.Article;
+using ERP.StockService.Domain.LocalCache.Client;
+using ERP.StockService.Domain.LocalCache.Fournisseur;
+
+namespace ERP.StockService.Application.Interfaces;
+
+public interface IArticleCacheRepository
+{
+    Task<ArticleCache?> GetByIdAsync(Guid id);
+    Task<ArticleCache?> GetByBarCodeAsync(string barCode);
+    Task<ArticleCache?> GetByCodeRefAsync(string codeRef);
+    Task<List<ArticleCache>> GetAllAsync();
+    Task<List<ArticleCache>> GetAllActiveAsync();
+    Task<(IEnumerable<ArticleCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task AddAsync(ArticleCache article);
+    Task SaveChangesAsync();
+
+    Task DeleteAsync(ArticleCache article);
+}
+
+public interface ICategoryCacheRepository
+{
+    Task<bool> ExistsAsync(string name);
+    Task<Domain.LocalCache.Article.CategoryCache?> GetByIdAsync(Guid id);
+    Task<Domain.LocalCache.Article.CategoryCache?> GetByNameAsync(string name);
+    Task<List<Domain.LocalCache.Article.CategoryCache>> GetAllAsync();
+    Task<List<Domain.LocalCache.Article.CategoryCache>> GetAllActiveAsync();
+    Task<(List<Domain.LocalCache.Article.CategoryCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task AddAsync(Domain.LocalCache.Article.CategoryCache category);
+    Task SaveChangesAsync();
+    Task DeleteAsync(Domain.LocalCache.Article.CategoryCache cache);
+}
+
+
+public interface IClientCacheRepository
+{
+    Task<ClientCache?> GetByIdAsync(Guid id);
+    Task<ClientCache?> GetByNameAsync(string name);
+    Task<ClientCache?> GetByEmailAsync(string email);
+    Task<List<ClientCache>> GetAllAsync();
+    Task<List<ClientCache>> GetActiveAsync();
+    Task<bool> ExistsAsync(Guid id);
+    Task AddAsync(ClientCache client);
+    Task UpdateAsync(ClientCache client);
+    Task SaveChangesAsync();
+    Task DeleteAsync(ClientCache client);
+}
+public interface IClientCategoryCacheRepository
+{
+    // Read operations - Master data
+    Task<Dictionary<Guid, int>> GetClientCountsByCategoryIdsAsync(List<Guid> categoryIds);
+    Task<Domain.LocalCache.Client.CategoryCache?> GetByIdAsync(Guid id);
+    Task<Domain.LocalCache.Client.CategoryCache?> GetByCodeAsync(string code);
+    Task<List<Domain.LocalCache.Client.CategoryCache>> GetByClientIdAsync(Guid clientId);
+    Task<List<Domain.LocalCache.Client.CategoryCache>> GetByClientNameAsync(string clientName);
+    Task<List<Domain.LocalCache.Client.CategoryCache>> GetAllAsync();
+    Task<bool> ExistsAsync(Guid id);
+    Task<bool> ExistsForClientAsync(Guid clientId, Guid categoryId);
+    Task<int> GetCountForClientAsync(Guid clientId);
+
+    // Junction table operations
+    Task AssignCategoryToClientAsync(Guid clientId, Guid categoryId);
+    Task UnassignCategoryFromClientAsync(Guid clientId, Guid categoryId);
+    Task<List<ClientCategoryCache>> GetClientAssignmentsAsync(Guid clientId);
+
+    // Write operations - Master data
+    Task AddCategoryAsync(Domain.LocalCache.Client.CategoryCache category);
+    Task AddRangeCategoriesAsync(IEnumerable<Domain.LocalCache.Client.CategoryCache> categories);
+    Task UpdateCategoryAsync(Domain.LocalCache.Client.CategoryCache category);
+    Task DeleteCategoryAsync(Guid id);
+    Task DeleteAllCategoriesForClientAsync(Guid clientId);
+
+    // Save changes
+    Task SaveChangesAsync();
+    Task DeleteAsync(Domain.LocalCache.Client.CategoryCache category);
+}
+
+public interface IFournisseurCacheRepository
+{
+    // Read operations
+    Task<FournisseurCache?> GetByIdAsync(Guid id);
+    Task<FournisseurCache?> GetByNameAsync(string name);
+    Task<FournisseurCache?> GetByTaxNumberAsync(string taxNumber);
+    Task<FournisseurCache?> GetByEmailAsync(string email);
+    Task<List<FournisseurCache>> GetAllAsync();
+    Task<List<FournisseurCache>> GetActiveAsync();
+    Task<List<FournisseurCache>> GetBlockedAsync();
+    Task<List<FournisseurCache>> GetPagedAsync(int pageNumber, int pageSize);
+    Task<bool> ExistsAsync(Guid id);
+    Task<bool> ExistsByNameAsync(string name);
+    Task<bool> ExistsByTaxNumberAsync(string taxNumber);
+    Task<int> GetCountAsync();
+
+    // Write operations
+    Task AddAsync(FournisseurCache fournisseur);
+    Task AddRangeAsync(IEnumerable<FournisseurCache> fournisseurs);
+    Task UpdateAsync(FournisseurCache fournisseur);
+    Task DeleteAsync(FournisseurCache fournisseur);
+    Task DeletePermanentlyAsync(Guid id);
+    Task SaveChangesAsync();
+}
