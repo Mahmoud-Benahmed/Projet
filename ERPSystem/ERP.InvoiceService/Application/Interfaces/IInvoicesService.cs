@@ -8,9 +8,9 @@ namespace InvoiceService.Application.Interfaces
     {
 
         Task<InvoiceDto> GetByIdAsync(Guid id);
-        Task<IEnumerable<InvoiceDto>> GetAllAsync(bool includeDeleted = false);
-        Task<IEnumerable<InvoiceDto>> GetByClientIdAsync(Guid clientId);
-        Task<IEnumerable<InvoiceDto>> GetByStatusAsync(InvoiceStatus status);
+        Task<List<InvoiceDto>> GetAllAsync(bool includeDeleted = false);
+        Task<List<InvoiceDto>> GetByClientIdAsync(Guid clientId);
+        Task<List<InvoiceDto>> GetByStatusAsync(InvoiceStatus status);
         Task<InvoiceDto> CreateAsync(CreateInvoiceDto dto);
         Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto);
 

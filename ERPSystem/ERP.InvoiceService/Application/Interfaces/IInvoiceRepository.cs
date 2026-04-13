@@ -15,6 +15,7 @@ namespace InvoiceService.Application.Interfaces
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);
         Task<bool> ExistsByInvoiceNumberAsync(string invoiceNumber);
+        Task<IEnumerable<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId);
 
         // ── Stats queries ────────────────────────────────────────────────────────
         Task<IEnumerable<InvoiceStatProjection>> GetStatsProjectionAsync();

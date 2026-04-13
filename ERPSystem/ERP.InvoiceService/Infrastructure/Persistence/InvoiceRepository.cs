@@ -150,5 +150,14 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 .IgnoreQueryFilters()
                 .CountAsync(i => i.IsDeleted);
         }
+
+        public async Task<IEnumerable<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId)
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .Include(i => i.Items)
+                .Where(i => i.ClientId == clientId)
+                .ToListAsync();
+        }
     }
 }

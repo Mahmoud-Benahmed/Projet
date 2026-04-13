@@ -1,30 +1,30 @@
-using ERP.InvoiceService.Infrastructure.Messaging;
+using ERP.InvoiceService.Application.Interfaces;
 using ERP.InvoiceService.Infrastructure.Persistence;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Exceptions;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
-using Microsoft.JSInterop.Infrastructure;
 
 namespace InvoiceService.Application.Services
 {
     public class InvoicesService : IInvoicesService
     {
         private readonly IInvoiceRepository _invoiceRepository;
-        private readonly IClientServiceHttpClient _clientServiceHttpClient;
-        private readonly IArticleServiceHttpClient _articleServiceHttpClient;
         private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
+        private readonly IClientCacheRepository _clientCacheRepository;
+        private readonly IArticleCacheRepository _articleCacheRepository;
+
 
         public InvoicesService(
             IInvoiceRepository invoiceRepository,
             IInvoiceNumberGenerator invoiceNumberGenerator,
-            IClientServiceHttpClient clientServiceHttpClient,
-            IArticleServiceHttpClient articleServiceHttpClient) // Add missing dependencies
+            IClientCacheRepository clientCacheRepository,
+            IArticleCacheRepository articleCacheRepository)
         {
+            _clientCacheRepository = clientCacheRepository;
             _invoiceRepository = invoiceRepository;
-            _invoiceNumberGenerator = invoiceNumberGenerator; // THIS WAS MISSING!
-            _clientServiceHttpClient = clientServiceHttpClient;
-            _articleServiceHttpClient = articleServiceHttpClient;
+            _invoiceNumberGenerator = invoiceNumberGenerator;
+            _articleCacheRepository = articleCacheRepository;
         }
 
         public async Task<InvoiceDto> GetByIdAsync(Guid id)
@@ -34,20 +34,20 @@ namespace InvoiceService.Application.Services
 
             return invoice.ToDto();
         }
-        public async Task<IEnumerable<InvoiceDto>> GetAllAsync(bool includeDeleted = false)
+        public async Task<List<InvoiceDto>> GetAllAsync(bool includeDeleted = false)
         {
             var invoices = await _invoiceRepository.GetAllAsync(includeDeleted);
-            return invoices.Select(i => i.ToDto());
+            return invoices.Select(i => i.ToDto()).ToList();
         }
-        public async Task<IEnumerable<InvoiceDto>> GetByClientIdAsync(Guid clientId)
+        public async Task<List<InvoiceDto>> GetByClientIdAsync(Guid clientId)
         {
             var invoices = await _invoiceRepository.GetByClientIdAsync(clientId);
-            return invoices.Select(i => i.ToDto());
+            return invoices.Select(i => i.ToDto()).ToList();
         }
-        public async Task<IEnumerable<InvoiceDto>> GetByStatusAsync(InvoiceStatus status)
+        public async Task<List<InvoiceDto>> GetByStatusAsync(InvoiceStatus status)
         {
             var invoices = await _invoiceRepository.GetByStatusAsync(status);
-            return invoices.Select(i => i.ToDto());
+            return invoices.Select(i => i.ToDto()).ToList();
         }
 
         // ════════════════════════════════════════════════════════════════════════════
@@ -56,7 +56,13 @@ namespace InvoiceService.Application.Services
 
         public async Task<InvoiceDto> CreateAsync(CreateInvoiceDto dto)
         {
-            var client = await _clientServiceHttpClient.GetByIdAsync(dto.ClientId);
+            if (dto.Items == null || !dto.Items.Any())
+                throw new InvoiceDomainException("Invoice must have at least one item.");
+
+            if (dto.InvoiceDate > dto.DueDate)
+                throw new InvoiceDomainException("Due date cannot be before invoice date.");
+
+            var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
 
             decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate /100m)));
 
@@ -71,26 +77,38 @@ namespace InvoiceService.Application.Services
                 invoiceNumber,
                 dto.InvoiceDate,
                 dto.DueDate,
-                dto.ClientId,
+                client.Id,
                 client.Name,
                 client.Address,
                 dto.AdditionalNotes);
 
 
+            // Load all articles once (single database call)
+            var articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
+            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+            if (articles == null || !articles.Any())
+                throw new InvalidOperationException("No articles found for the given IDs.");
+
+            var articleDictionary = articles.ToDictionary(a => a.Id, a => a);
+
+            // Now loop through items - no database calls here!
             foreach (var itemDto in dto.Items)
             {
-                var article = await _articleServiceHttpClient.GetByIdAsync(itemDto.ArticleId);
-
-                var item = new InvoiceItem(
-                    invoice.Id,
-                    itemDto.ArticleId,
-                    article.Libelle,
-                    article.BarCode,
-                    itemDto.Quantity,
-                    itemDto.UniPriceHT,
-                    itemDto.TaxRate);
-
-                invoice.AddItem(item);
+                if (articleDictionary.TryGetValue(itemDto.ArticleId, out var article))
+                {
+                    invoice.AddItem(new InvoiceItem(
+                        invoice.Id,
+                        itemDto.ArticleId,
+                        article.Libelle,
+                        article.BarCode,
+                        itemDto.Quantity,
+                        itemDto.UniPriceHT,
+                        itemDto.TaxRate));
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Article with ID {itemDto.ArticleId} not found");
+                }
             }
 
 
@@ -98,19 +116,19 @@ namespace InvoiceService.Application.Services
             return invoice.ToDto();
         }
 
-        // InvoicesService.cs
         public async Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto)
         {
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(id)
                 ?? throw new InvoiceNotFoundException(id);
 
+            var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
+            
             if (invoice.Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
-            var client = await _clientServiceHttpClient.GetByIdAsync(dto.ClientId);
-
             decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate / 100m)));
-            await CheckClientCreditLimit(client.Id, invoiceTotalTTC);
+
+            await CheckClientCreditLimit(dto.ClientId, invoiceTotalTTC);
 
             // Update header only
             invoice.Update(
@@ -122,18 +140,30 @@ namespace InvoiceService.Application.Services
                 additionalNotes: dto.AdditionalNotes
             );
 
-            // ✅ No RemoveItem loop — repository.UpdateAsync will ExecuteDeleteAsync first
+
+            // Load all articles once (single database call)
+            var articles = await _articleCacheRepository.GetAllAsync();
+            var articleDictionary = articles.ToDictionary(a => a.Id, a => a);
+
+            // Now loop through items - no database calls here!
             foreach (var itemDto in dto.Items)
             {
-                var article = await _articleServiceHttpClient.GetByIdAsync(itemDto.ArticleId);
-                invoice.AddItem(new InvoiceItem(
-                    invoice.Id,
-                    itemDto.ArticleId,
-                    article.Libelle,
-                    article.BarCode,
-                    itemDto.Quantity,
-                    itemDto.UniPriceHT,
-                    itemDto.TaxRate));
+                if (articleDictionary.TryGetValue(itemDto.ArticleId, out var article))
+                {
+                    invoice.AddItem(new InvoiceItem(
+                        invoice.Id,
+                        itemDto.ArticleId,
+                        article.Libelle,
+                        article.BarCode,
+                        itemDto.Quantity,
+                        itemDto.UniPriceHT,
+                        itemDto.TaxRate));
+                }
+                else
+                {
+                    // Handle missing article - log, throw, or skip
+                    throw new InvalidOperationException($"Article with ID {itemDto.ArticleId} not found");
+                }
             }
 
             await _invoiceRepository.UpdateAsync(invoice);
@@ -146,13 +176,11 @@ namespace InvoiceService.Application.Services
             var invoice = await _invoiceRepository.GetByIdWithItemsAsync(invoiceId)
                 ?? throw new InvoiceNotFoundException(invoiceId);
 
-            var article = _articleServiceHttpClient.GetByIdAsync(dto.ArticleId).Result;
+            var invoiceTotalTTC = invoice.TotalTTC + (dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate /100m)));
+            
+            await CheckClientCreditLimit(invoice.ClientId, invoiceTotalTTC);
 
-
-            var client = await _clientServiceHttpClient.GetByIdAsync(invoice.ClientId);
-            var itemTotalTTC = dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate /100m));
-
-            await CheckClientCreditLimit(client.Id, itemTotalTTC);
+            var article = await _articleCacheRepository.GetByIdAsync(dto.ArticleId) ?? throw new KeyNotFoundException($"Article with Id: {dto.ArticleId} not found.");
 
             var item = new InvoiceItem(
                 invoiceId,
@@ -349,17 +377,19 @@ namespace InvoiceService.Application.Services
             );
         }
 
-        private async Task CheckClientCreditLimit(Guid clientId, decimal invoiceTotalTTC)
+        private async Task CheckClientCreditLimit(Guid clientId, decimal invoiceTotalTTC, Guid? excludeInvoiceId = null)
         {
-            var client = await _clientServiceHttpClient.GetByIdAsync(clientId);
-            var invoices = await _invoiceRepository.GetByClientIdAsync(clientId);
+            var client = await _clientCacheRepository.GetByIdAsync(clientId)
+                ?? throw new KeyNotFoundException($"Client with Id: {clientId} not found.");
 
-            // Current outstanding total for the client
+            var invoices = await _invoiceRepository.GetByClientIdAsNoTrackingAsync(clientId);
+
+            // Exclude current invoice if updating
             var clientCurrentCredit = invoices
-                        .Where(i => i.Status == InvoiceStatus.UNPAID)
-                        .Sum(i => i.TotalTTC);
+                .Where(i => i.Status == InvoiceStatus.UNPAID
+                            && (excludeInvoiceId == null || i.Id != excludeInvoiceId))
+                .Sum(i => i.TotalTTC);
 
-            // Check credit limit
             if (client.CreditLimit < invoiceTotalTTC + clientCurrentCredit)
                 throw new InvoiceDomainException(
                     $"Cannot create invoice. Client '{client.Name}' exceeds credit limit." +

@@ -37,6 +37,9 @@ namespace InvoiceService.Middleware
 
             var (statusCode, message) = exception switch
             {
+                KeyNotFoundException e =>
+                    (HttpStatusCode.NotFound, e.Message),
+
                 // 404 Not Found
                 InvoiceNotFoundException e =>
                     (HttpStatusCode.NotFound, e.Message),
