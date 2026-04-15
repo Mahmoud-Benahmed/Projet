@@ -6,6 +6,8 @@ public static class ApiRoutes
     public static class Invoices
     {
         private const string Root = $"{Base}/invoices";
+
+        public const string ToPdf= $"{Root}/{{id:guid}}/pdf";
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
         public const string GetByClient = $"{Root}/client/{{clientId:guid}}";
