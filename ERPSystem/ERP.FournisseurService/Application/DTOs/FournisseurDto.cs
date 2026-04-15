@@ -7,7 +7,8 @@ namespace ERP.FournisseurService.Application.DTOs;
 public record CreateFournisseurRequestDto(
     [Required] string Name,
     [Required] string Address,
-    [Required] string Phone,
+    [Required] [RegularExpression(@"^[\d\s]+$", ErrorMessage = "Phone must contain digits and spaces only.")] [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
+    string Phone,
     [Required] string TaxNumber,
     [Required][Length(10, 50)] string RIB,
     string? Email = null);
@@ -15,7 +16,8 @@ public record CreateFournisseurRequestDto(
 public record UpdateFournisseurRequestDto(
     [Required] string Name,
     [Required] string Address,
-    [Required] string Phone,
+    [RegularExpression(@"^[\d\s]+$", ErrorMessage = "Phone must contain digits and spaces only.")] [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
+    string Phone,
     [Required] string TaxNumber,
     [Required][Length(10, 50)] string RIB,
     string? Email = null);
