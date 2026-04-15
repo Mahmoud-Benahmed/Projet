@@ -1,0 +1,77 @@
+﻿using ERP.StockService.Application.DTOs;
+using ERP.StockService.Application.Interfaces;
+using ERP.StockService.Domain;
+
+namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
+{
+    public class InvoiceCacheService:IInvoiceCacheService
+    {
+        private readonly IJournalStockRepository _journalStockRepo;
+        private readonly IBonRetourService _bonRetourService;
+        private readonly IBonSortieService _bonSortieService;
+        private readonly IInvoiceBonSortieMappingRepository _invoiceBonSortieMappingRepo;
+
+        public InvoiceCacheService(
+                                    IJournalStockRepository journalStockRepo, 
+                                    IBonRetourService bonRetourService, 
+                                    IBonSortieService bonSortieService,
+                                    IInvoiceBonSortieMappingRepository invoiceBonSortieMappingRepo)
+        {
+            _journalStockRepo = journalStockRepo;
+            _bonRetourService = bonRetourService;
+            _bonSortieService = bonSortieService;
+            _invoiceBonSortieMappingRepo = invoiceBonSortieMappingRepo;
+        }
+
+        public async Task SyncCreatedAsync(InvoiceDto invoiceDto)
+        {
+            if (invoiceDto.Items == null || invoiceDto.Items.Count == 0)
+                throw new ArgumentException("Invoice has no items to sync.");
+
+            var articleIds = invoiceDto.Items.Select(i => i.ArticleId).Distinct();
+            var stockMap = await _journalStockRepo.GetCurrentStocksAsync(articleIds);
+
+            // Create BonSortie to record stock going out
+            var createBonSortieDto = new CreateBonSortieRequestDto(
+                ClientId: invoiceDto.ClientId,
+                Observation: $"Auto-generated from Invoice {invoiceDto.InvoiceNumber}",
+                Lignes: invoiceDto.Items.Select(i => new LigneRequestDto(
+                    ArticleId: i.ArticleId,
+                    Quantity: i.Quantity,
+                    Price: i.UniPriceHT
+                )).ToList()
+            );
+
+            var bonSortie = await _bonSortieService.CreateAsync(createBonSortieDto);
+            var mapping = new InvoiceBonSortieMapping(invoiceDto.Id, bonSortie.Id);
+            await _invoiceBonSortieMappingRepo.AddAsync(mapping);
+            await _invoiceBonSortieMappingRepo.SaveChangesAsync();
+        }
+
+        public async Task SyncCancelledAsync(InvoiceDto invoiceDto)
+        {
+            if (invoiceDto.Items == null || invoiceDto.Items.Count == 0)
+                throw new ArgumentException("Invoice has no items to sync.");
+
+            var bonSortieId = await _invoiceBonSortieMappingRepo.GetBonSortieIdByInvoiceIdAsync(invoiceDto.Id);
+
+            if (bonSortieId == null)
+                throw new InvalidOperationException($"No BonSortie found for invoice {invoiceDto.Id}");
+
+            // Create BonRetour to reverse the stock movement
+            var createBonRetourDto = new CreateBonRetourRequestDto(
+                SourceId: bonSortieId.Value,
+                SourceType: RetourSourceType.BonSortie,
+                Motif: $"Invoice {invoiceDto.InvoiceNumber} cancelled",
+                Observation: $"Auto-reversal from Invoice cancellation",
+                Lignes: invoiceDto.Items.Select(i => new LigneRequestDto(
+                    ArticleId: i.ArticleId,
+                    Quantity: i.Quantity,
+                    Price: i.UniPriceHT
+                )).ToList()
+            );
+
+            await _bonRetourService.CreateAsync(createBonRetourDto);
+        }
+    }
+}
