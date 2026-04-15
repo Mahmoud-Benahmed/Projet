@@ -89,7 +89,6 @@ public class BonSortieRepository : IBonSortieRepository
         var total = await query.CountAsync();
         var items = await query
             .OrderByDescending(b => b.CreatedAt)
-            .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync();
 
