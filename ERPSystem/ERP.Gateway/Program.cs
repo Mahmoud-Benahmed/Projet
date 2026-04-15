@@ -28,7 +28,6 @@ string GetAuthServiceAddress()
 
 var authServiceUrl = GetAuthServiceAddress();
 
-Console.WriteLine($"[Gateway] Using AuthService at: {authServiceUrl}");
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 {
     client.BaseAddress = new Uri(authServiceUrl);
@@ -39,11 +38,6 @@ builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 //////////////////////////////////////////////////
 // JWT Authentication
 //////////////////////////////////////////////////
-
-Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
-Console.WriteLine($"JWT:Secret: '{config["JWT:Secret"]}'");
-Console.WriteLine($"JWT:Secret Length: {config["JWT:Secret"]?.Length}");
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -76,7 +70,6 @@ builder.Services.AddAuthentication(options =>
     {
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"[Gateway] JWT validation failed: {context.Exception.Message}");
             return Task.CompletedTask;
         },
         OnTokenValidated = async context =>
@@ -94,7 +87,6 @@ builder.Services.AddAuthentication(options =>
             var validationResult = await authServiceClient.ValidateTokenAsync(tokenString);
             if (!validationResult.IsValid)
             {
-                Console.WriteLine($"[Gateway] User validation failed: {validationResult.Reason}");
                 context.Fail(validationResult.Reason ?? "User validation failed");
                 return;
             }
@@ -107,8 +99,6 @@ builder.Services.AddAuthentication(options =>
                 identity.AddClaim(new Claim("user_email", validationResult.User.Email ?? ""));
                 identity.AddClaim(new Claim("user_fullname", validationResult.User.FullName ?? ""));
             }
-
-            Console.WriteLine($"[Gateway] User {validationResult.User?.UserId} successfully validated");
         },
         OnChallenge = async context =>
         {
@@ -134,10 +124,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    // ── No FallbackPolicy — routes marked "Anonymous" in appsettings.json
-    //    are intentionally public; all others have an explicit AuthorizationPolicy.
-    //    FallbackPolicy would override "Anonymous" and block login/refresh/revoke.
-
     options.DefaultPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
