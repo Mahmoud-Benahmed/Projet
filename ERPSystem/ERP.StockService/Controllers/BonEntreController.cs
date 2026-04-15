@@ -58,10 +58,7 @@ public class BonEntreController : ControllerBase
     [HttpPost(ApiRoutes.BonEntres.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonEntreRequestDto dto)
     {
-        if(!TryGetRequesterId(out var requesterId))
-            return Unauthorized();
-
-        var result = await _service.CreateAsync(dto, requesterId);
+        var result = await _service.CreateAsync(dto);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -73,10 +70,7 @@ public class BonEntreController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonEntreRequestDto dto)
     {
-        if(!TryGetRequesterId(out var requesterId))
-            return Unauthorized();
-
-        var result = await _service.UpdateAsync(id, dto, requesterId);
+        var result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 

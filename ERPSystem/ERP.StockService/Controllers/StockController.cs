@@ -48,6 +48,7 @@ namespace ERP.StockService.Controllers
             }
         }
 
+
         [HttpGet("articles")]
         [ProducesResponseType(typeof(StockStatusResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStockStatus()

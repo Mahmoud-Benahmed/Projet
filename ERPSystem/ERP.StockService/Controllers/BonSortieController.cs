@@ -64,10 +64,7 @@ public class BonSortieController : ControllerBase
     [HttpPost(ApiRoutes.BonSorties.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonSortieRequestDto dto)
     {
-        if (!TryGetRequesterId(out var requesterId))
-            return Unauthorized();
-
-        var result = await _service.CreateAsync(dto, requesterId);
+        var result = await _service.CreateAsync(dto);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -79,10 +76,7 @@ public class BonSortieController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonSortieRequestDto dto)
     {
-        if(!TryGetRequesterId(out var requesterId))
-            return Unauthorized();
-
-        var result = await _service.UpdateAsync(id, dto, requesterId);
+        var result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 
@@ -91,12 +85,5 @@ public class BonSortieController : ControllerBase
     {
         await _service.DeleteAsync(id);
         return NoContent();
-    }
-
-    private bool TryGetRequesterId(out Guid requesterId)
-    {
-        requesterId = Guid.Empty;
-        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
-        return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
     }
 }
