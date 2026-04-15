@@ -13,14 +13,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         public async Task AddAsync(BonEntre b) => await _context.BonEntres.AddAsync(b);
         public async Task SaveChangesAsync()
         {
-            foreach (var entry in _context.ChangeTracker.Entries())
-            {
-                Console.WriteLine($"Entity: {entry.Entity.GetType().Name}, State: {entry.State}");
-                foreach (var prop in entry.Properties)
-                {
-                    Console.WriteLine($"  {prop.Metadata.Name}: Original={prop.OriginalValue}, Current={prop.CurrentValue}, Modified={prop.IsModified}");
-                }
-            }
             await _context.SaveChangesAsync();
         }
 
@@ -135,7 +127,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         // ── stats ─────────────────────────────────────────────────────────────
         public async Task<BonStatsDto> GetStatsAsync()
         {
-            var count = await _context.BonRetours.CountAsync();
+            var count = await _context.BonEntres.CountAsync();
 
             return new BonStatsDto(
                 TotalCount: count

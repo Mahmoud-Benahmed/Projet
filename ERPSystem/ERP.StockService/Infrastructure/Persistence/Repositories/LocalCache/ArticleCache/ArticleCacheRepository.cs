@@ -10,6 +10,11 @@ public sealed class ArticleCacheRepository : IArticleCacheRepository
 
     public ArticleCacheRepository(StockDbContext db) => _db = db;
 
+    public async Task<List<Domain.LocalCache.Article.ArticleCache>> GetByIdsAsync(List<Guid> ids)
+    => await _db.ArticleCaches
+        .Include(a => a.Category)
+        .Where(a => ids.Contains(a.Id))
+        .ToListAsync();
     public async Task<Domain.LocalCache.Article.ArticleCache?> GetByIdAsync(Guid id)
         => await _db.ArticleCaches
             .Include(a => a.Category)

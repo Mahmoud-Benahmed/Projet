@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
 
@@ -112,4 +113,6 @@ public class BonRetourRepository : IBonRetourRepository
             TotalCount: count
         );
     }
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+            => await _context.Database.BeginTransactionAsync();
 }

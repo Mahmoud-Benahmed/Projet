@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
 
@@ -15,14 +16,6 @@ public class BonSortieRepository : IBonSortieRepository
     public async Task AddAsync(BonSortie b) => await _context.BonSorties.AddAsync(b);
     public async Task SaveChangesAsync()
     {
-        foreach (var entry in _context.ChangeTracker.Entries())
-        {
-            Console.WriteLine($"Entity: {entry.Entity.GetType().Name}, State: {entry.State}");
-            foreach (var prop in entry.Properties)
-            {
-                Console.WriteLine($"  {prop.Metadata.Name}: Original={prop.OriginalValue}, Current={prop.CurrentValue}, Modified={prop.IsModified}");
-            }
-        }
         await _context.SaveChangesAsync();
     }
 
@@ -89,6 +82,7 @@ public class BonSortieRepository : IBonSortieRepository
         var total = await query.CountAsync();
         var items = await query
             .OrderByDescending(b => b.CreatedAt)
+            .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync();
 
@@ -114,10 +108,12 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var count = await _context.BonRetours.CountAsync();
+        var count = await _context.BonSorties.CountAsync();
 
         return new BonStatsDto(
             TotalCount: count
         );
     }
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+            => await _context.Database.BeginTransactionAsync();
 }

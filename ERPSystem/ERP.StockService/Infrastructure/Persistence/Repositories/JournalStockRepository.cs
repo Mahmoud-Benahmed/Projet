@@ -60,6 +60,21 @@ public class JournalStockRepository: IJournalStockRepository
 
         return result;
     }
+
+    public async Task<Dictionary<Guid, decimal>> GetCurrentStocksAsync(IEnumerable<Guid> articleIds)
+    {
+        var ids = articleIds.ToList();
+
+        return await _context.JournalStocks
+            .Where(j => ids.Contains(j.ArticleId))
+            .GroupBy(j => j.ArticleId)
+            .Select(g => new
+            {
+                ArticleId = g.Key,
+                Stock = g.OrderByDescending(j => j.CreatedAt).First().StockAfter
+            })
+            .ToDictionaryAsync(x => x.ArticleId, x => x.Stock);
+    }
 }
 
 
