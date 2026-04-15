@@ -7,34 +7,34 @@ namespace InvoiceService.Application.DTOs;
 // ════════════════════════════════════════════════════════════════════════════
 
 public record InvoiceDto(
-    [Required] Guid Id,
-    [Required][MinLength(1)][MaxLength(50)] string InvoiceNumber,
-    [Required] DateTime InvoiceDate,
-    [Required] DateTime DueDate,
-    [Range(0, double.MaxValue)] decimal TotalHT,
-    [Range(0, double.MaxValue)] decimal TotalTVA,
-    [Range(0, double.MaxValue)] decimal TotalTTC,
-    [Required][MinLength(1)] string Status,
-    [Required] Guid ClientId,
-    [Required][MinLength(1)][MaxLength(200)] string ClientFullName,
-    [Required][MinLength(1)][MaxLength(500)] string ClientAddress,
-    [MaxLength(1000)] string? AdditionalNotes,
-    [Required] DateTime CreatedAt,
-    [Required] DateTime UpdatedAt,
-    [Required] bool IsDeleted,
-    [Required][MinLength(1)] List<InvoiceItemDto> Items
+    Guid Id,
+    string InvoiceNumber,
+    DateTime InvoiceDate,
+    DateTime DueDate,
+    decimal TotalHT,
+    decimal TotalTVA,
+    decimal TotalTTC,
+    string Status,
+    Guid ClientId,
+    string ClientFullName,
+    string ClientAddress,
+    string? AdditionalNotes,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    bool IsDeleted,
+    List<InvoiceItemDto> Items
 );
 
 public record InvoiceItemDto(
-    [Required] Guid Id,
-    [Required] Guid ArticleId,
-    [Required][MinLength(1)][MaxLength(200)] string ArticleName,
-    [Required][MinLength(1)][MaxLength(50)] string ArticleBarCode,
-    [Required][Range(1, double.MaxValue)] decimal Quantity,
-    [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
-    [Required][Range(0, 100)] decimal TaxRate,
-    [Required][Range(0, double.MaxValue)] decimal TotalHT,
-    [Required][Range(0, double.MaxValue)] decimal TotalTTC
+    Guid Id,
+    Guid ArticleId,
+    string ArticleName,
+    string ArticleBarCode,
+    decimal Quantity,
+    decimal UniPriceHT,
+    decimal TaxRate,
+    decimal TotalHT,
+    decimal TotalTTC
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@ public record CreateInvoiceItemDto(
     [Required] Guid ArticleId,
     [Required][Range(1, double.MaxValue)] decimal Quantity,
     [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
-    [Required][Range(0, 100)] decimal TaxRate
+    [Required][Range(0, 1)] decimal TaxRate
 );
 
 // ✅ FIXED: Move validation attributes to constructor parameters
@@ -69,14 +69,14 @@ public record UpdateInvoiceItemDto(
     [Required] Guid ArticleId,
     [Required][Range(1, double.MaxValue)] decimal Quantity,
     [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
-    [Required][Range(0, 100)] decimal TaxRate
+    [Required][Range(0, 1)] decimal TaxRate
 );
 
 public record AddInvoiceItemDto(
     [Required] Guid ArticleId,
     [Required][Range(1, double.MaxValue)] decimal Quantity,
     [Required][Range(0, double.MaxValue)] decimal UniPriceHT,
-    [Required][Range(0, 100)] decimal TaxRate
+    [Required][Range(0, 1)] decimal TaxRate
 );
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -35,7 +35,7 @@ public sealed record ClientCategoryResponseDto(
 
 
 // Article DTOs
-public record CategoryResponseDto(
+public record ArticleCategoryResponseDto(
     Guid Id,
     string Name,
     decimal TVA,
@@ -46,7 +46,7 @@ public record CategoryResponseDto(
 
 public record ArticleResponseDto(
     Guid Id,
-    CategoryResponseDto Category,
+    ArticleCategoryResponseDto Category,
     string CodeRef,
     string BarCode,
     string Libelle,
