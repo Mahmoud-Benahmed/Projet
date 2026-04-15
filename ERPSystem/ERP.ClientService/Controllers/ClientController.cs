@@ -165,7 +165,6 @@ public class ClientController : ControllerBase
         requesterId = Guid.Empty;
         var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
         var res = !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
-        Console.WriteLine($">>>>>>>>>>>> {res} <<<<<<<<<<<<");
         return res;
     }
 

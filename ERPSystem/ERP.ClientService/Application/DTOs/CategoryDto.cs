@@ -25,10 +25,10 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+        [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(1,180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
+        [Range(7,180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
         int DuePaymentPeriod,               // ← added
 
         bool UseBulkPricing = false,
@@ -51,10 +51,10 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(1, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+        [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(1, 180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
+        [Range(7, 180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
         int DuePaymentPeriod,
 
         bool UseBulkPricing = false,
