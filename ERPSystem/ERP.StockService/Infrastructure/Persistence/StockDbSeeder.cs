@@ -10,7 +10,6 @@ namespace ERP.StockService.Infrastructure.Persistence.Seeders;
 public class StockDbSeeder
 {
     private readonly StockDbContext _dbContext;
-    //private readonly IArticleServiceHttpClient _articleServiceHttpClient;
 
     private readonly IArticleCacheRepository _articleCacheRepository;
     private readonly IClientCacheRepository _clientCacheRepository;
@@ -117,7 +116,6 @@ public class StockDbSeeder
     {
         _logger?.LogInformation("Seeding bon entrées using service...");
 
-        var userId = Guid.NewGuid();
         var random = new Random();
 
         var bonEntreeGroups = new[]
@@ -164,7 +162,7 @@ public class StockDbSeeder
 
                 try
                 {
-                    var result = await _bonEntreService.CreateAsync(createDto, userId);
+                    var result = await _bonEntreService.CreateAsync(createDto);
                     _logger?.LogInformation("Created BonEntre: {Numero} with {LigneCount} lines",
                         result.numero, result.Lignes?.Count ?? 0);
                 }
@@ -236,7 +234,7 @@ public class StockDbSeeder
 
             try
             {
-                var result = await _bonSortieService.CreateAsync(createDto, userId);
+                var result = await _bonSortieService.CreateAsync(createDto);
                 _logger?.LogInformation("Created BonSortie: {Numero} for client {Client}",
                     result.numero, client.Name);
             }
@@ -297,7 +295,7 @@ public class StockDbSeeder
 
             try
             {
-                var result = await _bonRetourService.CreateAsync(createDto, userId);
+                var result = await _bonRetourService.CreateAsync(createDto);
                 _logger?.LogInformation("Created BonRetour: {Numero} from {SourceType}",
                     result.Numero, result.SourceType);
             }

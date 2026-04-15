@@ -1,10 +1,10 @@
 ﻿using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 using ERP.StockService.Domain.LocalCache.Article;
 using ERP.StockService.Domain.LocalCache.Client;
 using ERP.StockService.Domain.LocalCache.Fournisseur;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Reflection.Emit;
 
 namespace ERP.StockService.Infrastructure.Persistence;
 
@@ -19,7 +19,8 @@ public sealed class StockDbContext(DbContextOptions<StockDbContext> options) : D
     public DbSet<BonNumber> BonNumber => Set<BonNumber>();
     public DbSet<JournalStock> JournalStocks => Set<JournalStock>();
     public DbSet<ArticleCache> ArticleCaches => Set<ArticleCache>();
-    public DbSet<Domain.LocalCache.Article.CategoryCache> ArticleCategoryCaches => Set<Domain.LocalCache.Article.CategoryCache>();
+    public DbSet<ArticleCategoryCache> ArticleCategoryCaches => Set<ArticleCategoryCache>();
+    public DbSet<InvoiceBonSortieMapping> InvoiceBonSortieMappings { get; set; }
 
 
     public DbSet<ClientCache> ClientCaches => Set<ClientCache>();
@@ -179,9 +180,9 @@ internal sealed class JournalStockConfiguration : IEntityTypeConfiguration<Journ
 }
 
 // ── CategoryCache ─────────────────────────────────────────────────────────────
-internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Article.CategoryCache>
+internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Article.ArticleCategoryCache>
 {
-    public void Configure(EntityTypeBuilder<Domain.LocalCache.Article.CategoryCache> b)
+    public void Configure(EntityTypeBuilder<Domain.LocalCache.Article.ArticleCategoryCache> b)
     {
         b.ToTable("ArticleCategoryCache");
         b.HasKey(c => c.Id);
@@ -348,5 +349,15 @@ internal sealed class  FournisseurCacheConfiguration : IEntityTypeConfiguration<
         entity.Property(e => e.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("GETUTCDATE()");
+    }
+}
+
+internal sealed class InvoiceBonSortieMappingConfiguration : IEntityTypeConfiguration<InvoiceBonSortieMapping>
+{
+    public void Configure(EntityTypeBuilder<InvoiceBonSortieMapping> entity)
+    {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.InvoiceId).IsUnique();
+            entity.HasIndex(e => e.BonSortieId);
     }
 }
