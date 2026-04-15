@@ -5,31 +5,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
 
-public sealed class CategoryCacheRepository : ICategoryCacheRepository
+public sealed class ArticleCategoryCacheRepository : IArticleCategoryCacheRepository
 {
     private readonly InvoiceDbContext _db;
 
-    public CategoryCacheRepository(InvoiceDbContext db) => _db = db;
-
-    public async Task<CategoryCache?> GetByIdAsync(Guid id)
+    public ArticleCategoryCacheRepository(InvoiceDbContext db) => _db = db;
+    public async Task<ArticleCategoryCache?> GetByIdAsync(Guid id)
         => await _db.ArticleCategoryCaches.FindAsync(id);
 
-    public async Task<CategoryCache?> GetByNameAsync(string name)
+    public async Task<ArticleCategoryCache?> GetByNameAsync(string name)
         => await _db.ArticleCategoryCaches
             .FirstOrDefaultAsync(c => c.Name == name);
 
-    public async Task<List<CategoryCache>> GetAllAsync()
+    public async Task<List<ArticleCategoryCache>> GetAllAsync()
         => await _db.ArticleCategoryCaches
             .OrderBy(c => c.Name)
             .ToListAsync();
 
-    public async Task<List<CategoryCache>> GetAllActiveAsync()
+    public async Task<List<ArticleCategoryCache>> GetAllActiveAsync()
         => await _db.ArticleCategoryCaches
             .Where(c => !c.IsDeleted)
             .OrderBy(c => c.Name)
             .ToListAsync();
 
-    public async Task<(List<CategoryCache> Items, int TotalCount)> GetPagedAsync(
+    public async Task<(List<ArticleCategoryCache> Items, int TotalCount)> GetPagedAsync(
         int pageNumber, int pageSize)
     {
         var query = _db.ArticleCategoryCaches
@@ -45,7 +44,7 @@ public sealed class CategoryCacheRepository : ICategoryCacheRepository
         return (items, totalCount);
     }
 
-    public async Task DeleteAsync(CategoryCache category)
+    public async Task DeleteAsync(ArticleCategoryCache category)
     {
         if (category == null)
             throw new ArgumentNullException(nameof(category));
@@ -59,7 +58,7 @@ public sealed class CategoryCacheRepository : ICategoryCacheRepository
         return await _db.ArticleCategoryCaches.AnyAsync(c => c.Name == name);
     }
 
-    public async Task AddAsync(CategoryCache category)
+    public async Task AddAsync(ArticleCategoryCache category)
         => await _db.ArticleCategoryCaches.AddAsync(category);
     public async Task SaveChangesAsync()
         => await _db.SaveChangesAsync();

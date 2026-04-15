@@ -56,7 +56,6 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
         public async Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false)
         {
-            Console.WriteLine($"includeDeleted: {includeDeleted}");
             var query = includeDeleted
                 ? _context.Invoices.IgnoreQueryFilters()
                 : _context.Invoices.AsQueryable();

@@ -16,25 +16,14 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
         public DbSet<InvoiceSequence> InvoiceSequences { get; set; }
 
         public DbSet<ArticleCache> ArticleCaches => Set<ArticleCache>();
-        public DbSet<Domain.LocalCache.Article.CategoryCache> ArticleCategoryCaches => Set<Domain.LocalCache.Article.CategoryCache>();
+        public DbSet<Domain.LocalCache.Article.ArticleCategoryCache> ArticleCategoryCaches => Set<Domain.LocalCache.Article.ArticleCategoryCache>();
 
         public DbSet<ClientCache> ClientCaches => Set<ClientCache>();
         public DbSet<Domain.LocalCache.Client.CategoryCache> ClientCategoryMasterCaches => Set<Domain.LocalCache.Client.CategoryCache>();
         public DbSet<ClientCategoryCache> ClientCategoryAssignments => Set<ClientCategoryCache>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.ApplyConfiguration(new InvoiceConfiguration());
-            modelBuilder.ApplyConfiguration(new InvoiceItemConfiguration());
-            modelBuilder.ApplyConfiguration(new InvoiceSequenceConfiguration());
-            modelBuilder.ApplyConfiguration(new ArtCategoryCacheConfiguration());
-            modelBuilder.ApplyConfiguration(new ArticleCacheConfiguration());
-            modelBuilder.ApplyConfiguration(new ClientCacheConfiguration());
-            modelBuilder.ApplyConfiguration(new CltCategoryCacheConfiguration());
-            modelBuilder.ApplyConfiguration(new ClientCategoryConfiguration());
-        }
+        protected override void OnModelCreating(ModelBuilder m) =>
+            m.ApplyConfigurationsFromAssembly(typeof(InvoiceDbContext).Assembly);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -140,9 +129,9 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
     // CACHE CONFIGURATIONS
     // ═══════════════════════════════════════════════════════════════════════════
 
-    internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Article.CategoryCache>
+    internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<Domain.LocalCache.Article.ArticleCategoryCache>
     {
-        public void Configure(EntityTypeBuilder<Domain.LocalCache.Article.CategoryCache> b)
+        public void Configure(EntityTypeBuilder<Domain.LocalCache.Article.ArticleCategoryCache> b)
         {
             b.ToTable("ArticleCategoryCache");
             b.HasKey(c => c.Id);
