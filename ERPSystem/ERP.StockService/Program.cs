@@ -1,16 +1,20 @@
 
+using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Application.Services;
 using ERP.StockService.Application.Services.LocalCache;
 using ERP.StockService.Application.Services.LocalCache.ArticleCache;
 using ERP.StockService.Application.Services.LocalCache.ClientCache;
 using ERP.StockService.Application.Services.LocalCache.Fournisseur;
+using ERP.StockService.Application.Services.LocalCache.InvoiceCache;
 using ERP.StockService.Infrastructure.Messaging;
-using ERP.StockService.Infrastructure.Messaging.ArticleEvents.Article;
-using ERP.StockService.Infrastructure.Messaging.ArticleEvents.Category;
-using ERP.StockService.Infrastructure.Messaging.ClientEvents.Category;
-using ERP.StockService.Infrastructure.Messaging.ClientEvents.Client;
-using ERP.StockService.Infrastructure.Messaging.FournisseurEvents;
+using ERP.StockService.Infrastructure.Messaging.Events.ArticleEvents.Article;
+using ERP.StockService.Infrastructure.Messaging.Events.ArticleEvents.Category;
+using ERP.StockService.Infrastructure.Messaging.Events.ClientEvents.Category;
+using ERP.StockService.Infrastructure.Messaging.Events.ClientEvents.Client;
+using ERP.StockService.Infrastructure.Messaging.Events.FournisseurEvents;
+using ERP.StockService.Infrastructure.Messaging.Events.InvoiceEvents;
 using ERP.StockService.Infrastructure.Persistence;
 using ERP.StockService.Infrastructure.Persistence.Repositories;
 using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache;
@@ -64,10 +68,10 @@ builder.Services.AddScoped<IArticleEventHandler, ArticleEventHandler>();
 builder.Services.AddHostedService<ArticleEventConsumer>();
 
 // Category cache dependencies
-builder.Services.AddScoped<ICategoryCacheRepository, CategoryCacheRepository>();
-builder.Services.AddScoped<ICategoryCacheService, CategoryCacheService>();
-builder.Services.AddScoped<ICategoryEventHandler, CategoryEventHandler>();
-builder.Services.AddHostedService<CategoryEventConsumer>();
+builder.Services.AddScoped<IArticleCategoryCacheRepository, ArticleCategoryCacheRepository>();
+builder.Services.AddScoped<IArticleCategoryCacheService, ArticleCategoryCacheService>();
+builder.Services.AddScoped<IArticleCategoryEventHandler, ArticleCategoryEventHandler>();
+builder.Services.AddHostedService<ArticleCategoryEventConsumer>();
 
 // Client cache dependencies
 builder.Services.AddScoped<IClientCacheRepository, ClientCacheRepository>();
@@ -85,8 +89,11 @@ builder.Services.AddScoped<IFournisseurCacheService, FournisseurCacheService>();
 builder.Services.AddScoped<IFournisseurEventHandler, FournisseurEventHandler>();
 builder.Services.AddHostedService<FournisseurEventConsumer>();
 
+builder.Services.AddScoped<IInvoiceCacheService, InvoiceCacheService>();
+builder.Services.AddScoped<IInvoiceEventHandler, InvoiceEventHandler>();
+builder.Services.AddHostedService<InvoiceEventConsumer>();
 
-
+builder.Services.AddScoped<IInvoiceBonSortieMappingRepository, InvoiceBonSortieMappingRepository>();
 
 
 // =========================
@@ -123,6 +130,93 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
+
+// =========================
+// KAFKA TOPIC VERIFICATION & CREATION
+// =========================
+using (var scope = app.Services.CreateScope())
+{
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var bootstrapServers = configuration["Kafka:BootstrapServers"]
+        ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured.");
+
+    var adminConfig = new AdminClientConfig
+    {
+        BootstrapServers = bootstrapServers
+    };
+
+    using var adminClient = new AdminClientBuilder(adminConfig).Build();
+
+    var requiredTopics = new[] {
+        ArticleTopics.Created, ArticleTopics.Updated,
+        ArticleTopics.Deleted, ArticleTopics.Restored,
+
+        ArticleCategoryTopics.Created, ArticleCategoryTopics.Updated,
+        ArticleCategoryTopics.Deleted, ArticleCategoryTopics.Restored,
+
+        ClientTopics.Created, ClientTopics.Updated,
+        ClientTopics.Deleted, ClientTopics.Restored,
+
+        ClientCategoryTopics.Created, ClientCategoryTopics.Updated,
+        ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored,
+
+        InvoiceTopics.Created, InvoiceTopics.Cancelled,
+    };
+
+    var maxRetries = 30;
+    var retryDelay = TimeSpan.FromSeconds(2);
+
+    // First, try to create all topics
+    var topicSpecifications = requiredTopics.Select(topic => new TopicSpecification
+    {
+        Name = topic,
+        NumPartitions = 1,  // Adjust based on your needs
+        ReplicationFactor = 1  // Adjust for your Kafka cluster
+    });
+
+    try
+    {
+        await adminClient.CreateTopicsAsync(topicSpecifications);
+        logger.LogInformation("Successfully created all required Kafka topics");
+    }
+    catch (CreateTopicsException ex) when (ex.Results[0].Error.Code == ErrorCode.TopicAlreadyExists)
+    {
+        logger.LogInformation("Some topics already exist, continuing...");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error creating Kafka topics");
+    }
+
+    // Then verify they exist
+    for (int i = 0; i < maxRetries; i++)
+    {
+        try
+        {
+            var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
+            var existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
+
+            var missingTopics = requiredTopics.Where(t => !existingTopics.Contains(t)).ToList();
+
+            if (!missingTopics.Any())
+            {
+                logger.LogInformation("All required Kafka topics exist and are ready");
+                break;
+            }
+
+            logger.LogWarning("Waiting for topics to be fully created... Missing: {MissingTopics}. Attempt {Attempt}/{MaxRetries}",
+                string.Join(", ", missingTopics), i + 1, maxRetries);
+            await Task.Delay(retryDelay);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking Kafka topics. Attempt {Attempt}/{MaxRetries}", i + 1, maxRetries);
+            await Task.Delay(retryDelay);
+        }
+    }
+}
 
 // =========================
 // MIGRATIONS & SEEDING
