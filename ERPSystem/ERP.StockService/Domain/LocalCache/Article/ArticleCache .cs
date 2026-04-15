@@ -1,4 +1,5 @@
-﻿using ERP.StockService.Application.DTOs;
+﻿using Confluent.Kafka;
+using ERP.StockService.Application.DTOs;
 
 namespace ERP.StockService.Domain.LocalCache.Article;
 
@@ -6,7 +7,7 @@ public sealed class ArticleCache
 {
     public Guid Id { get; private set; }
     public Guid CategoryId { get; private set; }          // ← FK
-    public CategoryCache? Category { get; private set; }  // ← navigation
+    public ArticleCategoryCache? Category { get; private set; }  // ← navigation
     public string CodeRef { get; private set; } = default!;
     public string BarCode { get; private set; } = default!;
     public string Libelle { get; private set; } = default!;
@@ -36,7 +37,9 @@ public sealed class ArticleCache
 
     public void ApplyUpdate(ArticleResponseDto dto)
     {
-        CategoryId = dto.Category.Id;
+        if (CategoryId != dto.Category.Id)
+            CategoryId = dto.Category.Id;
+
         CodeRef = dto.CodeRef;
         BarCode = dto.BarCode;
         Libelle = dto.Libelle;
