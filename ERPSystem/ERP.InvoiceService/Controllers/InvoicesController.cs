@@ -2,6 +2,7 @@ using ERP.InvoiceService.Properties;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
+using InvoiceService.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InvoiceService.API.Controllers
@@ -10,9 +11,11 @@ namespace InvoiceService.API.Controllers
     public class InvoicesController : ControllerBase
     {
         private readonly IInvoicesService _invoiceService;
-        public InvoicesController(IInvoicesService invoiceService)
+        private readonly IInvoicePdfGenerator _pdfGenerator;
+        public InvoicesController(IInvoicesService invoiceService, IInvoicePdfGenerator pdfGenerator)
         {
             _invoiceService = invoiceService;
+            _pdfGenerator = pdfGenerator;
         }
         // ════════════════════════════════════════════════════════════════════════════
         // GET OPERATIONS
@@ -129,5 +132,16 @@ namespace InvoiceService.API.Controllers
         [HttpGet(ApiRoutes.Invoices.GetStats)]
         public async Task<ActionResult<InvoiceStatsDto>> GetStats([FromQuery] int top = 5)
             => Ok(await _invoiceService.GetStatsAsync(top));
+
+        [HttpGet(ApiRoutes.Invoices.ToPdf)]
+        public async Task<IActionResult> GetInvoicePdf([FromRoute] Guid id)
+        {
+            var invoice = await _invoiceService.GetByIdAsync(id);
+            if (invoice == null)
+                return NotFound();
+
+            var pdfBytes = _pdfGenerator.GenerateInvoicePdf(invoice);
+            return File(pdfBytes, "application/pdf", $"Invoice_{invoice.InvoiceNumber}.pdf");
+        }
     }
 }
