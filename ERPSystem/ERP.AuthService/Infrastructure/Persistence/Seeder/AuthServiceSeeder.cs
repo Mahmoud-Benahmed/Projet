@@ -97,7 +97,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
                 {
                     if (!controles.TryGetValue(def.Code, out var controle))
                     {
-                        Console.WriteLine($"Controle not found: {def.Code}");
                         continue;
                     }
 
@@ -257,9 +256,9 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
 
             var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
             {
-                ("admin_erp1234",   "admin@erPrivileges.com",    "John DOE",         "Admin@1234",   adminRole.Id),
-                ("sales_erp1234",   "sales@erPrivileges.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
-                ("stock_erp1234",   "stock@erPrivileges.com",    "Stock David",      "Stock@1234",   stockRole.Id),
+                ("admin_erp1234",   "admin@erp.com",    "John DOE",         "Admin@1234",   adminRole.Id),
+                ("sales_erp1234",   "sales@erp.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
+                ("stock_erp1234",   "stock@erp.com",    "Stock David",      "Stock@1234",   stockRole.Id),
                 ("account_erp1234", "account@erPrivileges.com",  "Accountant Jane",  "Account@1234", accountRole.Id),
             };
 
