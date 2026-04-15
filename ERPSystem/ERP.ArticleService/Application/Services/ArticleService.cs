@@ -49,15 +49,6 @@ namespace ERP.ArticleService.Application.Services
             await _articleRepository.SaveChangesAsync();
             var dto = MapToDto(article);
 
-
-            // Add this logging
-            logger.LogInformation("Publishing article event: {@Article}", dto);
-            logger.LogInformation("Category in event: Id={CategoryId}, Name={CategoryName}, TVA={CategoryTVA}",
-                dto.Category?.Id, dto.Category?.Name, dto.Category?.TVA);
-
-            var json = JsonSerializer.Serialize(dto);
-            logger.LogInformation("Serialized JSON: {Json}", json);
-
             await _eventPublisher.PublishAsync(ArticleTopics.Created, dto);
             return dto;
         }
