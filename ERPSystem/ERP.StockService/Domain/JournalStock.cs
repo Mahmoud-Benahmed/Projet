@@ -37,7 +37,7 @@
             decimal stockBefore,
             StockMovementType movementType,
             string sourceService,
-            string sourceOperation,
+            string sourceOperation= "CreateBonEntre",
             Guid? performedBy = null)
         {
             var stockAfter = stockBefore + quantity;

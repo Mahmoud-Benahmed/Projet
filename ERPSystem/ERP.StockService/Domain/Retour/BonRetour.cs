@@ -38,18 +38,13 @@ public sealed class BonRetour : PieceStock
     }
 
     // ---------------- UPDATE BON ----------------
-    public void Update(Guid sourceId, string sourceType, string motif, string? observation)
+    public void Update(string motif, string? observation)
     {
 
         if (string.IsNullOrWhiteSpace(motif))
             throw new ArgumentException("Motif is required.");
 
-        if (!Enum.TryParse<RetourSourceType>(sourceType, true, out var parsedSourceType))
-            throw new ArgumentException($"Invalid source type: {sourceType}");
-
         Motif = motif.Trim();
-        SourceId = sourceId;
-        SourceType = parsedSourceType;
 
         base.Update(observation);
     }

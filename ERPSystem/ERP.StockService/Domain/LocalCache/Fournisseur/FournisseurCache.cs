@@ -1,7 +1,4 @@
-﻿// Domain/LocalCache/FournisseurCache.cs
-
-// Domain/LocalCache/FournisseurCache.cs
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 
 namespace ERP.StockService.Domain.LocalCache.Fournisseur;
 

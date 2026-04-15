@@ -1,5 +1,4 @@
 ﻿using ERP.StockService.Domain;
-using ERP.StockService.Domain.Entre;
 
 public sealed class BonEntre : PieceStock
 {

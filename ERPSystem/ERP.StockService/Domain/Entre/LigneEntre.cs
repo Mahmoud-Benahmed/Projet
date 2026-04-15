@@ -1,4 +1,4 @@
-﻿namespace ERP.StockService.Domain.Entre;
+﻿namespace ERP.StockService.Domain;
 
 public sealed class LigneEntre : LigneStock
 {
