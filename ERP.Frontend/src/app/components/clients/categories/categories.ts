@@ -71,10 +71,10 @@ export class ClientCategoriesComponent implements OnInit {
     this.categoryForm = this.fb.group({
       name:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
       code:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      delaiRetour:           [null, [Validators.required, Validators.min(1)]],
-      duePaymentPeriod:      [null, [Validators.required, Validators.min(1)]],  // ← added
-      discountRate:          [null, [Validators.min(0), Validators.max(1)]],    // ← fix: max 1 not 100
-      creditLimitMultiplier: [null, [Validators.min(0.01)]],
+      delaiRetour:           [null, [Validators.required, Validators.min(7)]],
+      duePaymentPeriod:      [null, [Validators.required, Validators.min(7)]],
+      discountRate:          [null, [Validators.min(0), Validators.max(1)]],
+      creditLimitMultiplier: [null, [Validators.min(1)]],
       useBulkPricing:        [false],
     });
   }

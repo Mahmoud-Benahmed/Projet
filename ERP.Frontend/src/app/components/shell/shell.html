@@ -311,7 +311,7 @@
       <!-- Invoices -->
       <a class="sidebar__item" routerLink="/invoices" routerLinkActive="sidebar__item--active"
          *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)">
-        <mat-icon>receipt</mat-icon>{{ 'NAV.INVOICES' | translate}}
+        <mat-icon>receipt</mat-icon><span>{{ 'NAV.INVOICES' | translate}}</span>
       </a>
 
       <!-- Audit Log -->

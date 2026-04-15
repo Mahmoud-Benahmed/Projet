@@ -89,6 +89,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     applies: false,
     rate: 0,
     discountAmount: 0,
+    discountAmountHT: 0,
     originalTotal: 0,
     discountedTotal: 0
   };
@@ -313,19 +314,25 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     });
   }
 
-  loadClients(): void {
-    this.clientsService.getAll(1, 1000).subscribe({
-      next: res => { this.clients = res.items; },
-      error: () => {},
-    });
+  loadClients(): Observable<ClientResponseDto[]> {
+    return this.clientsService.getAll(1, 1000).pipe(
+      map(res => {
+        this.clients = res.items;
+        return this.clients;
+      }),
+      catchError(() => {
+        this.clients = [];
+        return of([]);
+      })
+    );
   }
 
-  private loadArticlesWithStock(): void {
-    forkJoin({
+  loadArticlesWithStock(): Observable<StockItem[]> {
+    return forkJoin({
       articles: this.articleService.getAll(1, 1000).pipe(catchError(() => of({ items: [] }))),
       stock: this.stock.getStockArticles().pipe(catchError(() => of({ inStock: [], outStock: [] })))
-    }).subscribe({
-      next: (results) => {
+    }).pipe(
+      map((results) => {
         const allArticles = results.articles.items || [];
         const stockData = results.stock || { inStock: [], outStock: [] };
 
@@ -334,20 +341,19 @@ export class InvoicesComponent implements OnInit, OnDestroy{
           stockMap.set(s.articleId || s.id, s.quantity);
         });
 
-        // Store original articles (never modified)
         this.masterArticles = allArticles
           .filter((a: any) => stockMap.has(a.id) && stockMap.get(a.id)! > 0)
           .map((a: any) => ({ ...a, quantity: stockMap.get(a.id)! }));
 
-        this.syncArticles();
-
-        this.cdr.markForCheck();
-      },
-      error: () => {
+        this.syncArticles(); // updates this.articles and calls markForCheck
+        return this.articles;
+      }),
+      catchError(() => {
         this.syncArticles();
         this.articles = [];
-      }
-    });
+        return of([]);
+      })
+    );
   }
 
   loadStats(): void {
@@ -384,16 +390,35 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   }
 
   reload(): void {
-    this.loadClients();
-    this.loadArticlesWithStock();
+    forkJoin({
+      clients: this.loadClients(),
+      articles: this.loadArticlesWithStock()
+    }).subscribe({
+      next: () => {
+        // Force change detection after both data loads are complete
+        this.cdr.markForCheck();
 
-    if (this.isDeletedList()) {
-      this.loadDeletedInvoices();
-    } else if (this.isStats()) {
-      this.loadStats();
-    } else {
-      this.load();
-    }
+        // Now load the appropriate list/stats
+        if (this.isDeletedList()) {
+          this.loadDeletedInvoices();
+        } else if (this.isStats()) {
+          this.loadStats();
+        } else {
+          this.load();
+        }
+      },
+      error: () => {
+        // Even on error, try to load the main data
+        this.cdr.markForCheck();
+        if (this.isDeletedList()) {
+          this.loadDeletedInvoices();
+        } else if (this.isStats()) {
+          this.loadStats();
+        } else {
+          this.load();
+        }
+      }
+    });
   }
 
   // ── Navigation / Mode Management ──────────────────────────────────────────
@@ -408,7 +433,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   openCreate(): void {
     if (this.isCreate()) return;
     this.previousMode = this.viewMode();
-    this.setViewMode('create');
+    this.setViewMode('create'); 
     this.resetCreateForm();
 
     const today = new Date();
@@ -518,15 +543,14 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this.clientSearchQuery = '';
     this.filteredClients = [];
     this.creditWarning = null;
-    this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
+    this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 ,   discountAmountHT: 0};
     this.selectedClientForValidation = null;
     this._selectedArticle = null;
     
     // Reset available articles to original stock
     this.syncArticles();
-    
-    
     this.cdr.markForCheck();
+    this.isValidating = false; // ← add this
   }
 
   setViewMode(mode: ViewMode): void {
@@ -649,6 +673,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this._selectedArticle = null;
     this.itemForm.reset();
     this.syncArticles();
+    this.isValidating = false; // ← add this
   }
 
   submitInlineItem(): void {
@@ -691,7 +716,9 @@ export class InvoicesComponent implements OnInit, OnDestroy{
           ...this.pendingItems[idx],
           articleId, articleName: master.libelle ?? '',
           articleBarCode: master.barCode ?? '',
-          quantity, uniPriceHT, taxRate, totalHT, totalTTC,
+          quantity, uniPriceHT, 
+          taxRate , 
+          totalHT, totalTTC
         };
       }
     } else {
@@ -722,6 +749,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
           quantity, uniPriceHT, taxRate, totalHT, totalTTC,
         });
       }
+      this.isValidating = false; // ← add this
     }
 
     this.pendingItems = [...this.pendingItems];
@@ -816,7 +844,7 @@ export class InvoicesComponent implements OnInit, OnDestroy{
       articleId: rest.articleId,  // Ensure this is string
       quantity: Number(rest.quantity),  // Force to number
       uniPriceHT: Number(rest.uniPriceHT),  // Force to number
-      taxRate: Number(rest.taxRate),  // Force to number
+      taxRate: Number(rest.taxRate / 100),  // Force to number
     }));
 
     this.isValidating = true;
@@ -865,7 +893,11 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   finalize(invoice: InvoiceDto): void {
     this.invoiceService.finalize(invoice.id).subscribe({
       next: (updated) => {
-        if (this.isEdit() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+        // ✅ update selectedInvoice regardless of which mode triggered the action
+        if (this.selectedInvoice?.id === updated.id) {
+          this.selectedInvoice = { ...updated }; // spread to trigger reference change
+          this.cdr.markForCheck();
+        }
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.FINALIZED'));
         this.reload();
       },
@@ -876,7 +908,10 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   markAsPaid(invoice: InvoiceDto): void {
     this.invoiceService.markAsPaid(invoice.id).subscribe({
       next: (updated) => {
-        if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+        if (this.selectedInvoice?.id === updated.id) {
+          this.selectedInvoice = { ...updated }; // spread to trigger reference change
+          this.cdr.markForCheck();
+        }
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.MARKED_PAID'));
         this.reload();
       },
@@ -900,7 +935,10 @@ export class InvoicesComponent implements OnInit, OnDestroy{
       if (!confirmed) return;
       this.invoiceService.cancel(invoice.id).subscribe({
         next: (updated) => {
-          if (this.isView() && this.selectedInvoice?.id === updated.id) this.selectedInvoice = updated;
+          if (this.selectedInvoice?.id === updated.id) {
+            this.selectedInvoice = { ...updated };
+            this.cdr.markForCheck();
+          }
           this.flash('success', this.translate.instant('INVOICES.SUCCESS.CANCELLED'));
           this.reload();
         },
@@ -960,10 +998,10 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     const formValue = this.invoiceForm.value;
 
     const items = this.pendingItems.map(item => ({
-      articleId: item.articleId,
-      quantity: item.quantity,
-      uniPriceHT: item.uniPriceHT,
-      taxRate: item.taxRate, // This should already be in percentage (0-100)
+      articleId: item.articleId,  // Ensure this is string
+      quantity: Number(item.quantity),  // Force to number
+      uniPriceHT: Number(item.uniPriceHT),  // Force to number
+      taxRate: Number(item.taxRate / 100),  // Force to number
     }));
 
     const updateDto = {
@@ -1093,6 +1131,20 @@ export class InvoicesComponent implements OnInit, OnDestroy{
     this.chart = new Chart(this.monthlyChartRef.nativeElement, config);
   }
 
+  downloadPdf(invoice: InvoiceDto): void {
+    this.invoiceService.downloadInvoicePdf(invoice.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice_${invoice.invoiceNumber}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.flash('error', 'PDF generation failed')
+    });
+  }
+
   private observeThemeChanges(): void {
     this.themeObserver = new MutationObserver(() => {
       if (this.isStats() && this.invoiceStats) this.renderStatusPieChart();
@@ -1105,24 +1157,37 @@ export class InvoicesComponent implements OnInit, OnDestroy{
   async checkClientLimitsAndDiscount(): Promise<void> {
     if (!this.selectedClientForValidation || this.pendingItems.length === 0) {
       this.creditWarning = null;
-      this.discountInfo = { applies: false, rate: 0, discountAmount: 0, originalTotal: 0, discountedTotal: 0 };
+      this.discountInfo = { applies: false, rate: 0, discountAmount: 0, discountAmountHT: 0, originalTotal: 0, discountedTotal: 0 };
       return;
     }
 
     const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
-      articleId: rest.articleId, quantity: rest.quantity,
-      uniPriceHT: rest.uniPriceHT, taxRate: rest.taxRate,
+      articleId: rest.articleId,  // Ensure this is string
+      quantity: Number(rest.quantity),  // Force to number
+      uniPriceHT: Number(rest.uniPriceHT),  // Force to number
+      taxRate: Number(rest.taxRate / 100),  // Force to number
     }));
 
     const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
-    const { originalTotalTTC, discountedTotalTTC, discountAmount } =
+    const { originalTotalTTC, discountedTotalTTC, discountAmount, discountAmountHT } =
       this.invoiceService.calculateDiscountedTotals(items, discountRate);
 
-    this.discountInfo = { applies, rate: discountRate, discountAmount, originalTotal: originalTotalTTC, discountedTotal: discountedTotalTTC };
+    this.discountInfo = { 
+      applies, 
+      rate: discountRate, 
+      discountAmount,       // TTC
+      discountAmountHT,     // HT  ← now properly destructured
+      originalTotal: originalTotalTTC, 
+      discountedTotal: discountedTotalTTC 
+    };
 
     try {
-      const outstanding = await firstValueFrom(this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id));
-      const creditCheck = this.invoiceService.validateCreditLimit(this.selectedClientForValidation, discountedTotalTTC, outstanding || 0);
+      const outstanding = await firstValueFrom(
+        this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id)
+      );
+      const creditCheck = this.invoiceService.validateCreditLimit(
+        this.selectedClientForValidation, discountedTotalTTC, outstanding || 0
+      );
       this.creditWarning = creditCheck.hasSufficientCredit ? null : creditCheck.message;
     } catch {
       // silently ignore credit check failures

@@ -239,10 +239,13 @@ export class InvoiceService {
     }
 
     const highestDiscount = Math.max(...bulkCategories.map((cat: any) => cat.discountRate || 0));
+
+    // Normalize: if stored as decimal (0–1), convert to percentage (0–100)
+    const normalizedRate = highestDiscount <= 1 ? highestDiscount * 100 : highestDiscount;
     
     return { 
-      discountRate: highestDiscount, 
-      applies: highestDiscount > 0 
+      discountRate: normalizedRate, 
+      applies: normalizedRate > 0 
     };
   }
 
@@ -265,7 +268,7 @@ export class InvoiceService {
   calculateDiscountedTotals(
     items: CreateInvoiceDto['items'],
     discountRate: number
-  ): { originalTotalHT: number; originalTotalTTC: number; discountedTotalHT: number; discountedTotalTTC: number; discountAmount: number } {
+  ): { originalTotalHT: number; originalTotalTTC: number; discountedTotalHT: number; discountedTotalTTC: number; discountAmount: number ,   discountAmountHT: number} {
     let originalTotalHT = 0;
     let originalTotalTTC = 0;
 
@@ -282,13 +285,15 @@ export class InvoiceService {
     const discountedTotalHT = originalTotalHT * discountMultiplier;
     const discountedTotalTTC = originalTotalTTC * discountMultiplier;
     const discountAmount = originalTotalTTC - discountedTotalTTC;
+    const discountAmountHT = originalTotalHT - discountedTotalHT;
 
     return {
       originalTotalHT,
       originalTotalTTC,
       discountedTotalHT,
       discountedTotalTTC,
-      discountAmount
+      discountAmount,
+      discountAmountHT
     };
   }
 
@@ -388,5 +393,9 @@ export class InvoiceService {
   update(id: string, dto: UpdateInvoiceDto): Observable<InvoiceDto> {
     return this.http.put<InvoiceDto>(`${this.baseUrl}/update/${id}`, dto);
   }
+
+  downloadInvoicePdf(invoiceId: string): Observable<Blob> {
+  return this.http.get(`${this.baseUrl}/${invoiceId}/pdf`, { responseType: 'blob' });
+}
   
 }

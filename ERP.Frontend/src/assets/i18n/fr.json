@@ -374,6 +374,8 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
+      "OUTSTANDING_BALANCE": "Solde en cours",
+      "REMAINING_CREDIT": "Crédit restant",
       "NAME": "NOM",
       "EMAIL": "EMAIL",
       "ADDRESS": "ADRESSE",
@@ -802,7 +804,8 @@
       "RESTORE": "Restaurer",
       "FINALIZE": "Finaliser",
       "MARK_AS_PAID": "Marquer comme payée",
-      "CANCEL": "Annuler"
+      "CANCEL": "Annuler",
+      "PRINT": "Imprimer la facture"
     },
     "DIALOG": {
       "UNSAVED_CHANGES_TITLE": "Modifications non enregistrées",

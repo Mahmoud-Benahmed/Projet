@@ -269,10 +269,20 @@
             {{ selectedClient.creditLimit != null ? (selectedClient.creditLimit | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale) : '—' }}
           </span>
         </div>
+        <div class="detail-item" *ngIf="selectedClient.creditLimit != null">
+          <span class="detail-label">{{ 'CLIENTS.DETAILS.OUTSTANDING_BALANCE' | translate }}</span>
+          <span class="detail-value">{{ outstandingBalance | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedClient.creditLimit != null">
+          <span class="detail-label">{{ 'CLIENTS.DETAILS.REMAINING_CREDIT' | translate }}</span>
+          <span class="detail-value" [class.text-danger]="creditRemaining !== null && creditRemaining < 0">
+            {{ creditRemaining !== null ? (creditRemaining | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale) : '—' }}
+          </span>
+        </div>
         <div class="detail-item">
           <span class="detail-label">{{ 'CLIENTS.DETAILS.DUE_PAYMENT_PERIOD' | translate }}</span>
           <span class="detail-value">
-            {{ selectedClient.duePaymentPeriod > 0 ? (selectedClient.duePaymentPeriod + ' ' + ('COMMON.DAYS_COUNT' | translate: { count: selectedClient.duePaymentPeriod })) : '—' }}
+            {{ selectedClient.duePaymentPeriod > 0 ? ('COMMON.DAYS_COUNT' | translate: { count: selectedClient.duePaymentPeriod }) : '—' }}
           </span>
         </div>
         <div class="detail-item">

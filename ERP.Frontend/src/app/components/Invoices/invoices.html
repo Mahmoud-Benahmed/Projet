@@ -708,9 +708,8 @@
                     <th class="text-center">{{ 'INVOICES.DETAILS.QTY' | translate }}</th>
                     <th class="text-center">{{ 'INVOICES.DETAILS.UNIT_HT' | translate }}</th>
                     <th class="text-center">{{ 'INVOICES.DETAILS.TAX' | translate }}</th>
-                    <th class="text-center">{{ 'INVOICES.DETAILS.TOTAL_HT_COL' | translate }}</th>
                     <th class="text-center">{{ 'INVOICES.DETAILS.TOTAL_TTC_COL' | translate }}</th>
-                    <th class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
+                    <th class="text-center" colspan="2">{{ 'COMMON.ACTIONS' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -720,9 +719,8 @@
                     <td class="text-center">{{ item.quantity | number:'1.2-2' }}</td>
                     <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
                     <td class="text-center">{{ item.taxRate | number:'1.0-0' }}%</td>
-                    <td class="td--price text-center">{{ item.totalHT | number:'1.2-2' }}</td>
                     <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
-                    <td class="td--actions">
+                    <td class="td--actions" colspan="2">
                       <button class="icon-btn icon-btn--edit" [matTooltip]="'COMMON.EDIT' | translate" (click)="openInlineItemEdit(item)">
                         <mat-icon style="font-size:15px;width:15px;height:15px;">edit</mat-icon>
                       </button>
@@ -837,7 +835,7 @@
         </button>
         <button class="btn-secondary"
                 *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VALIDATE_INVOICE)
-                       && (selectedInvoice.status === 'DRAFT' || selectedInvoice.status === 'UNPAID')
+                       && selectedInvoice.status === 'UNPAID'
                        && !selectedInvoice.isDeleted"
                 (click)="cancelInvoice(selectedInvoice)">
           <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle">cancel</mat-icon>
@@ -854,6 +852,13 @@
                 (click)="restore(selectedInvoice)">
           <mat-icon style="font-size:16px;width:16px;height:16px;">restore</mat-icon>
           {{ 'COMMON.RESTORE' | translate }}
+        </button>
+
+        <button class="btn-success" [matTooltip]="'INVOICES.ACTIONS.PRINT' | translate"
+                *ngIf="!selectedInvoice.isDeleted"
+                (click)="downloadPdf(selectedInvoice)">
+          <mat-icon style="font-size:16px;width:16px;height:16px;">picture_as_pdf</mat-icon>
+          {{ 'INVOICES.ACTIONS.PRINT' | translate }}
         </button>
       </div>
     </div>
@@ -1319,8 +1324,8 @@
                       <td colspan="5" class="totals-label discount-label">
                         {{ 'INVOICES.FORM.DISCOUNT_ROW' | translate: { rate: discountInfo.rate } }}
                       </td>
-                      <td class="td--price text-center discount-amount">- {{ (pendingTotalHT * discountInfo.rate / 100) | number:'1.2-2' }} TND</td>
-                      <td class="td--price text-center discount-amount">- {{ discountInfo.discountAmount | number:'1.2-2' }} TND</td>
+                      <td class="td--price text-center discount-amount">- {{ discountInfo.discountAmountHT | number:'1.2-2' }} TND</td>
+                      <td class="td--price text-center discount-amount"> - {{ discountInfo.discountAmount | number:'1.2-2' }} TND</td>
                       <td></td>
                     </tr>
                     <tr class="totals-row final-totals">

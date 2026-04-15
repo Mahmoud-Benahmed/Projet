@@ -384,6 +384,8 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
+      "OUTSTANDING_BALANCE": "Outstanding Balance",
+      "REMAINING_CREDIT": "Remaining Credit",
       "NAME": "NAME",
       "EMAIL": "EMAIL",
       "ADDRESS": "ADDRESS",
@@ -810,7 +812,8 @@
       "RESTORE": "Restore",
       "FINALIZE": "Finalize",
       "MARK_AS_PAID": "Mark as Paid",
-      "CANCEL": "Cancel"
+      "CANCEL": "Cancel",
+      "PRINT": "Print invoice"
     },
     "DIALOG": {
       "CANCEL_INVOICE_TITLE": "Cancel Invoice",

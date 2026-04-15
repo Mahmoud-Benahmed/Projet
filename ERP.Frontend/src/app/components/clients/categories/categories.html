@@ -180,7 +180,7 @@
               <td class="td--name">{{ cat.name }}</td>
               <td class="td--days">{{ cat.delaiRetour }} {{ 'COMMON.DAYS' | translate }}</td>
               <td class="td--discount">
-                <span *ngIf="cat.discountRate != null">{{ cat.discountRate }}%</span>
+                <span *ngIf="cat.discountRate != null">{{ (cat.discountRate *100) }}%</span>
                 <span class="td--empty-value" *ngIf="cat.discountRate == null">—</span>
               </td>
               <td>
@@ -284,7 +284,7 @@
         <div class="detail-item">
           <span class="detail-label">{{ 'CLIENT_CATEGORIES.DETAILS.DISCOUNT_RATE' | translate }}</span>
           <span class="detail-value">
-            {{ selectedCategory.discountRate != null ? selectedCategory.discountRate + '%' : '—' }}
+            {{ selectedCategory.discountRate != null ? (selectedCategory.discountRate *100) + '%' : '—' }}
           </span>
         </div>
         <div class="detail-item">
@@ -378,7 +378,7 @@
               <label>{{ 'CLIENT_CATEGORIES.FORM.DELAI_RETOUR' | translate }}</label>
               <mat-icon>assignment_return</mat-icon>
             </div>
-            <input class="form__input" type="number" formControlName="delaiRetour" [placeholder]="'CLIENT_CATEGORIES.FORM.DELAI_RETOUR_PLACEHOLDER' | translate" min="0"
+            <input class="form__input" type="number" formControlName="delaiRetour" [placeholder]="'CLIENT_CATEGORIES.FORM.DELAI_RETOUR_PLACEHOLDER' | translate" min="7"
               [class.form__input--error]="categoryForm.get('delaiRetour')?.invalid && categoryForm.get('delaiRetour')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('delaiRetour')?.invalid && categoryForm.get('delaiRetour')?.touched">
               {{ 'VALIDATION.DELAI_RETOUR_REQUIRED' | translate }}
@@ -391,7 +391,7 @@
               <mat-icon>schedule</mat-icon>
             </div>
             <input class="form__input" type="number" formControlName="duePaymentPeriod"
-              [placeholder]="'CLIENT_CATEGORIES.FORM.DUE_PAYMENT_PERIOD_PLACEHOLDER' | translate" min="1"
+              [placeholder]="'CLIENT_CATEGORIES.FORM.DUE_PAYMENT_PERIOD_PLACEHOLDER' | translate" min="7"
               [class.form__input--error]="categoryForm.get('duePaymentPeriod')?.invalid && categoryForm.get('duePaymentPeriod')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('duePaymentPeriod')?.invalid && categoryForm.get('duePaymentPeriod')?.touched">
               {{ 'VALIDATION.DUE_PAYMENT_PERIOD_REQUIRED' | translate }}
@@ -418,7 +418,7 @@
               <mat-icon>account_balance_wallet</mat-icon>
             </div>
             <input class="form__input" type="number" formControlName="creditLimitMultiplier"
-              [placeholder]="'CLIENT_CATEGORIES.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" step="0.01" min="0"
+              [placeholder]="'CLIENT_CATEGORIES.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" step="0.01" min="1"
               [class.form__input--error]="categoryForm.get('creditLimitMultiplier')?.invalid && categoryForm.get('creditLimitMultiplier')?.touched"/>
             <span class="form__error" *ngIf="categoryForm.get('creditLimitMultiplier')?.invalid && categoryForm.get('creditLimitMultiplier')?.touched">
               {{ 'VALIDATION.MULTIPLIER_INVALID' | translate }}

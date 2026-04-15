@@ -20,8 +20,15 @@ import { CurrencyConfigService } from '../../../services/currency-config.service
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
+import { InvoiceService } from '../../../services/invoice.service';
 
 type ViewMode = 'list' | 'list-deleted' | 'list-blocked' | 'create' | 'edit' | 'view';
+
+type CreditLimitInfo= {
+    hasSufficientCredit: boolean,
+    currentUsage: number,
+    remainingCredit: number
+};
 
 @Component({
   selector: 'app-clients',
@@ -44,6 +51,14 @@ export class ClientsComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
   totalCount = 0;
 
+  creditLimitInfo: CreditLimitInfo = {
+    hasSufficientCredit: true,
+    currentUsage: 0,
+    remainingCredit: 0
+  };
+
+  creditRemaining: number | null = null;
+  outstandingBalance: number = 0;
   // ── Signals ───────────────────────────────────────────────────────────────
 
   viewMode = signal<ViewMode>('list');
@@ -80,7 +95,8 @@ export class ClientsComponent implements OnInit {
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
     private currencyConfig: CurrencyConfigService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private invoiceService: InvoiceService,
   ) {
     this.clientForm = this.fb.group({
       name:             ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
@@ -289,7 +305,7 @@ export class ClientsComponent implements OnInit {
     this.previousMode = this.viewMode();
     this.setViewMode('view');
     this.selectedClient = client;
-
+    this.loadCreditLimitInfo();  // <-- add this
     this.selectedCategoryId = '';
     this.cdr.markForCheck();
   }
@@ -599,5 +615,35 @@ export class ClientsComponent implements OnInit {
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
     this.cdr.markForCheck();
+  }
+
+
+
+  loadCreditLimitInfo(): void {
+    if (!this.selectedClient?.id) {
+      this.creditRemaining = null;
+      this.outstandingBalance = 0;
+      return;
+    }
+
+    // If no credit limit is set, remaining is undefined (or null)
+    if (!this.selectedClient.creditLimit) {
+      this.creditRemaining = null;
+      this.outstandingBalance = 0;
+      return;
+    }
+
+    this.invoiceService.getClientOutstandingBalance(this.selectedClient.id).subscribe({
+      next: (outstanding) => {
+        this.outstandingBalance = outstanding;
+        this.creditRemaining = Math.max(0, this.selectedClient!.creditLimit! - outstanding);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.outstandingBalance = 0;
+        this.creditRemaining = null;
+        this.cdr.markForCheck();
+      }
+    });
   }
 }
