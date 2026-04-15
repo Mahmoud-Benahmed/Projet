@@ -18,19 +18,19 @@ public interface IArticleCacheService
     Task SyncRestoredAsync(ArticleResponseDto dto);
 }
 
-public interface ICategoryCacheService
+public interface IArticleCategoryCacheService
 {
     Task<bool> ExistsAsync(string name);
-    Task<CategoryResponseDto?> GetByIdAsync(Guid id);
-    Task<CategoryResponseDto?> GetByNameAsync(string name);
-    Task<List<CategoryResponseDto>> GetAllAsync();
-    Task<List<CategoryResponseDto>> GetAllActiveAsync();
-    Task<PagedResultDto<CategoryResponseDto>> GetPagedAsync(int pageNumber, int pageSize);
+    Task<ArticleCategoryResponseDto?> GetByIdAsync(Guid id);
+    Task<ArticleCategoryResponseDto?> GetByNameAsync(string name);
+    Task<List<ArticleCategoryResponseDto>> GetAllAsync();
+    Task<List<ArticleCategoryResponseDto>> GetAllActiveAsync();
+    Task<PagedResultDto<ArticleCategoryResponseDto>> GetPagedAsync(int pageNumber, int pageSize);
 
-    Task SyncCreatedAsync(CategoryResponseDto dto);
-    Task SyncUpdatedAsync(CategoryResponseDto dto);
-    Task SyncDeletedAsync(CategoryResponseDto dto);
-    Task SyncRestoredAsync(CategoryResponseDto dto);
+    Task SyncCreatedAsync(ArticleCategoryResponseDto dto);
+    Task SyncUpdatedAsync(ArticleCategoryResponseDto dto);
+    Task SyncDeletedAsync(ArticleCategoryResponseDto dto);
+    Task SyncRestoredAsync(ArticleCategoryResponseDto dto);
 }
 
 public interface IClientCacheService
@@ -80,4 +80,10 @@ public interface IFournisseurCacheService
     Task SyncDeletedAsync(FournisseurResponseDto dto);
     Task SyncRestoredAsync(FournisseurResponseDto dto);
     Task SyncBlockedAsync(Guid id, bool isBlocked);
+}
+
+public interface IInvoiceCacheService
+{
+    Task SyncCreatedAsync(InvoiceDto dto);
+    Task SyncCancelledAsync(InvoiceDto dto);
 }

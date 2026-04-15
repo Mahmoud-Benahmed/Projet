@@ -45,6 +45,7 @@ public interface IBonSortieRepository
     Task<(List<BonSortie> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<(List<BonSortie> Items, int TotalCount)> GetPagedByClientAsync(Guid clientId, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }
 public interface IBonRetourRepository
 {
@@ -58,6 +59,7 @@ public interface IBonRetourRepository
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedBySourceAsync(Guid sourceId, int page, int size);
     Task<(List<BonRetour> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size);
     Task<BonStatsDto> GetStatsAsync();
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }
 
 public interface IJournalStockRepository
@@ -67,4 +69,11 @@ public interface IJournalStockRepository
     Task<List<JournalStock>> GetByArticleAsync(Guid articleId);
     Task<decimal> GetCurrentStockAsync(Guid articleId);
     Task<Dictionary<string, List<StockItem>>> GetArticlesWithStockAsync();
+    Task<Dictionary<Guid, decimal>> GetCurrentStocksAsync(IEnumerable<Guid> articleIds);
+}
+public interface IInvoiceBonSortieMappingRepository
+{
+    Task AddAsync(InvoiceBonSortieMapping mapping);
+    Task<Guid?> GetBonSortieIdByInvoiceIdAsync(Guid invoiceId);
+    Task SaveChangesAsync();
 }

@@ -35,7 +35,7 @@ public sealed record ClientCategoryResponseDto(
 
 
 // Article DTOs
-public record CategoryResponseDto(
+public record ArticleCategoryResponseDto(
     Guid Id,
     string Name,
     decimal TVA,
@@ -46,7 +46,7 @@ public record CategoryResponseDto(
 
 public record ArticleResponseDto(
     Guid Id,
-    CategoryResponseDto Category,
+    ArticleCategoryResponseDto Category,
     string CodeRef,
     string BarCode,
     string Libelle,
@@ -64,3 +64,32 @@ Guid Id, string Name, string Address, string Phone,
 string? Email, string TaxNumber, string RIB,
 bool IsDeleted, bool IsBlocked,
 DateTime CreatedAt, DateTime? UpdatedAt);
+
+public record InvoiceDto(
+    Guid Id,
+    string InvoiceNumber,
+    DateTime InvoiceDate,
+    DateTime DueDate,
+    decimal TotalHT,
+    decimal TotalTVA,
+    decimal TotalTTC,
+    string Status,
+    Guid ClientId,
+    string ClientFullName,
+    string ClientAddress,
+    string? AdditionalNotes,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    bool IsDeleted,
+    List<InvoiceItemDto> Items);
+public record InvoiceItemDto(
+    Guid Id,
+    Guid ArticleId,
+    string ArticleName,
+    string ArticleBarCode,
+    decimal Quantity,
+    decimal UniPriceHT,
+    decimal TaxRate,
+    decimal TotalHT,
+    decimal TotalTTC
+);

@@ -50,7 +50,8 @@ public sealed record BonSortieResponseDto(
     Guid Id, Guid ClientId,
     string numero, string? Observation,
     DateTime CreatedAt, DateTime? UpdatedAt,
-    List<LigneResponseDto> Lignes, decimal Total);
+    List<LigneResponseDto> Lignes, 
+    decimal Total);
 
 // ── BonRetour ─────────────────────────────────────────────────────────────────
 public record CreateBonRetourRequestDto(
@@ -61,10 +62,8 @@ public record CreateBonRetourRequestDto(
     List<LigneRequestDto>? Lignes = null);
 
 public record UpdateBonRetourRequestDto(
-    [Required] Guid SourceId,
     [Required][MaxLength(500)] string Motif,
-    string? Observation = null,
-    List<LigneRequestDto>? Lignes = null);
+    string? Observation = null);
 
 public sealed record BonRetourResponseDto(
     Guid Id, Guid SourceId, RetourSourceType SourceType,
@@ -115,8 +114,13 @@ public static class BonEntreMapping
 public static class BonSortieMapping
 {
     public static BonSortieResponseDto ToResponseDto(this BonSortie bon) =>
-        new(bon.Id, bon.ClientId,
-            bon.Numero, bon.Observation, bon.CreatedAt, bon.UpdatedAt,
+        new(
+            bon.Id, 
+            bon.ClientId,
+            bon.Numero, 
+            bon.Observation, 
+            bon.CreatedAt, 
+            bon.UpdatedAt,
             bon.Lignes.Select(l => new LigneResponseDto(
                 l.Id, l.ArticleId, l.Quantity, l.Price, l.CalculateTotalLigne()
             )).ToList(),

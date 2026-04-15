@@ -7,6 +7,7 @@ namespace ERP.StockService.Application.Interfaces;
 
 public interface IArticleCacheRepository
 {
+    Task<List<ArticleCache>> GetByIdsAsync(List<Guid> ids);
     Task<ArticleCache?> GetByIdAsync(Guid id);
     Task<ArticleCache?> GetByBarCodeAsync(string barCode);
     Task<ArticleCache?> GetByCodeRefAsync(string codeRef);
@@ -19,17 +20,17 @@ public interface IArticleCacheRepository
     Task DeleteAsync(ArticleCache article);
 }
 
-public interface ICategoryCacheRepository
+public interface IArticleCategoryCacheRepository
 {
     Task<bool> ExistsAsync(string name);
-    Task<Domain.LocalCache.Article.CategoryCache?> GetByIdAsync(Guid id);
-    Task<Domain.LocalCache.Article.CategoryCache?> GetByNameAsync(string name);
-    Task<List<Domain.LocalCache.Article.CategoryCache>> GetAllAsync();
-    Task<List<Domain.LocalCache.Article.CategoryCache>> GetAllActiveAsync();
-    Task<(List<Domain.LocalCache.Article.CategoryCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
-    Task AddAsync(Domain.LocalCache.Article.CategoryCache category);
+    Task<Domain.LocalCache.Article.ArticleCategoryCache?> GetByIdAsync(Guid id);
+    Task<Domain.LocalCache.Article.ArticleCategoryCache?> GetByNameAsync(string name);
+    Task<List<Domain.LocalCache.Article.ArticleCategoryCache>> GetAllAsync();
+    Task<List<Domain.LocalCache.Article.ArticleCategoryCache>> GetAllActiveAsync();
+    Task<(List<Domain.LocalCache.Article.ArticleCategoryCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task AddAsync(Domain.LocalCache.Article.ArticleCategoryCache category);
     Task SaveChangesAsync();
-    Task DeleteAsync(Domain.LocalCache.Article.CategoryCache cache);
+    Task DeleteAsync(Domain.LocalCache.Article.ArticleCategoryCache cache);
 }
 
 
