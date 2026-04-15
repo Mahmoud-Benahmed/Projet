@@ -2,10 +2,7 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
-using ERP.StockService.Infrastructure.Messaging;
-using ERP.StockService.Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
-using static ERP.StockService.Properties.ApiRoutes;
+
 
 namespace ERP.StockService.Application.Services;
 
@@ -14,65 +11,80 @@ public class BonEntreService : IBonEntreService
     private readonly IBonEntreRepository _repo;
     private readonly IBonNumeroRepository _bonNumberRepo;
     private readonly IJournalStockRepository _journalStockRepository;
+    private readonly IFournisseurCacheRepository _fournisseurCacheRepository;
+    private readonly IArticleCacheRepository _articleCacheRepository;
 
-    public BonEntreService(IBonEntreRepository repo,
-        IBonNumeroRepository bonNumberRepository, IJournalStockRepository journalStockRepository)
+    public BonEntreService(
+        IBonEntreRepository repo,
+        IArticleCacheRepository articleCacheRepository,
+        IBonNumeroRepository bonNumberRepository, 
+        IJournalStockRepository journalStockRepository,
+        IFournisseurCacheRepository fornisseurCacheRepo)
     {
         _repo = repo;
-        //_articleService = articleService;
+        _fournisseurCacheRepository = fornisseurCacheRepo;
         _bonNumberRepo = bonNumberRepository;
         _journalStockRepository = journalStockRepository;
+        _articleCacheRepository = articleCacheRepository;
     }
 
     // =========================
     // CREATE
     // =========================
-    public async Task<BonEntreResponseDto> CreateAsync(CreateBonEntreRequestDto dto, Guid userId)
+    public async Task<BonEntreResponseDto> CreateAsync(CreateBonEntreRequestDto dto)
     {
+        _ = await _fournisseurCacheRepository.GetByIdAsync(dto.FournisseurId)
+            ?? throw new KeyNotFoundException($"Fournisseur with Id:{dto.FournisseurId} not found.");
 
-        var numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
-        var bon = BonEntre.Create(numero, dto.FournisseurId, dto.Observation);
+        if (dto.Lignes is null or { Count: 0 })
+            throw new ArgumentException("At least one ligne is required.");
 
-        foreach (var l in dto.Lignes ?? [])
-        {
-            //await _articleService.GetByIdAsync(l.ArticleId);
-            bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
-        }
+        var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+        var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
 
-        bon.ValidateLignes();
+        var foundIds = articles.Select(a => a.Id).ToHashSet();
+        var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+        if (missingIds.Count != 0)
+            throw new InvalidOperationException(
+                $"Articles not found: {string.Join(", ", missingIds)}");
+
 
         await using var transaction = await _repo.BeginTransactionAsync();
-
         try
         {
-            // 1. Save BonEntre + lignes first
+            var numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
+            var bon = BonEntre.Create(numero, dto.FournisseurId, dto.Observation);
+
+            foreach (var l in dto.Lignes)
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+
+            bon.ValidateLignes();
+
             await _repo.AddAsync(bon);
             await _repo.SaveChangesAsync();
 
-            // 2. Create journal entries — all in one loop, NO SaveChanges inside
+            var stockMap = await _journalStockRepository
+                .GetCurrentStocksAsync(bon.Lignes.Select(l => l.ArticleId));
+
             foreach (var ligne in bon.Lignes)
             {
-                decimal stockBefore = await _journalStockRepository
-                                            .GetCurrentStockAsync(ligne.ArticleId);
+                decimal stockBefore = stockMap.GetValueOrDefault(ligne.ArticleId, 0);
 
-                var journal = JournalStock.Create(
+                await _journalStockRepository.AddAsync(JournalStock.Create(
                     articleId: ligne.ArticleId,
                     ligneId: ligne.Id,
                     pieceId: bon.Id,
-                    quantity: ligne.Quantity,   // renamed from quantity
+                    quantity: ligne.Quantity,
                     stockBefore: stockBefore,
                     movementType: StockMovementType.BonEntre,
                     sourceService: "StockService",
-                    sourceOperation: "CreateBonEntre",
-                    performedBy: userId
-                );
-
-                await _journalStockRepository.AddAsync(journal);
+                    sourceOperation: "CreateBonEntre"
+                ));
             }
 
-            // 3. ONE SaveChanges for all journals
             await _journalStockRepository.SaveChangesAsync();
             await transaction.CommitAsync();
+            return bon.ToResponseDto();
         }
         catch
         {
@@ -80,100 +92,104 @@ public class BonEntreService : IBonEntreService
             throw;
         }
 
-        return bon.ToResponseDto();
     }
 
     // =========================
     // UPDATE
     // =========================
-    public async Task<BonEntreResponseDto> UpdateAsync(Guid id, UpdateBonEntreRequestDto dto, Guid userId)
+    public async Task<BonEntreResponseDto> UpdateAsync(Guid id, UpdateBonEntreRequestDto dto)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
+        _ = await _fournisseurCacheRepository.GetByIdAsync(dto.FournisseurId)
+            ?? throw new KeyNotFoundException($"Fournisseur with Id:{dto.FournisseurId} not found.");
+
+        var bon = await _repo.GetByIdAsync(id)
+            ?? throw new BonEntreNotFoundException(id);
+
+        Dictionary<Guid, decimal> oldQtyMap = [];
+        Dictionary<Guid, decimal> newQtyMap = [];
+
+        // Only process lines if they were provided
+        if (dto.Lignes is not null)
+        {
+            var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+
+            var foundIds = articles.Select(a => a.Id).ToHashSet();
+            var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+            if (missingIds.Count != 0)
+                throw new InvalidOperationException(
+                    $"Articles not found: {string.Join(", ", missingIds)}");
+
+            // Capture old quantities before clearing
+            oldQtyMap = bon.Lignes
+                .GroupBy(l => l.ArticleId)
+                .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+            bon.ClearLignes();
+            foreach (var l in dto.Lignes)
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+
+            bon.ValidateLignes();
+        }
 
         bon.Update(dto.FournisseurId, dto.Observation);
 
-        if (dto.Lignes is not { Count: > 0 })
-        {
-            await _repo.SaveChangesAsync();
-            return bon.ToResponseDto();
-        }
-
-        // Capture old quantities BEFORE clearing
-        var oldQtyMap = bon.Lignes
-            .ToDictionary(l => l.ArticleId, l => l.Quantity);
-
-        bon.ClearLignes();
-
-        foreach (var l in dto.Lignes)
-        {
-            //await _articleService.GetByIdAsync(l.ArticleId);
-            bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
-        }
-
-        bon.ValidateLignes();
-
         await using var transaction = await _repo.BeginTransactionAsync();
-
         try
         {
-            await _repo.SaveChangesAsync(); // persist new lignes, get their Ids
+            await _repo.SaveChangesAsync();
 
-            var newQtyMap = bon.Lignes
-                .ToDictionary(l => l.ArticleId, l => l.Quantity);
-
-            // 1. Handle new or modified articles
-            foreach (var ligne in bon.Lignes)
+            // Only create journal entries if lines were changed
+            if (dto.Lignes is not null)
             {
-                oldQtyMap.TryGetValue(ligne.ArticleId, out decimal oldQty);
-                decimal delta = ligne.Quantity - oldQty;
+                // Populate new quantities after SaveChanges
+                newQtyMap = bon.Lignes
+                    .GroupBy(l => l.ArticleId)
+                    .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
 
-                if (delta == 0) continue; // no stock movement needed
+                foreach (var ligne in bon.Lignes)
+                {
+                    oldQtyMap.TryGetValue(ligne.ArticleId, out decimal oldQty);
+                    decimal delta = ligne.Quantity - oldQty;
+                    if (delta == 0) continue;
 
-                decimal stockBefore = await _journalStockRepository
-                                            .GetCurrentStockAsync(ligne.ArticleId);
-                decimal stockAfter = stockBefore + delta;
+                    decimal stockBefore = await _journalStockRepository
+                        .GetCurrentStockAsync(ligne.ArticleId);
 
-                var journal = JournalStock.Create(
-                    articleId: ligne.ArticleId,
-                    ligneId: ligne.Id,
-                    pieceId: bon.Id,
-                    quantity: delta,           // delta, not full qty
-                    stockBefore: stockBefore,
-                    movementType: StockMovementType.BonEntre,
-                    sourceService: "StockService",
-                    sourceOperation: "UpdateBonEntre",
-                    performedBy: userId
-                );
+                    await _journalStockRepository.AddAsync(JournalStock.Create(
+                        articleId: ligne.ArticleId,
+                        ligneId: ligne.Id,
+                        pieceId: bon.Id,
+                        quantity: delta,
+                        stockBefore: stockBefore,
+                        movementType: StockMovementType.BonEntre,
+                        sourceService: "StockService",
+                        sourceOperation: "UpdateBonEntre"
+                    ));
+                }
 
-                await _journalStockRepository.AddAsync(journal);
+                foreach (var (articleId, oldQty) in oldQtyMap)
+                {
+                    if (newQtyMap.ContainsKey(articleId)) continue;
+
+                    decimal stockBefore = await _journalStockRepository
+                        .GetCurrentStockAsync(articleId);
+
+                    await _journalStockRepository.AddAsync(JournalStock.Create(
+                        articleId: articleId,
+                        ligneId: Guid.Empty,
+                        pieceId: bon.Id,
+                        quantity: -oldQty,
+                        stockBefore: stockBefore,
+                        movementType: StockMovementType.BonEntre,
+                        sourceService: "StockService",
+                        sourceOperation: "UpdateBonEntre_Reversal"
+                    ));
+                }
+
+                await _journalStockRepository.SaveChangesAsync();
             }
 
-            // 2. Handle removed articles (were in old, not in new) → reversal
-            foreach (var (articleId, oldQty) in oldQtyMap)
-            {
-                if (newQtyMap.ContainsKey(articleId)) continue;
-
-                decimal stockBefore = await _journalStockRepository
-                                            .GetCurrentStockAsync(articleId);
-                decimal delta = -oldQty; // negative = reversal
-                decimal stockAfter = stockBefore + delta;
-
-                var reversal = JournalStock.Create(
-                    articleId: articleId,
-                    ligneId: Guid.Empty,  // original ligne was deleted
-                    pieceId: bon.Id,
-                    quantity: delta,
-                    stockBefore: stockBefore,
-                    movementType: StockMovementType.BonEntre,
-                    sourceService: "StockService",
-                    sourceOperation: "UpdateBonEntre_Reversal",
-                    performedBy: userId
-                );
-
-                await _journalStockRepository.AddAsync(reversal);
-            }
-
-            await _journalStockRepository.SaveChangesAsync();
             await transaction.CommitAsync();
         }
         catch
@@ -192,7 +208,30 @@ public class BonEntreService : IBonEntreService
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
 
-        await _repo.DeleteByIdAsync(id);
+        await using var transaction = await _repo.BeginTransactionAsync();
+        try
+        {
+            foreach (var ligne in bon.Lignes)
+            {
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+                var reversal = JournalStock.Create(
+                    articleId: ligne.ArticleId,
+                    ligneId: ligne.Id,
+                    pieceId: bon.Id,
+                    quantity: -ligne.Quantity,
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonEntre,
+                    sourceService: "StockService",
+                    sourceOperation: "DeleteBonEntre"
+                );
+                await _journalStockRepository.AddAsync(reversal);
+            }
+            await _journalStockRepository.SaveChangesAsync();
+            await _repo.DeleteByIdAsync(id);
+            await _repo.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch { await transaction.RollbackAsync(); throw; }
     }
 
     // =========================

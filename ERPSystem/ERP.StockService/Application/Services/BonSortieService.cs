@@ -2,8 +2,7 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
-using ERP.StockService.Infrastructure.Messaging;
-using ERP.StockService.Infrastructure.Persistence.Repositories;
+using System.Runtime.InteropServices;
 
 namespace ERP.StockService.Application.Services;
 
@@ -17,7 +16,8 @@ public class BonSortieService : IBonSortieService
 
     public BonSortieService(IBonSortieRepository repo, 
         IArticleCacheRepository articleCacheRepository,
-        IClientCacheRepository clientCacheRepository, IBonNumeroRepository bonNumeroRepository,
+        IClientCacheRepository clientCacheRepository, 
+        IBonNumeroRepository bonNumeroRepository,
         IJournalStockRepository journalStockRepository)
     {
         _repo = repo;
@@ -30,92 +30,171 @@ public class BonSortieService : IBonSortieService
     // =========================
     // CREATE
     // =========================
-    public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto, Guid requesterId)
+    public async Task<BonSortieResponseDto> CreateAsync(CreateBonSortieRequestDto dto)
     {
-        var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
+        _ = await _clientCacheRepository.GetByIdAsync(dto.ClientId) 
+            ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
 
-        var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_SORTIE");
-        var bon = BonSortie.Create(numero, dto.ClientId, dto.Observation);
+        if (dto.Lignes is null or { Count: 0 })
+            throw new ArgumentException("At least one ligne is required.");
 
-        foreach (var l in dto.Lignes ?? [])
+        var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+        var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+
+        var foundIds = articles.Select(a => a.Id).ToHashSet();
+        var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+        if (missingIds.Count != 0)
+            throw new InvalidOperationException(
+                $"Articles not found: {string.Join(", ", missingIds)}");
+
+        await using var transaction = await _repo.BeginTransactionAsync();
+
+        try
         {
-            //await _articleService.GetByIdAsync(l.ArticleId);
-            bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
-        }
+            var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_SORTIE");
+            var bon = BonSortie.Create(numero, dto.ClientId, dto.Observation);
 
-        bon.ValidateLignes();
+            var articleDictionary = articles.ToDictionary(a => a.Id, a => a);
 
-        await _repo.AddAsync(bon);
-        await _repo.SaveChangesAsync();
 
-        foreach (var ligne in bon.Lignes)
-        {
-            var stockBefore = ligne.Quantity;
+            foreach (var l in dto.Lignes)
+            {
+               bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+            }
 
-            var journal = JournalStock.Create(
-                ligne.ArticleId,
-                ligne.Id,
-                bon.Id,
-                ligne.Quantity,
-                stockBefore,
-                StockMovementType.BonEntre,
-                "StockService",
-                "CreateBonEntre",
-                requesterId
-            );
+            bon.ValidateLignes();
 
-            await _journalStockRepository.AddAsync(journal);
+            await _repo.AddAsync(bon);
+            await _repo.SaveChangesAsync();
+
+            var stockMap = await _journalStockRepository
+                                .GetCurrentStocksAsync(bon.Lignes.Select(l => l.ArticleId));
+
+            foreach (var ligne in bon.Lignes)
+            {
+                var stockBefore = stockMap.GetValueOrDefault(ligne.ArticleId, 0);
+
+                await _journalStockRepository.AddAsync(JournalStock.Create(
+                    ligne.ArticleId,
+                    ligne.Id,
+                    bon.Id,
+                    -ligne.Quantity,
+                    stockBefore,
+                    StockMovementType.BonSortie,
+                    "StockService",
+                    "CreateBonSortie"
+                ));
+            }
+
             await _journalStockRepository.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return bon.ToResponseDto();
         }
-        return bon.ToResponseDto();
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     // =========================
     // UPDATE
     // =========================
-    public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto, Guid requesterId)
+    public async Task<BonSortieResponseDto> UpdateAsync(Guid id, UpdateBonSortieRequestDto dto)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
+        _ = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found");
+
+        Dictionary<Guid, decimal> oldQtyMap = [];
+        Dictionary<Guid, decimal> newQtyMap = [];
+
+        if (dto.Lignes is not null)
+        {
+            var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+
+            var foundIds = articles.Select(a => a.Id).ToHashSet();
+            var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+            if (missingIds.Count != 0)
+                throw new InvalidOperationException(
+                    $"Articles not found: {string.Join(", ", missingIds)}");
+
+            // Capture BEFORE mutating
+            oldQtyMap = bon.Lignes
+                .GroupBy(l => l.ArticleId)
+                .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+            bon.ClearLignes();
+            foreach (var l in dto.Lignes)
+                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+
+            bon.ValidateLignes();
+        }
 
         bon.Update(dto.ClientId, dto.Observation);
 
-        if (dto.Lignes is { Count: > 0 })
+        await using var transaction = await _repo.BeginTransactionAsync();
+
+        try
         {
-            bon.ClearLignes();
-            foreach (var l in dto.Lignes)
+            await _repo.SaveChangesAsync();
+
+            // Populate AFTER SaveChanges so ligne IDs are materialized
+            newQtyMap = bon.Lignes
+                .GroupBy(l => l.ArticleId)
+                .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+            foreach (var ligne in bon.Lignes)
             {
-                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(l.ArticleId);
-                if (l.Quantity > stockBefore)
-                    throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
+                oldQtyMap.TryGetValue(ligne.ArticleId, out decimal oldQty);
+                decimal delta = ligne.Quantity - oldQty;
+                if (delta == 0) continue;
 
-                //await _articleService.GetByIdAsync(l.ArticleId);
-                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+                decimal stockBefore = await _journalStockRepository
+                    .GetCurrentStockAsync(ligne.ArticleId);
+                await _journalStockRepository.AddAsync(JournalStock.Create(
+                    ligne.ArticleId,
+                    ligne.Id,
+                    bon.Id,
+                    delta,
+                    stockBefore,
+                    StockMovementType.BonSortie,
+                    "StockService",
+                    "UpdateBonSortie"
+                ));
             }
-            bon.ValidateLignes();
-        }
-        await _repo.SaveChangesAsync();
 
-        foreach (var ligne in bon.Lignes)
-        {
-            var stockBefore = ligne.Quantity;
+            foreach (var (articleId, oldQty) in oldQtyMap)
+            {
+                if (newQtyMap.ContainsKey(articleId)) continue;
 
-            var journal = JournalStock.Create(
-                ligne.ArticleId,
-                ligne.Id,
-                bon.Id,
-                ligne.Quantity,
-                stockBefore,
-                StockMovementType.BonSortie,
-                "StockService",
-                "CreateBonSortie",
-                requesterId
-            );
+                decimal stockBefore = await _journalStockRepository
+                    .GetCurrentStockAsync(articleId);
 
-            await _journalStockRepository.AddAsync(journal);
+                await _journalStockRepository.AddAsync(JournalStock.Create(
+                    articleId: articleId,
+                    ligneId: Guid.Empty,
+                    pieceId: bon.Id,
+                    quantity: -oldQty,
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonSortie,
+                    sourceService: "StockService",
+                    sourceOperation: "UpdateBonSortie_Reversal"
+                ));
+
+            }
+
             await _journalStockRepository.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+
         return bon.ToResponseDto();
+
     }
 
     // =========================
@@ -124,7 +203,30 @@ public class BonSortieService : IBonSortieService
     public async Task DeleteAsync(Guid id)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonSortieNotFoundException(id);
-        await _repo.DeleteByIdAsync(id);
+        await using var transaction = await _repo.BeginTransactionAsync();
+        try
+        {
+            foreach (var ligne in bon.Lignes)
+            {
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+                var reversal = JournalStock.Create(
+                    articleId: ligne.ArticleId,
+                    ligneId: ligne.Id,
+                    pieceId: bon.Id,
+                    quantity: -ligne.Quantity,
+                    stockBefore: stockBefore,
+                    movementType: StockMovementType.BonSortie,
+                    sourceService: "StockService",
+                    sourceOperation: "DeleteBonSortie"
+                );
+                await _journalStockRepository.AddAsync(reversal);
+            }
+            await _journalStockRepository.SaveChangesAsync();
+            await _repo.DeleteByIdAsync(id);
+            await _repo.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch { await transaction.RollbackAsync(); throw; }
     }
 
     // =========================

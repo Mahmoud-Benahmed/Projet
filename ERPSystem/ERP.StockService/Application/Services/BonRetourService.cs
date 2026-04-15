@@ -39,90 +39,99 @@ public class BonRetourService : IBonRetourService
     // =========================
     // CREATE
     // =========================
-    public async Task<BonRetourResponseDto> CreateAsync(CreateBonRetourRequestDto dto, Guid requesterId)
+    public async Task<BonRetourResponseDto> CreateAsync(CreateBonRetourRequestDto dto)
     {
-        // 1. Resolve source bon and validate party existence
+        // 1. Validate input
+        if (dto.Lignes == null || dto.Lignes.Count == 0)
+            throw new ArgumentException("At least one ligne is required.");
+
+        // 2. Resolve source bon and validate party existence
         IReadOnlyList<LigneSource> sourceLignes = dto.SourceType switch
         {
             RetourSourceType.BonSortie => await ResolveBonSortieAsync(dto.SourceId),
             RetourSourceType.BonEntre => await ResolveBonEntreAsync(dto.SourceId),
             _ => throw new ArgumentOutOfRangeException(nameof(dto.SourceType))
         };
-        var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_RETOUR");
-        var bon = BonRetour.Create(numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
 
-        // 2. Validate and add lignes
-        foreach (var l in dto.Lignes ?? [])
+        // 3. Begin transaction
+        await using var transaction = await _repo.BeginTransactionAsync();
+
+        try
         {
-            var article = await _articleCacheRepository.GetByIdAsync(l.ArticleId) ?? throw new KeyNotFoundException($"Article with Id {l.ArticleId} not found");
+            // 4. Generate document number and create BonRetour header
+            var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_RETOUR");
+            var bon = BonRetour.Create(numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
 
-            var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == l.ArticleId)
-                ?? throw new ArticleNotInSourceBonException(l.ArticleId, dto.SourceId);
+            // 5. Validate and add each ligne
+            foreach (var ligneDto in dto.Lignes)
+            {
+                // Verify article exists
+                var article = await _articleCacheRepository.GetByIdAsync(ligneDto.ArticleId)
+                    ?? throw new KeyNotFoundException($"Article with Id {ligneDto.ArticleId} not found");
 
-            if (l.Quantity > sourceLigne.Quantity)
-                throw new RetourQuantityExceedsSourceException(l.ArticleId, l.Quantity, sourceLigne.Quantity);
+                // Verify the source bon contains this article and quantity does not exceed original
+                var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == ligneDto.ArticleId)
+                    ?? throw new ArticleNotInSourceBonException(ligneDto.ArticleId, dto.SourceId);
 
-            bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
+                if (ligneDto.Quantity > sourceLigne.Quantity)
+                    throw new RetourQuantityExceedsSourceException(ligneDto.ArticleId, ligneDto.Quantity, sourceLigne.Quantity);
+
+                // Add ligne to BonRetour
+                bon.AddLigne(ligneDto.ArticleId, ligneDto.Quantity, ligneDto.Price);
+            }
+
+            // 6. Validate all lignes together (e.g., no duplicate articles, etc.)
+            bon.ValidateLignes();
+
+            // 7. Persist BonRetour
+            await _repo.AddAsync(bon);
+            await _repo.SaveChangesAsync();
+
+            // 8. Create journal entries for stock increase
+            foreach (var ligne in bon.Lignes)
+            {
+                // Get current stock BEFORE this operation
+                var stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+
+                // For a BonRetour, stock INCREASES, so quantity is positive
+                var journal = JournalStock.Create(
+                    ligne.ArticleId,
+                    ligne.Id,
+                    bon.Id,
+                    ligne.Quantity,          // Positive quantity = stock increase
+                    stockBefore,
+                    StockMovementType.BonRetour,
+                    "StockService",
+                    "CreateBonRetour"
+                );
+
+                await _journalStockRepository.AddAsync(journal);
+            }
+            await _journalStockRepository.SaveChangesAsync();
+
+            // 9. Commit transaction
+            await transaction.CommitAsync();
+
+            return bon.ToResponseDto();
         }
-
-        bon.ValidateLignes();
-
-        await _repo.AddAsync(bon);
-        await _repo.SaveChangesAsync();
-        return bon.ToResponseDto();
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     // =========================
     // UPDATE
     // =========================
-    public async Task<BonRetourResponseDto> UpdateAsync(Guid id, UpdateBonRetourRequestDto dto, Guid requesterId)
+    public async Task<BonRetourResponseDto> UpdateAsync(Guid id, UpdateBonRetourRequestDto dto)
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
-        var bonEntre = await _bonEntreRepo.GetByIdAsync(dto.SourceId);
-        var bonSortie = await _bonSortieRepo.GetByIdAsync(dto.SourceId);
-        if (bonEntre is null && bonSortie is null)
-            throw new BonNotFoundException(dto.SourceId);
 
-        var sourceType = bonEntre is not null ? "BonEntre" : "BonSortie";
+        // Only allow updating Motif and Observation
+        bon.Update(dto.Motif, dto.Observation);
 
-        bon.Update(dto.SourceId, sourceType, dto.Motif, dto.Observation);
-
-        if (dto.Lignes is { Count: > 0 })
-        {
-            bon.ClearLignes();
-            foreach (var l in dto.Lignes)
-            {
-                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(l.ArticleId);
-                if (l.Quantity > stockBefore)
-                    throw new InsufficientStockException(l.ArticleId, stockBefore, l.Quantity);
-
-                //await _articleService.GetByIdAsync(l.ArticleId);
-                bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
-            }
-            bon.ValidateLignes();
-        }
         await _repo.SaveChangesAsync();
-
-        foreach (var ligne in bon.Lignes)
-        {
-            var stockBefore = ligne.Quantity;
-
-            var journal = JournalStock.Create(
-                ligne.ArticleId,
-                ligne.Id,
-                bon.Id,
-                ligne.Quantity,
-                stockBefore,
-                StockMovementType.BonRetour,
-                "StockService",
-                "CreateBonRetour",
-                requesterId
-            );
-
-            await _journalStockRepository.AddAsync(journal);
-            await _journalStockRepository.SaveChangesAsync();
-        }
-
         return bon.ToResponseDto();
     }
 
@@ -133,7 +142,37 @@ public class BonRetourService : IBonRetourService
     {
         var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
 
-        await _repo.DeleteByIdAsync(id);
+        await using var transaction = await _repo.BeginTransactionAsync();
+        try
+        {
+            // Reverse each journal entry (negative quantity)
+            foreach (var ligne in bon.Lignes)
+            {
+                var stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+                var reversal = JournalStock.Create(
+                    ligne.ArticleId,
+                    ligne.Id,
+                    bon.Id,
+                    -ligne.Quantity,   // Subtract the returned quantity
+                    stockBefore,
+                    StockMovementType.BonRetour,
+                    "StockService",
+                    "DeleteBonRetour"
+                );
+                await _journalStockRepository.AddAsync(reversal);
+            }
+            await _journalStockRepository.SaveChangesAsync();
+
+            await _repo.DeleteByIdAsync(id);
+            await _repo.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
 
