@@ -126,11 +126,8 @@ namespace InvoiceService.Domain
         /// <exception cref="InvoiceDomainException">Thrown if PAID or already CANCELLED</exception>
         public void CancelInvoice()
         {
-            if (Status == InvoiceStatus.PAID)
-                throw new InvoiceDomainException("PAID invoices cannot be cancelled.");
-
-            if (Status == InvoiceStatus.CANCELLED)
-                throw new InvoiceDomainException("Invoice is already cancelled.");
+            if (Status != InvoiceStatus.UNPAID)
+                throw new InvoiceDomainException("UNPAID invoices are only the ones can be cancelled.");
 
             Status = InvoiceStatus.CANCELLED;
             UpdatedAt = DateTime.UtcNow;
@@ -166,8 +163,6 @@ namespace InvoiceService.Domain
             if (Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
-            ClearItems();
-            // Update header
             InvoiceDate = invoiceDate;
             DueDate = dueDate;
             ClientId = clientId;

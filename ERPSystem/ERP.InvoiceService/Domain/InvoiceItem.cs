@@ -46,7 +46,7 @@ namespace InvoiceService.Domain
             if (uniPriceHT < 0)
                 throw new InvoiceDomainException("Unit price cannot be negative.");
 
-            if (taxRate < 0 || taxRate > 100)
+            if (taxRate < 0 || taxRate > 1)
                 throw new InvoiceDomainException("Tax rate must be between 0 and 100.");
 
             // ──── INITIALIZATION ────
@@ -58,7 +58,7 @@ namespace InvoiceService.Domain
             ArticleBarCode = articleBarCode;
             Quantity = quantity;
             UniPriceHT = uniPriceHT;
-            TaxRate = taxRate / 100m;
+            TaxRate = taxRate;
 
             // ──── CALCULATE TOTALS ────
             CalculateSubtotal();
@@ -81,5 +81,13 @@ namespace InvoiceService.Domain
             TotalHT = Quantity * UniPriceHT;
             TotalTTC = TotalHT * (1 + TaxRate);
         }
+    }
+
+    public enum InvoiceStatus
+    {
+        DRAFT,
+        UNPAID,
+        PAID,
+        CANCELLED
     }
 }
