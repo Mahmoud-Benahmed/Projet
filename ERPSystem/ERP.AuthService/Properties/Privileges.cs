@@ -57,7 +57,9 @@
         public const string MANAGE_INVOICES = "MANAGE_INVOICES";
         public const string VIEW_INVOICES = "VIEW_INVOICES";
         public const string CREATE_INVOICE = "CREATE_INVOICE";
-        public const string VALIDATE_INVOICE = "VALIDATE_INVOICE";
+        public const string UPDATE_DRAFT_INVOICE = "UPDATE_DRAFT_INVOICE";
+        public const string CANCEL_INVOICE = "CANCEL_INVOICE";
+        public const string MARK_INVOICE_PAID = "MARK_INVOICE_PAID";
         public const string DELETE_INVOICE = "DELETE_INVOICE";
         public const string RESTORE_INVOICE = "RESTORE_INVOICE";
     }
