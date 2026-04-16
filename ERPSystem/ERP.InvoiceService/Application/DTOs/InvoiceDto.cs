@@ -8,6 +8,7 @@ namespace InvoiceService.Application.DTOs;
 
 public record InvoiceDto(
     Guid Id,
+    TaxCalculationMode TaxMode,
     string InvoiceNumber,
     DateTime InvoiceDate,
     DateTime DueDate,
@@ -42,8 +43,10 @@ public record InvoiceItemDto(
 // ════════════════════════════════════════════════════════════════════════════
 
 public record CreateInvoiceDto(
+
     [Required] DateTime InvoiceDate,
     [Required] DateTime DueDate,
+    [Required(ErrorMessage = "Tax calculation mode is required.")] TaxCalculationMode TaxMode,
     [Required] Guid ClientId,
     [MaxLength(1000)] string? AdditionalNotes,
     [Required][MinLength(1)] List<CreateInvoiceItemDto> Items
@@ -60,6 +63,7 @@ public record CreateInvoiceItemDto(
 public record UpdateInvoiceDto(
     [Required] DateTime InvoiceDate,
     [Required] DateTime DueDate,
+    [Required(ErrorMessage = "Tax calculation mode is required.")] TaxCalculationMode TaxMode,
     [Required] Guid ClientId,
     [MaxLength(1000)] string? AdditionalNotes,
     [Required][MinLength(1)] List<UpdateInvoiceItemDto> Items

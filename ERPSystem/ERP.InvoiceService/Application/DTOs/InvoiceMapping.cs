@@ -16,6 +16,7 @@ namespace InvoiceService.Application.DTOs
                 TotalHT: invoice.TotalHT,
                 TotalTVA: invoice.TotalTVA,
                 TotalTTC: invoice.TotalTTC,
+                TaxMode: invoice.TaxCalculationMode,
                 Status: invoice.Status.ToString(),
                 ClientId: invoice.ClientId,
                 ClientFullName: invoice.ClientFullName,

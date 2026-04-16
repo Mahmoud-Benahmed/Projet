@@ -135,6 +135,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     col.Item().PaddingVertical(15);
 
                     // ================= TOTALS =================
+                    // ================= TOTALS =================
                     col.Item().AlignRight().Width(240).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(totals =>
                     {
                         totals.Item().Row(r =>
@@ -142,11 +143,43 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                             r.RelativeItem().Text("Subtotal (HT):").Bold();
                             r.ConstantItem(100).AlignRight().Text($"{invoice.TotalHT:N2} {CurrencySymbol}");
                         });
-                        totals.Item().Row(r =>
+
+                        // TVA breakdown depends on mode
+                        if (invoice.TaxMode == TaxCalculationMode.INVOICE)
                         {
-                            r.RelativeItem().Text($"TVA ({invoice.Items.FirstOrDefault()?.TaxRate ?? 0:F0}%):").Bold();
-                            r.ConstantItem(100).AlignRight().Text($"{invoice.TotalTVA:N2} {CurrencySymbol}");
-                        });
+                            // Single blended rate line
+                            var effectiveRate = invoice.TotalHT > 0
+                                ? (invoice.TotalTVA / invoice.TotalHT) * 100
+                                : 0;
+
+                            totals.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text($"TVA ({effectiveRate:F2}%):").Bold();
+                                r.ConstantItem(100).AlignRight().Text($"{invoice.TotalTVA:N2} {CurrencySymbol}");
+                            });
+                        }
+                        else
+                        {
+                            // Per-rate breakdown (LINE mode)
+                            var taxGroups = invoice.Items
+                                .GroupBy(i => i.TaxRate)
+                                .Select(g => new
+                                {
+                                    Rate = g.Key * 100,
+                                    Amount = g.Sum(i => Math.Round(i.TotalHT * i.TaxRate, 2))
+                                })
+                                .OrderBy(g => g.Rate);
+
+                            foreach (var group in taxGroups)
+                            {
+                                totals.Item().Row(r =>
+                                {
+                                    r.RelativeItem().Text($"TVA ({group.Rate:F0}%):").Bold();
+                                    r.ConstantItem(100).AlignRight().Text($"{group.Amount:N2} {CurrencySymbol}");
+                                });
+                            }
+                        }
+
                         totals.Item().LineHorizontal(1).LineColor(Colors.Grey.Medium);
                         totals.Item().Row(r =>
                         {
