@@ -6,6 +6,9 @@ import { TranslateService } from '@ngx-translate/core';
 
 // ── DTOs ─────────────────────────────────────────────
 
+export enum TaxCalculationMode{
+  LINE, INVOICE
+}
 export interface InvoiceItemDto {
   id: string;
   articleId: string;
@@ -22,6 +25,7 @@ export interface InvoiceDto {
   id: string;
   invoiceNumber: string;
   invoiceDate: string;
+  taxMode: string;
   dueDate: string;
   totalHT: number;
   totalTVA: number;
@@ -41,6 +45,7 @@ export interface CreateInvoiceDto {
   invoiceDate: string;
   dueDate: string;
   clientId: string;
+  taxMode: TaxCalculationMode;
   additionalNotes: string | null;
   items: Array<{
     articleId: string;
@@ -395,7 +400,10 @@ export class InvoiceService {
   }
 
   downloadInvoicePdf(invoiceId: string): Observable<Blob> {
-  return this.http.get(`${this.baseUrl}/${invoiceId}/pdf`, { responseType: 'blob' });
-}
+    return this.http.get(`${this.baseUrl}/${invoiceId}/pdf`, { responseType: 'blob' });
+  }
   
+  getInvoicePdfUrl(invoiceId: string): string {
+    return `${this.baseUrl}/${invoiceId}/pdf`;
+  }
 }
