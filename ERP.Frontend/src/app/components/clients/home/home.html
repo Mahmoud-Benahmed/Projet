@@ -313,9 +313,10 @@
       </div>
 
       <div class="categories-list" *ngIf="selectedClient.categories.length > 0; else noCategories">
-        <div class="category-tag" *ngFor="let cat of selectedClient.categories; trackBy: trackByCategoryId">
+        <div class="category-tag" *ngFor="let cat of selectedClient.categories; trackBy: trackByCategoryId" [routerLink]="['/clients/categories', cat.id]">
           <span class="category-tag__code">{{ cat.code }}</span>
           <span class="category-tag__name">{{ cat.name }}</span>
+
           <button class="category-tag__remove" (click)="removeCategory(selectedClient!.id, cat.id, cat.name)" [title]="'CONFIRMATION.REMOVE_CATEGORY_TITLE' | translate: { name: cat.name }"
                   *ngIf="!selectedClient.isDeleted">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

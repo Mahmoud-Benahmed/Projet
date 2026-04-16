@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,7 +17,7 @@ import { HttpError } from '../../../interfaces/ErrorDto';
 import { AuthService, PRIVILEGES } from '../../../services/auth/auth.service';
 import { CategoriesService, ClientCategoryResponseDto } from '../../../services/clients/categories.service';
 import { CurrencyConfigService } from '../../../services/currency-config.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
 import { InvoiceService } from '../../../services/invoice.service';
@@ -33,12 +33,13 @@ type CreditLimitInfo= {
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, TranslatePipe, RouterLink],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
 export class ClientsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly location= inject(Location);
   private translate = inject(TranslateService);
 
   dataSource = new MatTableDataSource<ClientResponseDto>([]);
@@ -73,6 +74,7 @@ export class ClientsComponent implements OnInit {
 
   private previousMode: ViewMode = 'list';
 
+  clientIdFromRoute: string | null = null;
   selectedClient: ClientResponseDto | null = null;
   loading = false;
   errors: string[] = [];
@@ -114,13 +116,30 @@ export class ClientsComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
 
-    const id = this.route.snapshot.paramMap.get('id');
+    this.clientIdFromRoute = this.route.snapshot.paramMap.get('id');
 
-    if (id) {
-      this.openClientFromRoute(id);
-    } else {
+    if(this.clientIdFromRoute == null){
       this.reload();
+    }else{
+      this.clientsService.getById(this.clientIdFromRoute).subscribe({
+        next: (client) => {
+          this.selectedClient = client;
+          this.setViewMode('view');
+  
+          this.loadCategories();
+          this.loadStats();
+  
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.flash('error', this.translate.instant('ERRORS.CLIENT_NOT_FOUND'));
+          this.setViewMode('list');
+          this.reload();
+        }
+      });
     }
+    
+
   }
 
   // ── Page title ────────────────────────────────────────────────────────────
@@ -329,6 +348,7 @@ export class ClientsComponent implements OnInit {
   }
 
   cancel(): void {
+    if(this.clientIdFromRoute) this.location.back();
     const target = this.resolveCancel();
     const needsClient: ViewMode[] = ['view', 'edit'];
 
@@ -591,25 +611,6 @@ export class ClientsComponent implements OnInit {
 
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
-  }
-
-  private openClientFromRoute(id: string): void {
-    this.clientsService.getById(id).subscribe({
-      next: (client) => {
-        this.selectedClient = client;
-        this.setViewMode('view');
-
-        this.loadCategories();
-        this.loadStats();
-
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.flash('error', this.translate.instant('ERRORS.CLIENT_NOT_FOUND'));
-        this.setViewMode('list');
-        this.reload();
-      }
-    });
   }
 
   setViewMode(mode: ViewMode): void {
