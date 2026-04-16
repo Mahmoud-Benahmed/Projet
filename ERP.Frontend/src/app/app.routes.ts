@@ -23,6 +23,9 @@ import { BonsComponent } from './components/stock/bon/bon';
 import { ChangePasswordComponent } from './components/system-admin/users/change-password/change-password';
 import { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay';
 import { InvoicesComponent } from './components/invoices/invoices';
+import { EditInvoiceComponent } from './components/invoices/edit/edit';
+import { CreateInvoiceComponent } from './components/invoices/create/create';
+import { ViewInvoiceComponent } from './components/invoices/view/view';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
@@ -50,15 +53,21 @@ export const routes: Routes = [
       { path: 'users/roles', component: RoleComponent, data: { privileges: pickPrivileges('USERS', ['ASSIGN_ROLES']) } },
       { path: 'users/:authUserId', component: ProfileComponent, data: { privileges: pickPrivileges('USERS', ['VIEW_USERS','UPDATE_USER']) } },
 
-      { path: 'articles', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
+
       { path: 'articles/categories', component: ArticleCategoriesComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE']) } },
+      { path: 'articles/:id', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES']) } },
+      { path: 'articles', component: ArticleComponent, data: { privileges: pickPrivileges('ARTICLES', ['VIEW_ARTICLES','CREATE_ARTICLE','UPDATE_ARTICLE','DELETE_ARTICLE']) } },
 
       { path: 'clients/categories', component: ClientCategoriesComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT']) } },
+      { path: 'clients/categories/:id', component: ClientCategoriesComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS']) } },
       { path: 'clients/:id', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','UPDATE_CLIENT','DELETE_CLIENT']) } },
       { path: 'clients', component: ClientsComponent, data: { privileges: pickPrivileges('CLIENTS', ['VIEW_CLIENTS','CREATE_CLIENT','UPDATE_CLIENT','DELETE_CLIENT']) } },
 
 
-      { path: 'invoices', component: InvoicesComponent, data: { privileges: pickPrivileges('INVOICES', ['VIEW_INVOICES','CREATE_INVOICE','VALIDATE_INVOICE','DELETE_INVOICE']) } },
+      { path: 'invoices/edit/:id', component: EditInvoiceComponent, data: { privileges: pickPrivileges('INVOICES', ['UPDATE_DRAFT_INVOICE']) } },
+      { path: 'invoices/create', component: CreateInvoiceComponent, data: { privileges: pickPrivileges('INVOICES', ['CREATE_INVOICE']) } },
+      { path: 'invoices/:id', component: ViewInvoiceComponent, data: { privileges: pickPrivileges('INVOICES', ['VIEW_INVOICES'])} },
+      { path: 'invoices', component: InvoicesComponent, data: { privileges: pickPrivileges('INVOICES', ['VIEW_INVOICES']) } },
 
       { path: 'stock/fournisseurs/:id', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK']) } },
       { path: 'stock/fournisseurs', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK','UPDATE_STOCK','ADD_ENTRY']) } },
