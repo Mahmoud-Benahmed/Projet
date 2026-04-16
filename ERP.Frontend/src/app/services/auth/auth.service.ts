@@ -69,8 +69,10 @@ export const PRIVILEGES = {
   INVOICES: {
     VIEW_INVOICES: "VIEW_INVOICES",
     CREATE_INVOICE: "CREATE_INVOICE",
-    VALIDATE_INVOICE: "VALIDATE_INVOICE",
+    UPDATE_DRAFT_INVOICE: "UPDATE_DRAFT_INVOICE",
     DELETE_INVOICE: "DELETE_INVOICE",
+    MARK_INVOICE_PAID: "MARK_INVOICE_PAID",
+    CANCEL_INVOICE: "CANCEL_INVOICE", 
     RESTORE_INVOICE: "RESTORE_INVOICE",
     MANAGE_INVOICES: "MANAGE_INVOICES",
   },
@@ -116,7 +118,7 @@ export class AuthService {
   get isRefreshing(): boolean { return this._isRefreshing; }
 
   private _userProfile$ = new BehaviorSubject<AuthUserGetResponseDto | null>(
-    this.loadProfileFromStorage()  // rehydrate immediately on construction
+    this.loadProfileFromStorage()
   );
   readonly userProfile$ = this._userProfile$.asObservable();
   private _loggingOut = false;
