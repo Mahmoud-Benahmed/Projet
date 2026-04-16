@@ -54,7 +54,9 @@ public static class PrivilegeRegistry
         new(Privileges.Invoices.MANAGE_INVOICES,  "FACTURATION", "Manage invoices"),
         new(Privileges.Invoices.VIEW_INVOICES,    "FACTURATION", "View invoices"),
         new(Privileges.Invoices.CREATE_INVOICE,   "FACTURATION", "Create invoice"),
-        new(Privileges.Invoices.VALIDATE_INVOICE, "FACTURATION", "Validate invoice"),
+        new(Privileges.Invoices.UPDATE_DRAFT_INVOICE,   "FACTURATION", "Apply Finalize, Add/Remove items on an invoice"),
+        new(Privileges.Invoices.CANCEL_INVOICE,   "FACTURATION", "Cancel invoice"),
+        new(Privileges.Invoices.MARK_INVOICE_PAID, "FACTURATION", "Mark invoice as paid"),
         new(Privileges.Invoices.DELETE_INVOICE,   "FACTURATION", "Delete invoice"),
         new(Privileges.Invoices.RESTORE_INVOICE,  "FACTURATION", "Restore invoice"),
 
