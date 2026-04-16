@@ -1,9 +1,9 @@
 import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -29,6 +29,7 @@ type ViewMode = 'list' | 'list-deleted' | 'create' | 'edit' | 'view';
 export class ArticleComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private translate = inject(TranslateService);
+  private readonly location= inject(Location)
 
   dataSource = new MatTableDataSource<ArticleResponseDto>([]);
 
@@ -41,6 +42,7 @@ export class ArticleComponent implements OnInit {
   totalCount = 0;
 
   selectedArticle: ArticleResponseDto | null = null;
+  articleIdFromRoute: string | null =null;
   loading = false;
   errors: string[] = [];
   successMessage: string | null = null;
@@ -74,7 +76,8 @@ export class ArticleComponent implements OnInit {
     private currencyConfig: CurrencyConfigService,
     private fb: FormBuilder,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {
     this.articleForm = this.fb.group({
       libelle:    ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
@@ -90,6 +93,26 @@ export class ArticleComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) => {
       return this.flattenObject(data).includes(filter);
     };
+    
+    this.articleIdFromRoute = this.route.snapshot.paramMap.get('id');
+    if(this.articleIdFromRoute == null){
+      this.reload();
+      return;
+    }
+
+    this.articleService.getById(this.articleIdFromRoute).subscribe({
+      next: (res)=>{
+        this.selectedArticle= res;
+        this.setViewMode('view');
+        this.reload();
+      },
+      error: (error)=>{
+        const err= error.error as HttpError;
+        this.flash("error", err.message);
+        this.cancel();
+      }
+    });
+
     this.reload();
   }
 
@@ -260,6 +283,7 @@ export class ArticleComponent implements OnInit {
   }
 
   cancel(): void {
+    if(this.articleIdFromRoute) this.location.back();
     const target = this.resolveCancel();
     const needsCategory: ViewMode[] = ['view', 'edit'];
 
