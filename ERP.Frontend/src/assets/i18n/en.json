@@ -752,6 +752,10 @@
       "TOTALS": "Totals"
     },
     "FORM": {
+      "TAX_PER_LINE": "Calculate tax per line item (subtotal × tax rate per line)",
+      "TAX_PER_LINE_LABEL": "Per line",
+      "TAX_PER_INVOICE": "Calculate tax on invoice total (sum of line subtotals × tax rate)",
+      "TAX_PER_INVOICE_LABEL": "Per invoice",
       "FINAL_TOTAL_TTC":"FINAL TOTAL (VAT included)",
       "BULK_DISCOUNT_APPLIED": "Bulk discount applied",
       "DISCOUNT_RATE":"Discount Rate (%)",
@@ -813,7 +817,8 @@
       "FINALIZE": "Finalize",
       "MARK_AS_PAID": "Mark as Paid",
       "CANCEL": "Cancel",
-      "PRINT": "Print invoice"
+      "PRINT": "Print invoice",
+      "PREVIEW": "Preview invoice" 
     },
     "DIALOG": {
       "CANCEL_INVOICE_TITLE": "Cancel Invoice",
@@ -844,6 +849,7 @@
       "LOAD_ARTICLES_FAILED": "Failed to load articles.",
       "CLIENT_NOT_FOUND": "Client not found",
       "CREDIT_LIMIT_EXCEEDED": "Credit limit exceeded. Cannot create invoice.",
+      "CREDIT_LIMIT_EXCEEDED_ARTICLES": "Cannot add items – client credit limit exceeded",
       "VALIDATION_FAILED": "Validation failed. Please try again."
     },
     "SUCCESS": {
