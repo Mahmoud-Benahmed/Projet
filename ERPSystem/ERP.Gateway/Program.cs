@@ -196,7 +196,9 @@ builder.Services.AddAuthorization(options =>
     AddManagePolicy("MANAGE_INVOICES",
         Privileges.Invoices.VIEW_INVOICES,
         Privileges.Invoices.CREATE_INVOICE,
-        Privileges.Invoices.VALIDATE_INVOICE,
+        Privileges.Invoices.UPDATE_DRAFT_INVOICE,
+        Privileges.Invoices.MARK_INVOICE_PAID,
+        Privileges.Invoices.CANCEL_INVOICE,
         Privileges.Invoices.DELETE_INVOICE,
         Privileges.Invoices.RESTORE_INVOICE);
 
