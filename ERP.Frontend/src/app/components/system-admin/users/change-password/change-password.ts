@@ -153,7 +153,7 @@ export class ChangePasswordComponent implements OnInit {
     setTimeout(() => { this.errors = []; this.cdr.markForCheck(); }, 4000);
   }
 
-    goBack(){
+  goBack(){
     this.location.back();
   }
 }
