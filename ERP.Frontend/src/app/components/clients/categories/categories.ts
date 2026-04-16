@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -14,6 +14,7 @@ import { ClientCategoryResponseDto } from '../../../services/clients/categories.
 import { CustomToggleComponent } from '../../toggle-slider/toggle-slider';
 import { ArticleCategoryResponseDto } from '../../../services/articles/categories.service';
 import { TranslatePipe } from '@ngx-translate/core';
+import { ActivatedRoute } from '@angular/router';
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted' | 'list-inactive';
 
@@ -26,6 +27,7 @@ type ViewMode = 'list' | 'create' | 'edit' | 'view' | 'list-deleted' | 'list-ina
 })
 export class ClientCategoriesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly location= inject(Location);
 
   dataSource = new MatTableDataSource<ClientCategoryResponseDto>([]);
   stats: CategoryStatsDto | null = null;
@@ -50,6 +52,8 @@ export class ClientCategoriesComponent implements OnInit {
   private previousMode: ViewMode = 'list';
 
   selectedCategory: ClientCategoryResponseDto | null = null;
+  categoryIdFromRoute: string | null = null;
+
   loading = false;
   errors: string[] = [];
   successMessage: string | null = null;
@@ -66,7 +70,8 @@ export class ClientCategoriesComponent implements OnInit {
     private categoriesService: CategoriesService,
     private fb: FormBuilder,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {
     this.categoryForm = this.fb.group({
       name:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
@@ -80,9 +85,25 @@ export class ClientCategoriesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.dataSource.filterPredicate = (data, filter) =>
-      this.flattenObject(data).includes(filter);
-    this.reload();
+    this.dataSource.filterPredicate = (data, filter) => this.flattenObject(data).includes(filter);
+
+    this.categoryIdFromRoute = this.route.snapshot.paramMap.get('id');
+    if(this.categoryIdFromRoute == null){
+      this.reload();
+    }else{
+      this.categoriesService.getById(this.categoryIdFromRoute).subscribe({
+        next: (res)=>{
+          this.selectedCategory= res;
+          this.setViewMode('view');
+          this.reload();
+        },
+        error: (error)=>{
+          const err= error.error as HttpError;
+          this.flash("error", err.message);
+          this.cancel();
+        }
+      });
+    }
   }
 
   // ── Page title ────────────────────────────────────────────────────────────
@@ -233,6 +254,8 @@ export class ClientCategoriesComponent implements OnInit {
   }
 
   cancel(): void {
+    if(this.categoryIdFromRoute) this.location.back();
+
     const target = this.resolveCancel();
     const needsCategory: ViewMode[] = ['view', 'edit'];
 
