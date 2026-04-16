@@ -743,6 +743,10 @@
       "TOTALS": "Totaux"
     },
     "FORM": {
+      "TAX_PER_LINE": "Calculer la taxe par ligne (sous-total × taux de taxe par ligne)",
+      "TAX_PER_LINE_LABEL": "Par ligne",
+      "TAX_PER_INVOICE": "Calculer la taxe sur le total de la facture (somme des sous-totaux × taux de taxe)",
+      "TAX_PER_INVOICE_LABEL": "Par facture",
       "FINAL_TOTAL_TTC":"TOTAL FINAL (TVA incluse)",
       "BULK_DISCOUNT_APPLIED": "Facturation en lot appliqué",
       "DISCOUNT_RATE":"Taux de remise (%)",
@@ -805,7 +809,8 @@
       "FINALIZE": "Finaliser",
       "MARK_AS_PAID": "Marquer comme payée",
       "CANCEL": "Annuler",
-      "PRINT": "Imprimer la facture"
+      "PRINT": "Imprimer la facture",
+      "PREVIEW": "Prévisualiser la facture" 
     },
     "DIALOG": {
       "UNSAVED_CHANGES_TITLE": "Modifications non enregistrées",
@@ -822,6 +827,7 @@
       "HAS_SUFFICIENT_CREDIT": "Crédit disponible : {{remainingCredit}} TND",
       "INSUFFICIENT_CREDIT": "Limite de crédit dépassée. Limite : {{creditLimit}} TND, Encours actuel : {{currentOutstanding}} TND, Cette facture : {{invoiceTotal}} TND",
       "CREDIT_LIMIT_EXCEEDED": "Impossible de créer la facture pour cet client. Sa totale dépasse le limite le client acquis. ",
+      "CREDIT_LIMIT_EXCEEDED_ARTICLES": "Impossible d'ajouter des articles – limite de crédit client dépassée",
       "LOAD_FAILED": "Échec du chargement des factures.",
       "LOAD_DELETED_FAILED": "Échec du chargement des factures supprimées.",
       "LOAD_STATS_FAILED": "Échec du chargement des statistiques.",
