@@ -617,6 +617,14 @@ $bp-xl:  1200px;
   }
 }
 
+.clickable:hover {
+  background: $blue-bg;
+  color: $blue;
+  border: 1px solid $blue-border;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
 
 
 // =======================
