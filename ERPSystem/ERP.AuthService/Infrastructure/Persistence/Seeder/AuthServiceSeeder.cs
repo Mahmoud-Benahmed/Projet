@@ -154,6 +154,9 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Invoices.MANAGE_INVOICES => true,
             Privileges.Invoices.VIEW_INVOICES => true,
             Privileges.Invoices.CREATE_INVOICE => true,
+            Privileges.Invoices.UPDATE_DRAFT_INVOICE => true,
+            Privileges.Invoices.MARK_INVOICE_PAID => true,
+            Privileges.Invoices.CANCEL_INVOICE => true,
             Privileges.Invoices.DELETE_INVOICE => true,
             Privileges.Invoices.RESTORE_INVOICE => true,
 
@@ -221,7 +224,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             // Invoices — view + validate only
             Privileges.Invoices.MANAGE_INVOICES => true,
             Privileges.Invoices.VIEW_INVOICES => true,
-            Privileges.Invoices.VALIDATE_INVOICE => true,
 
             // Payments — full
             Privileges.Payments.MANAGE_PAYMENTS => true,
