@@ -6,8 +6,6 @@ namespace InvoiceService.Application.Interfaces
     {
         // ── Existing queries ─────────────────────────────────────────────────────
         Task<Invoice?> GetByIdAsync(Guid id);
-        Task<Invoice?> GetByIdDeletedAsync(Guid id);
-        Task<Invoice?> GetByIdWithItemsAsync(Guid id);
         Task<Invoice?> GetByInvoiceNumberAsync(string invoiceNumber);
         Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false);
         Task<IEnumerable<Invoice>> GetByClientIdAsync(Guid clientId);

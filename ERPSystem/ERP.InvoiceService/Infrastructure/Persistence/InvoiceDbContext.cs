@@ -62,6 +62,10 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             entity.Property(i => i.TotalTTC)
                   .HasColumnType("decimal(18,4)");
 
+            entity.Property(i => i.TaxCalculationMode)
+              .HasConversion<string>()
+              .HasMaxLength(20);
+
             entity.Property(i => i.Status)
                   .HasConversion<string>()
                   .HasMaxLength(20);

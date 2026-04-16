@@ -31,18 +31,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
         public async Task<Invoice?> GetByIdAsync(Guid id)
         {
             return await _context.Invoices
-                .FirstOrDefaultAsync(i => i.Id == id);
-        }
-
-        public async Task<Invoice?> GetByIdDeletedAsync(Guid id)
-        {
-            return await _context.Invoices.IgnoreQueryFilters()
-                .FirstOrDefaultAsync(i => i.Id == id);
-        }
-
-        public async Task<Invoice?> GetByIdWithItemsAsync(Guid id)
-        {
-            return await _context.Invoices
+                .IgnoreQueryFilters()
                 .Include(i => i.Items)
                 .FirstOrDefaultAsync(i => i.Id == id);
         }
