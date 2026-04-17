@@ -8,7 +8,6 @@ using ERP.StockService.Application.Services.LocalCache.ArticleCache;
 using ERP.StockService.Application.Services.LocalCache.ClientCache;
 using ERP.StockService.Application.Services.LocalCache.Fournisseur;
 using ERP.StockService.Application.Services.LocalCache.InvoiceCache;
-using ERP.StockService.Infrastructure.Messaging;
 using ERP.StockService.Infrastructure.Messaging.Events.ArticleEvents.Article;
 using ERP.StockService.Infrastructure.Messaging.Events.ArticleEvents.Category;
 using ERP.StockService.Infrastructure.Messaging.Events.ClientEvents.Category;
@@ -20,7 +19,6 @@ using ERP.StockService.Infrastructure.Persistence.Repositories;
 using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache;
 using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
 using ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache.ClientCache;
-using ERP.StockService.Infrastructure.Persistence.Seeders;
 using ERP.StockService.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -95,13 +93,6 @@ builder.Services.AddHostedService<InvoiceEventConsumer>();
 
 builder.Services.AddScoped<IInvoiceBonSortieMappingRepository, InvoiceBonSortieMappingRepository>();
 
-
-// =========================
-// SEEDERS
-// =========================
-builder.Services.AddStockSeeders(); // Add this line!
-
-// =========================
 // CONTROLLERS & API
 // =========================
 builder.Services
@@ -225,11 +216,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<StockDbContext>();
     await db.Database.EnsureDeletedAsync();
-    await db.Database.MigrateAsync(); // Make this async
-
-    // Use the seeded instance instead of static method
-    var seeder = scope.ServiceProvider.GetRequiredService<StockDbSeeder>();
-    await seeder.SeedAsync();
+    await db.Database.MigrateAsync();
 }
 
 app.UseSwagger();
