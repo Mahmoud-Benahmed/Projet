@@ -374,6 +374,7 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
+      "DISCOUNT_RATE":"Taux de remise",
       "OUTSTANDING_BALANCE": "Solde en cours",
       "REMAINING_CREDIT": "Crédit restant",
       "NAME": "NOM",

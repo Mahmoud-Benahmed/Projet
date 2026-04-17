@@ -384,6 +384,7 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
+      "DISCOUNT_RATE":"Discount Rate",
       "OUTSTANDING_BALANCE": "Outstanding Balance",
       "REMAINING_CREDIT": "Remaining Credit",
       "NAME": "NAME",
@@ -758,7 +759,7 @@
       "TAX_PER_INVOICE_LABEL": "Per invoice",
       "FINAL_TOTAL_TTC":"FINAL TOTAL (VAT included)",
       "BULK_DISCOUNT_APPLIED": "Bulk discount applied",
-      "DISCOUNT_RATE":"Discount Rate (%)",
+      "DISCOUNT_RATE":"Discount Rate ({{rate}} %)",
       "YOU_SAVE": "Amount saved",
       "CREDIT_LIMIT_REMAINING": "Remaining Credit:",
       "CREDIT_LIMIT_CURRENT_USAGE": "Current Outstanding:",
