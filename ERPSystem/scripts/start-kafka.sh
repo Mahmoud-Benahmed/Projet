@@ -18,9 +18,13 @@ if [ ! -d "$KAFKA_DIR" ]; then
 fi
 cd "$KAFKA_DIR"
 
-# ── Tear down existing kafka stack cleanly ────────────────────────────────────
+# ── Tear down existing kafka stack ───────────────────────────────────────
 echo -e "${BLUE}Tearing down existing Kafka stack...${NC}"
 docker compose down --remove-orphans >/dev/null 2>&1 || true
+
+# ── Force cleanup ALL kafka containers ───────────────────────────────────
+echo -e "${YELLOW}Cleaning old Kafka containers...${NC}"
+docker ps -a --format '{{.Names}}' | grep '^erp-kafka' | xargs -r docker rm -f
 
 # ── Start Kafka ───────────────────────────────────────────────────────────────
 echo -e "${BLUE}Starting Kafka...${NC}"
