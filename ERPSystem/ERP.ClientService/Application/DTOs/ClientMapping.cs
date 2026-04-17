@@ -20,6 +20,7 @@ public static class ClientMappings
             CreatedAt: client.CreatedAt,
             UpdatedAt: client.UpdatedAt,
             Categories: (client.ClientCategories ?? new List<ClientCategory>())
+                                    .Where(cc=> cc.Category != null && cc.Category.IsActive)
                                     .Select(cc => new CategoryResponseDto(
                                         Id: cc.CategoryId,
                                         Name: cc.Category?.Name ?? string.Empty,

@@ -175,6 +175,7 @@ public class ClientService : IClientService
             ?? throw new CategoryNotFoundException(categoryId);
 
         client.RemoveCategory(category);
+
         await _clientRepository.SaveChangesAsync();
         var dto = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, dto);

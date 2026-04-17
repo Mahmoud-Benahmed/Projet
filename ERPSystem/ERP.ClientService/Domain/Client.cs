@@ -82,10 +82,6 @@ public class Client
         var clientCategory = ClientCategory.Create(Id, category.Id, assignedById);
         ClientCategories.Add(clientCategory);
 
-        // Recalculate effective values after adding category
-        CreditLimit = GetEffectiveCreditLimit();
-        DelaiRetour = GetEffectiveDelaiRetour();
-        DuePaymentPeriod = GetEffectiveDuePaymentPeriod();
         UpdatedAt = DateTime.UtcNow;
         return clientCategory;
     }
@@ -103,10 +99,6 @@ public class Client
 
         ClientCategories.Remove(existing);
 
-        // Recalculate effective values after removing category
-        CreditLimit = GetEffectiveCreditLimit();
-        DelaiRetour = GetEffectiveDelaiRetour();
-        DuePaymentPeriod = GetEffectiveDuePaymentPeriod();
         UpdatedAt = DateTime.UtcNow;
     }
 
