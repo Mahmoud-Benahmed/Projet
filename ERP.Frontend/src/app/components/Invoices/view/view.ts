@@ -29,7 +29,6 @@ import { LoadingOverlayComponent } from "../../loading-overlay/loading-overlay";
     MatTooltipModule,
     MatDialogModule,
     TranslatePipe,
-    LoadingOverlayComponent,
     RouterLink
 ],
   templateUrl: './view.html',

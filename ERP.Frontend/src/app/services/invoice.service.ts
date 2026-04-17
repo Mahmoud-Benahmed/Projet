@@ -269,39 +269,6 @@ export class InvoiceService {
     }));
   }
 
-  // In your invoice.service.ts
-  calculateDiscountedTotals(
-    items: CreateInvoiceDto['items'],
-    discountRate: number
-  ): { originalTotalHT: number; originalTotalTTC: number; discountedTotalHT: number; discountedTotalTTC: number; discountAmount: number ,   discountAmountHT: number} {
-    let originalTotalHT = 0;
-    let originalTotalTTC = 0;
-
-    for (const item of items) {
-      const itemTotalHT = item.quantity * item.uniPriceHT;
-      // TaxRate is already percentage (e.g., 10.1 for 10.1%)
-      const taxRateDecimal = item.taxRate / 100;
-      const itemTotalTTC = itemTotalHT * (1 + taxRateDecimal);
-      originalTotalHT += itemTotalHT;
-      originalTotalTTC += itemTotalTTC;
-    }
-
-    const discountMultiplier = 1 - (discountRate / 100);
-    const discountedTotalHT = originalTotalHT * discountMultiplier;
-    const discountedTotalTTC = originalTotalTTC * discountMultiplier;
-    const discountAmount = originalTotalTTC - discountedTotalTTC;
-    const discountAmountHT = originalTotalHT - discountedTotalHT;
-
-    return {
-      originalTotalHT,
-      originalTotalTTC,
-      discountedTotalHT,
-      discountedTotalTTC,
-      discountAmount,
-      discountAmountHT
-    };
-  }
-
   // Validate credit limit
   validateCreditLimit(
     client: any,
@@ -335,8 +302,8 @@ export class InvoiceService {
       })
     }
   }
-
-  // Full validation before submission
+  
+  // invoice.service.ts
   async validateInvoiceBeforeSubmission(
     client: any,
     items: CreateInvoiceDto['items']
@@ -344,54 +311,23 @@ export class InvoiceService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Check if client is blocked
+    // Only UI-level guards — backend will re-validate everything securely
     if (client.isBlocked) {
-      errors.push('Client is blocked and cannot create invoices');
+      errors.push(this.t('INVOICES.ERRORS.CLIENT_BLOCKED'));
       return { isValid: false, errors, warnings };
     }
 
-    // Check if client is deleted
     if (client.isDeleted) {
-      errors.push('Client account is deleted');
+      errors.push(this.t('INVOICES.ERRORS.CLIENT_DELETED'));
       return { isValid: false, errors, warnings };
     }
 
-    // Calculate bulk discount
-    const { discountRate, applies } = this.calculateBulkDiscount(client);
-
-    // Calculate totals
-    const { originalTotalTTC, discountedTotalTTC, discountAmount } = this.calculateDiscountedTotals(items, discountRate);
-
-    if (applies && discountRate > 0) {
-      warnings.push(`Bulk discount of ${discountRate}% applied. You save: ${discountAmount.toFixed(2)} TND`);
+    if (!items || items.length === 0) {
+      errors.push(this.t('INVOICES.FORM.NO_ITEMS_YET'));
+      return { isValid: false, errors, warnings };
     }
 
-    // Get current outstanding balance
-    try {
-      const currentOutstanding = await firstValueFrom(this.getClientOutstandingBalance(client.id));
-
-      // Validate credit limit
-      const creditCheck = this.validateCreditLimit(client, discountedTotalTTC, currentOutstanding || 0);
-
-      if (!creditCheck.hasSufficientCredit) {
-        errors.push(creditCheck.message);
-      } else if (creditCheck.remainingCredit !== Infinity) {
-        warnings.push(creditCheck.message);
-      }
-    } catch (error) {
-      console.error('Credit limit verification failed:', error);
-      errors.push('Unable to verify credit limit. Please try again.');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
-      discountedTotal: discountedTotalTTC,
-      originalTotal: originalTotalTTC,
-      discountApplied: discountAmount,
-      discountRate: applies ? discountRate : 0
-    };
+    return { isValid: true, errors, warnings };
   }
 
 

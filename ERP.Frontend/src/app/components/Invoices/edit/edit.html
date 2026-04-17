@@ -112,9 +112,9 @@
                 <div *ngIf="discountInfo.applies && discountInfo.rate > 0" class="discount-banner">
                   <div class="discount-banner__content">
                     <mat-icon>local_offer</mat-icon>
-                    <div>
+                    <div class="discount-banner-header">
                       <strong>{{ 'INVOICES.FORM.BULK_DISCOUNT_APPLIED' | translate }}</strong>
-                      <span>{{ 'INVOICES.FORM.DISCOUNT_RATE' | translate: { rate: discountInfo.rate } }}</span>
+                      <span *ngIf=" discountInfo.rate">{{ discountInfo.rate }} %</span>
                     </div>
                     <div class="discount-amount">
                       {{ 'INVOICES.FORM.YOU_SAVE' | translate: { amount: (discountInfo.discountAmount | number:'1.2-2') } }}

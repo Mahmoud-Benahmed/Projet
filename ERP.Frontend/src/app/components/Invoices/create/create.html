@@ -328,8 +328,8 @@
                         <th>{{ 'INVOICES.DETAILS.ARTICLE' | translate }}</th>
                         <th>{{ 'INVOICES.DETAILS.BAR_CODE' | translate }}</th>
                         <th class="text-center">{{ 'INVOICES.DETAILS.QTY' | translate }}</th>
-                        <th class="text-center">{{ 'INVOICES.DETAILS.UNIT_HT' | translate }}</th>
                         <th class="text-center">{{ 'INVOICES.DETAILS.TAX' | translate }}</th>
+                        <th class="text-center">{{ 'INVOICES.DETAILS.UNIT_HT' | translate }}</th>
                         <th class="text-center">{{ 'INVOICES.DETAILS.TOTAL_TTC_COL' | translate }}</th>
                         <th class="text-center" colspan="2">{{ 'COMMON.ACTIONS' | translate }}</th>
                       </tr>
@@ -339,10 +339,10 @@
                         <td class="td--name">{{ item.articleName }}</td>
                         <td class="td--barCode">{{ item.articleBarCode }}</td>
                         <td class="text-center">{{ item.quantity | number:'1.2-2' }}</td>
-                        <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
                         <td class="text-center">{{ item.taxRate | number:'1.0-0' }}%</td>
+                        <td class="td--price text-center">{{ item.uniPriceHT | number:'1.2-2' }}</td>
                         <td class="td--price text-center">{{ item.totalTTC | number:'1.2-2' }}</td>
-                        <td class="td--actions" colspan="2">
+                        <td class="td--actions">
                           <button class="icon-btn icon-btn--edit" [matTooltip]="'COMMON.EDIT' | translate" (click)="openInlineItemEdit(item)">
                             <mat-icon style="font-size:15px;width:15px;height:15px;">edit</mat-icon>
                           </button>
@@ -354,7 +354,7 @@
                     </tbody>
                     <tfoot>
                       <tr class="totals-row" *ngIf="!discountInfo.applies || discountInfo.rate === 0">
-                        <td colspan="5" class="totals-label">{{ 'INVOICES.DETAILS.TOTALS' | translate }}</td>
+                        <td colspan="4" class="totals-label">{{ 'INVOICES.DETAILS.TOTALS' | translate }}</td>
                         <td class="td--price text-center totals-value">{{ pendingTotalHT | number:'1.2-2' }} TND</td>
                         <td class="td--price text-center totals-value">{{ pendingTotalTTC | number:'1.2-2' }} TND</td>
                         <td></td>
@@ -362,14 +362,14 @@
                       
                       <ng-container *ngIf="discountInfo.applies && discountInfo.rate > 0">
                         <tr class="totals-row">
-                          <td colspan="5" class="totals-label">{{ 'INVOICES.FORM.ORIGINAL_TOTAL' | translate }}</td>
+                          <td colspan="4" class="totals-label">{{ 'INVOICES.FORM.ORIGINAL_TOTAL' | translate }}</td>
                           <td class="td--price text-center">{{ pendingTotalHT | number:'1.2-2' }} TND</td>
                           <td class="td--price text-center">{{ discountInfo.originalTotal | number:'1.2-2' }} TND</td>
                           <td></td>
                         </tr>
                         
                         <tr class="discount-row">
-                          <td colspan="5" class="totals-label discount-label">
+                          <td colspan="4" class="totals-label discount-label">
                             {{ 'INVOICES.FORM.DISCOUNT_ROW' | translate: { rate: discountInfo.rate } }}
                           </td>
                           <td class="td--price text-center discount-amount">- {{ (pendingTotalHT * discountInfo.rate / 100) | number:'1.2-2' }} TND</td>
@@ -378,7 +378,7 @@
                         </tr>
                         
                         <tr class="totals-row final-totals">
-                          <td colspan="5" class="totals-label final-label">
+                          <td colspan="4" class="totals-label final-label">
                             <strong>{{ 'INVOICES.FORM.FINAL_TOTALS' | translate }}</strong>
                           </td>
                           <td class="td--price text-center totals-value final-value">

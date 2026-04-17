@@ -447,33 +447,41 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
     return { effectivePriceHT, totalHT, taxAmount, totalTTC };
   }
 
+  // In the component — replace checkClientLimitsAndDiscount():
   async checkClientLimitsAndDiscount(): Promise<void> {
     if (!this.selectedClientForValidation || this.pendingItems.length === 0) {
       this.creditWarning = null;
-      this.discountInfo = { applies: false, rate: 0, discountAmount: 0, discountAmountHT: 0, originalTotal: 0, discountedTotal: 0 };
+      this.discountInfo = { 
+        applies: false, rate: 0, discountAmount: 0, 
+        discountAmountHT: 0, originalTotal: 0, discountedTotal: 0 
+      };
       return;
     }
 
-    const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
-      articleId: rest.articleId,  // Ensure this is string
-      quantity: Number(rest.quantity),  // Force to number
-      uniPriceHT: Number(rest.uniPriceHT),  // Force to number
-      taxRate: Number(rest.taxRate / 100),  // Force to number
-    }));
+    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(
+      this.selectedClientForValidation
+    );
 
-    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
-    const { originalTotalTTC, discountedTotalTTC, discountAmount, discountAmountHT } =
-      this.invoiceService.calculateDiscountedTotals(items, discountRate);
+    // ── Derive everything from pendingItems (original prices) ──
+    const originalTotalHT  = this.pendingItems.reduce((s, i) => s + i.quantity * i.uniPriceHT, 0);
+    const originalTotalTTC = this.pendingItems.reduce(
+      (s, i) => s + i.quantity * i.uniPriceHT * (1 + i.taxRate / 100), 0
+    );
 
-    this.discountInfo = { 
-      applies, 
-      rate: discountRate, 
-      discountAmount,       // TTC
-      discountAmountHT,     // HT  ← now properly destructured
-      originalTotal: originalTotalTTC, 
-      discountedTotal: discountedTotalTTC 
+    const discountMultiplier = 1 - discountRate / 100;
+    const discountedTotalHT  = originalTotalHT * discountMultiplier;
+    const discountedTotalTTC = originalTotalTTC * discountMultiplier;
+
+    this.discountInfo = {
+      applies,
+      rate: discountRate,
+      discountAmountHT: originalTotalHT - discountedTotalHT,
+      discountAmount:   originalTotalTTC - discountedTotalTTC,  // TTC savings
+      originalTotal:    originalTotalTTC,
+      discountedTotal:  discountedTotalTTC,
     };
 
+    // ── Recalc pending items with new discount rate ──
     this.recalcAllItemPrices();
 
     try {
@@ -481,14 +489,16 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
         this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id)
       );
       const creditCheck = this.invoiceService.validateCreditLimit(
-        this.selectedClientForValidation, discountedTotalTTC, outstanding || 0
+        this.selectedClientForValidation,
+        this.discountInfo.applies ? discountedTotalTTC : originalTotalTTC,
+        outstanding || 0
       );
       this.creditWarning = creditCheck.hasSufficientCredit ? null : creditCheck.message;
     } catch {
-      // silently ignore credit check failures
+      // silently ignore
     }
   }
-  
+
   get duePaymentPeriodHint(): string {
     if (!this.selectedClientForValidation?.duePaymentPeriod) return '';
     return this.translate.instant('INVOICES.FORM.DUE_DATE_HINT', {
@@ -629,9 +639,6 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
       return;
     }
 
-    const stockValid = await this.validateAllItemsStock();
-    if (!stockValid) return;
-
     const formValue = this.invoiceForm.value;
     const selectedClient = this.clients.find(c => c.id === formValue.clientId);
     if (!selectedClient) {
@@ -639,65 +646,52 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
       return;
     }
 
-  this.recalcAllItemPrices(); // ensures totals reflect the mode correctly
-  await this.checkClientLimitsAndDiscount();
-  
-  const items = this.pendingItems.map(item => ({
-    articleId: item.articleId,
-    quantity:  Number(item.quantity),
-    uniPriceHT: Number(item.effectivePriceHT), // already has discount baked in
-    taxRate: Number(item.taxRate / 100),        // convert to decimal for API
-  }));
+    // ── UI-level guards only ──────────────────────────────────────────────
+    if (selectedClient.isBlocked) {
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_BLOCKED'));
+      return;
+    }
+    if (selectedClient.isDeleted) {
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_DELETED'));
+      return;
+    }
+
+    const stockValid = await this.validateAllItemsStock();
+    if (!stockValid) return;
 
     this.isValidating = true;
 
-    try {
-      const validation = await this.invoiceService.validateInvoiceBeforeSubmission(selectedClient, items);
-
-      if (!validation.isValid) {
-        this.flash('error', validation.errors.join(', '));
-        this.isValidating = false;
-        return;
-      }
-
-      validation.warnings.forEach(w => this.flash('success', w));
-
-      let finalItems = items;
-
-      const dto: CreateInvoiceDto = {
-        invoiceDate: formValue.invoiceDate,
-        dueDate: formValue.dueDate,
-        clientId: formValue.clientId,
-        additionalNotes: formValue.additionalNotes,
-        items: finalItems,
-        taxMode: this.taxCalculationMode,   
-      };
-
-      this.invoiceService.create(dto).subscribe({
-        next: () => {
-          this.flash('success', this.translate.instant('INVOICES.SUCCESS.CREATED'));
-          
-          setTimeout(() => {
-            const el = document.getElementById('top');
-            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 0); // wait for DOM update
-          
-          setTimeout(() => {
-            this.cancel();
-            this.isValidating = false;
-          }, 2000);
-          
-        },
-        error: (err) => {
-          const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.CREATE_FAILED');
-          this.flash('error', errorMsg);
+    const dto: CreateInvoiceDto = {
+      invoiceDate: formValue.invoiceDate,
+      dueDate: formValue.dueDate,
+      clientId: formValue.clientId,
+      additionalNotes: formValue.additionalNotes,
+      taxMode: this.taxCalculationMode,
+      items: this.pendingItems.map(item => ({
+        articleId:  item.articleId,
+        quantity:   Number(item.quantity),
+        uniPriceHT: Number(item.uniPriceHT),  // ← original price, backend applies discount
+        taxRate:    Number(item.taxRate / 100),
+      })),
+    };
+    this.invoiceService.create(dto).subscribe({
+      next: () => {
+        this.flash('success', this.translate.instant('INVOICES.SUCCESS.CREATED'));
+        setTimeout(() => {
+          document.getElementById('top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+        setTimeout(() => {
+          this.cancel();
           this.isValidating = false;
-        },
-      });
-    } catch {
-      this.flash('error', this.translate.instant('INVOICES.ERRORS.VALIDATION_FAILED'));
-      this.isValidating = false;
-    }
+        }, 2000);
+      },
+      error: (err) => {
+        const errorMsg = (err.error as HttpError)?.message 
+          || this.translate.instant('INVOICES.ERRORS.CREATE_FAILED');
+        this.flash('error', errorMsg);
+        this.isValidating = false;
+      },
+    });
   }
     // Toggle handler (add to component):
   setTaxCalculationMode(mode: TaxCalculationMode): void {
@@ -718,18 +712,25 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   }
 
   get pendingTotalHT(): number {
+    // always sum effectivePriceHT (post-discount) × qty
     return this.pendingItems.reduce((s, i) => s + i.totalHT, 0);
   }
 
   get pendingTotalTVA(): number {
-    return this.pendingItems.reduce((s, i) => s + i.taxAmount, 0);
+    if (this.taxCalculationMode === TaxCalculationMode.LINE) {
+      // sum each line's tax individually (may differ due to rounding)
+      return this.pendingItems.reduce((s, i) => s + i.taxAmount, 0);
+    }
+    // INVOICE mode: weighted average rate on total HT
+    const totalHT = this.pendingTotalHT;
+    if (totalHT === 0) return 0;
+    const weightedRate = this.pendingItems.reduce(
+      (s, i) => s + i.totalHT * (i.taxRate / 100), 0
+    ) / totalHT;
+    return Math.round(totalHT * weightedRate * 100) / 100;
   }
 
   get pendingTotalTTC(): number {
-    if (this.taxCalculationMode === TaxCalculationMode.LINE) {
-      return this.pendingItems.reduce((s, i) => s + i.totalTTC, 0);
-    }
-    
     return this.pendingTotalHT + this.pendingTotalTVA;
   }
 

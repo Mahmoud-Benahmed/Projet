@@ -153,39 +153,34 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       clientFullName: this.selectedInvoice.clientFullName,
       clientAddress: this.selectedInvoice.clientAddress || '',
       additionalNotes: this.selectedInvoice.additionalNotes || '',
-      taxModeInvoice: this.taxCalculationMode === TaxCalculationMode.INVOICE,
+      taxModeInvoice: this.selectedInvoice.taxMode || this.TaxModes.INVOICE,
     });
 
     // Build pending items from invoice items
     this.pendingItems = this.selectedInvoice.items.map(item => {
-      const article = this.masterArticles.find(a => a.id === item.articleId);
-      const uniPriceHT = item.uniPriceHT;   // original price before any line discount
-      const effectivePriceHT = uniPriceHT;  // discount applied at total level, not per line
-      const quantity = item.quantity;
-      const taxRate = item.taxRate * 100;   // assuming backend stores as decimal (e.g., 0.19)
-      const totalHT = quantity * effectivePriceHT;
-      const taxAmount = totalHT * taxRate / 100;
+      const taxRate = item.taxRate * 100;
+      const totalHT = item.quantity * item.uniPriceHT;
+      const taxAmount = totalHT * (taxRate / 100);
       const totalTTC = totalHT + taxAmount;
 
       return {
         _localId: crypto.randomUUID(),
         articleId: item.articleId,
-        articleName: article?.libelle || '',
-        articleBarCode: article?.barCode || '',
-        quantity: quantity,
-        uniPriceHT: uniPriceHT,
-        effectivePriceHT: effectivePriceHT,
-        taxRate: taxRate,
-        totalHT: totalHT,
-        totalTTC: totalTTC,
-        taxAmount: taxAmount
+        articleName: item.articleName,       // ← use item.articleName directly, don't look up from masterArticles (may not be in stock)
+        articleBarCode: item.articleBarCode, // ← same
+        quantity: item.quantity,
+        uniPriceHT: item.uniPriceHT,
+        effectivePriceHT: item.uniPriceHT,  // same until user changes something
+        taxRate,
+        totalHT,
+        taxAmount,
+        totalTTC,
       };
     });
 
     // Update derived data
     this.syncArticles();
     this.checkClientLimitsAndDiscount();
-    this.loadCreditLimitInfo();
 
     // Mark form as pristine initially (no unsaved changes)
     this.invoiceForm.markAsPristine();
@@ -354,7 +349,8 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   getSelectedArticle(): StockItem | null {
     return this._selectedArticle;
   }
-    getStockStatusClass(availableStock: number): string {
+  
+  getStockStatusClass(availableStock: number): string {
     if (availableStock === 0) return 'stock-out';
     if (availableStock <= 5) return 'stock-critical';
     if (availableStock <= 10) return 'stock-low';
@@ -495,7 +491,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     if (existingIndex !== -1) {
       const existing = this.pendingItems[existingIndex];
       const newQuantity = existing.quantity + quantity;
-      if (newQuantity > maxAllowed) { /* existing error flash */ return; }
+      if (newQuantity > maxAllowed) { return; }
 
       const merged = this.calcLineAmounts(newQuantity, existing.uniPriceHT, existing.taxRate, discountRate);
       this.pendingItems[existingIndex] = {
@@ -541,24 +537,26 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       return;
     }
 
-    const items = this.pendingItems.map(({ _localId, totalHT, totalTTC, ...rest }) => ({
-      articleId: rest.articleId,  // Ensure this is string
-      quantity: Number(rest.quantity),  // Force to number
-      uniPriceHT: Number(rest.uniPriceHT),  // Force to number
-      taxRate: Number(rest.taxRate / 100),  // Force to number
-    }));
+    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(
+      this.selectedClientForValidation
+    );
 
-    const { discountRate, applies } = this.invoiceService.calculateBulkDiscount(this.selectedClientForValidation);
-    const { originalTotalTTC, discountedTotalTTC, discountAmount, discountAmountHT } =
-      this.invoiceService.calculateDiscountedTotals(items, discountRate);
+    const originalTotalHT  = this.pendingItems.reduce((s, i) => s + i.quantity * i.uniPriceHT, 0);
+    const originalTotalTTC = this.pendingItems.reduce(
+      (s, i) => s + i.quantity * i.uniPriceHT * (1 + i.taxRate / 100), 0
+    );
 
-    this.discountInfo = { 
-      applies, 
-      rate: discountRate, 
-      discountAmount,       // TTC
-      discountAmountHT,     // HT  ← now properly destructured
-      originalTotal: originalTotalTTC, 
-      discountedTotal: discountedTotalTTC 
+    const discountMultiplier  = 1 - discountRate / 100;
+    const discountedTotalHT   = originalTotalHT * discountMultiplier;
+    const discountedTotalTTC  = originalTotalTTC * discountMultiplier;
+
+    this.discountInfo = {
+      applies,
+      rate: discountRate,
+      discountAmountHT: originalTotalHT - discountedTotalHT,
+      discountAmount:   originalTotalTTC - discountedTotalTTC,
+      originalTotal:    originalTotalTTC,
+      discountedTotal:  discountedTotalTTC,
     };
 
     try {
@@ -566,11 +564,13 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
         this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id)
       );
       const creditCheck = this.invoiceService.validateCreditLimit(
-        this.selectedClientForValidation, discountedTotalTTC, outstanding || 0
+        this.selectedClientForValidation,
+        applies ? discountedTotalTTC : originalTotalTTC,
+        outstanding || 0
       );
       this.creditWarning = creditCheck.hasSufficientCredit ? null : creditCheck.message;
     } catch {
-      // silently ignore credit check failures
+      // silently ignore
     }
   }
   
@@ -739,13 +739,6 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     this.isValidating = true;
     const formValue = this.invoiceForm.value;
 
-    const items = this.pendingItems.map(item => ({
-      articleId: item.articleId,  // Ensure this is string
-      quantity: Number(item.quantity),  // Force to number
-      uniPriceHT: Number(item.uniPriceHT),  // Force to number
-      taxRate: Number(item.taxRate / 100),  // Force to number
-    }));
-
     const updateDto = {
       invoiceDate: formValue.invoiceDate,
       dueDate: formValue.dueDate,
@@ -753,7 +746,12 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       clientAddress: formValue.clientAddress,
       additionalNotes: formValue.additionalNotes,
       taxMode: this.taxCalculationMode,      
-      items: items
+      items: this.pendingItems.map(item => ({
+          articleId:  item.articleId,
+          quantity:   Number(item.quantity),
+          uniPriceHT: Number(item.uniPriceHT),  // ✅ original — backend applies discount
+          taxRate:    Number(item.taxRate / 100),
+        }))
     };
 
     this.invoiceService.update(this.selectedInvoice!.id, updateDto).subscribe({
@@ -798,16 +796,21 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   }
 
   get pendingTotalTVA(): number {
-    return this.pendingItems.reduce((s, i) => s + i.taxAmount, 0);
+    if (this.taxCalculationMode === TaxCalculationMode.LINE) {
+      return this.pendingItems.reduce((s, i) => s + i.taxAmount, 0);
+    }
+    // INVOICE mode: weighted average rate on totalHT
+    const totalHT = this.pendingTotalHT;
+    if (totalHT === 0) return 0;
+    const weightedRate = this.pendingItems.reduce(
+      (s, i) => s + i.totalHT * (i.taxRate / 100), 0
+    ) / totalHT;
+    return Math.round(totalHT * weightedRate * 100) / 100;
   }
 
   get pendingTotalTTC(): number {
-    if (this.taxCalculationMode === TaxCalculationMode.LINE) {
-      return this.pendingItems.reduce((s, i) => s + i.totalTTC, 0);
-    }
-    return this.pendingTotalHT + this.pendingTotalTVA;
+    return this.pendingTotalHT + this.pendingTotalTVA; // derives from above, no duplication
   }
-
   trackById(_: number, item: { id: string }) { return item.id; }
   trackByLocalId(_: number, item: PendingItem) { return item._localId; }
 
