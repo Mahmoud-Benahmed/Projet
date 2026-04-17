@@ -33,7 +33,7 @@ type CreditLimitInfo= {
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, TranslatePipe, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIcon, PaginationComponent, TranslatePipe],
   templateUrl: './home.html',
   styleUrls: ['./home.scss'],
 })
@@ -279,6 +279,7 @@ export class ClientsComponent implements OnInit {
         this.totalCount = clients.totalCount;
         this.stats = stats;
         this.categories = categories;
+        this.loadCreditLimitInfo();
         this.cdr.markForCheck();
       },
       error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR'))
@@ -534,7 +535,7 @@ export class ClientsComponent implements OnInit {
       next: (result) => {
         this.selectedCategoryId = '';
         this.flash('success', this.translate.instant('SUCCESS.CLIENT_CATEGORY_ADDED'));
-        this.selectedClient = result;
+        this.selectedClient = result;this.reload();
       },
       error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('ERRORS.INTERNAL_ERROR')),
     });
@@ -561,6 +562,7 @@ export class ClientsComponent implements OnInit {
           next: (client) => {
             this.flash('success', this.translate.instant('SUCCESS.CLIENT_CATEGORY_REMOVED', { name: categoryName }));
             this.selectedClient = client;
+            this.reload();
           },
           error: () => this.flash('error', this.translate.instant('ERRORS.INTERNAL_ERROR')),
         });
@@ -646,5 +648,14 @@ export class ClientsComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  getSelectedClientDiscountRate(): number {
+    if(!this.selectedClient) return 0;
+    if (!this.selectedClient?.categories?.length) return 0;
+    const rates = this.selectedClient.categories
+      .map(c => c.discountRate)
+      .filter((rate): rate is number => rate !== null && rate !== undefined);
+    return rates.length > 0 ? Math.max(...rates) * 100 : 0;
   }
 }

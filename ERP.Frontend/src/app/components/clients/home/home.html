@@ -263,6 +263,10 @@
           <span class="detail-label">{{ 'CLIENTS.DETAILS.TAX_NUMBER' | translate }}</span>
           <span class="detail-value detail-value--mono">{{ selectedClient.taxNumber ?? '—' }}</span>
         </div>
+        <div class="detail-item" *ngIf="getSelectedClientDiscountRate() > 0">
+          <span class="detail-label">{{ 'CLIENTS.DETAILS.DISCOUNT_RATE' | translate }}</span>
+          <span class="detail-value">{{ getSelectedClientDiscountRate() }} %</span>
+        </div>
         <div class="detail-item">
           <span class="detail-label">{{ 'CLIENTS.DETAILS.CREDIT_LIMIT' | translate }}</span>
           <span class="detail-value">
@@ -313,7 +317,7 @@
       </div>
 
       <div class="categories-list" *ngIf="selectedClient.categories.length > 0; else noCategories">
-        <div class="category-tag" *ngFor="let cat of selectedClient.categories; trackBy: trackByCategoryId" [routerLink]="['/clients/categories', cat.id]">
+        <div class="category-tag" *ngFor="let cat of selectedClient.categories; trackBy: trackByCategoryId">
           <span class="category-tag__code">{{ cat.code }}</span>
           <span class="category-tag__name">{{ cat.name }}</span>
 
