@@ -19,7 +19,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET ALL
         // =========================
         [HttpGet(ApiRoutes.Articles.GetAll)]
-        public async Task<ActionResult<ArticleResponseDto>> GetAllPagedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetAllPagedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _articleService.GetAllAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
@@ -30,7 +30,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET DELETED
         // =========================
         [HttpGet(ApiRoutes.Articles.GetDeletedRoute)]
-        public async Task<ActionResult<ArticleResponseDto>> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
@@ -60,7 +60,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET PAGED BY CATEGORY
         // =========================
         [HttpGet(ApiRoutes.Articles.GetPagedByCategory)]
-        public async Task<ActionResult<ArticleResponseDto>> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
@@ -79,7 +79,7 @@ namespace ERP.ArticleService.API.Controllers
         // GET PAGED BY LIBELLE
         // =========================
         [HttpGet(ApiRoutes.Articles.GetPagedByLibelle)]
-        public async Task<ActionResult<ArticleResponseDto>> GetPagedByLibelle(
+        public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetPagedByLibelle(
             [FromQuery] string libelleFilter,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
