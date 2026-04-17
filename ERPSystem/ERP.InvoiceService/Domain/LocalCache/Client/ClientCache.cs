@@ -1,4 +1,6 @@
-﻿namespace ERP.InvoiceService.Domain.LocalCache.Client;
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace ERP.InvoiceService.Domain.LocalCache.Client;
 
 public class ClientCache
 {
@@ -24,18 +26,12 @@ public class ClientCache
 
     public static ClientCache Create(
         Guid id,
-        string name, 
-        string email, 
-        string address,
-        DateTime createdAt, 
-        bool isBlocked = false, 
-        bool isDeleted = false,
-        DateTime? updatedAt = null,
+        string name, string email, string address,
         decimal? creditLimit = null,  // ← Made nullable with default
-        string? phone = null, 
-        string? taxNumber = null,
+        string? phone = null, string? taxNumber = null,
         int? delaiRetour = null,
-        int? duePaymentPeriod = null)
+        int? duePaymentPeriod = null,
+        bool isBlocked = false, bool isDeleted = false, DateTime? createdAt = null, DateTime? updatedAt = null)
     {
         ValidateName(name);
         ValidateEmail(email);
@@ -55,25 +51,16 @@ public class ClientCache
             CreditLimit = creditLimit,
             DelaiRetour = delaiRetour,
             DuePaymentPeriod = duePaymentPeriod,
-            CreatedAt = createdAt,
-            UpdatedAt = updatedAt,
+            CreatedAt = DateTime.UtcNow,
         };
     }
 
     public void Update(
-        string name,
-        string email, 
-        string address,
-        DateTime createdAt, 
-        bool isBlocked = false, 
-        bool isDeleted = false,
-        DateTime? updatedAt= null,
-        decimal? creditLimit = null,  // ← Made nullable with default
-        string? phone = null, 
-        string? taxNumber = null,
-        int? delaiRetour = null,
-        int? duePaymentPeriod = null)
+        string name, string email, string address, decimal? creditLimit = null, int? delaiRetour = null, int? duePaymentPeriod = null,
+        string? phone = null, string? taxNumber = null,
+        bool isBlocked = false, bool isDeleted = false, DateTime? createdAt = null, DateTime? updatedAt = null)
     {
+        GuardNotDeleted();
         ValidateName(name);
         ValidateEmail(email);
         ValidateAddress(address);
@@ -83,16 +70,10 @@ public class ClientCache
         Address = address.Trim();
         Phone = phone?.Trim();
         TaxNumber = taxNumber?.Trim();
-        CreditLimit = creditLimit;
-        DelaiRetour = delaiRetour;
-        DuePaymentPeriod = duePaymentPeriod;
-        CreatedAt = createdAt;
-        UpdatedAt = updatedAt;
-        IsBlocked = isBlocked;
-        IsDeleted = isDeleted;
+        UpdatedAt = DateTime.UtcNow;
     }
 
-    public ClientCategoryCache AddCategory(CategoryCache category)
+    public ClientCategoryCache AddCategory(CategoryCache category, Guid assignedById)
     {
         GuardNotDeleted();
         if (!category.IsActive)
@@ -123,13 +104,34 @@ public class ClientCache
 
         ClientCategories.Remove(existing);
 
-        // Recalculate effective values after removing category
-        CreditLimit = CreditLimit;
-        DelaiRetour = DelaiRetour;
-        DuePaymentPeriod = DuePaymentPeriod;
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void SetCreditLimit(decimal limit)
+    {
+        ValidateCreditLimit(limit);
+        CreditLimit = limit;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RemoveCreditLimit()
+    {
+        CreditLimit = null;  // ← Now works because CreditLimit is nullable
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetDelaiRetour(int days)
+    {
+        ValidateDelaiRetour(days);
+        DelaiRetour = days;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearDelaiRetour()
+    {
+        DelaiRetour = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     public void Block()
     {
@@ -160,20 +162,79 @@ public class ClientCache
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public int? GetEffectiveDelaiRetour()
+    {
+        if (DelaiRetour.HasValue) return DelaiRetour.Value;
+
+        var categoryMax = ClientCategories
+            .Select(cc => cc.Category)
+            .Where(c => c is { IsActive: true, IsDeleted: false })
+            .Select(c => c.DelaiRetour)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return categoryMax > 0 ? categoryMax : null;
+    }
+
+    public decimal? GetEffectiveCreditLimit()  // ← Returns nullable decimal
+    {
+        // If no base credit limit, return null
+        if (!CreditLimit.HasValue || CreditLimit.Value <= 0)
+            return null;
+
+        // Get the highest multiplier from active categories
+        var multiplier = ClientCategories
+            .Select(cc => cc.Category)
+            .Where(c => c is { IsActive: true, IsDeleted: false } && c.CreditLimitMultiplier.HasValue)
+            .Select(c => c.CreditLimitMultiplier!.Value)  // Use ! after filtering
+            .DefaultIfEmpty(1m)  // Default to 1 if no multipliers found
+            .Max();
+
+        return CreditLimit.Value * multiplier;
+    }
+
+    public void SetDuePaymentPeriod(int days)
+    {
+        ValidateDuePaymentPeriod(days);
+        DuePaymentPeriod = days;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearDuePaymentPeriod()
+    {
+        DuePaymentPeriod = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public int GetEffectiveDuePaymentPeriod()
+    {
+        if (DuePaymentPeriod.HasValue) return DuePaymentPeriod.Value;
+
+        var categoryMax = ClientCategories
+            .Select(cc => cc.Category)
+            .Where(c => c is { IsActive: true, IsDeleted: false })
+            .Select(c => c.DuePaymentPeriod)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return categoryMax;
+    }
 
     public bool CanPlaceOrder(decimal orderAmount, decimal currentBalance)
     {
         if (IsBlocked || IsDeleted) return false;
 
-        // If no credit limit set, allow order
-        if (!CreditLimit.HasValue) return true;
+        var limit = GetEffectiveCreditLimit();
 
-        return currentBalance + orderAmount <= CreditLimit.Value;
+        // If no credit limit set, allow order
+        if (!limit.HasValue) return true;
+
+        return currentBalance + orderAmount <= limit.Value;
     }
 
     public bool IsWithinDelaiRetour(DateTime documentDate)
     {
-        var window = DelaiRetour;
+        var window = GetEffectiveDelaiRetour();
         if (!window.HasValue) return false;
         return (DateTime.UtcNow - documentDate).TotalDays <= window.Value;
     }

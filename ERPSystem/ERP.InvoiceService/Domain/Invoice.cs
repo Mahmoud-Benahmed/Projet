@@ -10,6 +10,7 @@ namespace InvoiceService.Domain
         public string InvoiceNumber { get; private set; }
         public TaxCalculationMode TaxCalculationMode { get; private set; }
         public DateTime InvoiceDate { get; private set; }
+        public decimal DiscountRate { get; private set; }
         public DateTime DueDate { get; private set; }
         public decimal TotalHT { get; private set; }
         public decimal TotalTVA { get; private set; }
@@ -36,6 +37,7 @@ namespace InvoiceService.Domain
             DateTime invoiceDate,
             DateTime dueDate,
             TaxCalculationMode taxCalculation,
+            decimal discountRate,
             Guid clientId,
             string clientFullName,
             string clientAddress,
@@ -45,6 +47,7 @@ namespace InvoiceService.Domain
             InvoiceNumber = invoiceNumber;
             InvoiceDate = invoiceDate;
             TaxCalculationMode = taxCalculation;
+            DiscountRate = discountRate;
             DueDate = dueDate;
             ClientId = clientId;
             ClientFullName = clientFullName;
@@ -68,7 +71,6 @@ namespace InvoiceService.Domain
                 throw new InvoiceDomainException("Items can only be added to DRAFT invoices.");
 
             _items.Add(item);
-            CalculateTotals();
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -88,39 +90,32 @@ namespace InvoiceService.Domain
                 ?? throw new InvoiceDomainException($"Item with id '{itemId}' not found.");
 
             _items.Remove(item);
-            CalculateTotals();
             UpdatedAt = DateTime.UtcNow;
         }
 
         public void CalculateTotals()
         {
+            // Each item recalculates using the invoice-level discount
             foreach (var item in _items)
-                item.CalculateSubtotal();
+                item.CalculateSubtotal(DiscountRate);  // ← discount flows from invoice to items
 
             TotalHT = _items.Sum(i => i.TotalHT);
 
             if (TaxCalculationMode == TaxCalculationMode.INVOICE)
             {
-                if (TotalHT == 0)
-                {
-                    TotalTVA = 0;
-                    TotalTTC = 0;
-                }
+                if (TotalHT == 0) { TotalTVA = 0; TotalTTC = 0; }
                 else
                 {
-                    // Weighted average rate across all lines
                     var avgRate = _items.Sum(i => i.TotalHT * i.TaxRate) / TotalHT;
                     TotalTVA = Math.Round(TotalHT * avgRate, 2);
-                    TotalTTC = TotalHT + TotalTVA; // ← derived from rounded TVA, not line sum
+                    TotalTTC = TotalHT + TotalTVA;
                 }
             }
-            else // LINE mode
+            else
             {
                 TotalTVA = Math.Round(_items.Sum(i => i.TotalTTC - i.TotalHT), 2);
                 TotalTTC = TotalHT + TotalTVA;
             }
-
-            UpdatedAt = DateTime.UtcNow;
         }
 
         /// <exception cref="InvoiceDomainException">Thrown if not in DRAFT status or has no items</exception>
@@ -178,6 +173,7 @@ namespace InvoiceService.Domain
             DateTime invoiceDate,
             DateTime dueDate,
             TaxCalculationMode taxCalculationMode,
+            decimal discountRate,
             Guid clientId,
             string clientFullName,
             string clientAddress,
@@ -187,6 +183,7 @@ namespace InvoiceService.Domain
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
             TaxCalculationMode = taxCalculationMode;
+            DiscountRate = discountRate;
             InvoiceDate = invoiceDate;
             DueDate = dueDate;
             ClientId = clientId;

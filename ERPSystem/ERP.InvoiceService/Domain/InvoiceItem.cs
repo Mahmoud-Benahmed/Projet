@@ -12,6 +12,7 @@ namespace InvoiceService.Domain
         public string ArticleBarCode { get; private set; }
         public decimal Quantity { get; private set; }
         public decimal UniPriceHT { get; private set; }
+        public decimal EffectivePriceHT { get; private set; }
         public decimal TaxRate { get; private set; }
         public decimal TotalHT { get; private set; }
         public decimal TotalTTC { get; private set; }
@@ -76,9 +77,11 @@ namespace InvoiceService.Domain
             CalculateSubtotal();
 
         }
-        public void CalculateSubtotal()
+        public void CalculateSubtotal(decimal discountRate = 0)
         {
-            TotalHT = Quantity * UniPriceHT;
+            var multiplier = 1 - (discountRate / 100m);
+            EffectivePriceHT = UniPriceHT * multiplier;
+            TotalHT = Quantity * EffectivePriceHT;
             TotalTTC = TotalHT * (1 + TaxRate);
         }
     }

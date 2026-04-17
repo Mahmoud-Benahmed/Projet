@@ -12,6 +12,7 @@ public record InvoiceDto(
     string InvoiceNumber,
     DateTime InvoiceDate,
     DateTime DueDate,
+    decimal DiscountRate,
     decimal TotalHT,
     decimal TotalTVA,
     decimal TotalTTC,
@@ -33,6 +34,7 @@ public record InvoiceItemDto(
     string ArticleBarCode,
     decimal Quantity,
     decimal UniPriceHT,
+    decimal EffectivePriceHT,
     decimal TaxRate,
     decimal TotalHT,
     decimal TotalTTC

@@ -17,6 +17,7 @@ namespace InvoiceService.Application.DTOs
                 TotalTVA: invoice.TotalTVA,
                 TotalTTC: invoice.TotalTTC,
                 TaxMode: invoice.TaxCalculationMode,
+                DiscountRate: invoice.DiscountRate,
                 Status: invoice.Status.ToString(),
                 ClientId: invoice.ClientId,
                 ClientFullName: invoice.ClientFullName,
@@ -38,6 +39,7 @@ namespace InvoiceService.Application.DTOs
                 ArticleBarCode: item.ArticleBarCode,
                 Quantity: item.Quantity,
                 UniPriceHT: item.UniPriceHT,
+                EffectivePriceHT: item.EffectivePriceHT,
                 TaxRate: item.TaxRate,
                 TotalHT: item.TotalHT,
                 TotalTTC: item.TotalTTC

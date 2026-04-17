@@ -18,8 +18,11 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         private readonly IEventPublisher _eventPublisher;
         private readonly IStockServiceHttpClient _stockClient;
 
+        private readonly ILogger<InvoicesService> _logger;
+
 
         public InvoicesService(
+            ILogger<InvoicesService> logger,
             IStockServiceHttpClient stockClient,
             IInvoiceRepository invoiceRepository,
             IInvoiceNumberGenerator invoiceNumberGenerator,
@@ -27,8 +30,9 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             IArticleCacheRepository articleCacheRepository,
             IEventPublisher eventPublisher)
         {
+            _logger = logger;
             _stockClient = stockClient;
-            _eventPublisher= eventPublisher;
+            _eventPublisher = eventPublisher;
             _clientCacheRepository = clientCacheRepository;
             _invoiceRepository = invoiceRepository;
             _invoiceNumberGenerator = invoiceNumberGenerator;
@@ -72,18 +76,19 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
 
             var stockStatus = await _stockClient.GetStockStatusAsync();
-
-
             ValidateStockAvailability(dto.Items, stockStatus);
 
+            _logger.LogInformation("\n\nCreating invoice for client {ClientId} with {ItemCount} items\n\n", dto.ClientId, dto.Items.Count);
+            _logger.LogDebug("\n\nInvoice details: {@InvoiceDto}\n\n", dto);
 
-            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate)));
+            var discountRate = GetClientDiscountRate(client);
+            var discountMultiplier = 1 - (discountRate / 100m);
 
-            await CheckClientCreditLimit(client.Id, invoiceTotalTTC);
+            _logger.LogInformation("\n\nClient {ClientId} has discount rate of {DiscountRate}%, applying multiplier of {DiscountMultiplier}\n\n", dto.ClientId, discountRate, discountMultiplier);
+
+
 
             var invoiceNumber = await _invoiceNumberGenerator.GenerateNextInvoiceNumberAsync();
-
-            // add dropdown to list available clients and select it 
 
             // ──── CREATE INVOICE ────
             var invoice = new Invoice(
@@ -91,6 +96,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 dto.InvoiceDate,
                 dto.DueDate,
                 dto.TaxMode,
+                discountRate,
                 client.Id,
                 client.Name,
                 client.Address,
@@ -125,11 +131,16 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 }
             }
 
+            invoice.CalculateTotals();
+
+            _logger.LogInformation("\n\nCalculated invoice totals: \nTotalHT={TotalHT}, \nTotalTVA={TotalTVA}, \nTotalTTC={TotalTTC}\n\n", invoice.TotalHT, invoice.TotalTVA, invoice.TotalTTC);
+            
+            await CheckClientCreditLimit(client.Id, invoice.TotalTTC);
 
             await _invoiceRepository.AddAsync(invoice);
 
-            var payload = invoice.ToDto(); 
-            
+            var payload = invoice.ToDto();
+
             if (invoice.Status == InvoiceStatus.UNPAID)
                 await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
 
@@ -140,29 +151,44 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
 
-            if(invoice is null || invoice.IsDeleted)
+            if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
 
             var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
-            
+
             if (invoice.Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
-            decimal invoiceTotalTTC = dto.Items.Sum(i => i.Quantity * i.UniPriceHT * (1 + (i.TaxRate)));
+            var stockStatus = await _stockClient.GetStockStatusAsync();
+            var updateDTOs= dto.Items.Select(i => new CreateInvoiceItemDto
+            (
+                ArticleId: i.ArticleId,
+                Quantity: i.Quantity,
+                UniPriceHT: i.UniPriceHT,
+                TaxRate: i.TaxRate
+            )).ToList();
+            ValidateStockAvailability(updateDTOs, stockStatus);
+            
+            _logger.LogInformation("\n\nUpdating invoice {InvoiceId} for client {ClientId} with {ItemCount} items\n\n", id, dto.ClientId, dto.Items.Count);
+            _logger.LogDebug("\n\nInvoice details: {@InvoiceDto}\n\n", dto);
 
-            await CheckClientCreditLimit(dto.ClientId, invoiceTotalTTC, excludeInvoiceId: id);
+            var discountRate = GetClientDiscountRate(client);
+            var discountMultiplier = 1 - (discountRate / 100);
+
+            _logger.LogInformation("\n\nClient {ClientId} has discount rate of {DiscountRate}%, applying multiplier of {DiscountMultiplier}\n\n", dto.ClientId, discountRate, discountMultiplier);
+
 
             // Update header only
             invoice.Update(
                 invoiceDate: dto.InvoiceDate,
                 dueDate: dto.DueDate,
                 taxCalculationMode: dto.TaxMode,
+                discountRate: discountRate,
                 clientId: dto.ClientId,
                 clientFullName: client.Name,
                 clientAddress: client.Address,
                 additionalNotes: dto.AdditionalNotes
             );
-
 
             // Load all articles once (single database call)
             var articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
@@ -177,6 +203,9 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             {
                 if (articleDictionary.TryGetValue(itemDto.ArticleId, out var article))
                 {
+                    var discountedPrice = itemDto.UniPriceHT * discountMultiplier;
+                    _logger.LogInformation("\n\nAdding item to invoice: \nArticleId={ArticleId}, \nQuantity={Quantity}, \nUniPriceHT={UniPriceHT}, \nDiscountedPrice={DiscountedPrice}, \nTaxRate={TaxRate}\n\n",
+                        itemDto.ArticleId, itemDto.Quantity, itemDto.UniPriceHT, discountedPrice, itemDto.TaxRate);
                     invoice.AddItem(new InvoiceItem(
                         invoice.Id,
                         itemDto.ArticleId,
@@ -193,6 +222,12 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 }
             }
 
+            invoice.CalculateTotals();
+
+            _logger.LogInformation("\n\nCalculated invoice totals: \nTotalHT={TotalHT}, \nTotalTVA={TotalTVA}, \nTotalTTC={TotalTTC}\n\n", invoice.TotalHT, invoice.TotalTVA, invoice.TotalTTC);
+
+            await CheckClientCreditLimit(dto.ClientId, invoice.TotalTTC, excludeInvoiceId: id);
+
             await _invoiceRepository.UpdateAsync(invoice);
             return invoice.ToDto();
         }
@@ -208,7 +243,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 throw new InvoiceDomainException("Items can only be added to DRAFT invoices.");
 
             var invoiceTotalTTC = invoice.TotalTTC + (dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate)));
-            
+
             await CheckClientCreditLimit(invoice.ClientId, invoiceTotalTTC);
 
             var article = await _articleCacheRepository.GetByIdAsync(dto.ArticleId) ?? throw new KeyNotFoundException($"Article with Id: {dto.ArticleId} not found.");
@@ -224,6 +259,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             invoice.AddItem(item);
 
+            invoice.CalculateTotals();
 
             await _invoiceRepository.UpdateAsync(invoice);
             return invoice.ToDto();
@@ -234,14 +270,15 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
 
-            if(invoice is null || invoice.IsDeleted)
+            if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
 
             if (invoice.Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Items can only be removed from DRAFT invoices.");
 
-
             invoice.RemoveItem(itemId);
+
+            invoice.CalculateTotals();
 
             await _invoiceRepository.UpdateAsync(invoice);
         }
@@ -260,7 +297,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                     Quantity: i.Quantity,
                     UniPriceHT: i.UniPriceHT,
                     TaxRate: i.TaxRate
-                )).ToList(), 
+                )).ToList(),
                 await _stockClient.GetStockStatusAsync());
 
             invoice.FinalizeInvoice();
@@ -275,7 +312,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             // the draft invoice is peristed in Invoice service as Draft but only sent as UNPAID to StockService so the DRAFT isn't published in CreateAsync,
             // they are published once they are UNPAID so they will be persisted in the StockService for tracking by this statement.
             if (invoice.Status == InvoiceStatus.UNPAID)
-                await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload); 
+                await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
 
             return payload;
         }
@@ -306,9 +343,9 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.UpdateAsync(invoice);
 
-            var payload= invoice.ToDto();
+            var payload = invoice.ToDto();
             await _eventPublisher.PublishAsync(InvoiceTopics.Cancelled, payload);
-            
+
             return payload;
         }
 
@@ -463,10 +500,10 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                             && (excludeInvoiceId == null || i.Id != excludeInvoiceId))
                 .Sum(i => i.TotalTTC);
 
-            if (client.CreditLimit < invoiceTotalTTC + clientCurrentCredit)
+            if (client.GetEffectiveCreditLimit() < invoiceTotalTTC + clientCurrentCredit)
                 throw new InvoiceDomainException(
                     $"Cannot create invoice. Client '{client.Name}' exceeds credit limit." +
-                    $" Current used: {clientCurrentCredit:C}, Attempted invoice: {invoiceTotalTTC:C}, Limit: {client.CreditLimit:C}"
+                    $" Current used: {clientCurrentCredit:C}, Attempted invoice: {invoiceTotalTTC:C}, Limit: {client.GetEffectiveCreditLimit():C}"
                 );
         }
 
@@ -521,5 +558,20 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             }
         }
 
+
+        private static decimal GetClientDiscountRate(Domain.LocalCache.Client.ClientCache client)
+        {
+            if (client.ClientCategories == null || !client.ClientCategories.Any())
+                return 0m;
+
+            var bulkCategories = client.ClientCategories
+                .Where(cc => cc.Category?.UseBulkPricing == true)
+                .ToList();
+
+            if (!bulkCategories.Any()) return 0m;
+
+            var highest = bulkCategories.Max(cc => cc.Category!.DiscountRate) ?? 0m;
+            return highest <= 1 ? highest * 100 : highest;
+        }
     }
 }

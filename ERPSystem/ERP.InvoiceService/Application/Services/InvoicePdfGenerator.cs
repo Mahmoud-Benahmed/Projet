@@ -37,25 +37,20 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                 // ================= HEADER =================
                 page.Header().Row(row =>
                 {
-                    // Left side: Logo + Company details
                     row.RelativeItem().Column(col =>
                     {
                         col.Item().Text(CompanyName)
                             .FontSize(22).Bold().FontColor(Colors.Blue.Darken2);
-
                         col.Item().Text(CompanyAddress).FontSize(9);
                         col.Item().Text($"Tel: {CompanyPhone} | Email: {CompanyEmail}").FontSize(9);
                     });
 
-                    // Right side: Invoice title + number + status
                     row.ConstantItem(220).AlignRight().Column(col =>
                     {
                         col.Item().Text("INVOICE")
                             .FontSize(24).Bold().FontColor(Colors.Blue.Darken2);
-
                         col.Item().Text(invoice.InvoiceNumber)
                             .FontSize(14).SemiBold();
-
                         col.Item().Background(statusColor).PaddingVertical(5).PaddingHorizontal(10)
                             .AlignCenter()
                             .Text(invoice.Status).FontColor(Colors.White).Bold().FontSize(11);
@@ -68,7 +63,6 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     // CLIENT + DATES
                     col.Item().Row(row =>
                     {
-                        // Bill To
                         row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(c =>
                         {
                             c.Item().Text("BILL TO").Bold().FontSize(11);
@@ -77,7 +71,6 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                             c.Item().Text(invoice.ClientAddress).FontSize(10);
                         });
 
-                        // Invoice Dates
                         row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(c =>
                         {
                             c.Item().Text("INVOICE DETAILS").Bold().FontSize(11);
@@ -100,9 +93,12 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     // ================= TABLE =================
                     col.Item().Table(table =>
                     {
+                        // 7 columns: Article, Qty, Unit Price (HT), Discount, Net Price (HT), TVA, Total TTC
                         table.ColumnsDefinition(columns =>
                         {
                             columns.RelativeColumn(3);
+                            columns.RelativeColumn(1);
+                            columns.RelativeColumn(1.5f);
                             columns.RelativeColumn(1);
                             columns.RelativeColumn(1.5f);
                             columns.RelativeColumn(1);
@@ -115,52 +111,79 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                             header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Article").Bold();
                             header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Qty").Bold().AlignRight();
                             header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Unit Price (HT)").Bold().AlignRight();
+                            header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Discount").Bold().AlignCenter();
+                            header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Net Price (HT)").Bold().AlignRight();
                             header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("TVA").Bold().AlignCenter();
                             header.Cell().Background(Colors.Grey.Lighten2).Padding(8).Text("Total TTC").Bold().AlignRight();
                         });
 
                         // Rows
                         var index = 0;
+                        var discountRate = invoice.DiscountRate; // global discount percentage
+
                         foreach (var item in invoice.Items)
                         {
                             var bgColor = index++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten3;
+                            var netPriceHT = item.UniPriceHT * (1 - discountRate / 100m);
+                            var totalTTC = item.Quantity * netPriceHT * (1 + item.TaxRate);
+
                             table.Cell().Background(bgColor).Padding(6).Text(item.ArticleName);
                             table.Cell().Background(bgColor).Padding(6).Text($"{item.Quantity:N2}").AlignRight();
                             table.Cell().Background(bgColor).Padding(6).Text($"{item.UniPriceHT:N2} {CurrencySymbol}").AlignRight();
+                            table.Cell().Background(bgColor).Padding(6).AlignCenter().Text(discountRate > 0 ? $"{discountRate:F0}%" : "-");
+                            table.Cell().Background(bgColor).Padding(6).Text($"{netPriceHT:N2} {CurrencySymbol}").AlignRight();
                             table.Cell().Background(bgColor).Padding(6).AlignCenter().Text($"{item.TaxRate * 100:F0}%");
-                            table.Cell().Background(bgColor).Padding(6).Text($"{item.TotalTTC:N2} {CurrencySymbol}").AlignRight();
+                            table.Cell().Background(bgColor).Padding(6).Text($"{totalTTC:N2} {CurrencySymbol}").AlignRight();
                         }
                     });
 
                     col.Item().PaddingVertical(15);
 
                     // ================= TOTALS =================
-                    // ================= TOTALS =================
-                    col.Item().AlignRight().Width(240).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(totals =>
+                    col.Item().AlignRight().Width(260).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(totals =>
                     {
+                        // Original subtotal (before discount)
+                        var originalTotalHT = invoice.Items.Sum(i => i.Quantity * i.UniPriceHT);
                         totals.Item().Row(r =>
                         {
                             r.RelativeItem().Text("Subtotal (HT):").Bold();
-                            r.ConstantItem(100).AlignRight().Text($"{invoice.TotalHT:N2} {CurrencySymbol}");
+                            r.ConstantItem(110).AlignRight().Text($"{originalTotalHT:N2} {CurrencySymbol}");
                         });
 
-                        // TVA breakdown depends on mode
-                        if (invoice.TaxMode == TaxCalculationMode.INVOICE)
+                        // Discount line (if applicable)
+                        if (invoice.DiscountRate > 0)
                         {
-                            // Single blended rate line
-                            var effectiveRate = invoice.TotalHT > 0
-                                ? (invoice.TotalTVA / invoice.TotalHT) * 100
-                                : 0;
+                            var discountAmountHT = originalTotalHT - invoice.TotalHT;
+                            totals.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text($"Discount ({invoice.DiscountRate:F0}%):").Bold()
+                                    .FontColor(Colors.Green.Darken1);
+                                r.ConstantItem(110).AlignRight()
+                                    .Text($"- {discountAmountHT:N2} {CurrencySymbol}")
+                                    .FontColor(Colors.Green.Darken1);
+                            });
 
                             totals.Item().Row(r =>
                             {
+                                r.RelativeItem().Text("Net HT after discount:").Bold();
+                                r.ConstantItem(110).AlignRight().Text($"{invoice.TotalHT:N2} {CurrencySymbol}");
+                            });
+                        }
+
+                        // TVA breakdown
+                        if (invoice.TaxMode == TaxCalculationMode.INVOICE)
+                        {
+                            var effectiveRate = invoice.TotalHT > 0
+                                ? (invoice.TotalTVA / invoice.TotalHT) * 100
+                                : 0;
+                            totals.Item().Row(r =>
+                            {
                                 r.RelativeItem().Text($"TVA ({effectiveRate:F2}%):").Bold();
-                                r.ConstantItem(100).AlignRight().Text($"{invoice.TotalTVA:N2} {CurrencySymbol}");
+                                r.ConstantItem(110).AlignRight().Text($"{invoice.TotalTVA:N2} {CurrencySymbol}");
                             });
                         }
                         else
                         {
-                            // Per-rate breakdown (LINE mode)
                             var taxGroups = invoice.Items
                                 .GroupBy(i => i.TaxRate)
                                 .Select(g => new
@@ -175,7 +198,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                                 totals.Item().Row(r =>
                                 {
                                     r.RelativeItem().Text($"TVA ({group.Rate:F0}%):").Bold();
-                                    r.ConstantItem(100).AlignRight().Text($"{group.Amount:N2} {CurrencySymbol}");
+                                    r.ConstantItem(110).AlignRight().Text($"{group.Amount:N2} {CurrencySymbol}");
                                 });
                             }
                         }
@@ -184,7 +207,8 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         totals.Item().Row(r =>
                         {
                             r.RelativeItem().Text("TOTAL TTC:").Bold().FontSize(12);
-                            r.ConstantItem(100).AlignRight().Text($"{invoice.TotalTTC:N2} {CurrencySymbol}").Bold().FontSize(12);
+                            r.ConstantItem(110).AlignRight()
+                                .Text($"{invoice.TotalTTC:N2} {CurrencySymbol}").Bold().FontSize(12);
                         });
                     });
 
