@@ -1,182 +1,196 @@
 import { inject } from "@angular/core";
-import { catchError, switchMap, throwError, take } from "rxjs";
+import { catchError, finalize, Observable, shareReplay, switchMap, throwError } from "rxjs";
 import { AuthService } from "../services/auth/auth.service";
 import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
 import { ModalComponent } from "../components/modal/modal";
-import { TranslateService } from "@ngx-translate/core";
+import { AuthResponseDto } from "../interfaces/AuthDto";
+
+// Remove: import { routes } from "../app.routes";
 
 let serverDownDialogOpen = false;
-let authErrorDialogOpen = false;
+let refreshInProgress$: Observable<AuthResponseDto> | null = null;
 
 export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth      = inject(AuthService);
-  const dialog    = inject(MatDialog);
-  const router    = inject(Router);
-  const translate = inject(TranslateService);
+  if (req.headers.has('X-Retry')) {
+    return next(req.clone({ headers: req.headers.delete('X-Retry') }));
+  }
 
-  const openDialog = (
-    titleKey: string,
-    messageKey: string,
-    icon: string,
-    iconColor: string,
-    onClose: () => void,
-    titleFallback = titleKey,
-    messageFallback = messageKey
-  ) => {
-    translate.get([titleKey, messageKey, 'DIALOG.OK']).pipe(take(1)).subscribe(t => {
-      const title   = t[titleKey]   === titleKey   ? titleFallback   : t[titleKey];
-      const message = t[messageKey] === messageKey ? messageFallback : t[messageKey];
-      const ok      = t['DIALOG.OK'] === 'DIALOG.OK' ? 'OK' : t['DIALOG.OK'];
+  const auth   = inject(AuthService);
+  const dialog = inject(MatDialog);
+  const router = inject(Router);
 
-      dialog.open(ModalComponent, {
-        width: '400px',
-        data: { title, message, confirmText: ok, showCancel: false, icon, iconColor }
-      }).afterClosed().subscribe(() => onClose());
-    });
-  };
+  // ── Never attach token or intercept errors for auth infrastructure calls
+  const isPublicCall = req.url.includes('/auth/refresh')
+                    || req.url.includes('/auth/revoke')
+                    || req.url.includes('/auth/login');
 
-  const forceLogout = (titleKey: string, messageKey: string, icon: string,
-                       titleFallback: string, messageFallback: string) => {
-    auth.endSession();
-    router.navigate(['/login']);
-    if (!authErrorDialogOpen) {
-      authErrorDialogOpen = true;
-      openDialog(titleKey, messageKey, icon, 'warn',
-        () => { authErrorDialogOpen = false; },
-        titleFallback, messageFallback
-      );
-    }
-  };
-
-  const isPublicCall  = req.url.includes('/auth/refresh')
-                     || req.url.includes('/auth/revoke')
-                     || req.url.includes('/auth/login');
-  const isRefreshCall = req.url.includes('/auth/refresh');
-
-  const token   = !isPublicCall ? auth.getAccessToken() : null;
+  const token = !isPublicCall ? auth.getAccessToken() : null;
   const authReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
-  if (req.url.includes('/auth/login') || req.url.includes('/auth/revoke')) {
-    return next(authReq);
+  if (isPublicCall) {
+    return next(authReq); // ← bypass all error handling below
   }
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // ── Server unreachable ───────────────────────────────────────────
-      if (error.status === 0) {
-        if (!isRefreshCall && !serverDownDialogOpen) {
+      // ── Server unreachable ─────────────────────────────────────────────
+      if (error.status === 0) {  // ← was missing
+        if (!serverDownDialogOpen) {
           serverDownDialogOpen = true;
-          auth.endSession();
-          router.navigate(['/login']);
-          openDialog(
-            'DIALOG.SERVER_UNREACHABLE', 'ERRORS.SERVER_UNREACHABLE',
-            'cloud_off', 'warn',
-            () => { serverDownDialogOpen = false; },
-            'Server Unreachable', 'Unable to connect to the server.'
-          );
+          dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Server Unreachable',
+              message: 'Unable to connect to the server. Check your connection or try again later.',
+              confirmText: 'OK',
+              showCancel: false,
+              icon: 'cloud_off',
+              iconColor: 'warn'
+            }
+          }).afterClosed().subscribe(() => {
+            serverDownDialogOpen = false;
+          });
         }
+        auth.logout();
         return throwError(() => error);
       }
 
-      // ── Unauthorized ─────────────────────────────────────────────────
+      // ── Rate limit ─────────────────────────────────────────────────────
+      if (error.status === 429) {
+        const retryAfter = error.headers.get('Retry-After');
+        const content = error.error?.content
+          ?? `Too many requests. Please wait ${retryAfter ?? 60} seconds before retrying.`;
+
+        dialog.open(ModalComponent, {
+          width: '400px',
+          data: {
+            title: 'Rate Limit Reached',
+            message: content,
+            confirmText: 'OK',
+            showCancel: false,
+            icon: 'timer',
+            iconColor: 'warn'
+          }
+        }).afterClosed().subscribe(() => {
+            router.navigate(['/home']);
+        });
+        return throwError(() => error);
+      }
+
+      // ── Forbidden ──────────────────────────────────────────────────────
+      if (error.status === 403) {
+        const code = error.error?.code;
+        const isInactive = code === 'AUTH_003';
+
+        dialog.open(ModalComponent, {
+          width: '400px',
+          data: {
+            title: isInactive ? 'Account Deactivated' : 'Access Denied',
+            message: error.error?.message ?? 'You do not have permission to perform this action.',
+            confirmText: 'OK',
+            showCancel: false,
+            icon: isInactive ? 'person_off' : 'block',
+            iconColor: 'danger'
+          }
+        }).afterClosed().subscribe(() => {
+          if (isInactive) {
+            auth.logout();
+          } else {
+            router.navigate(['/home']);
+          }
+        });
+        return throwError(() => error);
+      }
+
+      // ── Unauthorized ───────────────────────────────────────────────────
       if (error.status === 401) {
         const code = error.error?.code;
 
-        // Specific codes that should immediately logout
-        if (code === 'AUTH_006' || code === 'AUTH_008' || code === 'AUTH_018') {
-          forceLogout(
-            'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
-            'warning', 'Session Expired',
-            'Your session has expired. Please login again.'
-          );
+        // User deleted or inactive — session invalid
+        if (code === 'AUTH_009') {
+          dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Session Expired',
+              message: 'Your session is no longer valid. You will be logged out.',
+              confirmText: 'OK',
+              showCancel: false,
+              icon: 'person_off',
+              iconColor: 'danger'
+            }
+          }).afterClosed().subscribe(() => auth.logout());
           return throwError(() => error);
         }
 
-        if (code === 'AUTH_002') return throwError(() => error); // invalid credentials – let component handle
-
-        if (code === 'AUTH_007' || code === 'AUTH_019') {
-          if (!authErrorDialogOpen) {
-            authErrorDialogOpen = true;
-            openDialog(
-              'ERRORS.ACCESS_DENIED_TITLE', 'ERRORS.ACCESS_DENIED_MESSAGE',
-              'lock', 'warn',
-              () => { router.navigate(['/home']); },
-              'Access Denied', 'You do not have permission to access this resource.'
-            );
-          }
+        // Wrong current password — user is authenticated, just typed wrong
+        if (code === 'AUTH_002') {
           return throwError(() => error);
         }
 
-        // Unknown 401 – attempt refresh (unless this is already the refresh call)
-        if (isRefreshCall) {
-          forceLogout(
-            'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
-            'warning', 'Session Expired',
-            'Your session has expired. Please login again.'
-          );
+        // Security violation
+        if (code === 'AUTH_008') {
+          auth.logout();
           return throwError(() => error);
         }
 
+        // Token expired — attempt refresh
         const refreshToken = auth.getRefreshToken();
         if (!refreshToken) {
-          forceLogout(
-            'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
-            'warning', 'Session Expired',
-            'Your session has expired. Please login again.'
-          );
+          auth.logout();
           return throwError(() => error);
         }
 
-        return auth.refresh({ refreshToken }).pipe(
+        if (!refreshInProgress$) {
+          refreshInProgress$ = auth.refresh({ refreshToken }).pipe(
+            shareReplay(1),
+            finalize(() => { refreshInProgress$ = null; })
+          );
+        }
+        
+        return refreshInProgress$.pipe(
           switchMap(response =>
-            next(authReq.clone({
-              setHeaders: { Authorization: `Bearer ${response.accessToken}` }
+            next(req.clone({
+              setHeaders: { Authorization: `Bearer ${response.accessToken}` },
+              headers: req.headers.set('X-Retry', 'true')
             }))
           ),
           catchError(refreshError => {
-            forceLogout(
-              'SESSION.EXPIRED_TITLE', 'SESSION.EXPIRED_MESSAGE',
-              'warning', 'Session Expired',
-              'Your session has expired. Please login again.'
-            );
+            auth.logout();
             return throwError(() => refreshError);
           })
         );
       }
 
-      // ── Forbidden (non-401) ──────────────────────────────────────────
-      if (error.status === 403) {
-        if (!authErrorDialogOpen) {
-          authErrorDialogOpen = true;
-          openDialog(
-            'ERRORS.ACCESS_DENIED_TITLE', 'ERRORS.ACCESS_DENIED_MESSAGE',
-            'lock', 'warn',
-            () => { router.navigate(['/home']); },
-            'Access Denied', 'You do not have permission to access this resource.'
-          );
-        }
-        return throwError(() => error);
+      if(error.status === 404){
+        router.navigate(['/home']);
       }
 
-      // ── Gateway errors ───────────────────────────────────────────────
+      // ── Gateway / service unavailable ─────────────────────────────────────
       if (error.status === 503 || error.status === 502 || error.status === 504) {
         if (!serverDownDialogOpen) {
           serverDownDialogOpen = true;
-          openDialog(
-            'DIALOG.SERVICE_UNAVAILABLE', 'ERRORS.SERVICE_UNAVAILABLE',
-            'cloud_off', 'warn',
-            () => { serverDownDialogOpen = false; router.navigate(['/home']); },
-            'Service Unavailable', 'The service is temporarily unavailable.'
-          );
+          dialog.open(ModalComponent, {
+            width: '400px',
+            data: {
+              title: 'Service Unavailable',
+              message: 'The requested service is temporarily unavailable. Please try again later.',
+              confirmText: 'OK',
+              showCancel: false,
+              icon: 'cloud_off',
+              iconColor: 'warn'
+            }
+          }).afterClosed().subscribe(() => {
+            serverDownDialogOpen = false;
+            router.navigate(['/home']);
+          });
         }
         return throwError(() => error);
       }
-
       return throwError(() => error);
     })
   );

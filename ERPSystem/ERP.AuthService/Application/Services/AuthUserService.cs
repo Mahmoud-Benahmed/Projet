@@ -267,7 +267,6 @@ namespace ERP.AuthService.Application.Services
 
             if (token.IsRevoked)
             {
-                // Possible token reuse attack
                 throw new TokenAlreadyRevokedException();
             }
 
