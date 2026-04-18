@@ -266,8 +266,14 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
             this.selectedInvoice = invoice;
           },
           error: (err) => {
-            const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.LOAD_FAILED');
+            const errorMsg = (err.error as HttpError)?.message;
             this.flash('error', errorMsg);
+            this.isValidating = false;
+
+            setTimeout(() => {
+              const el = document.getElementById('top');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 0);
           }
         })
     );
@@ -283,7 +289,15 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
           this.populateFormFromInvoice();
           this.cdr.markForCheck();      
       },
-      error: () => {
+      error: (err) => {
+        const errorMsg = (err.error as HttpError)?.message;
+        this.flash('error', errorMsg);
+        this.isValidating = false;
+
+        setTimeout(() => {
+          const el = document.getElementById('top');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
         this.cdr.markForCheck();
       }
     });
@@ -722,7 +736,17 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
         }, 2000);
         this.reload();
       },
-      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.FINALIZE_FAILED')),
+      error: (err) =>{
+        const errorMsg = (err.error as HttpError)?.message 
+          || this.translate.instant('INVOICES.ERRORS.FINALIZE_FAILED');
+        this.flash('error', errorMsg);
+        this.isValidating = false;
+
+        setTimeout(() => {
+          const el = document.getElementById('top');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+      } 
     });
   }
 
@@ -769,18 +793,15 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
         }, 2000);
       },
       error: (err) => {
-        const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.UPDATE_FAILED');
+        const errorMsg = (err.error as HttpError)?.message 
+          || this.translate.instant('INVOICES.ERRORS.UPDATE_FAILED');
         this.flash('error', errorMsg);
         this.isValidating = false;
+
         setTimeout(() => {
           const el = document.getElementById('top');
           el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 0); // wait for DOM update
-          
-        setTimeout(() => {
-          this.isValidating = false;
-          this.cancel();
-        }, 2000);
+        }, 0);
       },
     });
   }
