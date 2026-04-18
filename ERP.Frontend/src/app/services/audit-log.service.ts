@@ -11,6 +11,8 @@ export type AuditAction =
   | 'Logout'
   | 'TokenRefreshed'
   | 'TokenRevoked'
+  | 'TokenValidated'           // ✅ new
+  | 'TokenValidationFailed'    // ✅ new
 
   // Registration
   | 'UserRegistered'
