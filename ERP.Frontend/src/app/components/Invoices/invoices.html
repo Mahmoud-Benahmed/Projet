@@ -117,7 +117,7 @@
       </button>
 
       <button class="type-tab" [class.type-tab--active]="isStats()"
-              (click)="openStats()">
+              (click)="openStats()" *ngIf="stats.total > 0">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="20" x2="18" y2="10"/>
           <line x1="12" y1="20" x2="12" y2="4"/>
