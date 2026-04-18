@@ -202,6 +202,8 @@ export class ProfileComponent implements OnInit {
       this.authService.changeProfilePassword(this.passwordForm).subscribe({ next: onSuccess, error: onError });
     } else if (this.hasPrivilege) {
       this.authService.adminChangePassword(this.authUserId!, this.adminChangePasswordForm).subscribe({ next: onSuccess, error: onError });
+    } else {
+      stop(); // ← guard against hanging state
     }
   }
 
@@ -248,7 +250,7 @@ export class ProfileComponent implements OnInit {
   }
 
   checkChanges() {
-    const profile = this.authService.UserProfile;
+    const profile = this.userProfile;
     if (!profile) return;
     this.noDataChange = this.editForm.email === profile.email
       && this.editForm.fullName === profile.fullName;
@@ -265,10 +267,14 @@ export class ProfileComponent implements OnInit {
           mustChangePassword: this.userProfile!.mustChangePassword,
           lastLoginAt: this.userProfile!.lastLoginAt,
         };
-        this.authService.setUserProfile(this.userProfile);
         this.isEditing = false;
         this.stopLoading('isSaving');
         this.showSuccessDialog(this.translate.instant('SUCCESS.USER_UPDATED'));
+        if (this.isOwnProfile) {
+          this.authService.setUserProfile(this.userProfile);
+        }else{
+          this.loadProfile();
+        }
       },
       error: (error) => {
         const err = error.error as HttpError;
@@ -308,7 +314,7 @@ export class ProfileComponent implements OnInit {
   }
 
   getStrengthLabel(): string {
-    const strengthKey = this.passwordStrength.toUpperCase().replace(' ', '_');
+    const strengthKey = this.passwordStrength.toUpperCase().replace(/ /g, '_');
     return this.translate.instant(`VALIDATION.PASSWORD_${strengthKey}`);
   }
 
