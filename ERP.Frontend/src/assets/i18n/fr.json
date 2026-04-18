@@ -630,7 +630,9 @@
     },
     "ERRORS": {
       "QUANTITY_EXCEEDS_STOCK":"Quantité ne doit pas dépasser {{stock}}",
-      "ARTICLES_NOT_FOUND": "Aucun article disponible en stock"
+      "ARTICLES_NOT_FOUND": "Aucun article disponible en stock",
+      "INSUFFICIENT_STOCK": "La quantité {{requested}} dépasse le stock disponible {{max}}",
+      "INSUFFICIENT_STOCK_DETAIL": "{{article}} : demandé {{requested}}, disponible {{available}}"
     },
     "LABELS": {
       "AVAILABLE_STOCK":"Quantité disponible" ,
@@ -855,33 +857,35 @@
     "OVERDUE_TOOLTIP": "Cette facture est en retard"
   },
   "AUDIT": {
-    "BREADCRUMB": "ADMIN SYSTÈME",
-    "TITLE": "Journal d'audit",
+    "BREADCRUMB": "Journaux d'audit",
+    "TITLE": "Traçabilité des actions",
     "REFRESH": "Actualiser",
-    "CLEAR": "Effacer",
+    "CLEAR": "Effacer les logs",
     "FILTER_USER": "Filtrer par ID utilisateur…",
     "ALL": "Tous",
     "SUCCESS": "Succès",
     "FAILED": "Échec",
-    "ACTION": "ACTION",
-    "PERFORMED_BY": "EFFECTUÉ PAR",
-    "TARGET": "CIBLE",
-    "IP_ADDRESS": "ADRESSE IP",
-    "TIMESTAMP": "DATE",
-    "NO_LOGS": "Aucun journal d'audit trouvé.",
+    "ACTION": "Action",
+    "PERFORMED_BY": "Effectuée par",
+    "TARGET": "Utilisateur cible",
+    "IP_ADDRESS": "Adresse IP",
+    "TIMESTAMP": "Horodatage",
+    "NO_LOGS": "Aucun journal d'audit trouvé",
     "DETAILS": {
-      "METADATA": "Métadonnées",
-      "USER_AGENT": "Navigateur",
+      "METADATA": "Métadonnées complémentaires",
+      "USER_AGENT": "Navigateur / agent utilisateur",
       "CLOSE": "Fermer"
     },
     "ACTIONS": {
       "Login": "Connexion",
       "Logout": "Déconnexion",
-      "TokenRefreshed": "Jeton rafraîchi",
+      "TokenRefreshed": "Jeton actualisé",
       "TokenRevoked": "Jeton révoqué",
-      "UserRegistered": "Utilisateur inscrit",
-      "PasswordChanged": "Mot de passe changé",
-      "PasswordChangedByAdmin": "Mot de passe changé par admin",
+      "TokenValidated": "Jeton validé",
+      "TokenValidationFailed": "Échec de validation du jeton",
+      "UserRegistered": "Inscription utilisateur",
+      "PasswordChanged": "Mot de passe modifié",
+      "PasswordChangedByAdmin": "Mot de passe modifié par admin",
       "ProfileUpdated": "Profil mis à jour",
       "UserActivated": "Utilisateur activé",
       "UserDeactivated": "Utilisateur désactivé",
@@ -893,9 +897,21 @@
       "ControleCreated": "Contrôle créé",
       "ControleUpdated": "Contrôle mis à jour",
       "ControleDeleted": "Contrôle supprimé",
-      "Unauthorized": "Tentative d'accès non autorisée",
-      "UserNotFound": "Utilisateur non trouvé",
+      "Unauthorized": "Tentative non autorisée",
+      "UserNotFound": "Utilisateur introuvable",
       "UnhandledError": "Erreur non gérée"
+    },
+    "COMMON": {
+      "VIEW": "Voir les détails",
+      "PREVIOUS": "Précédent",
+      "NEXT": "Suivant",
+      "PAGE_OF": "Page {{current}} sur {{total}}",
+      "OK": "OK"
+    },
+    "ERRORS": {
+      "INTERNAL_ERROR": "Une erreur interne est survenue. Veuillez réessayer plus tard.",
+      "CONFIRMATION.CLEAR_AUDIT_LOGS": "Voulez-vous vraiment effacer tous les journaux d'audit ? Cette action est irréversible.",
+      "SUCCESS.AUDIT_LOG_CLEARED": "Les journaux d'audit ont été effacés avec succès."
     }
   },
   "CONTROLES": {
@@ -1078,6 +1094,7 @@
     "WELCOME": "Bon retour, {{name}} 👋",
     "LAST_LOGIN": "Dernière connexion : {{time}}",
     "QUICK_ACCESS_TITLE": "Accès rapide",
+    "GUEST": "Invité",
     "QUICK_ACCESS": {
       "MY_PROFILE": "Mon profil",
       "MANAGE_USERS": "Gérer les utilisateurs",

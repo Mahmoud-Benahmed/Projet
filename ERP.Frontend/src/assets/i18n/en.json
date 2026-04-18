@@ -640,7 +640,9 @@
     },    
     "ERRORS": {
       "QUANTITY_EXCEEDS_STOCK":"Quantity cannot exceed {{stock}}",
-      "ARTICLES_NOT_FOUND": "No articles available in stock"
+      "ARTICLES_NOT_FOUND": "No articles available in stock",
+      "INSUFFICIENT_STOCK": "Quantity {{requested}} exceeds available stock {{max}}",
+      "INSUFFICIENT_STOCK_DETAIL": "{{article}}: requested {{requested}}, available {{available}}"
     },
     "LABELS": {
       "AVAILABLE_STOCK":"Available quantity" ,
@@ -653,6 +655,7 @@
       "CRITICAL_STOCK": "⚠️ Critical stock! Only {{count}} units left."
     }
   },
+
   "INVOICES": {
     "KEYWORD": "Invoice",
     "KEYWORD_PLURAL": "Invoices",
@@ -864,48 +867,64 @@
     },
     "OVERDUE_TOOLTIP": "This invoice is overdue"
   },
-  "AUDIT": {
-    "BREADCRUMB": "SYSTEM ADMIN",
-    "TITLE": "Audit Logs",
-    "REFRESH": "Refresh Logs",
-    "CLEAR": "Clear Logs",
-    "FILTER_USER": "Filter by User ID…",
+  "AUDIT":{
+    "BREADCRUMB": "Audit Logs",
+    "TITLE": "Audit Trail",
+    "REFRESH": "Refresh",
+    "CLEAR": "Clear logs",
+    "FILTER_USER": "Filter by user ID…",
     "ALL": "All",
     "SUCCESS": "Success",
     "FAILED": "Failed",
-    "ACTION": "ACTION",
-    "PERFORMED_BY": "PERFORMED BY",
-    "TARGET": "TARGET",
-    "IP_ADDRESS": "IP ADDRESS",
-    "TIMESTAMP": "TIMESTAMP",
-    "NO_LOGS": "No audit logs found.",
+    "ACTION": "Action",
+    "PERFORMED_BY": "Performed by",
+    "TARGET": "Target user",
+    "IP_ADDRESS": "IP address",
+    "TIMESTAMP": "Timestamp",
+    "NO_LOGS": "No audit logs found",
     "DETAILS": {
-      "METADATA": "Metadata",
-      "USER_AGENT": "User Agent",
+      "METADATA": "Additional metadata",
+      "USER_AGENT": "User agent",
       "CLOSE": "Close"
     },
     "ACTIONS": {
       "Login": "Login",
       "Logout": "Logout",
-      "TokenRefreshed": "Token Refreshed",
-      "TokenRevoked": "Token Revoked",
-      "UserRegistered": "User Registered",
-      "PasswordChanged": "Password Changed",
-      "PasswordChangedByAdmin": "Password Changed by Admin",
-      "ProfileUpdated": "Profile Updated",
-      "UserActivated": "User Activated",
-      "UserDeactivated": "User Deactivated",
-      "UserDeleted": "User Deleted",
-      "UserRestored": "User Restored",
-      "RoleCreated": "Role Created",
-      "RoleUpdated": "Role Updated",
-      "RoleDeleted": "Role Deleted",
-      "ControleCreated": "Control Created",
-      "ControleUpdated": "Control Updated",
-      "ControleDeleted": "Control Deleted",
-      "Unauthorized": "Unauthorized Access Attempt",
-      "UserNotFound": "User Not Found",
-      "UnhandledError": "Unhandled Error"
+      "TokenRefreshed": "Token refreshed",
+      "TokenRevoked": "Token revoked",
+      "TokenValidated": "Token validated",
+      "TokenValidationFailed": "Token validation failed",
+      "UserRegistered": "User registered",
+      "PasswordChanged": "Password changed",
+      "PasswordChangedByAdmin": "Password changed by admin",
+      "ProfileUpdated": "Profile updated",
+      "UserActivated": "User activated",
+      "UserDeactivated": "User deactivated",
+      "UserDeleted": "User deleted",
+      "UserRestored": "User restored",
+      "RoleCreated": "Role created",
+      "RoleUpdated": "Role updated",
+      "RoleDeleted": "Role deleted",
+      "ControleCreated": "Control created",
+      "ControleUpdated": "Control updated",
+      "ControleDeleted": "Control deleted",
+      "Unauthorized": "Unauthorized attempt",
+      "UserNotFound": "User not found",
+      "UnhandledError": "Unhandled error"
+    },
+
+    "COMMON":{
+      "VIEW": "View details",
+      "PREVIOUS": "Previous",
+      "NEXT": "Next",
+      "PAGE_OF": "Page {{current}} of {{total}}",
+      "OK": "OK"
+    },
+
+    "ERRORS":{
+      "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
+      "CONFIRMATION.CLEAR_AUDIT_LOGS": "Are you sure you want to clear all audit logs? This action cannot be undone.",
+      "SUCCESS.AUDIT_LOG_CLEARED": "Audit logs have been cleared successfully."
     }
   },
   "CONTROLES": {
@@ -1088,6 +1107,7 @@
     "WELCOME": "Welcome back, {{name}} 👋",
     "LAST_LOGIN": "Last login: {{time}}",
     "QUICK_ACCESS_TITLE": "Quick Access",
+    "GUEST": "Guest",
     "QUICK_ACCESS": {
       "MY_PROFILE": "My Profile",
       "MANAGE_USERS": "Manage Users",
