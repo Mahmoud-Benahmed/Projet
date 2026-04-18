@@ -209,9 +209,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
 
         private static bool AccountantHas(string code) => code switch
         {
-            // Audit
-            Privileges.Audit.MANAGE_AUDITLOGS => true,
-
             // Clients — view only
             Privileges.Clients.VIEW_CLIENTS => true,
 
