@@ -25,10 +25,7 @@ namespace InvoiceService.Middleware
             }
             catch (Exception ex)
             {
-
                 _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
-
-
                 await HandleExceptionAsync(context, ex);
             }
         }
