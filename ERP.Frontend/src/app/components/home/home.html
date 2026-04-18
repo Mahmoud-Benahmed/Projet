@@ -131,6 +131,13 @@
       <mat-icon class="home__quick-arrow">chevron_right</mat-icon>
     </a>
 
+    <a class="home__quick-card" routerLink="/invoices"
+      *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)">
+      <div class="home__quick-icon home__quick-icon--purple"><mat-icon>receipt</mat-icon></div>
+      <span class="home__quick-label">{{ 'HOME.QUICK_ACCESS.INVOICES' | translate }}</span>
+      <mat-icon class="home__quick-arrow">chevron_right</mat-icon>
+    </a>
+
     <a class="home__quick-card" routerLink="/audit-log"
        *ngIf="authService.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS)">
       <div class="home__quick-icon home__quick-icon--red"><mat-icon>history</mat-icon></div>

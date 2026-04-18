@@ -1110,6 +1110,7 @@
       "CLIENT_CATEGORIES": "Catégories clients",
       "FOURNISSEURS": "Fournisseurs",
       "BONS": "Bons",
+      "INVOICES": "Factures",
       "AUDIT_LOG": "Journal d'audit",
       "REPORTS": "Rapports"
     }

@@ -1123,6 +1123,7 @@
       "CLIENT_CATEGORIES": "Client Categories",
       "FOURNISSEURS": "Suppliers",
       "BONS": "Receipts",
+      "INVOICES": "Invoices",
       "AUDIT_LOG": "Audit Log",
       "REPORTS": "Reports"
     }
