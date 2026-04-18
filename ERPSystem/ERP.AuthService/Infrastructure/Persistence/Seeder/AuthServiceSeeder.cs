@@ -135,11 +135,9 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Clients.CREATE_CLIENT => true,
             Privileges.Clients.UPDATE_CLIENT => true,
             Privileges.Clients.DELETE_CLIENT => true,
-            Privileges.Clients.RESTORE_CLIENT => true,
             Privileges.Clients.CREATE_CLIENT_CATEGORIES => true,
             Privileges.Clients.UPDATE_CLIENT_CATEGORIES => true,
             Privileges.Clients.DELETE_CLIENT_CATEGORIES => true,
-            Privileges.Clients.RESTORE_CLIENT_CATEGORIES => true,
 
             // Articles — create/update/view only (no delete/restore/categories)
             Privileges.Articles.MANAGE_ARTICLES => true,
@@ -158,7 +156,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Invoices.MARK_INVOICE_PAID => true,
             Privileges.Invoices.CANCEL_INVOICE => true,
             Privileges.Invoices.DELETE_INVOICE => true,
-            Privileges.Invoices.RESTORE_INVOICE => true,
 
             // Payments — view only
             Privileges.Payments.VIEW_PAYMENTS => true,
@@ -181,11 +178,9 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Articles.CREATE_ARTICLE => true,
             Privileges.Articles.UPDATE_ARTICLE => true,
             Privileges.Articles.DELETE_ARTICLE => true,
-            Privileges.Articles.RESTORE_ARTICLE => true,
             Privileges.Articles.CREATE_ARTICLE_CATEGORIES => true,
             Privileges.Articles.UPDATE_ARTICLE_CATEGORIES => true,
             Privileges.Articles.DELETE_ARTICLE_CATEGORIES => true,
-            Privileges.Articles.RESTORE_ARTICLE_CATEGORIES => true,
 
             // Stock — full
             Privileges.Stock.MANAGE_STOCK => true,
@@ -197,7 +192,6 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Fournisseurs.CREATE_FOURNISSEUR => true,
             Privileges.Fournisseurs.UPDATE_FOURNISSEUR => true,
             Privileges.Fournisseurs.DELETE_FOURNISSEUR => true,
-            Privileges.Fournisseurs.RESTORE_FOURNISSEUR => true,
             Privileges.Fournisseurs.BLOCK_FOURNISSEUR => true,
             Privileges.Fournisseurs.UNBLOCK_FOURNISSEUR => true,
 
