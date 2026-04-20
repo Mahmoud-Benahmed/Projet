@@ -153,19 +153,6 @@
               </svg>
             </span>
           </th>
-          <th (click)="sortBy('createdAt')" class="th--sortable">
-            {{ 'USERS.TABLE.JOINED' | translate }}
-            <span class="sort-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'asc' ? '1' : '0.25'">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  [style.opacity]="sortColumn === 'createdAt' && sortDirection === 'desc' ? '1' : '0.25'">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-          </th>
           <th (click)="sortBy('lastLoginAt')" class="th--sortable">
             {{ 'USERS.TABLE.LAST_LOGIN' | translate }}
             <span class="sort-icon">
@@ -186,21 +173,19 @@
         <tr *ngFor="let user of sortedData" class="table__row">
 
           <td>
-            <div class="user-cell"
-              [routerLink]="['/users', user.id]">
-              <div class="user-avatar user-avatar--inactive">{{ getInitials(user) }}</div>
-              <div class="user-meta">
-                <span class="user-meta__name">{{ user.fullName }}</span>
-                <span class="user-meta__id">{{ user.id | slice:0:8 }}…</span>
+              <div class="user-cell"
+                [routerLink]="['/users', user.id]"
+                routerLinkActive="user-cell--active"
+                [routerLinkActiveOptions]="{ exact: true }">
+                <div class="user-meta">
+                  <span class="user-meta__name">{{ user.fullName }}</span>
+                </div>
               </div>
-            </div>
           </td>
 
           <td><span class="mono">{{ user.email }}</span></td>
 
           <td><span class="role-badge">{{ user.roleName}}</span></td>
-
-          <td><span class="date-cell">{{ user.createdAt | date:'dd MMM yyyy' }}</span></td>
 
           <td>
             <span class="date-cell">
