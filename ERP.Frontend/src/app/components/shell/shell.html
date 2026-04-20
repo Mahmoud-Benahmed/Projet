@@ -313,7 +313,42 @@
          *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)">
         <mat-icon>receipt</mat-icon><span>{{ 'NAV.INVOICES' | translate}}</span>
       </a>
-
+      <!-- Payments group -->
+<div class="sidebar__group"
+     *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.VIEW_PAYMENTS)">
+  <button class="sidebar__item sidebar__item--group"
+          (click)="toggleGroup('payments')"
+          type="button"
+          [class.sidebar__item--group-open]="openGroups['payments']">
+    <mat-icon>payments</mat-icon>
+    <span>{{ 'NAV.PAYMENTS' | translate }}</span>
+    <mat-icon class="sidebar__chevron" [class.open]="openGroups['payments']">expand_more</mat-icon>
+  </button>
+  <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['payments']">
+    <a class="sidebar__subitem"
+       routerLink="/payments"
+       routerLinkActive="sidebar__subitem--active"
+       [routerLinkActiveOptions]="{exact:true}">
+      <mat-icon>list</mat-icon>
+      <span>{{ 'NAV.ALL_PAYMENTS' | translate }}</span>
+    </a>
+    <a class="sidebar__subitem"
+       routerLink="/payments/create"
+       routerLinkActive="sidebar__subitem--active"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.CREATE_PAYMENT)">
+      <mat-icon>add_circle_outline</mat-icon>
+      <span>{{ 'NAV.NEW_PAYMENT' | translate }}</span>
+    </a>
+    <a class="sidebar__subitem"
+       routerLink="/late-fee-policies"
+       routerLinkActive="sidebar__subitem--active"
+       *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.MANAGE_POLICIES)">
+      <mat-icon>policy</mat-icon>
+      <span>{{ 'NAV.LATE_FEE_POLICIES' | translate }}</span>
+    </a>
+  </div>
+</div>
+     
       <!-- Audit Log -->
       <a class="sidebar__item" routerLink="/audit-log" routerLinkActive="sidebar__item--active"
          *ngIf="authService.hasPrivilege(PRIVILEGES.AUDIT.MANAGE_AUDITLOGS)">
