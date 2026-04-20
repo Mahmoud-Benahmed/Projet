@@ -1,0 +1,207 @@
+<div class="page">
+  <ng-container *ngIf="selectedPayment">
+
+    <div class="page-header">
+      <div class="breadcrumb-title">
+        <p class="breadcrumb">{{ 'PAYMENTS.BREADCRUMB' | translate }} › {{ selectedPayment.id | slice:0:8 }}…</p>
+        <h1 class="page-title">{{ 'PAYMENTS.TITLE_VIEW' | translate }}</h1>
+      </div>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
+    </div>
+
+    <!-- Alerts -->
+    <div *ngFor="let e of errors" class="alert alert--error">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>{{ e }}
+      <button class="alert__close" (click)="errors=[]"><mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon></button>
+    </div>
+    <div *ngIf="successMessage" class="alert alert--success">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>{{ successMessage }}
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <div class="action-bar__btns">
+        <div class="start">
+          <button class="btn-primary"
+                  *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.UPDATE_PAYMENT) && selectedPayment.status === 'Pending' && !selectedPayment.isDeleted"
+                  [routerLink]="['/payments/edit', selectedPayment.id]">
+            <mat-icon style="font-size:16px;width:16px;height:16px;">edit</mat-icon>
+            {{ 'COMMON.EDIT' | translate }}
+          </button>
+          <button class="btn-danger"
+                  *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.DELETE_PAYMENT) && !selectedPayment.isDeleted"
+                  (click)="delete(selectedPayment)">
+            <mat-icon style="font-size:16px;width:16px;height:16px;">delete_outline</mat-icon>
+            {{ 'COMMON.DELETE' | translate }}
+          </button>
+          <button class="btn-success"
+                  *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.DELETE_PAYMENT) && selectedPayment.isDeleted"
+                  (click)="restore(selectedPayment)">
+            <mat-icon style="font-size:16px;width:16px;height:16px;">restore</mat-icon>
+            {{ 'COMMON.RESTORE' | translate }}
+          </button>
+        </div>
+        <div class="end">
+          <button class="btn-secondary" [routerLink]="['/invoices', selectedPayment.invoiceId]">
+            <mat-icon style="font-size:16px;width:16px;height:16px;">receipt</mat-icon>
+            {{ 'PAYMENTS.ACTIONS.VIEW_INVOICE' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail panels -->
+    <div class="detail-columns">
+
+      <!-- Payment Info -->
+      <div class="panel">
+        <div class="panel__header">
+          <div class="panel__title-wrap">
+            <div class="panel__icon"><mat-icon>payments</mat-icon></div>
+            <h2 class="panel__title">{{ 'PAYMENTS.DETAILS.PAYMENT_INFO' | translate }}</h2>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.ID' | translate }}</span>
+              <span class="detail-value detail-value--mono">{{ selectedPayment.id | slice:0:8 }}…</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.STATUS' | translate }}</span>
+              <span class="badge" [ngClass]="statusClass(selectedPayment.status)">
+                {{ 'PAYMENTS.STATUS.' + selectedPayment.status.toUpperCase() | translate }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.AMOUNT' | translate }}</span>
+              <span class="detail-value detail-value--large">{{ selectedPayment.amount | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.METHOD' | translate }}</span>
+              <span class="method-chip">
+                <mat-icon style="font-size:14px;width:14px;height:14px;">{{ methodIcon(selectedPayment.method) }}</mat-icon>
+                {{ methodLabel(selectedPayment.method) | translate }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.PAYMENT_DATE' | translate }}</span>
+              <span class="detail-value">{{ selectedPayment.paymentDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.CREATED_AT' | translate }}</span>
+              <span class="detail-value date-cell">{{ selectedPayment.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="detail-item detail-item--full" *ngIf="selectedPayment.lateFeeApplied > 0">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.LATE_FEE' | translate }}</span>
+              <span class="detail-value" style="color:var(--red)">+{{ selectedPayment.lateFeeApplied | number:'1.2-2' }} TND</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Payment Summary -->
+      <div class="panel" *ngIf="paymentSummary">
+        <div class="panel__header">
+          <div class="panel__title-wrap">
+            <div class="panel__icon"><mat-icon>receipt_long</mat-icon></div>
+            <h2 class="panel__title">{{ 'PAYMENTS.DETAILS.INVOICE_SUMMARY' | translate }}</h2>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.INVOICE_TOTAL' | translate }}</span>
+              <span class="detail-value">{{ paymentSummary.totalTTC | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.INVOICE_STATUS' | translate }}</span>
+              <span class="badge"
+                [ngClass]="{
+                  'badge--amber': paymentSummary.invoiceStatus === 'DRAFT',
+                  'badge--red':   paymentSummary.invoiceStatus === 'UNPAID',
+                  'badge--green': paymentSummary.invoiceStatus === 'PAID',
+                  'badge--grey':  paymentSummary.invoiceStatus === 'CANCELLED'
+                }">{{ 'INVOICES.STATUS.' + paymentSummary.invoiceStatus | translate }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.TOTAL_PAID' | translate }}</span>
+              <span class="detail-value" style="color:var(--green)">{{ paymentSummary.totalPaid | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.REMAINING' | translate }}</span>
+              <span class="detail-value"
+                    [style.color]="paymentSummary.remainingAmount > 0 ? 'var(--red)' : 'var(--green)'">
+                {{ paymentSummary.remainingAmount | number:'1.2-2' }} TND
+              </span>
+            </div>
+            <div class="detail-item detail-item--full" *ngIf="paymentSummary.lateFeeAmount > 0">
+              <span class="detail-label">{{ 'PAYMENTS.DETAILS.LATE_FEE_TOTAL' | translate }}</span>
+              <span class="detail-value" style="color:var(--red)">+{{ paymentSummary.lateFeeAmount | number:'1.2-2' }} TND</span>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="progress-bar-wrap" style="margin-top:1rem">
+            <div class="progress-bar">
+              <div class="progress-bar__fill" [style.width.%]="progressPercent"></div>
+            </div>
+            <span class="progress-bar__label">{{ progressPercent }}% {{ 'PAYMENTS.FORM.PAID' | translate }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- All payments for this invoice -->
+    <div class="panel" *ngIf="paymentSummary && paymentSummary.payments.length > 0">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>list_alt</mat-icon></div>
+          <div>
+            <h2 class="panel__title">{{ 'PAYMENTS.DETAILS.ALL_PAYMENTS' | translate }}</h2>
+            <p class="panel__subtitle">{{ 'PAYMENTS.DETAILS.PAYMENTS_COUNT' | translate: {count: paymentSummary.payments.length} }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel__body" style="padding:0">
+        <div class="table-scroll-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ 'PAYMENTS.TABLE.DATE' | translate }}</th>
+                <th>{{ 'PAYMENTS.TABLE.AMOUNT' | translate }}</th>
+                <th>{{ 'PAYMENTS.TABLE.METHOD' | translate }}</th>
+                <th class="text-center">{{ 'PAYMENTS.TABLE.LATE_FEE' | translate }}</th>
+                <th class="text-center">{{ 'PAYMENTS.TABLE.STATUS' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table__row" *ngFor="let p of paymentSummary.payments"
+                  [class.table__row--current]="p.id === selectedPayment.id">
+                <td class="date-cell">{{ p.paymentDate | date:'dd/MM/yyyy' }}</td>
+                <td class="td--price"><strong>{{ p.amount | number:'1.2-2' }} TND</strong></td>
+                <td>
+                  <span class="method-chip">
+                    <mat-icon style="font-size:13px;width:13px;height:13px;">{{ methodIcon(p.method) }}</mat-icon>
+                    {{ methodLabel(p.method) | translate }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span *ngIf="p.lateFeeApplied > 0" class="badge badge--red">+{{ p.lateFeeApplied | number:'1.2-2' }}</span>
+                  <span *ngIf="p.lateFeeApplied === 0" class="muted">—</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="statusClass(p.status)">
+                    {{ 'PAYMENTS.STATUS.' + p.status.toUpperCase() | translate }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>
