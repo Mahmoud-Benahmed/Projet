@@ -15,8 +15,10 @@
     "STOCK": "Stock",
     "FOURNISSEURS": "Suppliers",
     "BONS": "Receipts",
-    "INVOICES":"Invoices",
-    "AUDIT_LOG": "Audit Log"
+    "INVOICES": "Invoices",
+    "AUDIT_LOG": "Audit Log",
+    "PAYMENTS": "Payments",
+    "ALL_PAYMENTS": "All Payments"
   },
   "COMMON": {
     "LEAVE": "Leave",
@@ -33,7 +35,7 @@
     "RESTORE": "Restore",
     "ACTIVATE": "Activate",
     "ACTIVE": "Active",
-    "INACTIVE":"Inactive",
+    "INACTIVE": "Inactive",
     "DEACTIVATE": "Deactivate",
     "BLOCK": "Block",
     "UNBLOCK": "Unblock",
@@ -203,15 +205,12 @@
     "DELETE_CATEGORY_TITLE": "Supression catégorie",
     "DELETE_CATEGORY": "Category \"{{name}}\" will be permanently deleted. Do you want to proceed?",
     "DELETE_CATEGORY_SOFT": "Category \"{{name}}\" will be soft-deleted. Clients assigned to it will not be affected. Proceed?",
-
     "ACTIVATE_CATEGORY_TITLE": "Activate Category",
     "ACTIVATE_CATEGORY": "Are you sure you want to activate \"{{name}}\"?",
     "DEACTIVATE_CATEGORY_TITLE": "Deactivate Category",
     "DEACTIVATE_CATEGORY": "Are you sure you want to deactivate \"{{name}}\"?",
-
     "DELETE_ARTICLE_TITLE": "Delete Article",
     "DELETE_ARTICLE": "Article \"{{name}}\" will be permanently deleted. Do you want to proceed?",
-
     "RESTORE_CLIENT_TITLE": "Restore Client",
     "RESTORE_CLIENT": "Restore client \"{{name}}\"? It will reappear in the active clients list",
     "DELETE_CLIENT_TITLE": "Delete Client",
@@ -220,13 +219,10 @@
     "BLOCK_CLIENT": "Are you sure you want to block \"{{name}}\"?",
     "UNBLOCK_CLIENT_TITLE": "Unblock Client",
     "UNBLOCK_CLIENT": "Are you sure you want to unblock \"{{name}}\"?",
-
     "DELETE_BON_TITLE": "Delete Receipt",
     "DELETE_BON": "Purchase order \"{{numero}}\" will be soft-deleted. Proceed?",
-
     "REMOVE_CATEGORY_TITLE": "Remove Category",
     "REMOVE_CATEGORY": "Remove category \"{{name}}\" from this client?",
-
     "DELETE_FOURNISSEUR_TITLE": "Delete Supplier",
     "DELETE_FOURNISSEUR": "Supplier \"{{name}}\" will be soft-deleted. Do you want to proceed?",
     "BLOCK_FOURNISSEUR_TITLE": "Block Supplier",
@@ -235,7 +231,6 @@
     "UNBLOCK_FOURNISSEUR": "Are you sure you want to unblock \"{{name}}\"?",
     "DELETE_CONTROLE_TITLE": "Delete Controle",
     "DELETE_CONTROLE": "Controle \"{{name}}\" will be permanently deleted. Do you want to proceed?",
-
     "DELETE_ROLE_TITLE": "Supprimer le rôle",
     "DELETE_ROLE": "Le rôle \"{{name}}\" sera définitivement supprimé. Voulez-vous continuer ?",
     "DELETE_USER_TITLE": "Delete User",
@@ -243,12 +238,9 @@
     "RESTORE_USER": "Restore \"{{name}}\"? They will regain access",
     "DEACTIVATE_USER_TITLE": "Deactivate User",
     "DEACTIVATE_USER": "Are you sure you want to deactivate \"{{name}}\"?",
-
     "LOGIN_CHANGE_WARNING_TITLE": "Login input will be changed",
     "LOGIN_CHANGE_WARNING": "Login input will be changed to {{login}}, since login cannot contain spaces nor uppercase letters. Do you want to proceed with this username?",
-
     "CLEAR_AUDIT_LOGS": "Are you sure you want to clear the audit logs?"
-
   },
   "ARTICLES": {
     "BREADCRUMB": "ARTICLE MANAGEMENT",
@@ -299,7 +291,7 @@
       "UNIT": "Unit",
       "SELECT_UNIT": "Select a unit"
     },
-    "UNIT":{
+    "UNIT": {
       "PIECE": "Piece",
       "DOZEN": "Dozen",
       "PAIR": "Pair",
@@ -384,7 +376,7 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
-      "DISCOUNT_RATE":"Discount Rate",
+      "DISCOUNT_RATE": "Discount Rate",
       "OUTSTANDING_BALANCE": "Outstanding Balance",
       "REMAINING_CREDIT": "Remaining Credit",
       "NAME": "NAME",
@@ -637,13 +629,13 @@
         "OPERATION_FAILED": "Operation failed.",
         "DELETE_FAILED": "Delete failed."
       }
-    },    
+    },
     "ERRORS": {
-      "QUANTITY_EXCEEDS_STOCK":"Quantity cannot exceed {{stock}}",
+      "QUANTITY_EXCEEDS_STOCK": "Quantity cannot exceed {{stock}}",
       "ARTICLES_NOT_FOUND": "No articles available in stock"
     },
     "LABELS": {
-      "AVAILABLE_STOCK":"Available quantity" ,
+      "AVAILABLE_STOCK": "Available quantity",
       "UNIT": "Unit",
       "UNITS": "Units"
     },
@@ -757,36 +749,36 @@
       "TAX_PER_LINE_LABEL": "Per line",
       "TAX_PER_INVOICE": "Calculate tax on invoice total (sum of line subtotals × tax rate)",
       "TAX_PER_INVOICE_LABEL": "Per invoice",
-      "FINAL_TOTAL_TTC":"FINAL TOTAL (VAT included)",
+      "FINAL_TOTAL_TTC": "FINAL TOTAL (VAT included)",
       "BULK_DISCOUNT_APPLIED": "Bulk discount applied",
-      "DISCOUNT_RATE":"Discount Rate ({{rate}} %)",
+      "DISCOUNT_RATE": "Discount Rate ({{rate}} %)",
       "YOU_SAVE": "Amount saved",
       "CREDIT_LIMIT_REMAINING": "Remaining Credit:",
       "CREDIT_LIMIT_CURRENT_USAGE": "Current Outstanding:",
-      "NO_LIMIT":"No credit limit set",
-      "CREDIT_LIMIT_WARNING":"Credit limit warning",
-      "STOCK":"Qty in stock",
+      "NO_LIMIT": "No credit limit set",
+      "CREDIT_LIMIT_WARNING": "Credit limit warning",
+      "STOCK": "Qty in stock",
       "BULK_NOT_ELIGIBLE": "Not eligible",
       "EDIT_INVOICE_INFO": "Edit invoice information",
       "ORIGINAL_TOTAL": "Original total",
-      "DISCOUNT_ROW":"Discounted amount",
-      "FINAL_TOTALS":"Final amount",
+      "DISCOUNT_ROW": "Discounted amount",
+      "FINAL_TOTALS": "Final amount",
       "SELECTED_CLIENT": "Client details",
-      "BULK_PRICING_LABEL":"Bulk pricing",
-      "WHOLE_NUMBERS_ONLY":"Whole numbers allowed.",
-      "DECIMALS_ALLOWED":"Decimals allowed.",
+      "BULK_PRICING_LABEL": "Bulk pricing",
+      "WHOLE_NUMBERS_ONLY": "Whole numbers allowed.",
+      "DECIMALS_ALLOWED": "Decimals allowed.",
       "CLIENT_NAME_LABEL": "Client name",
       "BULK_ELIGIBLE": "eligible",
-      "LIMIT_WARNING":"Credit limit warning",
-      "CREDIT_LIMIT_LABEL":"Credit limit",
-      "SELECT_ARTICLE_FIRST":"Select an article",
-      "CLIENT_NOT_SELECTED_MATTOOLTIP":"Select a client before adding a line.",
+      "LIMIT_WARNING": "Credit limit warning",
+      "CREDIT_LIMIT_LABEL": "Credit limit",
+      "SELECT_ARTICLE_FIRST": "Select an article",
+      "CLIENT_NOT_SELECTED_MATTOOLTIP": "Select a client before adding a line.",
       "INVOICE_DETAILS": "Invoice Details",
       "FILL_INVOICE_CLIENT_INFO": "Fill in the invoice and client information",
       "INVOICE_NUMBER": "Invoice Number *",
       "INVOICE_DATE": "Invoice Date *",
       "DUE_DATE": "Due Date *",
-      "DUE_DATE_AUTO_TOOLTIP":"Due date of the invoice is computed based on the payement period the selected client have.",
+      "DUE_DATE_AUTO_TOOLTIP": "Due date of the invoice is computed based on the payement period the selected client have.",
       "DUE_DATE_HINT": "Due date calculated: {{days}} days after invoice date",
       "CLIENT": "Client *",
       "CLIENT_ADDRESS": "Client Address *",
@@ -819,7 +811,7 @@
       "MARK_AS_PAID": "Mark as Paid",
       "CANCEL": "Cancel",
       "PRINT": "Print invoice",
-      "PREVIEW": "Preview invoice" 
+      "PREVIEW": "Preview invoice"
     },
     "DIALOG": {
       "CANCEL_INVOICE_TITLE": "Cancel Invoice",
@@ -832,7 +824,7 @@
       "UNSAVED_CHANGES_TITLE": "Unsaved Changes",
       "UNSAVED_CHANGES_MESSAGE": "You have unsaved changes. Do you really want to leave?"
     },
-    "ERRORS": {    
+    "ERRORS": {
       "HAS_SUFFICIENT_CREDIT": "Credit available: {{remainingCredit}} TND",
       "INSUFFICIENT_CREDIT": "Credit limit exceeded. Limit: {{creditLimit}} TND, Current outstanding: {{currentOutstanding}} TND, This invoice: {{invoiceTotal}} TND",
       "LOAD_FAILED": "Failed to load invoices.",
@@ -962,7 +954,7 @@
     }
   },
   "PERMISSIONS": {
-    "BREADCRUMB":"PERMISSIONS MANAGEMENT",
+    "BREADCRUMB": "PERMISSIONS MANAGEMENT",
     "TITLE_LIST": "Assign/Remove permissions.",
     "ROLES": "Roles",
     "CONTROLS": "Controls",
@@ -1053,7 +1045,7 @@
       "ACCOUNT_DETAILS": "Account Details",
       "AUTH_ID": "Auth ID",
       "STATUS": "Status",
-      "ACTIVE":"Active",
+      "ACTIVE": "Active",
       "INACTIVE": "Inactive",
       "LAST_UPDATED": "Last Updated",
       "NO_CHANGES": "No changes have been made",
@@ -1145,5 +1137,131 @@
   "ACCOUNT": {
     "INVALID_TITLE": "Account Issue",
     "INVALID_MESSAGE": "Your account is no longer active or has been deleted. Please contact support."
+  },
+  "PAYMENTS": {
+    "BREADCRUMB": "PAYMENT MANAGEMENT",
+    "BREADCRUMB_NEW": "ERP › Payments › New Payment",
+    "BREADCRUMB_ANALYTICS": "ERP › Payments › Analytics",
+    "TITLE_LIST": "Payments",
+    "TITLE_NEW": "New Payment",
+    "TITLE_EDIT": "Edit Payment",
+    "TITLE_DETAILS": "Payment Details",
+    "TITLE_ANALYTICS": "Payment Analytics",
+    "NEW_BUTTON": "+ New Payment",
+    "SEARCH_PLACEHOLDER": "Search by invoice, amount or method…",
+    "NO_RESULTS": "No payments found.",
+    "STATS": {
+      "TOTAL": "Total",
+      "COMPLETED": "Completed",
+      "PENDING": "Pending",
+      "FAILED": "Failed",
+      "REVENUE": "Revenue",
+      "LOADING": "Loading statistics…",
+      "TOTAL_PAYMENTS": "Total Payments",
+      "TOTAL_REVENUE": "Total Revenue",
+      "STATUS_BREAKDOWN": "Status Breakdown",
+      "ALL_PAYMENTS_BY_STATUS": "All payments by current status"
+    },
+    "TABS": {
+      "ALL": "All Payments",
+      "ANALYTICS": "Analytics"
+    },
+    "TABLE": {
+      "INVOICE": "INVOICE",
+      "AMOUNT": "AMOUNT",
+      "METHOD": "METHOD",
+      "DATE": "DATE",
+      "LATE_FEE": "LATE FEE",
+      "STATUS": "STATUS",
+      "ACTIONS": "ACTIONS"
+    },
+    "STATUS": {
+      "PENDING": "Pending",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "REFUNDED": "Refunded",
+      "CANCELLED": "Cancelled"
+    },
+    "METHOD": {
+      "CASH": "Cash",
+      "BANK_TRANSFER": "Bank Transfer",
+      "CHECK": "Check",
+      "CREDIT_CARD": "Credit Card",
+      "OTHER": "Other"
+    },
+    "FEE_TYPE": {
+      "PERCENTAGE": "Percentage",
+      "FIXED_PER_DAY": "Fixed per day"
+    },
+    "ACTIONS": {
+      "VIEW": "View details",
+      "EDIT": "Edit",
+      "DELETE": "Delete",
+      "RESTORE": "Restore"
+    },
+    "FORM": {
+      "SELECT_INVOICE": "Select Invoice",
+      "SELECT_INVOICE_HINT": "Search for an unpaid invoice to attach this payment to",
+      "INVOICE_SEARCH_LABEL": "Invoice",
+      "INVOICE_SEARCH_PLACEHOLDER": "Search by invoice number or client name…",
+      "SELECT_INVOICE_REQUIRED": "Please select an invoice",
+      "CLEAR_INVOICE": "Clear selection",
+      "OVERDUE": "OVERDUE",
+      "OVERDUE_WARNING_TITLE": "This invoice is overdue",
+      "OVERDUE_WARNING_BODY": "A late fee may be applied automatically by the system.",
+      "TOTAL_PAID_SO_FAR": "Paid so far",
+      "LATE_FEE_APPLIED": "Late fee applied",
+      "REMAINING": "Remaining balance",
+      "LOADING_SUMMARY": "Loading payment summary…",
+      "PAID": "paid",
+      "PRIOR_PAYMENTS": "Prior payments",
+      "PAYMENT_DETAILS": "Payment Details",
+      "PAYMENT_DETAILS_HINT": "Enter the amount, date and method for this payment",
+      "AMOUNT": "Amount",
+      "MAX_REMAINING": "Max remaining",
+      "PAYMENT_DATE": "Payment Date",
+      "METHOD": "Payment Method",
+      "LATE_FEE_ESTIMATE": "Late fee estimate",
+      "LATE_FEE_ESTIMATE_BODY": "An estimated late fee of {{amount}} TND ({{type}}) may be added.",
+      "LATE_FEE_BACKEND_NOTE": "The exact amount is calculated by the server at submission.",
+      "SUBMIT": "Record Payment",
+      "EDIT_DETAILS": "Edit Payment Details",
+      "CURRENT_INFO": "Current Payment Info",
+      "AMOUNT_PLACEHOLDER": "0.00",
+      "SAVE": "Save Changes"
+    },
+    "DETAILS": {
+      "STATUS": "Status",
+      "CREATED_AT": "Created At",
+      "INVOICE_ID": "Invoice ID",
+      "AMOUNT": "Amount",
+      "METHOD": "Method",
+      "PAYMENT_DATE": "Payment Date"
+    },
+    "SUMMARY": {
+      "TOTAL_TTC": "Invoice Total (TTC)",
+      "REMAINING": "Remaining Balance"
+    },
+    "DIALOG": {
+      "DELETE_TITLE": "Delete Payment",
+      "DELETE_MESSAGE": "Payment #{{id}} will be deleted. Do you want to proceed?",
+      "DELETE_CONFIRM": "Delete"
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Failed to load payments.",
+      "LOAD_STATS_FAILED": "Failed to load payment statistics.",
+      "CREATE_FAILED": "Failed to create payment.",
+      "UPDATE_FAILED": "Failed to update payment.",
+      "DELETE_FAILED": "Failed to delete payment.",
+      "RESTORE_FAILED": "Failed to restore payment.",
+      "AMOUNT_MIN": "Amount must be greater than 0.",
+      "AMOUNT_EXCEEDS_REMAINING": "Amount exceeds the remaining balance on this invoice."
+    },
+    "SUCCESS": {
+      "CREATED": "Payment recorded successfully.",
+      "UPDATED": "Payment updated successfully.",
+      "DELETED": "Payment deleted successfully.",
+      "RESTORED": "Payment restored successfully."
+    }
   }
 }
