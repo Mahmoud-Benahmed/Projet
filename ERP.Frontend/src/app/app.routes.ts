@@ -26,7 +26,11 @@ import { InvoicesComponent } from './components/invoices/invoices';
 import { EditInvoiceComponent } from './components/invoices/edit/edit';
 import { CreateInvoiceComponent } from './components/invoices/create/create';
 import { ViewInvoiceComponent } from './components/invoices/view/view';
-
+import { PaymentsComponent }          from './components/payments/payments';
+import { ViewPaymentComponent }       from './components/payments/view/view';
+import { CreatePaymentComponent }     from './components/payments/create/create';
+import { EditPaymentComponent }       from './components/payments/edit/edit';
+import { LateFeePoliciesComponent }   from './components/payments/late-fee-policies/late-fee-policies';
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
   return keys.map(k => PRIVILEGES[category][k as keyof typeof PRIVILEGES[typeof category]]);
@@ -73,6 +77,14 @@ export const routes: Routes = [
       { path: 'stock/fournisseurs', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK','UPDATE_STOCK','ADD_ENTRY']) } },
       { path: 'stock/bons', component: BonsComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK', 'UPDATE_STOCK', 'ADD_ENTRY']) } },
 
+
+      { path: 'payments/create',  component: CreatePaymentComponent,   data: { privileges: pickPrivileges('PAYMENTS', ['CREATE_PAYMENT']) } },
+      { path: 'payments/edit/:id', component: EditPaymentComponent,    data: { privileges: pickPrivileges('PAYMENTS', ['UPDATE_PAYMENT']) } },
+      { path: 'payments/:id',     component: ViewPaymentComponent,     data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS']) } },
+      { path: 'payments',         component: PaymentsComponent,        data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS']) } },
+ 
+      { path: 'late-fee-policies', component: LateFeePoliciesComponent, data: { privileges: pickPrivileges('PAYMENTS', ['MANAGE_POLICIES']) } },
+      
       { path: '', redirectTo: 'home', pathMatch: 'full' },
     ]
   },
