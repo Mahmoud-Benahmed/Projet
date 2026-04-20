@@ -16,7 +16,9 @@
     "FOURNISSEURS": "Fournisseurs",
     "BONS": "Bons",
     "INVOICES": "Factures",
-    "AUDIT_LOG": "Journal d'audit"
+    "AUDIT_LOG": "Journal d'audit",
+    "PAYMENTS": "Paiements",
+    "ALL_PAYMENTS": "Tous les paiements"
   },
   "COMMON": {
     "LEAVE": "Quitter",
@@ -374,7 +376,7 @@
       "ACTIONS": "ACTIONS"
     },
     "DETAILS": {
-      "DISCOUNT_RATE":"Taux de remise",
+      "DISCOUNT_RATE": "Taux de remise",
       "OUTSTANDING_BALANCE": "Solde en cours",
       "REMAINING_CREDIT": "Crédit restant",
       "NAME": "NOM",
@@ -629,14 +631,13 @@
       }
     },
     "ERRORS": {
-      "QUANTITY_EXCEEDS_STOCK":"Quantité ne doit pas dépasser {{stock}}",
+      "QUANTITY_EXCEEDS_STOCK": "Quantité ne doit pas dépasser {{stock}}",
       "ARTICLES_NOT_FOUND": "Aucun article disponible en stock"
     },
     "LABELS": {
-      "AVAILABLE_STOCK":"Quantité disponible" ,
+      "AVAILABLE_STOCK": "Quantité disponible",
       "UNIT": "Unité",
       "UNITS": "Unités"
-
     },
     "WARNINGS": {
       "OUT_OF_STOCK": "⚠️ Rupture de stock ! Cet article n'est plus disponible.",
@@ -748,38 +749,37 @@
       "TAX_PER_LINE_LABEL": "Par ligne",
       "TAX_PER_INVOICE": "Calculer la taxe sur le total de la facture (somme des sous-totaux × taux de taxe)",
       "TAX_PER_INVOICE_LABEL": "Par facture",
-      "FINAL_TOTAL_TTC":"TOTAL FINAL (TVA incluse)",
+      "FINAL_TOTAL_TTC": "TOTAL FINAL (TVA incluse)",
       "BULK_DISCOUNT_APPLIED": "Facturation en lot appliqué",
-      "DISCOUNT_RATE":"Taux de remise (%)",
+      "DISCOUNT_RATE": "Taux de remise (%)",
       "YOU_SAVE": "Montant remisé",
       "CREDIT_LIMIT_REMAINING": "Crédit permis restant :",
       "CREDIT_LIMIT_CURRENT_USAGE": "Encours actuel :",
-      "CREDIT_LIMIT_WARNING":"Alterte limite de crédit",
-      "NO_LIMIT":"Sans limite",
-      "STOCK":"Qté en stock",
-      "BULK_NOT_ELIGIBLE":"Non admissible",
+      "CREDIT_LIMIT_WARNING": "Alterte limite de crédit",
+      "NO_LIMIT": "Sans limite",
+      "STOCK": "Qté en stock",
+      "BULK_NOT_ELIGIBLE": "Non admissible",
       "EDIT_INVOICE_INFO": "Modification facture",
-      "ORIGINAL_TOTAL":"Montant initiale",
+      "ORIGINAL_TOTAL": "Montant initiale",
       "DISCOUNT_ROW": "Montant en remise",
-      "FINAL_TOTALS":"Prix finale",
+      "FINAL_TOTALS": "Prix finale",
       "SELECTED_CLIENT": "Détails client",
       "BULK_PRICING_LABEL": "Facturation en lot",
-      "CREDIT_LIMIT_LABEL":"Limite de crédit",
-      "DECIMALS_ALLOWED":"Valeurs décimales permis.",
-      "WHOLE_NUMBERS_ONLY":"Numeros entiers.",
+      "CREDIT_LIMIT_LABEL": "Limite de crédit",
+      "DECIMALS_ALLOWED": "Valeurs décimales permis.",
+      "WHOLE_NUMBERS_ONLY": "Numeros entiers.",
       "CLIENT_NAME_LABEL": "Nom client",
       "BULK_ELIGIBLE": "éligible",
-      "LIMIT_WARNING":"Alerte concernant Limite de crédit",
-      "SELECT_ARTICLE_FIRST":"Veuiller sélectionner un article.",
-      "CLIENT_NOT_SELECTED_MATTOOLTIP":"Veuillez sélectionner un client avant d'ajouter des lignes.",
+      "LIMIT_WARNING": "Alerte concernant Limite de crédit",
+      "SELECT_ARTICLE_FIRST": "Veuiller sélectionner un article.",
+      "CLIENT_NOT_SELECTED_MATTOOLTIP": "Veuillez sélectionner un client avant d'ajouter des lignes.",
       "INVOICE_DETAILS": "Détails de la facture",
       "FILL_INVOICE_CLIENT_INFO": "Remplissez les informations de la facture et du client",
       "INVOICE_NUMBER": "Numéro facture *",
       "INVOICE_DATE": "Date facture *",
       "DUE_DATE": "Date d'échéance *",
-      "DUE_DATE_AUTO_TOOLTIP":"La date d'échéance de la facture est pré-calculée en se basant sur la période de paiement du client séléctionné.",
+      "DUE_DATE_AUTO_TOOLTIP": "La date d'échéance de la facture est pré-calculée en se basant sur la période de paiement du client séléctionné.",
       "DUE_DATE_HINT": "La date d'échéance: {{days}} depuis la date de facturation.",
-
       "CLIENT": "Client *",
       "CLIENT_ADDRESS": "Adresse client *",
       "ADDITIONAL_NOTES": "Notes supplémentaires",
@@ -811,7 +811,7 @@
       "MARK_AS_PAID": "Marquer comme payée",
       "CANCEL": "Annuler",
       "PRINT": "Imprimer la facture",
-      "PREVIEW": "Prévisualiser la facture" 
+      "PREVIEW": "Prévisualiser la facture"
     },
     "DIALOG": {
       "UNSAVED_CHANGES_TITLE": "Modifications non enregistrées",
@@ -824,7 +824,7 @@
       "DELETE_CONFIRM": "Supprimer",
       "GO_BACK": "Retour"
     },
-    "ERRORS": {    
+    "ERRORS": {
       "HAS_SUFFICIENT_CREDIT": "Crédit disponible : {{remainingCredit}} TND",
       "INSUFFICIENT_CREDIT": "Limite de crédit dépassée. Limite : {{creditLimit}} TND, Encours actuel : {{currentOutstanding}} TND, Cette facture : {{invoiceTotal}} TND",
       "CREDIT_LIMIT_EXCEEDED": "Impossible de créer la facture pour cet client. Sa totale dépasse le limite le client acquis. ",
@@ -1135,5 +1135,131 @@
   "ACCOUNT": {
     "INVALID_TITLE": "Problème de compte",
     "INVALID_MESSAGE": "Votre compte n'est plus actif ou a été supprimé. Veuillez contacter le support."
+  },
+  "PAYMENTS": {
+    "BREADCRUMB": "GESTION DES PAIEMENTS",
+    "BREADCRUMB_NEW": "ERP › Paiements › Nouveau paiement",
+    "BREADCRUMB_ANALYTICS": "ERP › Paiements › Analytique",
+    "TITLE_LIST": "Paiements",
+    "TITLE_NEW": "Nouveau paiement",
+    "TITLE_EDIT": "Modifier le paiement",
+    "TITLE_DETAILS": "Détails du paiement",
+    "TITLE_ANALYTICS": "Analytique des paiements",
+    "NEW_BUTTON": "+ Nouveau paiement",
+    "SEARCH_PLACEHOLDER": "Rechercher par facture, montant ou méthode…",
+    "NO_RESULTS": "Aucun paiement trouvé.",
+    "STATS": {
+      "TOTAL": "Total",
+      "COMPLETED": "Complétés",
+      "PENDING": "En attente",
+      "FAILED": "Échoués",
+      "REVENUE": "Revenus",
+      "LOADING": "Chargement des statistiques…",
+      "TOTAL_PAYMENTS": "Total paiements",
+      "TOTAL_REVENUE": "Revenus totaux",
+      "STATUS_BREAKDOWN": "Répartition par statut",
+      "ALL_PAYMENTS_BY_STATUS": "Tous les paiements par statut actuel"
+    },
+    "TABS": {
+      "ALL": "Tous les paiements",
+      "ANALYTICS": "Analytique"
+    },
+    "TABLE": {
+      "INVOICE": "FACTURE",
+      "AMOUNT": "MONTANT",
+      "METHOD": "MÉTHODE",
+      "DATE": "DATE",
+      "LATE_FEE": "PÉNALITÉ",
+      "STATUS": "STATUT",
+      "ACTIONS": "ACTIONS"
+    },
+    "STATUS": {
+      "PENDING": "En attente",
+      "COMPLETED": "Complété",
+      "FAILED": "Échoué",
+      "REFUNDED": "Remboursé",
+      "CANCELLED": "Annulé"
+    },
+    "METHOD": {
+      "CASH": "Espèces",
+      "BANK_TRANSFER": "Virement bancaire",
+      "CHECK": "Chèque",
+      "CREDIT_CARD": "Carte bancaire",
+      "OTHER": "Autre"
+    },
+    "FEE_TYPE": {
+      "PERCENTAGE": "Pourcentage",
+      "FIXED_PER_DAY": "Fixe par jour"
+    },
+    "ACTIONS": {
+      "VIEW": "Voir les détails",
+      "EDIT": "Modifier",
+      "DELETE": "Supprimer",
+      "RESTORE": "Restaurer"
+    },
+    "FORM": {
+      "SELECT_INVOICE": "Sélectionner une facture",
+      "SELECT_INVOICE_HINT": "Recherchez une facture impayée à associer à ce paiement",
+      "INVOICE_SEARCH_LABEL": "Facture",
+      "INVOICE_SEARCH_PLACEHOLDER": "Rechercher par numéro de facture ou nom du client…",
+      "SELECT_INVOICE_REQUIRED": "Veuillez sélectionner une facture",
+      "CLEAR_INVOICE": "Effacer la sélection",
+      "OVERDUE": "EN RETARD",
+      "OVERDUE_WARNING_TITLE": "Cette facture est en retard",
+      "OVERDUE_WARNING_BODY": "Des pénalités de retard peuvent être appliquées automatiquement.",
+      "TOTAL_PAID_SO_FAR": "Déjà payé",
+      "LATE_FEE_APPLIED": "Pénalité appliquée",
+      "REMAINING": "Solde restant",
+      "LOADING_SUMMARY": "Chargement du résumé…",
+      "PAID": "payé",
+      "PRIOR_PAYMENTS": "Paiements précédents",
+      "PAYMENT_DETAILS": "Détails du paiement",
+      "PAYMENT_DETAILS_HINT": "Saisissez le montant, la date et la méthode de paiement",
+      "AMOUNT": "Montant",
+      "MAX_REMAINING": "Solde maximum",
+      "PAYMENT_DATE": "Date de paiement",
+      "METHOD": "Méthode de paiement",
+      "LATE_FEE_ESTIMATE": "Estimation de la pénalité",
+      "LATE_FEE_ESTIMATE_BODY": "Une pénalité estimée à {{amount}} TND ({{type}}) pourrait être ajoutée.",
+      "LATE_FEE_BACKEND_NOTE": "Le montant exact est calculé par le serveur à la soumission.",
+      "SUBMIT": "Enregistrer le paiement",
+      "EDIT_DETAILS": "Modifier les détails",
+      "CURRENT_INFO": "Informations actuelles",
+      "AMOUNT_PLACEHOLDER": "0.00",
+      "SAVE": "Enregistrer"
+    },
+    "DETAILS": {
+      "STATUS": "Statut",
+      "CREATED_AT": "Créé le",
+      "INVOICE_ID": "ID Facture",
+      "AMOUNT": "Montant",
+      "METHOD": "Méthode",
+      "PAYMENT_DATE": "Date de paiement"
+    },
+    "SUMMARY": {
+      "TOTAL_TTC": "Total facture (TTC)",
+      "REMAINING": "Solde restant"
+    },
+    "DIALOG": {
+      "DELETE_TITLE": "Supprimer le paiement",
+      "DELETE_MESSAGE": "Le paiement #{{id}} sera supprimé. Voulez-vous continuer ?",
+      "DELETE_CONFIRM": "Supprimer"
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Échec du chargement des paiements.",
+      "LOAD_STATS_FAILED": "Échec du chargement des statistiques.",
+      "CREATE_FAILED": "Échec de la création du paiement.",
+      "UPDATE_FAILED": "Échec de la mise à jour du paiement.",
+      "DELETE_FAILED": "Échec de la suppression du paiement.",
+      "RESTORE_FAILED": "Échec de la restauration du paiement.",
+      "AMOUNT_MIN": "Le montant doit être supérieur à 0.",
+      "AMOUNT_EXCEEDS_REMAINING": "Le montant dépasse le solde restant de cette facture."
+    },
+    "SUCCESS": {
+      "CREATED": "Paiement enregistré avec succès.",
+      "UPDATED": "Paiement mis à jour avec succès.",
+      "DELETED": "Paiement supprimé avec succès.",
+      "RESTORED": "Paiement restauré avec succès."
+    }
   }
 }
