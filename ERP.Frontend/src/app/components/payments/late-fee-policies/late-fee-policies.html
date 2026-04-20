@@ -1,0 +1,154 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <p class="breadcrumb">{{ 'PAYMENTS.POLICIES.BREADCRUMB' | translate }}</p>
+      <h1 class="page-title">{{ 'PAYMENTS.POLICIES.TITLE' | translate }}</h1>
+    </div>
+    <button class="btn-add"
+            *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.MANAGE_POLICIES) && !formOpen"
+            (click)="openCreate()">
+      {{ 'PAYMENTS.POLICIES.NEW_BUTTON' | translate }}
+    </button>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngFor="let e of errors" class="alert alert--error">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>{{ e }}
+    <button class="alert__close" (click)="dismissError()"><mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon></button>
+  </div>
+  <div *ngIf="successMessage" class="alert alert--success">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>{{ successMessage }}
+  </div>
+
+  <!-- Active policy banner -->
+  <div class="active-policy-banner" *ngIf="activePolicy">
+    <div class="active-policy-banner__icon"><mat-icon>policy</mat-icon></div>
+    <div class="active-policy-banner__body">
+      <strong>{{ 'PAYMENTS.POLICIES.ACTIVE_POLICY' | translate }}</strong>
+      <span>
+        {{ feeLabel(activePolicy.feeType) | translate }}
+        · {{ activePolicy.feePercentage }}{{ activePolicy.feeType === FeeType.Percentage ? '%' : ' TND/day' }}
+        · {{ 'PAYMENTS.POLICIES.GRACE' | translate }}: {{ activePolicy.gracePeriodDays }}d
+      </span>
+    </div>
+  </div>
+
+  <!-- Inline form -->
+  <div class="panel" *ngIf="formOpen">
+    <div class="panel__header">
+      <div class="panel__title-wrap">
+        <div class="panel__icon"><mat-icon>edit_note</mat-icon></div>
+        <h2 class="panel__title">
+          {{ (editingId ? 'PAYMENTS.POLICIES.FORM.EDIT_TITLE' : 'PAYMENTS.POLICIES.FORM.CREATE_TITLE') | translate }}
+        </h2>
+      </div>
+    </div>
+    <div class="panel__body">
+      <form [formGroup]="policyForm" class="form">
+        <div class="form__row">
+
+          <div class="form__field">
+            <label class="form__label">{{ 'PAYMENTS.POLICIES.FORM.FEE_TYPE' | translate }} *</label>
+            <select class="form__input form__select" formControlName="feeType">
+              <option *ngFor="let ft of feeTypes" [value]="ft">{{ feeLabel(ft) | translate }}</option>
+            </select>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">
+              {{ 'PAYMENTS.POLICIES.FORM.FEE_VALUE' | translate }}
+              ({{ policyForm.get('feeType')?.value === FeeType.Percentage ? '%' : 'TND/day' }}) *
+            </label>
+            <input class="form__input" type="number" min="0.01" step="0.01"
+                   formControlName="feePercentage"
+                   [class.form__input--error]="policyForm.get('feePercentage')?.invalid && policyForm.get('feePercentage')?.touched" />
+            <span class="form__error" *ngIf="policyForm.get('feePercentage')?.invalid && policyForm.get('feePercentage')?.touched">
+              {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label">{{ 'PAYMENTS.POLICIES.FORM.GRACE_DAYS' | translate }} *</label>
+            <input class="form__input" type="number" min="0" step="1"
+                   formControlName="gracePeriodDays"
+                   [class.form__input--error]="policyForm.get('gracePeriodDays')?.invalid && policyForm.get('gracePeriodDays')?.touched" />
+            <small class="form__hint">{{ 'PAYMENTS.POLICIES.FORM.GRACE_HINT' | translate }}</small>
+          </div>
+
+        </div>
+
+        <div class="form__actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="button" class="btn-add"
+                  [disabled]="policyForm.invalid"
+                  [class.disabled]="policyForm.invalid"
+                  (click)="submit()">
+            {{ (editingId ? 'COMMON.SAVE_CHANGES' : 'PAYMENTS.POLICIES.FORM.CREATE') | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Policies table -->
+  <div class="table-card">
+    <div class="table-scroll-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ 'PAYMENTS.POLICIES.TABLE.FEE_TYPE' | translate }}</th>
+            <th class="text-center">{{ 'PAYMENTS.POLICIES.TABLE.FEE_VALUE' | translate }}</th>
+            <th class="text-center">{{ 'PAYMENTS.POLICIES.TABLE.GRACE_DAYS' | translate }}</th>
+            <th class="text-center">{{ 'PAYMENTS.POLICIES.TABLE.STATUS' | translate }}</th>
+            <th class="text-center">{{ 'PAYMENTS.POLICIES.TABLE.CREATED' | translate }}</th>
+            <th class="text-center">{{ 'PAYMENTS.TABLE.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="policies.length === 0">
+            <td colspan="6" class="td--empty">{{ 'PAYMENTS.POLICIES.NO_RESULTS' | translate }}</td>
+          </tr>
+          <tr class="table__row" *ngFor="let p of policies; trackBy: trackById">
+            <td>
+              <span class="badge" [ngClass]="p.feeType === FeeType.Percentage ? 'badge--blue' : 'badge--amber'">
+                {{ feeLabel(p.feeType) | translate }}
+              </span>
+            </td>
+            <td class="td--price text-center">
+              {{ p.feePercentage }}{{ p.feeType === FeeType.Percentage ? '%' : ' TND/day' }}
+            </td>
+            <td class="text-center">{{ p.gracePeriodDays }}d</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="p.isActive ? 'badge--green' : 'badge--grey'">
+                {{ (p.isActive ? 'PAYMENTS.POLICIES.STATUS.ACTIVE' : 'PAYMENTS.POLICIES.STATUS.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td class="text-center date-cell">{{ p.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="td--actions">
+              <button class="icon-btn icon-btn--reactivate"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.MANAGE_POLICIES) && !p.isActive"
+                      [matTooltip]="'PAYMENTS.POLICIES.ACTIONS.ACTIVATE' | translate"
+                      (click)="activate(p)">
+                <mat-icon style="font-size:16px;width:16px;height:16px;">toggle_on</mat-icon>
+              </button>
+              <button class="icon-btn icon-btn--edit"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.MANAGE_POLICIES)"
+                      [matTooltip]="'COMMON.EDIT' | translate"
+                      (click)="openEdit(p)">
+                <mat-icon style="font-size:16px;width:16px;height:16px;">edit</mat-icon>
+              </button>
+              <button class="icon-btn icon-btn--delete"
+                      *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.MANAGE_POLICIES) && !p.isActive"
+                      [matTooltip]="'COMMON.DELETE' | translate"
+                      (click)="delete(p)">
+                <mat-icon style="font-size:16px;width:16px;height:16px;">delete_outline</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
