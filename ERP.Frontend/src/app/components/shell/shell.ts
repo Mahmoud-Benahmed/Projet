@@ -31,7 +31,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     articles: false,
     clients:  false,
     stock:    false,
-    invoices: false
+    invoices: false,
+    payments:    false,
+    lateFee:     false,
   };
 
   userName = '';
@@ -113,6 +115,13 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/profile'))           return [{ label: 'My Profile' }];
     if (url.startsWith('/change-password'))   return [{ label: 'Change Password' }];
     if (url.startsWith('/home'))              return [{ label: 'Home' }];
+
+    if (url.startsWith('/payments') || url.startsWith('/late-fee-policies')) this.openGroups['payments'] = true;
+    if (url.startsWith('/payments/create'))         return [{ label: this.translate.instant('NAV.PAYMENTS'), link: '/payments' }, { label: this.translate.instant('NAV.NEW_PAYMENT') }];
+    if (url.startsWith('/payments/edit/'))          return [{ label: this.translate.instant('NAV.PAYMENTS'), link: '/payments' }, { label: this.translate.instant('COMMON.EDIT') }];
+    if (url.startsWith('/payments/'))               return [{ label: this.translate.instant('NAV.PAYMENTS'), link: '/payments' }, { label: this.translate.instant('PAYMENTS.TITLE_VIEW') }];
+    if (url.startsWith('/payments'))                return [{ label: this.translate.instant('NAV.PAYMENTS') }];
+    if (url.startsWith('/late-fee-policies'))       return [{ label: this.translate.instant('NAV.PAYMENTS'), link: '/payments' }, { label: this.translate.instant('NAV.LATE_FEE_POLICIES') }];
 
     return [{ label: 'Dashboard' }];
   }
