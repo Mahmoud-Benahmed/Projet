@@ -1,8 +1,8 @@
 import { LoginRequestDto } from './../../../../interfaces/AuthDto';
 import { ChangeDetectorRef, Component, HostBinding, OnDestroy, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -33,8 +33,7 @@ import { PasswordService } from '../../../../services/password.service';
     MatIconModule,
     MatSelectModule,
     MatProgressSpinner,
-    TranslatePipe,
-    RouterLink
+    TranslatePipe
   ],
   templateUrl: './register.html',
   styleUrl: './register.scss'
@@ -42,11 +41,14 @@ import { PasswordService } from '../../../../services/password.service';
 export class RegisterComponent implements OnDestroy {
   @ViewChild('registerForm') registerForm!: NgForm;
 
+  private location= inject(Location);
+
   private translate = inject(TranslateService);
   private passwordService = inject(PasswordService);
 
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;
   readonly fullnamePattern = /^\p{L}+(\s\p{L}+)*$/u;
+  readonly loginPattern = /^[a-zA-Z0-9_\s]+$/.source;
 
   credentials: RegisterRequestDto = { login: '', email: '', fullName: '', password: '', roleId: null };
   showPassword = false;
@@ -186,6 +188,13 @@ export class RegisterComponent implements OnDestroy {
         this.stopLoading();
         this.resetForm();
         this.flash('success', this.translate.instant('SUCCESS.USER_REGISTERED', { name: registeredUser.fullName }));
+        setTimeout(() => {
+          document.getElementById('top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+        setTimeout(() => {
+          this.cancel();
+          this.isLoading = false;
+        }, 2000);
       },
       error: (error) => {
         this.stopLoading();
@@ -193,6 +202,13 @@ export class RegisterComponent implements OnDestroy {
         if (err.code === 'VALIDATION_ERROR' && err.errors) {
           const messages = Object.values(err.errors).flat();
           this.flashErrors(messages);
+          setTimeout(() => {
+            document.getElementById('top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 0);
+          setTimeout(() => {
+            this.cancel();
+            this.isLoading = false;
+          }, 2000);  
         } else {
           this.flash('error', err.message ?? this.translate.instant('USERS.ERRORS.REGISTER_FAILED'));
         }
@@ -202,6 +218,10 @@ export class RegisterComponent implements OnDestroy {
 
   goToLogin(): void {
     this.router.navigate(['/login']);
+  }
+
+  cancel(){
+    this.location.back();
   }
 
   generatePassword(): void {
