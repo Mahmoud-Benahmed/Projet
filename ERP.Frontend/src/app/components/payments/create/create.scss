@@ -1,0 +1,273 @@
+@use 'shared' as *;
+
+// ── Autocomplete ──────────────────────────────────
+.autocomplete-wrap {
+  position: relative;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: $bg-card;
+  border: 1px solid $border-hi;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  overflow: hidden;
+  animation: fadeIn 0.15s ease;
+}
+
+.autocomplete-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover { background: $bg-card-hi; }
+  & + & { border-top: 1px solid $border; }
+
+  &__name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $text-hi;
+  }
+
+  &__sub {
+    font-size: 0.75rem;
+    color: $text-lo;
+  }
+}
+
+// ── Invoice summary card ──────────────────────────
+.invoice-summary-card {
+  background: $bg-card-hi;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.2s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid $border;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+
+    mat-icon {
+      color: $blue;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    strong { color: $text-hi; }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+}
+
+// ── Invoice info rows ─────────────────────────────
+.inv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+
+  span:first-child { color: $text-mid; }
+  strong { color: $text-hi; }
+
+  .text-danger { color: $red; }
+  .text-green  { color: $green; }
+  .text-red    { color: $red; }
+}
+
+// ── Overdue banner ────────────────────────────────
+.overdue-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: $red-bg;
+  border: 1px solid $red-border;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  animation: fadeIn 0.2s ease;
+
+  mat-icon { color: $red; flex-shrink: 0; }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+
+    strong { color: $red; font-size: 0.88rem; }
+    span   { font-size: 0.82rem; color: $text-mid; }
+  }
+}
+
+// ── Progress bar ──────────────────────────────────
+.progress-bar-wrap {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.progress-bar {
+  height: 6px;
+  background: $border;
+  border-radius: 99px;
+  overflow: hidden;
+
+  &__fill {
+    height: 100%;
+    background: $green;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+}
+
+.progress-bar__label {
+  font-size: 0.75rem;
+  color: $text-lo;
+  text-align: right;
+}
+
+// ── Prior payments list ───────────────────────────
+.prior-payments {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid $border;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: $text-mid;
+    text-transform: uppercase;
+    margin: 0 0 0.5rem;
+  }
+}
+
+.prior-payment-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  font-size: 0.83rem;
+  border-bottom: 1px solid $border;
+
+  &:last-child { border-bottom: none; }
+
+  .td--price { margin-left: auto; font-weight: 600; color: $text-hi; }
+}
+
+// ── Payment method grid ───────────────────────────
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.method-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.5rem;
+  background: $bg-card-hi;
+  border: 1px solid $border;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $text-mid;
+  transition: all 0.15s ease;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+  &:hover:not(.method-btn--active) {
+    background: $bg-card;
+    border-color: $border-hi;
+    color: $text-hi;
+  }
+
+  &--active {
+    background: $blue-bg;
+    border-color: $blue-border;
+    color: $blue;
+    font-weight: 600;
+
+    mat-icon { color: $blue; }
+  }
+}
+
+// ── Late fee preview ──────────────────────────────
+.late-fee-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: $amber-bg;
+  border: 1px solid $amber-border;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.2s ease;
+
+  mat-icon { color: $amber; flex-shrink: 0; margin-top: 1px; }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+
+    strong { font-size: 0.88rem; color: $text-hi; }
+    span   { font-size: 0.83rem; color: $text-mid; }
+    small  { font-size: 0.75rem; color: $text-lo; margin-top: 0.2rem; }
+  }
+}
+
+// ── Loading spinner (inline) ──────────────────────
+.payment-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.82rem;
+  color: $text-lo;
+}
+
+// ── Utility colours (inline style helpers) ────────
+.text-green { color: $green !important; }
+.text-red   { color: $red   !important; }
