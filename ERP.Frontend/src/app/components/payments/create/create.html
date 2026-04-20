@@ -1,0 +1,260 @@
+<div class="page">
+  <div class="page-header" id="top">
+    <div>
+      <p class="breadcrumb">{{ 'PAYMENTS.BREADCRUMB_NEW' | translate }}</p>
+      <h1 class="page-title">{{ pageTitle | translate }}</h1>
+    </div>
+    <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngFor="let e of errors" class="alert alert--error">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>{{ e }}
+    <button class="alert__close" (click)="dismissError()">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+    </button>
+  </div>
+  <div *ngIf="successMessage" class="alert alert--success">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>
+    {{ successMessage }}
+  </div>
+
+  <form [formGroup]="paymentForm">
+
+    <!-- ── Invoice Selection Panel ────────────────────────────────── -->
+    <div class="panel">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>receipt</mat-icon></div>
+          <div>
+            <h2 class="panel__title">{{ 'PAYMENTS.FORM.SELECT_INVOICE' | translate }}</h2>
+            <p class="panel__subtitle">{{ 'PAYMENTS.FORM.SELECT_INVOICE_HINT' | translate }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel__body">
+
+        <!-- Invoice autocomplete search -->
+        <div class="form__field">
+          <label class="form__label">
+            <mat-icon>search</mat-icon>
+            {{ 'PAYMENTS.FORM.INVOICE_SEARCH_LABEL' | translate }} *
+          </label>
+          <div class="autocomplete-wrap">
+            <input class="form__input"
+                   type="text"
+                   [placeholder]="'PAYMENTS.FORM.INVOICE_SEARCH_PLACEHOLDER' | translate"
+                   [(ngModel)]="invoiceSearch"
+                   [ngModelOptions]="{standalone: true}"
+                   (input)="filterInvoices(invoiceSearch)"
+                   [class.form__input--error]="paymentForm.get('invoiceId')?.invalid && paymentForm.get('invoiceId')?.touched" />
+            <div class="autocomplete-dropdown" *ngIf="filteredInvoices.length > 0">
+              <button type="button" class="autocomplete-item"
+                      *ngFor="let inv of filteredInvoices"
+                      (click)="selectInvoice(inv)">
+                <span class="autocomplete-item__name">{{ inv.invoiceNumber }} — {{ inv.clientFullName }}</span>
+                <span class="autocomplete-item__sub">
+                  {{ inv.totalTTC | number:'1.2-2' }} TND · {{ 'INVOICES.DETAILS.DUE_DATE' | translate }}: {{ inv.dueDate | date:'dd/MM/yyyy' }}
+                </span>
+              </button>
+            </div>
+          </div>
+          <span class="form__error" *ngIf="paymentForm.get('invoiceId')?.invalid && paymentForm.get('invoiceId')?.touched">
+            {{ 'PAYMENTS.FORM.SELECT_INVOICE_REQUIRED' | translate }}
+          </span>
+        </div>
+
+        <!-- Selected invoice summary card -->
+        <ng-container *ngIf="selectedInvoice">
+
+          <!-- Overdue warning -->
+          <div class="overdue-banner" *ngIf="isOverdue">
+            <mat-icon>warning_amber</mat-icon>
+            <div>
+              <strong>{{ 'PAYMENTS.FORM.OVERDUE_WARNING_TITLE' | translate }}</strong>
+              <span>{{ 'PAYMENTS.FORM.OVERDUE_WARNING_BODY' | translate }}</span>
+            </div>
+            <button type="button" class="btn-clear" (click)="clearInvoice()">✕</button>
+          </div>
+
+          <!-- Invoice info card -->
+          <div class="invoice-summary-card">
+            <div class="invoice-summary-card__header">
+              <div class="invoice-summary-card__title">
+                <mat-icon>receipt_long</mat-icon>
+                <strong>{{ selectedInvoice.invoiceNumber }}</strong>
+                <span class="badge badge--red" *ngIf="isOverdue">{{ 'PAYMENTS.FORM.OVERDUE' | translate }}</span>
+              </div>
+              <button type="button" class="btn-clear" (click)="clearInvoice()"
+                      [matTooltip]="'PAYMENTS.FORM.CLEAR_INVOICE' | translate">
+                <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+              </button>
+            </div>
+
+            <div class="invoice-summary-card__body">
+              <div class="inv-row">
+                <span>{{ 'INVOICES.DETAILS.NAME' | translate }}</span>
+                <strong>{{ selectedInvoice.clientFullName }}</strong>
+              </div>
+              <div class="inv-row">
+                <span>{{ 'INVOICES.DETAILS.TOTAL_TTC' | translate }}</span>
+                <strong>{{ selectedInvoice.totalTTC | number:'1.2-2' }} TND</strong>
+              </div>
+              <div class="inv-row">
+                <span>{{ 'INVOICES.DETAILS.DUE_DATE' | translate }}</span>
+                <strong [class.text-danger]="isOverdue">{{ selectedInvoice.dueDate | date:'dd/MM/yyyy' }}</strong>
+              </div>
+            </div>
+
+            <!-- Payment progress (from summary) -->
+            <div class="payment-progress" *ngIf="summaryLoading">
+              <div class="spinner spinner--sm"></div>
+              <span>{{ 'PAYMENTS.FORM.LOADING_SUMMARY' | translate }}</span>
+            </div>
+
+            <ng-container *ngIf="!summaryLoading && paymentSummary">
+              <div class="invoice-summary-card__body" style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">
+                <div class="inv-row">
+                  <span>{{ 'PAYMENTS.FORM.TOTAL_PAID_SO_FAR' | translate }}</span>
+                  <strong class="text-green">{{ paymentSummary.totalPaid | number:'1.2-2' }} TND</strong>
+                </div>
+                <div class="inv-row" *ngIf="paymentSummary.lateFeeAmount > 0">
+                  <span>{{ 'PAYMENTS.FORM.LATE_FEE_APPLIED' | translate }}</span>
+                  <strong class="text-red">+{{ paymentSummary.lateFeeAmount | number:'1.2-2' }} TND</strong>
+                </div>
+                <div class="inv-row">
+                  <span>{{ 'PAYMENTS.FORM.REMAINING' | translate }}</span>
+                  <strong [class.text-green]="paymentSummary.remainingAmount === 0"
+                          [class.text-red]="paymentSummary.remainingAmount > 0">
+                    {{ paymentSummary.remainingAmount | number:'1.2-2' }} TND
+                  </strong>
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="progress-bar-wrap">
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" [style.width.%]="progressPercent"></div>
+                </div>
+                <span class="progress-bar__label">{{ progressPercent }}% {{ 'PAYMENTS.FORM.PAID' | translate }}</span>
+              </div>
+
+              <!-- Prior payments list -->
+              <div class="prior-payments" *ngIf="paymentSummary.payments.length > 0">
+                <p class="prior-payments__title">
+                  <mat-icon style="font-size:14px;width:14px;height:14px;">history</mat-icon>
+                  {{ 'PAYMENTS.FORM.PRIOR_PAYMENTS' | translate }} ({{ paymentSummary.payments.length }})
+                </p>
+                <div class="prior-payment-row" *ngFor="let p of paymentSummary.payments">
+                  <span class="date-cell">{{ p.paymentDate | date:'dd/MM/yyyy' }}</span>
+                  <span class="method-chip">
+                    <mat-icon style="font-size:13px;width:13px;height:13px;">{{ methodIcon(p.method) }}</mat-icon>
+                    {{ methodLabel(p.method) | translate }}
+                  </span>
+                  <strong class="td--price">{{ p.amount | number:'1.2-2' }} TND</strong>
+                  <span *ngIf="p.lateFeeApplied > 0" class="badge badge--red" style="font-size:.7rem">
+                    +{{ p.lateFeeApplied | number:'1.2-2' }} fee
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ── Payment Details Panel ──────────────────────────────────── -->
+    <div class="panel" *ngIf="selectedInvoice">
+      <div class="panel__header">
+        <div class="panel__title-wrap">
+          <div class="panel__icon"><mat-icon>payments</mat-icon></div>
+          <div>
+            <h2 class="panel__title">{{ 'PAYMENTS.FORM.PAYMENT_DETAILS' | translate }}</h2>
+            <p class="panel__subtitle">{{ 'PAYMENTS.FORM.PAYMENT_DETAILS_HINT' | translate }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel__body">
+
+        <div class="form__row form__row--2">
+          <!-- Amount -->
+          <div class="form__field">
+            <label class="form__label">{{ 'PAYMENTS.FORM.AMOUNT' | translate }} *</label>
+            <input class="form__input" type="number" min="0.01" step="0.01"
+                   formControlName="amount"
+                   [placeholder]="paymentSummary ? (paymentSummary.remainingAmount | number:'1.2-2') : '0.00'"
+                   [class.form__input--error]="paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched" />
+            <span class="form__error"
+                  *ngIf="paymentForm.get('amount')?.hasError('required') && paymentForm.get('amount')?.touched">
+              {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+            <span class="form__error"
+                  *ngIf="paymentForm.get('amount')?.hasError('min') && paymentForm.get('amount')?.touched">
+              {{ 'PAYMENTS.ERRORS.AMOUNT_MIN' | translate }}
+            </span>
+            <small class="form__hint" *ngIf="paymentSummary">
+              {{ 'PAYMENTS.FORM.MAX_REMAINING' | translate }}: {{ paymentSummary.remainingAmount | number:'1.2-2' }} TND
+            </small>
+          </div>
+
+          <!-- Payment Date -->
+          <div class="form__field">
+            <label class="form__label">{{ 'PAYMENTS.FORM.PAYMENT_DATE' | translate }} *</label>
+            <input class="form__input" type="date"
+                   formControlName="paymentDate"
+                   [class.form__input--error]="paymentForm.get('paymentDate')?.invalid && paymentForm.get('paymentDate')?.touched" />
+            <span class="form__error"
+                  *ngIf="paymentForm.get('paymentDate')?.invalid && paymentForm.get('paymentDate')?.touched">
+              {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="form__field">
+          <label class="form__label">{{ 'PAYMENTS.FORM.METHOD' | translate }} *</label>
+          <div class="method-grid">
+            <button type="button"
+                    *ngFor="let m of methods"
+                    class="method-btn"
+                    [class.method-btn--active]="paymentForm.get('method')?.value === m"
+                    (click)="paymentForm.patchValue({ method: m })">
+              <mat-icon>{{ methodIcon(m) }}</mat-icon>
+              <span>{{ methodLabel(m) | translate }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Late fee preview (if overdue and policy exists) -->
+        <div class="late-fee-preview" *ngIf="isOverdue && activePolicy && estimatedLateFee > 0">
+          <mat-icon>warning_amber</mat-icon>
+          <div class="late-fee-preview__content">
+            <strong>{{ 'PAYMENTS.FORM.LATE_FEE_ESTIMATE' | translate }}</strong>
+            <span>{{ 'PAYMENTS.FORM.LATE_FEE_ESTIMATE_BODY' | translate: {
+              amount: (estimatedLateFee | number:'1.2-2'),
+              type: (activePolicy.feeType === FeeType.Percentage
+                      ? (activePolicy.feePercentage + '%')
+                      : (activePolicy.feePercentage + ' TND/day'))
+            } }}</span>
+            <small>{{ 'PAYMENTS.FORM.LATE_FEE_BACKEND_NOTE' | translate }}</small>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="panel__actions">
+          <button type="button" class="btn-secondary" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="button" class="btn-add"
+                  [disabled]="!canSubmit"
+                  [class.disabled]="!canSubmit"
+                  (click)="submit()">
+            <span *ngIf="!isSubmitting">{{ 'PAYMENTS.FORM.SUBMIT' | translate }}</span>
+            <span *ngIf="isSubmitting">{{ 'COMMON.SAVING' | translate }}…</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </form>
+</div>
