@@ -1,0 +1,158 @@
+<div class="page" id="top">
+
+  <!-- ── Alerts ─────────────────────────────────── -->
+  <div *ngFor="let e of errors" class="alert alert--error">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+    {{ e }}
+    <button class="alert__close" (click)="dismissError()">
+      <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+    </button>
+  </div>
+  <div *ngIf="successMessage" class="alert alert--success">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>
+    {{ successMessage }}
+  </div>
+
+  <ng-container *ngIf="selectedPayment">
+
+    <!-- ── Header ─────────────────────────────────── -->
+    <div class="page-header">
+      <div class="start">
+        <div class="breadcrumb-title">
+          <p class="breadcrumb">
+            {{ 'PAYMENTS.BREADCRUMB' | translate }} ›
+            {{ selectedPayment.id | slice:0:8 }}… ›
+            {{ 'COMMON.EDIT' | translate }}
+          </p>
+          <h1 class="page-title">{{ 'PAYMENTS.TITLE_EDIT' | translate }}</h1>
+        </div>
+      </div>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
+    </div>
+
+    <form [formGroup]="paymentForm" (ngSubmit)="submit()">
+      <div class="detail-columns">
+
+        <!-- ── Edit Form ───────────────────────────── -->
+        <div class="panel">
+          <div class="panel__header">
+            <div class="panel__title-wrap">
+              <div class="panel__icon"><mat-icon>edit</mat-icon></div>
+              <div><h2 class="panel__title">{{ 'PAYMENTS.FORM.EDIT_DETAILS' | translate }}</h2></div>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div class="form-grid">
+
+              <!-- Amount -->
+              <div class="form-field">
+                <label class="form-label">{{ 'PAYMENTS.FORM.AMOUNT' | translate }} *</label>
+                <input class="form-input"
+                       type="number"
+                       min="0.01"
+                       step="0.01"
+                       formControlName="amount"
+                       [placeholder]="'PAYMENTS.FORM.AMOUNT_PLACEHOLDER' | translate" />
+                <span class="form-error"
+                      *ngIf="paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched">
+                  {{ 'VALIDATION.AMOUNT_REQUIRED' | translate }}
+                </span>
+              </div>
+
+              <!-- Payment Date -->
+              <div class="form-field">
+                <label class="form-label">{{ 'PAYMENTS.FORM.PAYMENT_DATE' | translate }} *</label>
+                <input class="form-input"
+                       type="date"
+                       formControlName="paymentDate" />
+                <span class="form-error"
+                      *ngIf="paymentForm.get('paymentDate')?.invalid && paymentForm.get('paymentDate')?.touched">
+                  {{ 'VALIDATION.REQUIRED' | translate }}
+                </span>
+              </div>
+
+              <!-- Payment Method -->
+              <div class="form-field form-field--full">
+                <label class="form-label">{{ 'PAYMENTS.FORM.METHOD' | translate }} *</label>
+                <div class="method-selector">
+                  <button type="button"
+                          *ngFor="let m of paymentMethods"
+                          class="method-option"
+                          [class.method-option--active]="paymentForm.get('method')?.value === m"
+                          (click)="paymentForm.patchValue({ method: m })">
+                    <mat-icon style="font-size:18px;width:18px;height:18px;">
+                      {{ m === PaymentMethod.Cash ? 'payments' : m === PaymentMethod.BankTransfer ? 'account_balance' : 'receipt' }}
+                    </mat-icon>
+                    {{ 'PAYMENTS.METHOD.' + m | translate }}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Current Payment Info (read-only) ────── -->
+        <div class="panel">
+          <div class="panel__header">
+            <div class="panel__title-wrap">
+              <div class="panel__icon"><mat-icon>info_outline</mat-icon></div>
+              <div><h2 class="panel__title">{{ 'PAYMENTS.FORM.CURRENT_INFO' | translate }}</h2></div>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div class="detail-grid">
+
+              <div class="detail-item">
+                <span class="detail-label">{{ 'PAYMENTS.DETAILS.STATUS' | translate }}</span>
+                <span class="badge badge--amber">{{ 'PAYMENTS.STATUS.' + selectedPayment.status | translate }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">{{ 'PAYMENTS.DETAILS.CREATED_AT' | translate }}</span>
+                <span class="detail-value date-cell">{{ selectedPayment.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+
+              <div class="detail-item detail-item--full">
+                <span class="detail-label">{{ 'PAYMENTS.DETAILS.INVOICE_ID' | translate }}</span>
+                <span class="detail-value detail-value--mono">{{ selectedPayment.invoiceId }}</span>
+              </div>
+
+              <ng-container *ngIf="paymentSummary">
+                <div class="detail-item">
+                  <span class="detail-label">{{ 'PAYMENTS.SUMMARY.TOTAL_TTC' | translate }}</span>
+                  <span class="detail-value">{{ paymentSummary.totalTTC | number:'1.2-2' }} TND</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">{{ 'PAYMENTS.SUMMARY.REMAINING' | translate }}</span>
+                  <span class="detail-value" [class.detail-value--red]="paymentSummary.remainingAmount > 0">
+                    {{ paymentSummary.remainingAmount | number:'1.2-2' }} TND
+                  </span>
+                </div>
+              </ng-container>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Submit Bar ────────────────────────────── -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="cancel()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button type="submit"
+                class="btn-primary"
+                [disabled]="!canSubmit"
+                [matTooltip]="getSubmitTooltip()">
+          <mat-icon *ngIf="isSubmitting" class="spin" style="font-size:16px;width:16px;height:16px;">autorenew</mat-icon>
+          <mat-icon *ngIf="!isSubmitting" style="font-size:16px;width:16px;height:16px;">save</mat-icon>
+          {{ (isSubmitting ? 'COMMON.PROCESSING' : 'PAYMENTS.FORM.SAVE') | translate }}
+        </button>
+      </div>
+
+    </form>
+
+  </ng-container>
+</div>
