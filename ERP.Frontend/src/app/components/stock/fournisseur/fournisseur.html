@@ -136,7 +136,6 @@
                 </span>
               </th>
               <th>{{ 'STOCK.FOURNISSEURS.TABLE.PHONE' | translate }}</th>
-              <th>{{ 'STOCK.FOURNISSEURS.TABLE.EMAIL' | translate }}</th>
               <th (click)="sortBy('createdAt')" class="th--sortable">
                 {{ 'STOCK.FOURNISSEURS.TABLE.PARTNERSHIP_DATE' | translate }}
                 <span class="sort-icon">
@@ -158,10 +157,6 @@
 
               <td class="td--name">{{ f.name }}</td>
               <td>{{ f.phone }}</td>
-              <td class="td--email">
-                <span *ngIf="f.email != null">{{ f.email }}</span>
-                <span class="td--empty-value" *ngIf="f.email == null">—</span>
-              </td>
               <td class="td--createdAt">{{ f.createdAt | date:'dd-MM-yyyy'}}</td>
 
               <td class="td--actions">
