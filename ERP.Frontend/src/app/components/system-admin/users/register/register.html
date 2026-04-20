@@ -8,17 +8,19 @@
   </div>
 
   <!-- ===================== ALERTS ===================== -->
-  <div class="alert alert--error" *ngIf="errors.length > 0">
-    <div class="alert__messages">
-      <span *ngFor="let msg of errors">{{ msg }}</span>
+  <div class="top">
+    <div class="alert alert--error" *ngIf="errors.length > 0">
+      <div class="alert__messages">
+        <span *ngFor="let msg of errors">{{ msg }}</span>
+      </div>
     </div>
-  </div>
-  <div class="alert alert--success" *ngIf="successMessage">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-    {{ successMessage }}
-    <button class="alert__close" (click)="dismissError()">✕</button>
+    <div class="alert alert--success" *ngIf="successMessage">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      {{ successMessage }}
+      <button class="alert__close" (click)="dismissError()">✕</button>
+    </div>  
   </div>
 
   <!-- ── FORM CARD ── -->
@@ -36,7 +38,7 @@
           <p class="panel__subtitle">{{ 'USERS.REGISTER.SUBTITLE' | translate }}</p>
         </div>
       </div>
-      <button class="btn-back" routerLink="/users">← {{ 'COMMON.BACK' | translate }}</button>
+      <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
     </div>
 
     <div class="panel__body">
@@ -79,7 +81,7 @@
               [placeholder]="'USERS.REGISTER.LOGIN_PLACEHOLDER' | translate"
               [(ngModel)]="credentials.login"
               required
-              pattern="^[a-zA-Z0-9_]+$"
+              [pattern]="loginPattern"
               minlength="5"
               maxlength="50"
               #loginInput="ngModel"
