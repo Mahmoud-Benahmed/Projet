@@ -27,12 +27,12 @@ namespace ERP.AuthService.Application.Services
             _ = await _roleRepository.GetByIdAsync(roleId)
                 ?? throw new RoleNotFoundException(roleId);
 
-            var privileges = await _privilegeRepository.GetByRoleIdAsync(roleId);
-            var result = new List<PrivilegeResponseDto>();
+            List<Privilege> privileges = await _privilegeRepository.GetByRoleIdAsync(roleId);
+            List<PrivilegeResponseDto> result = new List<PrivilegeResponseDto>();
 
-            foreach (var p in privileges)
+            foreach (Privilege p in privileges)
             {
-                var controle = await _controleRepository.GetByIdAsync(p.ControleId)
+                Controle controle = await _controleRepository.GetByIdAsync(p.ControleId)
                                ?? throw new ControleNotFoundException(p.ControleId);
 
                 result.Add(new PrivilegeResponseDto(
@@ -49,15 +49,15 @@ namespace ERP.AuthService.Application.Services
 
         public async Task AllowAsync(Guid roleId, Guid controleId)
         {
-            var role = await _roleRepository.GetByIdAsync(roleId);
+            Role? role = await _roleRepository.GetByIdAsync(roleId);
             if (role == null)
                 throw new RoleNotFoundException(roleId);
 
-            var controle = await _controleRepository.GetByIdAsync(controleId);
+            Controle? controle = await _controleRepository.GetByIdAsync(controleId);
             if (controle == null)
                 throw new ControleNotFoundException(controleId);
 
-            var privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
+            Privilege? privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
 
             if (privilege == null)
             {
@@ -75,16 +75,16 @@ namespace ERP.AuthService.Application.Services
 
         public async Task DenyAsync(Guid roleId, Guid controleId)
         {
-            var role = await _roleRepository.GetByIdAsync(roleId);
+            Role? role = await _roleRepository.GetByIdAsync(roleId);
             if (role == null)
                 throw new RoleNotFoundException(roleId);
 
-            var controle = await _controleRepository.GetByIdAsync(controleId);
+            Controle? controle = await _controleRepository.GetByIdAsync(controleId);
             if (controle == null)
                 throw new ControleNotFoundException(controleId);
 
 
-            var privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
+            Privilege? privilege = await _privilegeRepository.GetByRoleIdAndControleIdAsync(roleId, controleId);
 
             if (privilege == null)
             {

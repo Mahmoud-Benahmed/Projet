@@ -25,7 +25,7 @@ namespace ERP.AuthService.Application.Services
             string? userAgent = null,
             Dictionary<string, string>? metadata = null)
         {
-            var log = new AuditLog(
+            AuditLog log = new AuditLog(
                 action,
                 success,
                 performedBy,

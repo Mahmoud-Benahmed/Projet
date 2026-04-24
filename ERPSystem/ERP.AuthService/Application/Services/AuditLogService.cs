@@ -18,8 +18,8 @@ namespace ERP.AuthService.Application.Services
         /// <summary>Get all audit logs, paginated, sorted by most recent.</summary>
         public async Task<PagedResultDto<AuditLogResponseDto>> GetAllAsync(int pageNumber, int pageSize)
         {
-            var items = await _repository.GetAllAsync(pageNumber, pageSize);
-            var total = await _repository.CountAsync();
+            List<AuditLog> items = await _repository.GetAllAsync(pageNumber, pageSize);
+            long total = await _repository.CountAsync();
             return new PagedResultDto<AuditLogResponseDto>(
                 items.Select(MapToDto).ToList(),
                 (int)total,
@@ -30,7 +30,7 @@ namespace ERP.AuthService.Application.Services
         /// <summary>Get all logs where the user is either the performer or the target.</summary>
         public async Task<PagedResultDto<AuditLogResponseDto>> GetByUserAsync(Guid userId, int pageNumber, int pageSize)
         {
-            var items = await _repository.GetByUserAsync(userId, pageNumber, pageSize);
+            List<AuditLog> items = await _repository.GetByUserAsync(userId, pageNumber, pageSize);
             return new PagedResultDto<AuditLogResponseDto>(
                 items.Select(MapToDto).ToList(),
                 items.Count,

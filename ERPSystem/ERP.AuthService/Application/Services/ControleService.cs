@@ -26,8 +26,8 @@ namespace ERP.AuthService.Application.Services
         public async Task<PagedResultDto<ControleResponseDto>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _controleRepository.GetAllPagedAsync(pageNumber, pageSize);
-            var mapped = items.Select(MapToDto).ToList();
+            (List<Controle>? items, int totalCount) = await _controleRepository.GetAllPagedAsync(pageNumber, pageSize);
+            List<ControleResponseDto> mapped = items.Select(MapToDto).ToList();
             return new PagedResultDto<ControleResponseDto>(
                 mapped,
                 totalCount,
@@ -37,8 +37,8 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<List<ControleResponseDto>> GetAllAsync()
         {
-            var items = await _controleRepository.GetAllAsync();
-            var mapped = items.Select(MapToDto).ToList();
+            List<Controle> items = await _controleRepository.GetAllAsync();
+            List<ControleResponseDto> mapped = items.Select(MapToDto).ToList();
             return mapped;
         }
 
@@ -48,7 +48,7 @@ namespace ERP.AuthService.Application.Services
         public async Task<PagedResultDto<ControleResponseDto>> GetByCategoryAsync(string category, int pageNum, int pageSize)
         {
             ValidatePaging(pageNum, pageSize);
-            var (items, totalCount) = await _controleRepository.GetByCategoryAsync(category, pageNum, pageSize);
+            (List<Controle>? items, int totalCount) = await _controleRepository.GetByCategoryAsync(category, pageNum, pageSize);
             return new PagedResultDto<ControleResponseDto>(
                 items.Select(MapToDto).ToList(),
                 totalCount,
@@ -61,7 +61,7 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task<ControleResponseDto> GetByIdAsync(Guid id)
         {
-            var controle = await _controleRepository.GetByIdAsync(id);
+            Controle? controle = await _controleRepository.GetByIdAsync(id);
 
             if (controle is null)
                 throw new ControleNotFoundException(id);
@@ -73,11 +73,11 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task<ControleResponseDto> CreateControleAsync(ControleRequestDto request, Guid requesterId)
         {
-            var existing = await _controleRepository.GetByLibelleAsync(request.Libelle);
+            Controle? existing = await _controleRepository.GetByLibelleAsync(request.Libelle);
             if (existing is not null)
                 throw new InvalidOperationException($"A controle with libelle '{request.Libelle}' already exists.");
 
-            var controle = new Controle(request.Category, request.Libelle, request.Description);
+            Controle controle = new Controle(request.Category, request.Libelle, request.Description);
             await _controleRepository.AddAsync(controle);
             await _auditLogger.LogAsync(
                         AuditAction.ControleCreated,
@@ -94,7 +94,7 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task<ControleResponseDto> UpdateControleAsync(Guid id, ControleRequestDto request, Guid requesterId)
         {
-            var existing = await _controleRepository.GetByIdAsync(id);
+            Controle? existing = await _controleRepository.GetByIdAsync(id);
             if (existing is null)
                 throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
@@ -121,7 +121,7 @@ namespace ERP.AuthService.Application.Services
         /// </summary>
         public async Task DeleteByIdAsync(Guid id, Guid requesterId)
         {
-            var existing = await _controleRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
+            Controle existing = await _controleRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Controle with ID '{id}' was not found.");
 
             await _controleRepository.DeleteAsync(id);
 

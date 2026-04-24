@@ -22,8 +22,8 @@ namespace ERP.AuthService.Application.Services
         public async Task<PagedResultDto<RoleResponseDto>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _roleRepository.GetAllPagedAsync(pageNumber, pageSize);
-            var mapped = items.Select(MapToDto).ToList();
+            (List<Role>? items, int totalCount) = await _roleRepository.GetAllPagedAsync(pageNumber, pageSize);
+            List<RoleResponseDto> mapped = items.Select(MapToDto).ToList();
             return new PagedResultDto<RoleResponseDto>(
                 mapped,
                 totalCount,
@@ -35,23 +35,23 @@ namespace ERP.AuthService.Application.Services
 
         public async Task<List<RoleResponseDto>> GetAllAsync()
         {
-            var items = await _roleRepository.GetAllAsync();
+            List<Role> items = await _roleRepository.GetAllAsync();
             return items.Select(MapToDto).ToList();
         }
 
         public async Task<RoleResponseDto> GetByIdAsync(Guid id)
         {
-            var role = await _roleRepository.GetByIdAsync(id)
+            Role role = await _roleRepository.GetByIdAsync(id)
                        ?? throw new RoleNotFoundException(id);
             return new RoleResponseDto(role.Id, role.Libelle);
         }
 
         public async Task<RoleResponseDto> CreateRole(RoleCreateDto dto, Guid performedById)
         {
-            var existing = await _roleRepository.GetByLibelleAsync(dto.Libelle);
+            Role? existing = await _roleRepository.GetByLibelleAsync(dto.Libelle);
             if (existing is not null)
                 throw new RoleAlreadyExistException(dto.Libelle);
-            var newRole = new Role(dto.Libelle);
+            Role newRole = new Role(dto.Libelle);
 
             await _roleRepository.AddAsync(newRole);
 
@@ -65,8 +65,8 @@ namespace ERP.AuthService.Application.Services
         }
         public async Task<RoleResponseDto> UpdateAsync(Guid id, RoleUpdateDto dto, Guid performedById)
         {
-            var role = await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
-            var before = role.Libelle.ToString();
+            Role role = await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
+            string before = role.Libelle.ToString();
 
             role.UpdateRole(dto.Libelle);
             await _roleRepository.UpdateAsync(role);
@@ -87,7 +87,7 @@ namespace ERP.AuthService.Application.Services
 
         public async Task DeleteAsync(Guid id, Guid performedById)
         {
-            var role = await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
+            Role role = await _roleRepository.GetByIdAsync(id) ?? throw new RoleNotFoundException(id);
             await _roleRepository.DeleteAsync(id);
             await _auditLogger.LogAsync(
                     AuditAction.RoleDeleted,
