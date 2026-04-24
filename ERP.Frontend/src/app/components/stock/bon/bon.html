@@ -107,7 +107,13 @@
 
       <button class="btn-add"
               *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY) && isList()"
-              (click)="openCreate()">
+              (click)="openCreate()"
+              [disabled]="
+                (activeBonType === 'entre' && fournisseurs.length === 0) ||
+                ((activeBonType === 'retour' || activeBonType === 'sortie') && articles.length === 0)
+              "
+              [matTooltip]="getAddButtonTooltip()"
+        >
         {{ 'STOCK.BONS.NEW_BON' | translate }}
       </button>
     </div>
@@ -381,20 +387,13 @@
             </thead>
             <tbody>
               <tr *ngFor="let l of getLignes(selectedBon)">
-                <td class="td--mono td--truncate">{{ l.articleId }}</td>
+                <td class="td--mono td--truncate clickable" [routerLink]="['/articles', l.articleId]">{{ l.articleId }}</td>
                 <td>{{ l.quantity }}</td>
                 <td class="td--price">{{ l.price | number:'1.2-2' }}</td>
                 <td class="td--price">{{ l.total | number:'1.2-2' }}</td>
                 <td *ngIf="activeBonType === 'retour'">{{ l.remarque ?? '—' }}</td>
                 <td *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK) && isEdit()"
                     class="td--actions">
-                  <button class="icon-btn icon-btn--edit" [title]="'STOCK.BONS.EDIT_LIGNE' | translate"
-                          (click)="openEditLigne(selectedBon, l)">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
                   <button class="icon-btn icon-btn--delete" [title]="'STOCK.BONS.REMOVE_LIGNE' | translate"
                           (click)="removeLigne(selectedBon, l.id)">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -405,7 +404,7 @@
                 </td>
               </tr>
               <tr *ngIf="getLignes(selectedBon).length === 0">
-                <td colspan="6" class="td--empty">{{ 'STOCK.BONS.NO_LIGNES' | translate }}</td>
+                <td colspan="5" class="td--empty">{{ 'STOCK.BONS.NO_LIGNES' | translate }}</td>
               </tr>
             </tbody>
             <tfoot *ngIf="getLignes(selectedBon).length > 0">
@@ -435,7 +434,7 @@
 
   <!-- ===================== FORM PANEL (create / edit) ===================== -->
   <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY))
-                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">
+                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">    
     <div class="panel__header">
       <h2 class="panel__title">
         {{ isCreate() ? ('STOCK.BONS.NEW_BON' | translate) : ('STOCK.BONS.EDIT_BON' | translate) }}
@@ -446,6 +445,17 @@
 
     <div class="panel__body">
 
+      <ng-container *ngIf="activeBonType === 'retour' && isCreate()">
+        <span class="form__hint" *ngIf="!headerForm.get('sourceId')?.value">
+          {{ 'STOCK.BONS.FORM.SOURCE_REQUIRED' | translate }}
+        </span>
+        <span class="form__hint" *ngIf="headerForm.get('sourceId')?.value && headerForm.get('motif')?.invalid">
+          {{ 'STOCK.BONS.FORM.MOTIF_REQUIRED' | translate }}
+        </span>
+        <span class="form__hint" *ngIf="headerForm.get('sourceId')?.value && headerForm.get('motif')?.valid && pendingLignes.length === 0">
+          {{ 'STOCK.BONS.FORM.LIGNES_REQUIRED' | translate }}
+        </span>
+      </ng-container>
       <!-- ── SECTION 1: Bon header fields ──────────────────────────────────── -->
       <form [formGroup]="headerForm" (ngSubmit)="submit()" class="form" id="bon-header-form">
 
@@ -456,13 +466,75 @@
               <label>{{ 'STOCK.BONS.FORM.FOURNISSEUR' | translate }}</label>
               <mat-icon>local_shipping</mat-icon>
             </div>
-            <select class="form__input form__select" formControlName="fournisseurId"
-                    [class.form__input--error]="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched">
-              <option value="" disabled selected>{{ 'STOCK.BONS.FORM.SELECT_FOURNISSEUR' | translate }}</option>
-              <option *ngFor="let f of filteredFournisseurs" [value]="f.id" [selected]="f.id === headerForm.get('fournisseurId')?.value">
-                {{ f.name }} — {{ f.taxNumber }}
-              </option>
-            </select>
+
+            <div class="client-dropdown" [class.client-dropdown--open]="fournisseurDropdownOpen">
+              <!-- Trigger -->
+              <button type="button"
+                      class="form__input client-dropdown__trigger"
+                      [class.form__input--error]="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched"
+                      (click)="toggleFournisseurDropdown()">
+                <span [class.client-dropdown__placeholder]="!selectedFournisseurLabel">
+                  {{ selectedFournisseurLabel || ('STOCK.BONS.FORM.SELECT_FOURNISSEUR' | translate) }}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    [style.transform]="fournisseurDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'"
+                    style="transition: transform 0.2s; flex-shrink:0;">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              <!-- Panel -->
+              <div class="client-dropdown__panel" *ngIf="fournisseurDropdownOpen">
+                <div class="client-dropdown__search">
+                  <input type="text"
+                        class="client-dropdown__search-input"
+                        [placeholder]="'COMMON.SEARCH' | translate"
+                        [ngModel]="fournisseurSearchQuery"
+                        (ngModelChange)="onFournisseurSearch($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        (click)="$event.stopPropagation()"
+                        autofocus />
+                </div>
+
+                <ul class="client-dropdown__list">
+                  <li *ngFor="let f of fournisseurs"
+                      class="client-dropdown__item"
+                      [class.client-dropdown__item--selected]="headerForm.get('fournisseurId')?.value === f.id"
+                      (click)="selectFournisseur(f)">
+                    <span class="client-dropdown__name">{{ f.name }}</span>
+                    <span class="client-dropdown__email">{{ f.taxNumber }}</span>
+                  </li>
+                  <li *ngIf="fournisseursLoading" class="client-dropdown__loading">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" class="spin">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  </li>
+                  <li *ngIf="!fournisseursLoading && fournisseurs.length === 0" class="client-dropdown__empty">
+                    {{ 'COMMON.NO_RESULTS' | translate }}
+                  </li>
+                </ul>
+
+                <div class="client-dropdown__load-more" *ngIf="hasMoreFournisseurs && !fournisseursLoading">
+                  <button type="button"
+                          class="client-dropdown__load-more-btn"
+                          (click)="loadMoreFournisseurs(); $event.stopPropagation()">
+                    {{ 'COMMON.LOAD_MORE' | translate }}
+                    <span class="client-dropdown__load-more-count">
+                      ({{ fournisseurs.length }} / {{ fournisseurTotalCount }})
+                    </span>
+                  </button>
+                </div>
+
+                <div class="client-dropdown__footer" *ngIf="!hasMoreFournisseurs && fournisseurTotalCount > 0">
+                  {{ fournisseurs.length }} / {{ fournisseurTotalCount }}
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" formControlName="fournisseurId" />
+            <div *ngIf="fournisseurDropdownOpen" class="client-dropdown__backdrop" (click)="fournisseurDropdownOpen = false"></div>
+
             <span class="form__error"
                   *ngIf="headerForm.get('fournisseurId')?.invalid && headerForm.get('fournisseurId')?.touched">
               {{ 'VALIDATION.REQUIRED' | translate }}
@@ -475,13 +547,85 @@
               <label>{{ 'STOCK.BONS.FORM.CLIENT' | translate }}</label>
               <mat-icon>person</mat-icon>
             </div>
-            <select class="form__input form__select" formControlName="clientId"
-                    [class.form__input--error]="headerForm.get('clientId')?.invalid && headerForm.get('clientId')?.touched">
-              <option value="" selected disabled>{{ 'STOCK.BONS.FORM.SELECT_CLIENT' | translate }}</option>
-              <option *ngFor="let client of filteredClients" [value]="client.id">
-                {{ client.name }} — {{ client.email }}
-              </option>
-            </select>
+
+            <div class="client-dropdown" [class.client-dropdown--open]="clientDropdownOpen">
+
+              <!-- Trigger -->
+              <button type="button"
+                      class="form__input client-dropdown__trigger"
+                      [class.form__input--error]="headerForm.get('clientId')?.invalid && headerForm.get('clientId')?.touched"
+                      (click)="toggleClientDropdown()">
+                <span [class.client-dropdown__placeholder]="!selectedClientLabel">
+                  {{ selectedClientLabel || ('STOCK.BONS.FORM.SELECT_CLIENT' | translate) }}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    [style.transform]="clientDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'"
+                    style="transition: transform 0.2s; flex-shrink:0;">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              <!-- Panel -->
+              <div class="client-dropdown__panel" *ngIf="clientDropdownOpen">
+
+                <!-- Search -->
+                <div class="client-dropdown__search">
+                  <input type="text"
+                        class="client-dropdown__search-input"
+                        [placeholder]="'COMMON.SEARCH' | translate"
+                        [ngModel]="clientSearchQuery"
+                        (ngModelChange)="onClientSearch($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        (click)="$event.stopPropagation()"
+                        autofocus />
+                </div>
+
+                <!-- List -->
+                <ul class="client-dropdown__list">
+                  <li *ngFor="let c of clients"
+                      class="client-dropdown__item"
+                      [class.client-dropdown__item--selected]="headerForm.get('clientId')?.value === c.id"
+                      (click)="selectClient(c)">
+                    <span class="client-dropdown__name">{{ c.name }}</span>
+                    <span class="client-dropdown__email">{{ c.email }}</span>
+                  </li>
+
+                  <li *ngIf="clientsLoading" class="client-dropdown__loading">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" class="spin">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  </li>
+                  <li *ngIf="!clientsLoading && clients.length === 0" class="client-dropdown__empty">
+                    {{ 'COMMON.NO_RESULTS' | translate }}
+                  </li>
+                </ul>
+
+                <!-- Load more -->
+                <div class="client-dropdown__load-more" *ngIf="hasMoreClients && !clientsLoading">
+                  <button type="button"
+                          class="client-dropdown__load-more-btn"
+                          (click)="loadMoreClients(); $event.stopPropagation()">
+                    {{ 'COMMON.LOAD_MORE' | translate }}
+                    <span class="client-dropdown__load-more-count">
+                      ({{ clients.length }} / {{ clientTotalCount }})
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Footer when all loaded -->
+                <div class="client-dropdown__footer" *ngIf="!hasMoreClients && clientTotalCount > 0">
+                  {{ clients.length }} / {{ clientTotalCount }}
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" formControlName="clientId" />
+            <div *ngIf="clientDropdownOpen"
+                class="client-dropdown__backdrop"
+                (click)="clientDropdownOpen = false">
+            </div>
+
             <span class="form__error"
                   *ngIf="headerForm.get('clientId')?.invalid && headerForm.get('clientId')?.touched">
               {{ 'VALIDATION.REQUIRED' | translate }}
@@ -529,7 +673,6 @@
             <input class="form__input" type="text" formControlName="observation" [placeholder]="'STOCK.BONS.FORM.OBSERVATION_PLACEHOLDER' | translate" />
           </div>
         </div>
-
       </form>
 
       <!-- ── SECTION 2: Lignes ───────────────────────────────────────────── -->
@@ -682,17 +825,76 @@
         </div>
 
         <div class="inline-ligne-form__body">
-          <!-- Article -->
+          <!-- Article dropdown (inside inline-ligne-form) -->
           <div class="form__field">
             <label class="form__label">{{ 'STOCK.BONS.FORM.ARTICLE' | translate }}</label>
-            <select class="form__input form__select" formControlName="articleId"
-                    (change)="onArticleSelected(ligneForm.get('articleId')!.value)"
-                    [class.form__input--error]="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
-              <option value="" selected disabled>{{ 'STOCK.BONS.FORM.SELECT_ARTICLE' | translate }}</option>
-              <option *ngFor="let article of articles" [value]="article.id">
-                {{ article.codeRef }} — {{ article.libelle }} ({{ article.prix | number:'1.2-2' }})
-              </option>
-            </select>
+
+            <div class="client-dropdown" [class.client-dropdown--open]="articleDropdownOpen">
+              <button type="button"
+                      class="form__input client-dropdown__trigger"
+                      [class.form__input--error]="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched"
+                      (click)="toggleArticleDropdown()">
+                <span [class.client-dropdown__placeholder]="!selectedArticleLabel">
+                  {{ selectedArticleLabel || ('STOCK.BONS.FORM.SELECT_ARTICLE' | translate) }}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    [style.transform]="articleDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'"
+                    style="transition: transform 0.2s; flex-shrink:0;">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              <div class="client-dropdown__panel" *ngIf="articleDropdownOpen">
+                <div class="client-dropdown__search">
+                  <input type="text"
+                        class="client-dropdown__search-input"
+                        [placeholder]="'COMMON.SEARCH' | translate"
+                        [ngModel]="articleSearchQuery"
+                        (ngModelChange)="onArticleSearch($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        (click)="$event.stopPropagation()"
+                        autofocus />
+                </div>
+
+                <ul class="client-dropdown__list">
+                  <li *ngFor="let a of articleDropdownItems"
+                      class="client-dropdown__item"
+                      [class.client-dropdown__item--selected]="ligneForm.get('articleId')?.value === a.id"
+                      (click)="selectArticleForLigne(a)">
+                    <span class="client-dropdown__name">{{ a.codeRef }} — {{ a.libelle }}</span>
+                    <span class="client-dropdown__email">{{ a.prix | number:'1.2-2' }} €</span>
+                  </li>
+                  <li *ngIf="articlesLoading" class="client-dropdown__loading">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" class="spin">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  </li>
+                  <li *ngIf="!articlesLoading && articleDropdownItems.length === 0" class="client-dropdown__empty">
+                    {{ 'COMMON.NO_RESULTS' | translate }}
+                  </li>
+                </ul>
+
+                <div class="client-dropdown__load-more" *ngIf="hasMoreArticles && !articlesLoading">
+                  <button type="button"
+                          class="client-dropdown__load-more-btn"
+                          (click)="loadMoreArticles(); $event.stopPropagation()">
+                    {{ 'COMMON.LOAD_MORE' | translate }}
+                    <span class="client-dropdown__load-more-count">
+                      ({{ articleDropdownItems.length }} / {{ articleTotalCount }})
+                    </span>
+                  </button>
+                </div>
+
+                <div class="client-dropdown__footer" *ngIf="!hasMoreArticles && articleTotalCount > 0">
+                  {{ articleDropdownItems.length }} / {{ articleTotalCount }}
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" formControlName="articleId" />
+            <div *ngIf="articleDropdownOpen" class="client-dropdown__backdrop" (click)="articleDropdownOpen = false"></div>
+
             <span class="form__error"
                   *ngIf="ligneForm.get('articleId')?.invalid && ligneForm.get('articleId')?.touched">
               {{ 'VALIDATION.REQUIRED' | translate }}

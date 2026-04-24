@@ -1,13 +1,11 @@
 @use 'shared' as *;
 
-// ── Add these rules to your existing bon.scss ─────────────────────────────
+// ============================================================
+// Bon component – only styles NOT already in shared
+// ============================================================
 
-// Section divider hint text (ligne count indicator)
+// Extend shared .section-divider with additional elements
 .section-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
   &__hint {
     font-size: 0.75rem;
     color: $text-mid;
@@ -20,7 +18,7 @@
   }
 }
 
-// Empty state inside the form panel
+// Empty lignes state inside form panel
 .lignes-empty {
   display: flex;
   flex-direction: column;
@@ -41,14 +39,14 @@
   }
 }
 
-// Row that holds the "+ Add Ligne" button below the table
+// Row holding the "+ Add Ligne" button
 .lignes-add-row {
   display: flex;
   justify-content: flex-start;
   padding: 0.75rem 0 0.25rem;
 }
 
-// Outline variant of btn-add (less prominent trigger)
+// Outline variant of .btn-add (shared .btn-add exists)
 .btn-add--outline {
   background: transparent !important;
   border: 1.5px dashed $blue !important;
@@ -59,13 +57,13 @@
   }
 }
 
-// Inline ligne form (embedded inside the form panel, not a modal)
+// Inline ligne form (embedded inside the form panel)
 .inline-ligne-form {
   margin-top: 0.75rem;
   border: 1px solid $border;
   border-radius: 12px;
   background: $bg-card;
-  overflow: hidden;
+  overflow: visible;
 
   &__header {
     display: flex;
@@ -87,8 +85,11 @@
   &__body {
     padding: 1rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 0.85rem;
+  .form__field:last-child:nth-child(4) {
+    grid-column: 1 / -1;
+  }
   }
 
   &__actions {
@@ -101,7 +102,7 @@
   }
 }
 
-// Final form actions row pinned at the bottom of the form panel
+// Panel variant for form actions (shared has .form__actions)
 .form__actions--panel {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -111,7 +112,7 @@
   gap: 1rem;
 }
 
-// Table styling for inner tables (lignes table)
+// Inner tables (lignes table) – specific to bon component
 .table--inner {
   background: $bg-card-hi;
   border-radius: 12px;
@@ -195,151 +196,12 @@
   }
 }
 
-// Button variants (already defined in shared, but adding specific styles)
-.btn-add {
-  background: $blue;
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover:not(:disabled) {
-    background: #6b94ff;
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn-secondary {
-  background: transparent;
-  border: 1px solid $border;
-  color: $text-mid;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: $bg-card-hi;
-    border-color: $blue;
-    color: $text-hi;
-  }
-}
-
-// Form field styling to match theme
-.form__field {
-  margin-bottom: 1rem;
-}
-
-.form__label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: $text-mid;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.form__optional {
-  font-weight: 400;
-  color: $text-lo;
-  font-size: 0.7rem;
-}
-
-.form__input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: $bg-page;
-  border: 1px solid $border;
-  border-radius: 8px;
-  color: $text-hi;
-  font-size: 0.85rem;
-  transition: all 0.15s;
-
-  &:focus {
-    outline: none;
-    border-color: $blue;
-    box-shadow: 0 0 0 2px $blue-bg;
-  }
-
-  &--error {
-    border-color: $red;
-
-    &:focus {
-      box-shadow: 0 0 0 2px $red-bg;
-    }
-  }
-}
-
-.form__select {
-  cursor: pointer;
-
-  option {
-    background: $bg-page;
-    color: $text-hi;
-  }
-}
-
-.form__error {
-  display: block;
-  font-size: 0.7rem;
-  color: $red;
-  margin-top: 0.25rem;
-}
-
-// Table scroll wrapper
-.table-scroll-wrap {
-  overflow-x: auto;
-  margin: 1rem 0;
-
-  &::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: $bg-page;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: $border-hi;
-    border-radius: 3px;
-
-    &:hover {
-      background: $blue;
-    }
-  }
-}
-
-// Table card styling - using shared variables
-.table-card {
-  background: $bg-card;
-  border-radius: 12px;
-  border: 1px solid $border;
-  overflow: hidden;
-  margin-bottom: 1rem;
-}
-
-// Responsive adjustments
-@media (max-width: 768px) {
-  .inline-ligne-form__body {
-    grid-template-columns: 1fr;
-  }
-
-  .table--inner {
-    .td--truncate {
-      max-width: 120px;
-    }
+.form__hint {
+  font-size: 0.78rem;
+  color: $amber;
+  align-self: self-start;
+  
+  &::before {
+    content: '⚠ ';
   }
 }

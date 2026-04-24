@@ -1,4 +1,4 @@
-import { FournisseurService } from './../../../services/fournisseur.service';
+import { BonEntreResponse, BonSortieResponse } from './../../../services/stock.service';
 import {
   Component, OnInit, ChangeDetectorRef, ViewEncapsulation,
   DestroyRef, inject, signal, computed,
@@ -8,18 +8,14 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PRIVILEGES, AuthService } from '../../../services/auth/auth.service';
 import {
-  StockService,
-  BonEntreResponse, CreateBonEntreRequest, UpdateBonEntreRequest,
-  BonSortieResponse, CreateBonSortieRequest, UpdateBonSortieRequest,
+  StockService, CreateBonEntreRequest, UpdateBonEntreRequest, CreateBonSortieRequest, UpdateBonSortieRequest,
   BonRetourResponse, CreateBonRetourRequest, UpdateBonRetourRequest,
   LigneResponseDto, LigneRequestDto, RetourSourceType, BonStatsDto,
   PagedResult,
 } from '../../../services/stock.service';
 
-/** A single record that can be any of the three bon response shapes. */
 export type BonRecord = BonEntreResponse | BonSortieResponse | BonRetourResponse;
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpError } from '../../../interfaces/ErrorDto';
@@ -27,10 +23,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from '../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaginationComponent } from '../../pagination/pagination';
-import { Observable, switchMap, EMPTY, forkJoin, map, catchError, of } from 'rxjs';
+import { Observable, switchMap, EMPTY, forkJoin, map, catchError, of, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { RouterLink } from "@angular/router";
 import { ClientResponseDto, ClientsService } from '../../../services/clients/clients.service';
-import { ArticleResponseDto, ArticleService } from '../../../services/articles/articles.service';
+import { ArticleResponseDto } from '../../../services/articles/articles.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FournisseurResponse } from '../../../services/fournisseur.service';
 
@@ -38,17 +34,15 @@ export type BonType = 'entre' | 'sortie' | 'retour';
 
 type BonApi = {
   list:         (p: number, s: number) => Observable<PagedResult<BonRecord>>;
-  stats:        () => Observable<BonStatsDto>;
   delete:       (id: string) => Observable<any>;
 };
 
 type ViewMode = 'list' | 'create' | 'edit' | 'view';
 
-/** A ligne that exists only in memory during create mode (no id yet). */
 export interface PendingLigne {
-  _localId:  string;        // UUID-like local key for trackBy
+  _localId:  string;
   articleId: string;
-  articleLabel: string;     // display only
+  articleLabel: string;
   quantity:  number;
   price:     number;
   remarque:  string | null;
@@ -60,7 +54,7 @@ export interface PendingLigne {
   standalone: true,
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
-    MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
+    MatIconModule, MatButtonModule, MatTooltipModule,
     PaginationComponent,
     RouterLink,
     TranslatePipe
@@ -75,10 +69,8 @@ export class BonsComponent implements OnInit {
   readonly PRIVILEGES   = PRIVILEGES;
   readonly RetourSource = RetourSourceType;
 
-  // ── Bon type tab ───────────────────────────────────────────────────────────
   activeBonType: BonType = 'entre';
 
-  // ── Table ──────────────────────────────────────────────────────────────────
   dataSource = new MatTableDataSource<BonRecord>([]);
   pageNumber = signal(1);
   pageSize   = signal(10);
@@ -89,75 +81,76 @@ export class BonsComponent implements OnInit {
   sortDirection: 'asc' | 'desc' = 'asc';
   searchQuery   = '';
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  stats: BonStatsDto | null = null;
-
-  // ADD:
   private masterArticles: ArticleResponseDto[] = [];
-  articles: ArticleResponseDto[] = []; // already exists, now driven by sync
-  private masterStockMap = new Map<string, number>();   // articleId → warehouse stock (sortie)
-  private masterRetourMap = new Map<string, number>();  //
+  articles: ArticleResponseDto[] = [];
+  private masterStockMap = new Map<string, number>();
+  private masterRetourMap = new Map<string, number>();
 
-  // ── View mode ──────────────────────────────────────────────────────────────
   viewMode = signal<ViewMode>('list');
-
-  isList        = computed(() => this.viewMode() === 'list');
-  isCreate      = computed(() => this.viewMode() === 'create');
-  isEdit        = computed(() => this.viewMode() === 'edit');
-  isView        = computed(() => this.viewMode() === 'view');
-
+  isList   = computed(() => this.viewMode() === 'list');
+  isCreate = computed(() => this.viewMode() === 'create');
+  isEdit   = computed(() => this.viewMode() === 'edit');
+  isView   = computed(() => this.viewMode() === 'view');
   private previousMode: ViewMode = 'list';
 
-  // ── Alerts ─────────────────────────────────────────────────────────────────
   errors: string[] = [];
   successMessage: string | null = null;
 
-  // ── Selection ──────────────────────────────────────────────────────────────
   selectedBon: BonRecord | null = null;
 
-  // ── Source bon list (for retour form select) ──────────────────────────────
   allSourceBons: { id: string; numero: string; sourceType: RetourSourceType }[] = [];
 
-  // ── Date filter ────────────────────────────────────────────────────────────
   dateFrom: string | null = null;
   dateTo: string | null = null;
 
-  // ── Forms ──────────────────────────────────────────────────────────────────
   headerForm: FormGroup;
   ligneForm:  FormGroup;
 
-  // ── Inline ligne editing inside form panel ─────────────────────────────────
-  /** Lignes pending save during CREATE mode (no bon id yet). */
   pendingLignes: PendingLigne[] = [];
-  /** Which pending ligne (by _localId) or saved ligne (by id) is being inline-edited. */
   inlineLigneLocalId: string | null = null;
-  /** Whether the inline ligne form is open inside the form panel. */
   inlineLigneOpen = false;
   isInlineLigneSubmitting = false;
 
-  // ── Ligne modal (kept for VIEW panel only) ─────────────────────────────────
-  editingLigneId: string | null = null;
-  isLigneSubmitting = false;
-  
-  articleSearchQuery = '';
-
-  fournisseurs: FournisseurResponse[] = [];
-  filteredFournisseurs: FournisseurResponse[] = [];
-  fournisseurSearchQuery = '';
-
   clients: ClientResponseDto[] = [];
-  filteredClients: ClientResponseDto[] = [];
+  clientPage = 1;
+  clientPageSize = 10;
+  clientTotalCount = 0;
   clientSearchQuery = '';
+  clientsLoading = false;
+  hasMoreClients = true;
+  clientDropdownOpen = false;
+  selectedClientLabel = '';
+  private clientSearchSubject$ = new Subject<string>();
+  
+  fournisseurDropdownOpen = false;
+  fournisseurs: FournisseurResponse[] = [];
+  fournisseurPage = 1;
+  fournisseurPageSize = 10;
+  fournisseurTotalCount = 0;
+  fournisseurSearchQuery = '';
+  fournisseursLoading = false;
+  hasMoreFournisseurs = true;
+  selectedFournisseurLabel = '';
+  private fournisseurSearchSubject$ = new Subject<string>();
+
+  articleDropdownOpen = false;
+  articleDropdownItems: ArticleResponseDto[] = [];
+  articlePage = 1;
+  articlePageSize = 10;
+  articleTotalCount = 0;
+  articleSearchQuery = '';
+  articlesLoading = false;
+  hasMoreArticles = true;
+  selectedArticleLabel = '';
+  private articleSearchSubject$ = new Subject<string>();
 
   constructor(
     private stock: StockService,
     public authService: AuthService,
     public clientService: ClientsService,
-    private articleService: ArticleService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog,
-    private fournisseurService: FournisseurService
+    private dialog: MatDialog
   ) {
     this.headerForm = this.buildHeaderForm();
     this.ligneForm  = this.buildLigneForm();
@@ -167,9 +160,22 @@ export class BonsComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) =>
       this.flattenObject(data).includes(filter);
     this.reload();
+    this.initClientSearch();
+    this.initFournisseurSearch();
+    this.initArticleSearch();
   }
 
-  // ── Form builders ──────────────────────────────────────────────────────────
+  private initClientSearch(): void {
+    this.clientSearchSubject$
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(query => {
+        this.clientSearchQuery = query;
+        this.clientPage = 1;
+        this.hasMoreClients = true;
+        this.loadClients(1, false);
+      });
+  }
+
   private buildHeaderForm(): FormGroup {
     return this.fb.group({
       observation:   [''],
@@ -195,7 +201,6 @@ export class BonsComponent implements OnInit {
     ['fournisseurId', 'clientId', 'sourceId', 'motif'].forEach(ctrl =>
       f.get(ctrl)?.clearValidators()
     );
-
     if (this.activeBonType === 'entre') {
       f.get('fournisseurId')?.setValidators(Validators.required);
     } else if (this.activeBonType === 'sortie') {
@@ -204,13 +209,11 @@ export class BonsComponent implements OnInit {
       f.get('sourceId')?.setValidators(Validators.required);
       f.get('motif')?.setValidators(Validators.required);
     }
-
     ['fournisseurId', 'clientId', 'sourceId', 'motif'].forEach(ctrl =>
       f.get(ctrl)?.updateValueAndValidity()
     );
   }
 
-  // ── Sorting / filtering ────────────────────────────────────────────────────
   sortBy(column: string): void {
     this.sortDirection = this.sortColumn === column && this.sortDirection === 'asc' ? 'desc' : 'asc';
     this.sortColumn = column;
@@ -236,61 +239,52 @@ export class BonsComponent implements OnInit {
 
   applyDateFilter(): void {
     if (!this.dateFrom || !this.dateTo) return;
-
     if (this.dateFrom > this.dateTo) {
       [this.dateFrom, this.dateTo] = [this.dateTo, this.dateFrom];
     }
     const from = new Date(this.dateFrom);
     const to = new Date(this.dateTo);
-
     let request$: Observable<PagedResult<BonRecord>>;
-
     switch (this.activeBonType) {
       case 'entre':
         request$ = this.stock.getBonEntresByDateRange(from, to, this.pageNumber(), this.pageSize());
         break;
       case 'sortie':
-        request$ = this.stock.getBonSortiesByDateRange(from, to,this.pageNumber(), this.pageSize());
+        request$ = this.stock.getBonSortiesByDateRange(from, to, this.pageNumber(), this.pageSize());
         break;
       case 'retour':
         request$ = this.stock.getBonRetoursByDateRange(from, to, this.pageNumber(), this.pageSize());
         break;
     }
-
-    request$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.dataSource.data = res.items;
-          this.totalCount = res.totalCount;
-          this.pageNumber.set(1);
-          this.cdr.markForCheck();
-        },
-        error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.DATE_FILTER_FAILED'))
-      });
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.items;
+        this.totalCount = res.totalCount;
+        this.pageNumber.set(1);
+        this.cdr.markForCheck();
+      },
+      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.DATE_FILTER_FAILED'))
+    });
   }
 
-  clearDateFilter(): void { this.dateFrom = ''; this.dateTo = ''; this.pageNumber.set(1); this.load(); }
-
-  // ── Type switching ─────────────────────────────────────────────────────────
-  switchBonType(type: BonType): void {
-    this.activeBonType = type;
+  clearDateFilter(): void {
+    this.dateFrom = '';
+    this.dateTo = '';
     this.pageNumber.set(1);
-    this.dateFrom    = '';
-    this.dateTo      = '';
-    this.searchQuery = '';
-    this.setViewMode('list');
     this.reload();
   }
 
-  // ── Card clicks ────────────────────────────────────────────────────────────
-  onActiveCardClick(): void {
-    if (this.isList()) return;
+  switchBonType(type: BonType): void {
+    this.activeBonType = type;
+    this.pageNumber.set(1);
+    this.dateFrom = '';
+    this.dateTo = '';
+    this.searchQuery = '';
     this.setViewMode('list');
-    this.load();
+    this.masterRetourMap.clear();
+    this.reload();
   }
 
-  // ── Pagination handler ─────────────────────────────────────────────────────
   onPageChange(page: number): void {
     this.pageNumber.set(page);
     this.reload();
@@ -302,48 +296,93 @@ export class BonsComponent implements OnInit {
     this.reload();
   }
 
-  // ── Data loading ───────────────────────────────────────────────────────────
-  load(): void {
-    this.bonApi[this.activeBonType]
-      .list(this.pageNumber(), this.pageSize())
+  reload(): void {
+    const list$ = this.bonApi[this.activeBonType].list(this.pageNumber(), this.pageSize());
+    const articles$ = this.activeBonType === 'sortie'
+      ? forkJoin({
+          arts: this.stock.getArticlesPaged(1, 20),
+          stock: this.stock.getStockArticles(),
+        })
+      : this.stock.getArticlesPaged(1, 20).pipe(map(arts => ({ arts, stock: null })));
+
+    let fournisseurs$: Observable<{ items: FournisseurResponse[]; totalCount: number } | null> = of(null);
+    let sourceBons$: Observable<any> = of(null);
+
+    if (this.activeBonType === 'entre') {
+      fournisseurs$ = this.stock.getFournisseursPaged(1, 1000).pipe(
+        map(res => ({ items: res.items, totalCount: res.totalCount }))
+      );
+    } else if (this.activeBonType === 'retour') {
+      sourceBons$ = forkJoin({
+        entres: this.stock.getBonEntres(1, 1000),
+        sorties: this.stock.getBonSorties(1, 1000),
+      });
+    }
+
+    forkJoin({ list: list$, articles: articles$, fournisseurs: fournisseurs$, sourceBons: sourceBons$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (res: PagedResult<BonRecord>) => {
-          this.dataSource.data = res.items;
-          this.totalCount      = res.totalCount;
+        next: ({ list, articles, fournisseurs, sourceBons }) => {
+          this.dataSource.data = list.items;
+          this.totalCount = list.totalCount;
+
+          this.masterArticles = articles.arts.items.filter(a => !a.isDeleted);
+          if (articles.stock) {
+            this.masterStockMap.clear();
+            articles.stock.inStock.forEach((s: any) => {
+              this.masterStockMap.set(s.articleId ?? s.id, s.quantity);
+            });
+          }
+
+          if (this.activeBonType === 'entre' && fournisseurs && fournisseurs.items) {
+            this.fournisseurs = fournisseurs.items.filter(f => !f.isDeleted && !f.isBlocked);
+            if (this.isList() && this.fournisseurs.length > 0) {
+              this.headerForm.patchValue({ fournisseurId: this.fournisseurs[0].id }, { emitEvent: false });
+            }
+          }
+
+          if (sourceBons) {
+            this.allSourceBons = [
+              ...sourceBons.entres.items.map((b: BonEntreResponse) => ({
+                id: b.id,
+                numero: b.numero,
+                sourceType: RetourSourceType.BonEntre,
+              })),
+              ...sourceBons.sorties.items.map((b: BonSortieResponse) => ({
+                id: b.id,
+                numero: b.numero,
+                sourceType: RetourSourceType.BonSortie,
+              })),
+            ].sort((a, b) => a.numero.localeCompare(b.numero));
+            
+            if (this.isList() && this.allSourceBons.length > 0) {
+              this.headerForm.patchValue(
+                { sourceId: this.allSourceBons[0].id, sourceType: this.allSourceBons[0].sourceType },
+                { emitEvent: false }
+              );
+            }
+          }
+
+          this.syncArticles();
           this.cdr.markForCheck();
         },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_FAILED')),
+        error: (err) => {
+          this.flash(
+            'error',
+            (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_FAILED')
+          );
+        },
       });
   }
 
-  loadStats(): void {
-    this.bonApi[this.activeBonType]
-      .stats()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => { this.stats = res; this.cdr.markForCheck(); },
-        error: (err) => this.flash('error', (err.error as HttpError)?.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_STATS_FAILED')),
-      });
-  }
-
-  reload(): void {
-    this.load();
-    this.loadStats();
-  }
-
-  // ── Pagination helpers ─────────────────────────────────────────────────────
   get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize()); }
 
-  // ── Stats getters ──────────────────────────────────────────────────────────
-  get activeCount():  number { return this.sortedData.length  ?? 0; }
+  get activeCount(): number { return this.sortedData.length ?? 0; }
 
-  /** Computed total of pending lignes during create mode. */
   get pendingTotal(): number {
     return this.pendingLignes.reduce((s, l) => s + l.total, 0);
   }
 
-  // ── Source bons loader (retour form) ──────────────────────────────────────
   loadSourceBons(): void {
     forkJoin({
       entres:  this.stock.getBonEntres(1, 1000),
@@ -369,39 +408,36 @@ export class BonsComponent implements OnInit {
   }
 
   loadArticles(): void {
-    if (this.activeBonType === 'sortie') {
-      forkJoin({
-        arts: this.articleService.getAll(1, 1000),
-        stock: this.stock.getStockArticles(),
-      }).subscribe({
+    const arts$ = this.stock.getArticlesPaged(1, 1000);
+    const stock$ = this.activeBonType === 'sortie'
+      ? this.stock.getStockArticles()
+      : of(null);
+
+    forkJoin({ arts: arts$, stock: stock$ })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: ({ arts, stock }) => {
-          this.masterArticles = arts.items.filter(a => !a.isDeleted);
           this.masterStockMap.clear();
-          stock.inStock.forEach((s: any) => {
-            this.masterStockMap.set(s.articleId ?? s.id, s.quantity);
-          });
+
+          if (stock) {
+            stock.inStock.forEach((s: any) => {
+              this.masterStockMap.set(s.articleId ?? s.id, s.quantity);
+            });
+
+            this.masterArticles = arts.items.filter(
+              a => !a.isDeleted &&
+                  this.masterStockMap.has(a.id) &&
+                  (this.masterStockMap.get(a.id) ?? 0) > 0
+            );            
+          } else {
+            this.masterArticles = arts.items.filter(a => !a.isDeleted);
+            this.articleDropdownItems = this.masterArticles;
+          }
+
           this.syncArticles();
         },
         error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
       });
-    } else {
-      this.articleService.getAll(1, 1000).subscribe({
-        next: res => {
-          this.masterArticles = res.items.filter(a => !a.isDeleted);
-          this.syncArticles();
-        },
-        error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_ARTICLES_FAILED'))
-      });
-    }
-  }
-  
-  onArticleSelected(articleId: string): void {
-    const article = this.masterArticles.find(a => a.id === articleId);
-    if (article) {
-      this.ligneForm.patchValue({ price: article.prix });
-    }
-    const max = this.getArticleMaxQty(articleId);
-    this.updateQuantityValidator(max === Infinity ? null : max);
   }
 
   private updateQuantityValidator(max: number | null): void {
@@ -412,106 +448,79 @@ export class BonsComponent implements OnInit {
     ctrl.updateValueAndValidity();
   }
 
-  loadFournisseurs(): void {
-    this.fournisseurService.getFournisseurs(1, 1000).subscribe({
-      next: (res) => {
-        this.fournisseurs = res.items.filter(f => !f.isDeleted && !f.isBlocked);
-        this.filteredFournisseurs = this.fournisseurs;
-        if (this.filteredFournisseurs.length > 0) {
-          this.headerForm.patchValue({ fournisseurId: this.filteredFournisseurs[0].id });
+  loadClients(page: number, append = false): void {
+    if (this.clientsLoading) return;
+    this.clientsLoading = true;
+
+    this.stock.getClientsPaged(page, this.clientPageSize, this.clientSearchQuery)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.clients = append
+            ? [...this.clients, ...res.items]
+            : res.items;
+          this.clientTotalCount = res.totalCount;
+          this.clientPage = page;
+          this.hasMoreClients = this.clients.length < res.totalCount;
+          this.clientsLoading = false;
+          if (!append && this.clients.length > 0 && !this.headerForm.get('clientId')?.value) {
+            this.selectClient(this.clients[0]);
+          }
+          if (this.isEdit()) this.restoreClientLabel();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.clientsLoading = false;
+          this.cdr.markForCheck();
         }
-        this.cdr.markForCheck();
-      },
-      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_FOURNISSEURS_FAILED'))
-    });
-  }
-
-  filterFournisseurs(): void {
-    const q = this.fournisseurSearchQuery.toLowerCase();
-    this.filteredFournisseurs = this.fournisseurs.filter(f =>
-      f.name.toLowerCase().includes(q) ||
-      f.phone.toLowerCase().includes(q)
-    );
-    if (this.filteredFournisseurs.length > 0) {
-      this.headerForm.patchValue({ fournisseurId: this.filteredFournisseurs[0].id });
-    }
-  }
-
-  loadClients(): void {
-    this.clientService.getAll(1, 1000).subscribe({
-      next: (res) => {
-        this.clients = res.items.filter(f => !f.isBlocked);
-        this.filteredClients = this.clients;
-        if (this.filteredClients.length > 0) {
-          this.headerForm.patchValue({ clientId: this.filteredClients[0].id });
-        }
-        this.cdr.markForCheck();
-      },
-      error: () => this.flash('error', this.translate.instant('STOCK.BONS.ERRORS.LOAD_CLIENTS_FAILED'))
-    });
-  }
-
-  filterClients(): void {
-    const q = this.clientSearchQuery.toLowerCase();
-    this.filteredClients = this.clients.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q)
-    );
-    if (this.filteredClients.length > 0) {
-      this.headerForm.patchValue({ clientId: this.filteredClients[0].id });
-    }
+      });
   }
 
   onSourceBonChange(id: string): void {
-      const match = this.allSourceBons.find(b => b.id === id);
-      if (!match) return;
+    const match = this.allSourceBons.find(b => b.id === id);
+    if (!match) return;
 
-      this.headerForm.patchValue({ sourceType: match.sourceType });
+    this.headerForm.patchValue({ sourceType: match.sourceType });
 
-      if (this.isCreate() && this.activeBonType === 'retour') {
-        const $req: Observable<BonRecord> = match.sourceType === RetourSourceType.BonEntre
-          ? this.stock.getBonEntreById(id)
-          : this.stock.getBonSortieById(id);
+    if (this.isCreate() && this.activeBonType === 'retour') {
+      const $req: Observable<BonRecord> = match.sourceType === RetourSourceType.BonEntre
+        ? this.stock.getBonEntreById(id)
+        : this.stock.getBonSortieById(id);
 
-        $req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-          next: (res) => {
-            // Aggregate lignes by articleId
-            const aggregated = new Map<string, PendingLigne>();
-
-            for (const l of res.lignes) {
-              const existing = aggregated.get(l.articleId);
-              if (existing) {
-                // Sum quantities and recalculate total
-                existing.quantity += l.quantity;
-                existing.total = existing.quantity * existing.price;
-              } else {
-                aggregated.set(l.articleId, {
-                  _localId: crypto.randomUUID(),
-                  articleId: l.articleId,
-                  articleLabel: this.getArticleLabel(l.articleId),
-                  quantity: l.quantity,
-                  price: l.price,
-                  remarque: l.remarque,
-                  total: l.quantity * l.price,
-                });
-              }
+      $req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (res) => {
+          const aggregated = new Map<string, PendingLigne>();
+          for (const l of res.lignes) {
+            const existing = aggregated.get(l.articleId);
+            if (existing) {
+              existing.quantity += l.quantity;
+              existing.total = existing.quantity * existing.price;
+            } else {
+              aggregated.set(l.articleId, {
+                _localId: crypto.randomUUID(),
+                articleId: l.articleId,
+                articleLabel: this.getArticleLabel(l.articleId),
+                quantity: l.quantity,
+                price: l.price,
+                remarque: l.remarque,
+                total: l.quantity * l.price,
+              });
             }
-
-            // Convert map to array
-            this.pendingLignes = Array.from(aggregated.values());
-            this.masterRetourMap.clear();
-            for (const [id, ligne] of aggregated) {
-              this.masterRetourMap.set(id, ligne.quantity);
-            }
-            this.syncArticles();
-            this.cdr.markForCheck();
-          },
-          error: (err) => {
-            const error = err.error as HttpError;
-            this.flash('error', error.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_SOURCE_BON_LIGNES_FAILED'));
           }
-        });
-      }
+          this.pendingLignes = Array.from(aggregated.values());
+          this.masterRetourMap.clear();
+          for (const [id, ligne] of aggregated) {
+            this.masterRetourMap.set(id, ligne.quantity);
+          }
+          this.syncArticles();
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          const error = err.error as HttpError;
+          this.flash('error', error.message ?? this.translate.instant('STOCK.BONS.ERRORS.LOAD_SOURCE_BON_LIGNES_FAILED'));
+        }
+      });
+    }
   }
 
   private getArticleLabel(articleId: string): string {
@@ -519,9 +528,9 @@ export class BonsComponent implements OnInit {
     return article ? `${article.codeRef} — ${article.libelle}` : articleId;
   }
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
   openCreate(): void {
     if (this.isCreate()) return;
+    this.masterRetourMap.clear();
     this.syncArticles();
 
     this.previousMode = this.viewMode();
@@ -531,8 +540,8 @@ export class BonsComponent implements OnInit {
     this.inlineLigneLocalId = null;
     this.applyTypeValidators();
     if (this.activeBonType === 'retour') this.loadSourceBons();
-    if (this.activeBonType === 'sortie') this.loadClients();
-    if (this.activeBonType === 'entre')  this.loadFournisseurs();
+    if (this.activeBonType === 'sortie') this.loadClients(1, false);
+    if (this.activeBonType === 'entre')  this.loadFournisseurs(1, false);
     this.loadArticles();
     this.setViewMode('create');
   }
@@ -541,36 +550,28 @@ export class BonsComponent implements OnInit {
     if (this.isView()) return;
     this.syncArticles();
     this.previousMode = this.viewMode();
-
-    
     const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
-
-    // ← shallow clone sufficient for view-only, prevents accidental mutation
     this.selectedBon = { ...bon, lignes: bon.lignes.map(l => ({ ...l })) };
-    
     this.setViewMode('view');
   }
 
   openEdit(bon: BonRecord): void {
     if (this.isEdit()) return;
+    this.masterRetourMap.clear();
     this.syncArticles();
     this.previousMode = this.viewMode();
-
-    
     const pristine = this.dataSource.data.find(b => b.id === bon.id) ?? bon;
-
     this.selectedBon = {
       ...pristine,
       lignes: pristine.lignes.map(l => ({ ...l })),
     };
-
-    this.pendingLignes      = [];
-    this.inlineLigneOpen    = false;
+    this.pendingLignes = [];
+    this.inlineLigneOpen = false;
     this.inlineLigneLocalId = null;
     this.applyTypeValidators();
     if (this.activeBonType === 'retour') this.loadSourceBons();
-    if (this.activeBonType === 'entre')  this.loadFournisseurs();
-    if (this.activeBonType === 'sortie') this.loadClients();
+    if (this.activeBonType === 'entre')  this.loadFournisseurs(1, false);
+    if (this.activeBonType === 'sortie') this.loadClients(1, false);
     this.loadArticles();
     this.headerForm.patchValue({
       observation:   pristine.observation                           ?? '',
@@ -584,15 +585,14 @@ export class BonsComponent implements OnInit {
   }
 
   cancel(): void {
-    this.inlineLigneOpen    = false;
+    this.inlineLigneOpen = false;
     this.inlineLigneLocalId = null;
-    this.pendingLignes      = [];
+    this.pendingLignes = [];
 
     const target = this.resolveCancel();
     this.setViewMode(target);
 
     if (target === 'view' && this.selectedBon) {
-      // ← restore selectedBon to the pristine server copy so view panel is clean
       const pristine = this.dataSource.data.find(b => b.id === this.selectedBon!.id);
       if (pristine) {
         this.selectedBon = { ...pristine, lignes: pristine.lignes.map(l => ({ ...l })) };
@@ -609,18 +609,14 @@ export class BonsComponent implements OnInit {
   private resolveCancel(): ViewMode {
     const cur = this.viewMode();
     if (cur === 'edit' && this.previousMode === 'view' && this.selectedBon) return 'view';
-    if (cur === 'view' && (this.previousMode === 'list'))
-      return this.previousMode;
+    if (cur === 'view' && (this.previousMode === 'list')) return this.previousMode;
     if (cur === 'create') return this.previousMode ?? 'list';
     return 'list';
   }
 
-  // ── Inline ligne form (inside create/edit panel) ───────────────────────────
-
   openInlineLigneAdd(): void {
     this.inlineLigneLocalId = null;
     this.ligneForm = this.buildLigneForm();
-    // auto-select first article if available
     if (this.articles.length > 0) {
       const first = this.articles[0];
       this.ligneForm.patchValue({ articleId: first.id, price: first.prix });
@@ -633,12 +629,12 @@ export class BonsComponent implements OnInit {
     this.ligneForm = this.buildLigneForm();
     if (isLocal) {
       const pl = ligne as PendingLigne;
-      this.inlineLigneLocalId = pl._localId;   // set BEFORE sync
+      this.inlineLigneLocalId = pl._localId;
       this.syncArticles();
       this.ligneForm.patchValue({ articleId: pl.articleId, quantity: pl.quantity, price: pl.price, remarque: pl.remarque ?? '' });
     } else {
       const sl = ligne as LigneResponseDto;
-      this.inlineLigneLocalId = sl.id;          // set BEFORE sync
+      this.inlineLigneLocalId = sl.id;
       this.syncArticles();
       this.ligneForm.patchValue({ articleId: sl.articleId, quantity: sl.quantity, price: sl.price, remarque: (sl as any).remarque ?? '' });
     }
@@ -649,7 +645,7 @@ export class BonsComponent implements OnInit {
   }
 
   closeInlineLigne(): void {
-    this.inlineLigneOpen    = false;
+    this.inlineLigneOpen = false;
     this.inlineLigneLocalId = null;
     this.ligneForm = this.buildLigneForm();
     this.syncArticles();
@@ -666,41 +662,29 @@ export class BonsComponent implements OnInit {
     }
 
     const label = `${master.codeRef} — ${master.libelle}`;
-
-    // Active lignes for the current mode
     const activeLignes: any[] = this.isCreate()
       ? this.pendingLignes
       : (this.selectedBon?.lignes ?? []);
-
-    // How much is already consumed by OTHER lignes (excluding the one being edited)
     const alreadyConsumed = activeLignes
       .filter(l => {
         const lid = (l as any)._localId ?? (l as any).id;
         return l.articleId === val.articleId && lid !== this.inlineLigneLocalId;
       })
       .reduce((sum, l) => sum + l.quantity, 0);
-
-    // Ceiling from syncArticles (Infinity for entre, warehouse-stock or source-bon qty for sortie/retour)
     const max = this.getArticleMaxQty(val.articleId);
 
     if (max !== Infinity) {
-      // The real ceiling for THIS input = master ceiling - what others already use
-      const effectiveMax = max; // syncArticles already subtracted alreadyConsumed from master
-
-      if (val.quantity > effectiveMax) {
+      if (val.quantity > max) {
         this.flash('error', this.translate.instant('STOCK.ERRORS.INSUFFICIENT_STOCK', {
-          max: effectiveMax, requested: val.quantity
+          max, requested: val.quantity
         }));
         return;
       }
-
-      // Merge: adding a new ligne for an article that already has one — check combined total
       if (!this.inlineLigneLocalId && alreadyConsumed > 0) {
         const combined = alreadyConsumed + val.quantity;
         const masterMax = this.activeBonType === 'sortie'
           ? (this.masterStockMap.get(val.articleId) ?? 0)
           : (this.masterRetourMap.get(val.articleId) ?? 0);
-
         if (combined > masterMax) {
           this.flash('error', this.translate.instant('STOCK.ERRORS.MERGED_QUANTITY_EXCEEDS_STOCK', {
             article: master.libelle, total: combined, max: masterMax
@@ -710,7 +694,6 @@ export class BonsComponent implements OnInit {
       }
     }
 
-    // ── CREATE mode ───────────────────────────────────────────────────────────
     if (this.isCreate()) {
       if (this.inlineLigneLocalId) {
         const idx = this.pendingLignes.findIndex(l => l._localId === this.inlineLigneLocalId);
@@ -747,7 +730,6 @@ export class BonsComponent implements OnInit {
       return;
     }
 
-    // ── EDIT mode ─────────────────────────────────────────────────────────────
     if (this.isEdit() && this.selectedBon) {
       if (this.inlineLigneLocalId) {
         const idx = this.selectedBon.lignes.findIndex(l => l.id === this.inlineLigneLocalId);
@@ -788,7 +770,6 @@ export class BonsComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
   submit(): void {
     if (this.headerForm.invalid) return;
 
@@ -802,9 +783,8 @@ export class BonsComponent implements OnInit {
       return;
     }
 
-    const val      = this.headerForm.value;
+    const val = this.headerForm.value;
     const creating = this.isCreate();
-
     const req$ = creating
       ? this.buildCreateRequest$(val)
       : this.buildUpdateRequest$(val);
@@ -821,13 +801,6 @@ export class BonsComponent implements OnInit {
     });
   }
 
-  getClientName(clientId: string): Observable<string> {
-    return this.clientService.getById(clientId).pipe(
-      map(client => client.name),
-      catchError(() => of(clientId))
-    );
-  }
-
   private buildCreateRequest$(val: any): Observable<any> {
     const lignes = this.pendingLignes.map(l => ({
       articleId: l.articleId,
@@ -835,7 +808,6 @@ export class BonsComponent implements OnInit {
       price:     l.price,
       remarque:  l.remarque ?? null,
     }));
-
     switch (this.activeBonType) {
       case 'entre':
         return this.stock.createBonEntre({
@@ -843,14 +815,12 @@ export class BonsComponent implements OnInit {
           observation:   val.observation || null,
           lignes,
         } as CreateBonEntreRequest);
-
       case 'sortie':
         return this.stock.createBonSortie({
           clientId:    val.clientId,
           observation: val.observation || null,
           lignes,
         } as CreateBonSortieRequest);
-
       default:
         return this.stock.createBonRetour({
           sourceId:    val.sourceId,
@@ -864,15 +834,12 @@ export class BonsComponent implements OnInit {
 
   private buildUpdateRequest$(val: any): Observable<any> {
     const id = this.selectedBon!.id;
-
-    const lignes = this.selectedBon!.lignes
-      .map((l: LigneResponseDto) => ({
-        articleId: l.articleId,
-        quantity:  l.quantity,
-        price:     l.price,
-        remarque:  l.remarque ?? null,
-      }));                             // ← no id sent, backend treats all as the new set
-
+    const lignes = this.selectedBon!.lignes.map((l: LigneResponseDto) => ({
+      articleId: l.articleId,
+      quantity:  l.quantity,
+      price:     l.price,
+      remarque:  l.remarque ?? null,
+    }));
     switch (this.activeBonType) {
       case 'entre':
         return this.stock.updateBonEntre(id, {
@@ -880,14 +847,12 @@ export class BonsComponent implements OnInit {
           fournisseurId: val.fournisseurId,
           lignes,
         } as UpdateBonEntreRequest);
-
       case 'sortie':
         return this.stock.updateBonSortie(id, {
           observation: val.observation || null,
           clientId:    val.clientId,
           lignes,
         } as UpdateBonSortieRequest);
-
       default:
         return this.stock.updateBonRetour(id, {
           motif:       val.motif,
@@ -898,7 +863,6 @@ export class BonsComponent implements OnInit {
     }
   }
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
   delete(bon: BonRecord): void {
     this.dialog
       .open(ModalComponent, {
@@ -930,28 +894,6 @@ export class BonsComponent implements OnInit {
       });
   }
 
-  // ── Ligne modal (VIEW panel only) ──────────────────────────────────────────
-  openAddLigne(bon: BonRecord): void {
-    this.selectedBon    = bon;
-    this.editingLigneId = null;
-    this.ligneForm      = this.buildLigneForm();
-    this.loadArticles();
-  }
-
-  openEditLigne(bon: BonRecord, ligne: any): void {
-    this.selectedBon    = bon;
-    this.editingLigneId = ligne.id;
-    this.ligneForm      = this.buildLigneForm();
-    this.ligneForm.patchValue({
-      articleId: ligne.articleId,
-      quantity:  ligne.quantity,
-      price:     ligne.price,
-      remarque:  ligne.remarque ?? '',
-    });
-    this.loadArticles();
-  }
-
-  // ── Casting helpers ────────────────────────────────────────────────────────
   asEntre(b: BonRecord):  BonEntreResponse  { return b as BonEntreResponse; }
   asSortie(b: BonRecord): BonSortieResponse { return b as BonSortieResponse; }
   asRetour(b: BonRecord): BonRetourResponse { return b as BonRetourResponse; }
@@ -959,18 +901,17 @@ export class BonsComponent implements OnInit {
   getLignes(b: BonRecord): LigneResponseDto[] {
     return b.lignes as LigneResponseDto[];
   }
+
   getTotal(b: BonRecord): number {
     return this.getLignes(b).reduce((s, l) => s + l.quantity * l.price, 0);
   }
 
-  /** Lignes to show in edit mode (from the live selectedBon). */
   get editLignes(): LigneResponseDto[] {
     return this.selectedBon ? this.getLignes(this.selectedBon) : [];
   }
 
   trackByLocalId(_: number, l: PendingLigne): string { return l._localId; }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   flash(type: 'success' | 'error', msg: string): void {
     if (type === 'success') {
       this.successMessage = msg;
@@ -982,7 +923,7 @@ export class BonsComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  dismissError(): void   { this.errors = []; }
+  dismissError(): void { this.errors = []; }
   trackById(_: number, b: BonRecord): string { return b.id; }
   setViewMode(mode: ViewMode): void { this.viewMode.set(mode); this.cdr.markForCheck(); }
 
@@ -998,81 +939,231 @@ export class BonsComponent implements OnInit {
   }
 
   removeLigne(selectedBon: BonRecord, ligneId: string): void {
-    selectedBon.lignes = (selectedBon.lignes as LigneResponseDto[])
-    .filter(l => l.id !== ligneId);
+    selectedBon.lignes = (selectedBon.lignes as LigneResponseDto[]).filter(l => l.id !== ligneId);
     this.cdr.markForCheck();
   }
 
-  // ── API dispatch map ───────────────────────────────────────────────────────
   private readonly bonApi: Record<BonType, BonApi> = {
-    entre: {
-      list:        (p, s) => this.stock.getBonEntres(p, s) as any,
-      stats:       ()     => this.stock.getBonEntreStats(),
-      delete:      id     => this.stock.deleteBonEntre(id)
-    },
-    sortie: {
-      list:        (p, s) => this.stock.getBonSorties(p, s) as any,
-      stats:       ()     => this.stock.getBonSortieStats(),
-      delete:      id     => this.stock.deleteBonSortie(id)
-    },
-    retour: {
-      list:        (p, s) => this.stock.getBonRetours(p, s) as any,
-      stats:       ()     => this.stock.getBonRetourStats(),
-      delete:      id     => this.stock.deleteBonRetour(id)
-    },
+    entre:  { list: (p, s) => this.stock.getBonEntres(p, s) as any, delete: id => this.stock.deleteBonEntre(id) },
+    sortie: { list: (p, s) => this.stock.getBonSorties(p, s) as any, delete: id => this.stock.deleteBonSortie(id) },
+    retour: { list: (p, s) => this.stock.getBonRetours(p, s) as any, delete: id => this.stock.deleteBonRetour(id) },
   };
 
   private syncArticles(): void {
-    // Build consumed map from current lignes, excluding the one being edited
     const consumed = new Map<string, number>();
     const editingId = this.inlineLigneLocalId;
-
     const activeLignes = this.isCreate()
       ? this.pendingLignes
       : (this.selectedBon?.lignes ?? []) as any[];
-
     for (const l of activeLignes) {
       const lid = (l as any)._localId ?? (l as any).id;
       if (lid === editingId) continue;
       const prev = consumed.get(l.articleId) ?? 0;
       consumed.set(l.articleId, prev + l.quantity);
     }
-
     this.articles = this.masterArticles
       .map(a => {
         let maxQty: number;
-
         if (this.activeBonType === 'sortie') {
           const warehouseStock = this.masterStockMap.get(a.id) ?? 0;
           const used = consumed.get(a.id) ?? 0;
           maxQty = warehouseStock - used;
         } else if (this.activeBonType === 'retour') {
-          const sourceMax = this.masterRetourMap.get(a.id) ?? 0;
-          const used = consumed.get(a.id) ?? 0;
-          maxQty = sourceMax - used;
+          if (this.masterRetourMap.size === 0) {
+            maxQty = Infinity;
+          } else {
+            const sourceMax = this.masterRetourMap.get(a.id) ?? 0;
+            const used = consumed.get(a.id) ?? 0;
+            maxQty = sourceMax - used;
+          }
         } else {
-          // entre: no upper limit on qty, all articles available
           maxQty = Infinity;
         }
-
         return { ...a, _maxQty: maxQty };
       })
       .filter(a => {
         if (this.activeBonType === 'entre') return true;
-        // keep the article being edited even if its remaining hits 0
+        if (this.activeBonType === 'retour' && this.masterRetourMap.size === 0) return true;
         const lid = this.inlineLigneLocalId;
         const isEditing = lid && activeLignes.some(
           (l: any) => ((l as any)._localId ?? (l as any).id) === lid && l.articleId === a.id
         );
         return (a as any)._maxQty > 0 || isEditing;
       });
-
     this.cdr.markForCheck();
+    if (this.articleDropdownOpen) {
+      this.loadArticlesForDropdown(1, false);
+    }
   }
 
-  // Helper used in template and validator
   getArticleMaxQty(articleId: string): number {
     const a = this.articles.find(x => x.id === articleId);
     return (a as any)?._maxQty ?? Infinity;
+  }
+
+  getAddButtonTooltip(): string {
+    if (this.fournisseurs.length === 0 && this.activeBonType === 'entre')
+      return this.translate.instant('STOCK.ERRORS.FOURNISSEURS_NOT_FOUND');
+    if (this.articles.length === 0 && (this.activeBonType === 'retour' || this.activeBonType === 'sortie'))
+      return this.translate.instant('STOCK.ERRORS.ARTICLES_NOT_FOUND');
+    return '';
+  }
+
+  onClientSearch(query: string): void {
+    this.clientSearchSubject$.next(query);
+  }
+
+  loadMoreClients(): void {
+    if (!this.hasMoreClients || this.clientsLoading) return;
+    this.loadClients(this.clientPage + 1, true);
+  }
+
+  selectClient(client: ClientResponseDto): void {
+    this.headerForm.patchValue({ clientId: client.id });
+    this.selectedClientLabel = `${client.name} - ${client.email}`;
+    this.clientDropdownOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  private restoreClientLabel(): void {
+    const clientId = this.headerForm.get('clientId')?.value;
+    if (!clientId) return;
+    const found = this.clients.find(c => c.id === clientId);
+    if (found) {
+      this.selectedClientLabel = `${found.name} - ${found.email}`;
+      this.cdr.markForCheck();
+    }
+  }
+
+  toggleClientDropdown(): void {
+    this.clientDropdownOpen = !this.clientDropdownOpen;
+    if (this.clientDropdownOpen) {
+      this.clientSearchQuery = '';
+      this.loadClients(1, false);
+    }
+  }
+
+  private initFournisseurSearch(): void {
+    this.fournisseurSearchSubject$
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(query => {
+        this.fournisseurSearchQuery = query;
+        this.fournisseurPage = 1;
+        this.hasMoreFournisseurs = true;
+        this.loadFournisseurs(1, false);
+      });
+  }
+
+  private initArticleSearch(): void {
+    this.articleSearchSubject$
+      .pipe(debounceTime(150), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(query => {
+        this.articleSearchQuery = query;
+        this.articlePage = 1;
+        this.hasMoreArticles = true;
+        this.loadArticlesForDropdown(1, false);
+      });
+  }
+
+  loadFournisseurs(page: number, append = false): void {
+    if (this.fournisseursLoading) return;
+    this.fournisseursLoading = true;
+    this.stock.getFournisseursPaged(page, this.fournisseurPageSize, this.fournisseurSearchQuery)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const items = res.items.filter(f => !f.isDeleted && !f.isBlocked);
+          this.fournisseurs = append ? [...this.fournisseurs, ...items] : items;
+          this.fournisseurTotalCount = res.totalCount;
+          this.fournisseurPage = page;
+          this.hasMoreFournisseurs = this.fournisseurs.length < res.totalCount;
+          this.fournisseursLoading = false;
+          if (!append && this.fournisseurs.length > 0 && !this.headerForm.get('fournisseurId')?.value) {
+            this.selectFournisseur(this.fournisseurs[0]);
+          }
+          if (this.isEdit()) this.restoreFournisseurLabel();
+          this.cdr.markForCheck();
+        },
+        error: () => { this.fournisseursLoading = false; this.cdr.markForCheck(); }
+      });
+  }
+
+  loadMoreFournisseurs(): void {
+    if (!this.hasMoreFournisseurs || this.fournisseursLoading) return;
+    this.loadFournisseurs(this.fournisseurPage + 1, true);
+  }
+
+  selectFournisseur(fournisseur: FournisseurResponse): void {
+    this.headerForm.patchValue({ fournisseurId: fournisseur.id });
+    this.selectedFournisseurLabel = `${fournisseur.name} — ${fournisseur.taxNumber}`;
+    this.fournisseurDropdownOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  toggleFournisseurDropdown(): void {
+    this.fournisseurDropdownOpen = !this.fournisseurDropdownOpen;
+    if (this.fournisseurDropdownOpen) {
+      this.fournisseurSearchQuery = '';
+      this.loadFournisseurs(1, false);
+    }
+  }
+
+  onFournisseurSearch(query: string): void {
+    this.fournisseurSearchSubject$.next(query);
+  }
+
+  private restoreFournisseurLabel(): void {
+    const id = this.headerForm.get('fournisseurId')?.value;
+    if (!id) return;
+    const found = this.fournisseurs.find(f => f.id === id);
+    if (found) {
+      this.selectedFournisseurLabel = `${found.name} — ${found.taxNumber}`;
+      this.cdr.markForCheck();
+    }
+  }
+
+  loadArticlesForDropdown(page: number, append = false): void {
+    const query = this.articleSearchQuery.toLowerCase();
+    const filtered = this.articles.filter(a =>
+      !query ||
+      a.libelle?.toLowerCase().includes(query) ||
+      a.codeRef?.toLowerCase().includes(query)
+    );
+    this.articleTotalCount = filtered.length;
+    const start = (page - 1) * this.articlePageSize;
+    const slice = filtered.slice(start, start + this.articlePageSize);
+    this.articleDropdownItems = append ? [...this.articleDropdownItems, ...slice] : slice;
+    this.articlePage = page;
+    this.hasMoreArticles = this.articleDropdownItems.length < filtered.length;
+    if (!append && this.articleDropdownItems.length > 0 && !this.ligneForm.get('articleId')?.value) {
+      this.selectArticleForLigne(this.articleDropdownItems[0]);
+    }
+    this.cdr.markForCheck();
+  }
+
+  loadMoreArticles(): void {
+    if (!this.hasMoreArticles || this.articlesLoading) return;
+    this.loadArticlesForDropdown(this.articlePage + 1, true);
+  }
+
+  selectArticleForLigne(article: ArticleResponseDto): void {
+    this.ligneForm.patchValue({ articleId: article.id, price: article.prix });
+    this.selectedArticleLabel = `${article.codeRef} — ${article.libelle}`;
+    this.articleDropdownOpen = false;
+    const max = this.getArticleMaxQty(article.id);
+    this.updateQuantityValidator(max === Infinity ? null : max);
+    this.cdr.markForCheck();
+  }
+
+  toggleArticleDropdown(): void {
+    this.articleDropdownOpen = !this.articleDropdownOpen;
+    if (this.articleDropdownOpen) {
+      this.articleSearchQuery = '';
+      this.loadArticlesForDropdown(1, false);
+    }
+  }
+
+  onArticleSearch(query: string): void {
+    this.articleSearchSubject$.next(query);
   }
 }
