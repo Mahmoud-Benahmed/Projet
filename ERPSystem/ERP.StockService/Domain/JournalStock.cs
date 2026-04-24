@@ -37,10 +37,10 @@
             decimal stockBefore,
             StockMovementType movementType,
             string sourceService,
-            string sourceOperation= "CreateBonEntre",
+            string sourceOperation = "CreateBonEntre",
             Guid? performedBy = null)
         {
-            var stockAfter = stockBefore + quantity;
+            decimal stockAfter = stockBefore + quantity;
 
             return new JournalStock
             {
