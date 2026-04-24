@@ -1,6 +1,6 @@
 ﻿using Confluent.Kafka;
-using System.Text.Json;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ERP.FournisseurService.Infrastructure.Messaging;
 
@@ -19,7 +19,7 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
             WriteIndented = false
         };
 
-        var config = new ProducerConfig
+        ProducerConfig config = new ProducerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -42,11 +42,11 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
     {
         try
         {
-            var stopwatch = Stopwatch.StartNew();
-            var eventId = Guid.NewGuid();
-            var json = JsonSerializer.Serialize(@event, _jsonOptions);
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Guid eventId = Guid.NewGuid();
+            string json = JsonSerializer.Serialize(@event, _jsonOptions);
 
-            var message = new Message<string, string>
+            Message<string, string> message = new Message<string, string>
             {
                 Key = eventId.ToString(),
                 Value = json,
@@ -64,7 +64,7 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
             }
 
             // Produce with delivery report
-            var deliveryResult = await _producer.ProduceAsync(topic, message);
+            DeliveryResult<string, string> deliveryResult = await _producer.ProduceAsync(topic, message);
 
             stopwatch.Stop();
 
