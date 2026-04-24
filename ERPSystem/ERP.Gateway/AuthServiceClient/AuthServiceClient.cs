@@ -22,20 +22,20 @@ public class AuthServiceClient : IAuthServiceClient
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, "/auth/validate-token");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/auth/validate-token");
             request.Headers.Add("Authorization", $"Bearer {token}");
 
-            var response = await _httpClient.SendAsync(request);
+            HttpResponseMessage response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<TokenValidationResponse>();
+                TokenValidationResponse? result = await response.Content.ReadFromJsonAsync<TokenValidationResponse>();
                 return result ?? TokenValidationResponse.Invalid("Invalid response from auth service");
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
                 return TokenValidationResponse.Invalid(error?.reason ?? "Token validation failed");
             }
 
