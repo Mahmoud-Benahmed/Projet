@@ -1,5 +1,4 @@
-﻿using ERP.InvoiceService.Application.Services.LocalCache.ArticleCache;
-using ERP.InvoiceService.Domain.LocalCache.Article;
+﻿using ERP.InvoiceService.Domain.LocalCache.Article;
 using ERP.InvoiceService.Domain.LocalCache.Client;
 
 namespace ERP.InvoiceService.Application.Interfaces;
@@ -12,7 +11,7 @@ public interface IArticleCacheRepository
     Task<ArticleCache?> GetByCodeRefAsync(string codeRef);
     Task<List<ArticleCache>> GetAllAsync();
     Task<List<ArticleCache>> GetAllActiveAsync();
-    Task<(IEnumerable<ArticleCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task<(List<ArticleCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task AddAsync(ArticleCache article);
     Task SaveChangesAsync();
 
@@ -38,7 +37,7 @@ public interface IClientCacheRepository
     Task<ClientCache?> GetByIdAsync(Guid id);
     Task<ClientCache?> GetByNameAsync(string name);
     Task<ClientCache?> GetByEmailAsync(string email);
-    Task<List<ClientCache>> GetAllAsync();
+    Task<(List<ClientCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task<List<ClientCache>> GetActiveAsync();
     Task<bool> ExistsAsync(Guid id);
     Task AddAsync(ClientCache client);
