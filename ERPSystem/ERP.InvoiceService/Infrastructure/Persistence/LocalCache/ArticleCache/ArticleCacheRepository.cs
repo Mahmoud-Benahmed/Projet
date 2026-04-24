@@ -1,5 +1,4 @@
 ﻿using ERP.InvoiceService.Application.Interfaces;
-using ERP.InvoiceService.Domain.LocalCache.Article;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache;
@@ -10,7 +9,7 @@ public sealed class ArticleCacheRepository : IArticleCacheRepository
 
     public ArticleCacheRepository(InvoiceDbContext db) => _db = db;
 
-    public async Task<List<Domain.LocalCache.Article.ArticleCache>> GetByIdsAsync(List<Guid> ids) 
+    public async Task<List<Domain.LocalCache.Article.ArticleCache>> GetByIdsAsync(List<Guid> ids)
         => await _db.ArticleCaches
             .Include(a => a.Category)
             .Where(a => ids.Contains(a.Id))
@@ -43,15 +42,31 @@ public sealed class ArticleCacheRepository : IArticleCacheRepository
             .OrderBy(a => a.Libelle)
             .ToListAsync();
 
-    public async Task<(IEnumerable<Domain.LocalCache.Article.ArticleCache> Items, int TotalCount)> GetPagedAsync(
-        int pageNumber, int pageSize)
+    public async Task<(List<Domain.LocalCache.Article.ArticleCache> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber, int pageSize, string? search = null)
     {
-        var query = _db.ArticleCaches
-            .Include(a => a.Category)
-            .OrderBy(a => a.Libelle);
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
 
-        var totalCount = await query.CountAsync();
-        var items = await query
+        IQueryable<Domain.LocalCache.Article.ArticleCache> baseQuery = _db.ArticleCaches.AsQueryable().AsNoTracking(); ;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string q = search.Trim().ToLower();
+            baseQuery = baseQuery.Where(c =>
+                c.BarCode.ToLower().Contains(q) ||
+                c.Libelle.ToLower().Contains(q) ||
+                c.CodeRef.ToLower().Contains(q)
+            );
+        }
+
+
+        int totalCount = await baseQuery.CountAsync();
+
+        List<Domain.LocalCache.Article.ArticleCache> items = await baseQuery
+            .OrderBy(a => a.Libelle)
+            .Include(a => a.Category)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

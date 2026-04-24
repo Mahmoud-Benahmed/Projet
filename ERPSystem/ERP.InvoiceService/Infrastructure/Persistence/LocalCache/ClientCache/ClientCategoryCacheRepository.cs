@@ -1,6 +1,5 @@
 ﻿// Infrastructure/Persistence/Repositories/LocalCache/ClientCategoryCacheRepository.cs
 using ERP.InvoiceService.Application.Interfaces;
-using ERP.InvoiceService.Domain.LocalCache;
 using ERP.InvoiceService.Domain.LocalCache.Client;
 using Microsoft.EntityFrameworkCore;
 
@@ -74,7 +73,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
         try
         {
             // Get category IDs from junction table, then fetch master data
-            var categoryIds = await _dbContext.ClientCategoryAssignments
+            List<Guid> categoryIds = await _dbContext.ClientCategoryAssignments
                 .Where(ca => ca.ClientId == clientId)
                 .Select(ca => ca.CategoryId)
                 .ToListAsync();
@@ -96,7 +95,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
         try
         {
             // First find the client
-            var client = await _dbContext.ClientCaches
+            Domain.LocalCache.Client.ClientCache? client = await _dbContext.ClientCaches
                 .FirstOrDefaultAsync(c => c.Name == clientName && !c.IsDeleted);
 
             if (client == null)
@@ -179,7 +178,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
     {
         try
         {
-            var assignment = ClientCategoryCache.Create(clientId, categoryId);
+            ClientCategoryCache assignment = ClientCategoryCache.Create(clientId, categoryId);
             await _dbContext.ClientCategoryAssignments.AddAsync(assignment);
             _logger.LogDebug("Category {CategoryId} assigned to client {ClientId}",
                 categoryId, clientId);
@@ -196,7 +195,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
     {
         try
         {
-            var assignment = await _dbContext.ClientCategoryAssignments
+            ClientCategoryCache? assignment = await _dbContext.ClientCategoryAssignments
                 .FirstOrDefaultAsync(ca => ca.ClientId == clientId && ca.CategoryId == categoryId);
 
             if (assignment != null)
@@ -258,7 +257,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
             if (categories == null)
                 throw new ArgumentNullException(nameof(categories));
 
-            var categoryList = categories.ToList();
+            List<CategoryCache> categoryList = categories.ToList();
             if (!categoryList.Any())
                 return;
 
@@ -294,7 +293,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
     {
         try
         {
-            var category = await GetByIdAsync(id);
+            CategoryCache? category = await GetByIdAsync(id);
             if (category != null)
             {
                 category.Delete();
@@ -313,7 +312,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
     {
         try
         {
-            var assignments = await _dbContext.ClientCategoryAssignments
+            List<ClientCategoryCache> assignments = await _dbContext.ClientCategoryAssignments
                 .Where(ca => ca.ClientId == clientId)
                 .ToListAsync();
 
