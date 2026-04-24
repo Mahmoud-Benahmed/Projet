@@ -3,7 +3,6 @@ using ERP.ArticleService.Application.Exceptions;
 using ERP.ArticleService.Application.Interfaces;
 using ERP.ArticleService.Domain;
 using ERP.ArticleService.Infrastructure.Messaging;
-using System.Text.Json;
 
 namespace ERP.ArticleService.Application.Services
 {
@@ -34,20 +33,20 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task<ArticleResponseDto> CreateAsync(CreateArticleRequestDto request)
         {
-            var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
+            Category category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new KeyNotFoundException(
                     $"Category with id '{request.CategoryId}' was not found.");
 
-            var existing = await _articleRepository.GetByBarCodeAsync(request.BarCode);
+            Article? existing = await _articleRepository.GetByBarCodeAsync(request.BarCode);
             if (existing is not null)
                 throw new ArticleAlreadyExistsException(existing.BarCode);
 
-            var code = await _articleCodeService.GenerateArticleCodeAsync();
+            string code = await _articleCodeService.GenerateArticleCodeAsync();
 
-            var article = new Article(code, request.Libelle, request.Prix, request.Unit, category, request.BarCode, request.TVA);
+            Article article = new Article(code, request.Libelle, request.Prix, request.Unit, category, request.BarCode, request.TVA);
             await _articleRepository.AddAsync(article);
             await _articleRepository.SaveChangesAsync();
-            var dto = MapToDto(article);
+            ArticleResponseDto dto = MapToDto(article);
 
             await _eventPublisher.PublishAsync(ArticleTopics.Created, dto);
             return dto;
@@ -58,7 +57,7 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task<ArticleResponseDto> GetByIdAsync(Guid id)
         {
-            var article = await _articleRepository.GetByIdAsync(id);
+            Article? article = await _articleRepository.GetByIdAsync(id);
             if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(id);
             return MapToDto(article);
@@ -66,7 +65,7 @@ namespace ERP.ArticleService.Application.Services
 
         public async Task<ArticleResponseDto> GetByCodeAsync(string code)
         {
-            var article = await _articleRepository.GetByCodeAsync(code);
+            Article? article = await _articleRepository.GetByCodeAsync(code);
             if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(code);
             return MapToDto(article);
@@ -77,18 +76,18 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task<ArticleResponseDto> UpdateAsync(Guid id, UpdateArticleRequestDto request)
         {
-            var article = await _articleRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
+            Article? article = await _articleRepository.GetByIdAsync(id) ?? throw new ArticleNotFoundException(id);
 
             if (article is null || article.IsDeleted)
                 throw new ArticleNotFoundException(id);
 
-            var category = await _categoryRepository.GetByIdAsync(request.CategoryId)
+            Category category = await _categoryRepository.GetByIdAsync(request.CategoryId)
                 ?? throw new CategoryNotFoundException(request.CategoryId);
 
-            article.Update(request.Libelle, request.Prix, request.Unit,category, request.BarCode, request.TVA);
+            article.Update(request.Libelle, request.Prix, request.Unit, category, request.BarCode, request.TVA);
 
             await _articleRepository.SaveChangesAsync();
-            var dto = MapToDto(article);
+            ArticleResponseDto dto = MapToDto(article);
             await _eventPublisher.PublishAsync(ArticleTopics.Updated, dto);
 
             return dto;
@@ -99,14 +98,14 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task RestoreAsync(Guid id)
         {
-            var article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
+            Article article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
             if (!article.IsDeleted)
                 return;
 
             article.Restore();
             await _articleRepository.SaveChangesAsync();
 
-            var dto = MapToDto(article);
+            ArticleResponseDto dto = MapToDto(article);
             await _eventPublisher.PublishAsync(ArticleTopics.Restored, dto);
 
         }
@@ -117,14 +116,14 @@ namespace ERP.ArticleService.Application.Services
         // =========================
         public async Task DeleteAsync(Guid id)
         {
-            var article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
+            Article article = await _articleRepository.GetByIdDeletedAsync(id) ?? throw new ArticleNotFoundException(id);
             if (article.IsDeleted)
                 return;
 
             article.Delete();
             await _articleRepository.SaveChangesAsync();
 
-            var dto = MapToDto(article);
+            ArticleResponseDto dto = MapToDto(article);
             await _eventPublisher.PublishAsync(ArticleTopics.Deleted, dto);
 
         }
@@ -136,8 +135,8 @@ namespace ERP.ArticleService.Application.Services
         {
             ValidatePaging(pageNumber, pageSize);
 
-            var (items, totalCount) = await _articleRepository.GetAllAsync(pageNumber, pageSize);
-            var mappedItems = items.Select(MapToDto).ToList();
+            (List<Article>? items, int totalCount) = await _articleRepository.GetAllAsync(pageNumber, pageSize);
+            List<ArticleResponseDto> mappedItems = items.Select(MapToDto).ToList();
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
@@ -145,9 +144,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task<PagedResultDto<ArticleResponseDto>> GetPagedByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _articleRepository
+            (List<Article>? items, int totalCount) = await _articleRepository
                 .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
-            var mappedItems = items.Select(MapToDto).ToList();
+            List<ArticleResponseDto> mappedItems = items.Select(MapToDto).ToList();
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
@@ -155,9 +154,9 @@ namespace ERP.ArticleService.Application.Services
         public async Task<PagedResultDto<ArticleResponseDto>> GetPagedDeletedAsync(int pageNumber, int pageSize)
         {
             ValidatePaging(pageNumber, pageSize);
-            var (items, totalCount) = await _articleRepository
+            (List<Article>? items, int totalCount) = await _articleRepository
                 .GetPagedDeletedAsync(pageNumber, pageSize);
-            var mappedItems = items.Select(MapToDto).ToList();
+            List<ArticleResponseDto> mappedItems = items.Select(MapToDto).ToList();
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
@@ -168,9 +167,9 @@ namespace ERP.ArticleService.Application.Services
             if (string.IsNullOrWhiteSpace(libelleFilter))
                 throw new ArgumentException("Libelle filter cannot be empty.");
 
-            var (items, totalCount) = await _articleRepository
+            (List<Article>? items, int totalCount) = await _articleRepository
                 .GetPagedByLibelleAsync(libelleFilter, pageNumber, pageSize);
-            var mappedItems = items.Select(MapToDto).ToList();
+            List<ArticleResponseDto> mappedItems = items.Select(MapToDto).ToList();
 
             return new PagedResultDto<ArticleResponseDto>(mappedItems, totalCount, pageNumber, pageSize);
         }
