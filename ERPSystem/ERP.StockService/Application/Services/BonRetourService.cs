@@ -2,8 +2,9 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
-using ERP.StockService.Infrastructure.Messaging;
-using ERP.StockService.Infrastructure.Persistence.Repositories;
+using ERP.StockService.Domain.LocalCache.Article;
+using ERP.StockService.Domain.LocalCache.Client;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Application.Services;
 
@@ -30,7 +31,7 @@ public class BonRetourService : IBonRetourService
         _repo = repo;
         _bonSortieRepo = bonSortieRepo;
         _bonEntreRepo = bonEntreRepo;
-        _articleCacheRepository= articleCacheRepository;
+        _articleCacheRepository = articleCacheRepository;
         _clientCacheRepository = clientCacheRepository;
         _bonNumeroRepository = bonNumeroRepository;
         _journalStockRepository = journalStockRepository;
@@ -54,23 +55,23 @@ public class BonRetourService : IBonRetourService
         };
 
         // 3. Begin transaction
-        await using var transaction = await _repo.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _repo.BeginTransactionAsync();
 
         try
         {
             // 4. Generate document number and create BonRetour header
-            var numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_RETOUR");
-            var bon = BonRetour.Create(numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
+            string numero = await _bonNumeroRepository.GetNextDocumentNumberAsync("BON_RETOUR");
+            BonRetour bon = BonRetour.Create(numero, dto.SourceId, dto.SourceType, dto.Motif, dto.Observation);
 
             // 5. Validate and add each ligne
-            foreach (var ligneDto in dto.Lignes)
+            foreach (LigneRequestDto ligneDto in dto.Lignes)
             {
                 // Verify article exists
-                var article = await _articleCacheRepository.GetByIdAsync(ligneDto.ArticleId)
+                ArticleCache article = await _articleCacheRepository.GetByIdAsync(ligneDto.ArticleId)
                     ?? throw new KeyNotFoundException($"Article with Id {ligneDto.ArticleId} not found");
 
                 // Verify the source bon contains this article and quantity does not exceed original
-                var sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == ligneDto.ArticleId)
+                LigneSource sourceLigne = sourceLignes.FirstOrDefault(s => s.ArticleId == ligneDto.ArticleId)
                     ?? throw new ArticleNotInSourceBonException(ligneDto.ArticleId, dto.SourceId);
 
                 if (ligneDto.Quantity > sourceLigne.Quantity)
@@ -88,13 +89,13 @@ public class BonRetourService : IBonRetourService
             await _repo.SaveChangesAsync();
 
             // 8. Create journal entries for stock increase
-            foreach (var ligne in bon.Lignes)
+            foreach (LigneRetour ligne in bon.Lignes)
             {
                 // Get current stock BEFORE this operation
-                var stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
 
                 // For a BonRetour, stock INCREASES, so quantity is positive
-                var journal = JournalStock.Create(
+                JournalStock journal = JournalStock.Create(
                     ligne.ArticleId,
                     ligne.Id,
                     bon.Id,
@@ -126,7 +127,7 @@ public class BonRetourService : IBonRetourService
     // =========================
     public async Task<BonRetourResponseDto> UpdateAsync(Guid id, UpdateBonRetourRequestDto dto)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
+        BonRetour bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
 
         // Only allow updating Motif and Observation
         bon.Update(dto.Motif, dto.Observation);
@@ -140,16 +141,16 @@ public class BonRetourService : IBonRetourService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
+        BonRetour bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
 
-        await using var transaction = await _repo.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _repo.BeginTransactionAsync();
         try
         {
             // Reverse each journal entry (negative quantity)
-            foreach (var ligne in bon.Lignes)
+            foreach (LigneRetour ligne in bon.Lignes)
             {
-                var stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
-                var reversal = JournalStock.Create(
+                decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
+                JournalStock reversal = JournalStock.Create(
                     ligne.ArticleId,
                     ligne.Id,
                     bon.Id,
@@ -181,14 +182,14 @@ public class BonRetourService : IBonRetourService
     // =========================
     public async Task<BonRetourResponseDto> GetByIdAsync(Guid id)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
+        BonRetour bon = await _repo.GetByIdAsync(id) ?? throw new BonRetourNotFoundException(id);
         return bon.ToResponseDto();
     }
 
     public async Task<PagedResultDto<BonRetourResponseDto>> GetAllAsync(int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetAllAsync(page, size);
+        (List<BonRetour>? items, int total) = await _repo.GetAllAsync(page, size);
         return new PagedResultDto<BonRetourResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
@@ -197,7 +198,7 @@ public class BonRetourService : IBonRetourService
         Guid sourceId, int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedBySourceAsync(sourceId, page, size);
+        (List<BonRetour>? items, int total) = await _repo.GetPagedBySourceAsync(sourceId, page, size);
         return new PagedResultDto<BonRetourResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
@@ -212,7 +213,7 @@ public class BonRetourService : IBonRetourService
             (from, to) = (to, from);
         }
 
-        var (items, total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
+        (List<BonRetour>? items, int total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
         return new PagedResultDto<BonRetourResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
@@ -222,29 +223,29 @@ public class BonRetourService : IBonRetourService
     // =========================
     private async Task<IReadOnlyList<LigneSource>> ResolveBonSortieAsync(Guid sourceId)
     {
-        var bonSortie = await _bonSortieRepo.GetByIdAsync(sourceId)
+        BonSortie bonSortie = await _bonSortieRepo.GetByIdAsync(sourceId)
             ?? throw new BonSortieNotFoundException(sourceId);
-        var client = await _clientCacheRepository.GetByIdAsync(bonSortie.ClientId) ?? throw new KeyNotFoundException($"Client with Id {bonSortie.ClientId} not found");
+        ClientCache client = await _clientCacheRepository.GetByIdAsync(bonSortie.ClientId) ?? throw new KeyNotFoundException($"Client with Id {bonSortie.ClientId} not found");
         return bonSortie.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
 
     private async Task<IReadOnlyList<LigneSource>> ResolveBonEntreAsync(Guid sourceId)
     {
-        var bonEntre = await _bonEntreRepo.GetByIdAsync(sourceId)
+        BonEntre bonEntre = await _bonEntreRepo.GetByIdAsync(sourceId)
             ?? throw new BonEntreNotFoundException(sourceId);
         return bonEntre.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
 
     private async Task<IReadOnlyList<LigneSource>> ResolveBonSortieSourceLignesAsync(Guid sourceId)
     {
-        var bonSortie = await _bonSortieRepo.GetByIdAsync(sourceId)
+        BonSortie bonSortie = await _bonSortieRepo.GetByIdAsync(sourceId)
             ?? throw new BonSortieNotFoundException(sourceId);
         return bonSortie.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
 
     private async Task<IReadOnlyList<LigneSource>> ResolveBonEntreSourceLignesAsync(Guid sourceId)
     {
-        var bonEntre = await _bonEntreRepo.GetByIdAsync(sourceId)
+        BonEntre bonEntre = await _bonEntreRepo.GetByIdAsync(sourceId)
             ?? throw new BonEntreNotFoundException(sourceId);
         return bonEntre.Lignes.Select(l => new LigneSource(l.ArticleId, l.Quantity)).ToList();
     }
