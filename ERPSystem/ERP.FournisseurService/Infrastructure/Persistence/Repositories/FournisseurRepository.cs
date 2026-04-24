@@ -33,10 +33,10 @@ public class FournisseurRepository : IFournisseurRepository
     {
         ValidatePaging(page, size);
 
-        var query = _context.Fournisseurs.Where(f => !f.IsDeleted);
+        IQueryable<Fournisseur> query = _context.Fournisseurs.Where(f => !f.IsDeleted);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Fournisseur> items = await query
             .OrderBy(f => f.Name)
             .Skip((page - 1) * size)
             .Take(size)
@@ -49,10 +49,10 @@ public class FournisseurRepository : IFournisseurRepository
     {
         ValidatePaging(page, size);
 
-        var query = _context.Fournisseurs.IgnoreQueryFilters().Where(f => f.IsDeleted);
+        IQueryable<Fournisseur> query = _context.Fournisseurs.IgnoreQueryFilters().Where(f => f.IsDeleted);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Fournisseur> items = await query
             .OrderBy(f => f.Name)
             .Skip((page - 1) * size)
             .Take(size)
@@ -64,12 +64,12 @@ public class FournisseurRepository : IFournisseurRepository
     public async Task<(List<Fournisseur> Items, int TotalCount)> GetPagedByNameAsync(
     string nameFilter, int page, int size)
     {
-        var query = _context.Fournisseurs
+        IQueryable<Fournisseur> query = _context.Fournisseurs
             .Where(f => !f.IsDeleted && f.Name.Contains(nameFilter.Trim()));
 
-        var total = await query.CountAsync();
+        int total = await query.CountAsync();
 
-        var items = await query
+        List<Fournisseur> items = await query
             .OrderBy(f => f.Name)
             .Skip((page - 1) * size)
             .Take(size)
