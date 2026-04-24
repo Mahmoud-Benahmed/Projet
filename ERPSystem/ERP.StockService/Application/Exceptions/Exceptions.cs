@@ -1,4 +1,5 @@
 ﻿namespace ERP.StockService.Application.Exceptions;
+
 public class BonNotFoundException(Guid id)
     : KeyNotFoundException($"Bon with '{id}' was not found.");
 public class BonEntreNotFoundException(Guid id)
