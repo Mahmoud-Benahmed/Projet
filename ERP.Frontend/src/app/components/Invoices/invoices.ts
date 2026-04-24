@@ -13,7 +13,6 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 import { AuthService, PRIVILEGES } from '../../services/auth/auth.service';
 import { InvoiceService, InvoiceDto, CreateInvoiceDto, InvoiceStatsDto } from '../../services/invoice.service';
-import { ClientsService, ClientResponseDto } from '../../services/clients/clients.service';
 import { ArticleService, UnitEnum } from '../../services/articles/articles.service';
 import { StockItem, StockService } from '../../services/stock.service';
 import { PaginationComponent } from '../pagination/pagination';
@@ -111,8 +110,6 @@ export class InvoicesComponent implements OnInit, OnDestroy {
   constructor(
     public authService: AuthService,
     private invoiceService: InvoiceService,
-    private clientsService: ClientsService,
-    private articleService: ArticleService,
     private dialog: MatDialog,
     private stock: StockService
   ) {}
@@ -195,7 +192,7 @@ export class InvoicesComponent implements OnInit, OnDestroy {
 
   private loadArticlesWithStock(): Observable<StockItem[]> {
     return forkJoin({
-      articles: this.articleService.getAll(1, 1000).pipe(catchError(() => of({ items: [] }))),
+      articles: this.invoiceService.getArticlesPaged(1, 20).pipe(catchError(() => of({ items: [] }))),
       stock: this.stock.getStockArticles().pipe(catchError(() => of({ inStock: [], outStock: [] })))
     }).pipe(
       map(({ articles, stock }) => {
