@@ -1,7 +1,6 @@
 ﻿using ERP.InvoiceService.Application.DTOs;
 using ERP.InvoiceService.Application.Interfaces;
 using ERP.InvoiceService.Domain.LocalCache.Article;
-using ERP.InvoiceService.Infrastructure.Persistence.Repositories;
 using InvoiceService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,26 +23,26 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
 
     public async Task<ArticleCategoryResponseDto?> GetByIdAsync(Guid id)
     {
-        var category = await _repo.GetByIdAsync(id);
+        ArticleCategoryCache? category = await _repo.GetByIdAsync(id);
         return category is null ? null : MapToDto(category);
     }
 
     public async Task<ArticleCategoryResponseDto?> GetByNameAsync(string name)
     {
-        var category = await _repo.GetByNameAsync(name);
+        ArticleCategoryCache? category = await _repo.GetByNameAsync(name);
         return category is null ? null : MapToDto(category);
     }
 
 
     public async Task<List<ArticleCategoryResponseDto>> GetAllAsync()
     {
-        var categories = await _repo.GetAllAsync();
+        List<ArticleCategoryCache> categories = await _repo.GetAllAsync();
         return categories.Select(MapToDto).ToList();
     }
 
     public async Task<List<ArticleCategoryResponseDto>> GetAllActiveAsync()
     {
-        var categories = await _repo.GetAllActiveAsync();
+        List<ArticleCategoryCache> categories = await _repo.GetAllActiveAsync();
         return categories.Select(MapToDto).ToList();
     }
 
@@ -52,7 +51,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
         if (pageNumber < 1) throw new ArgumentOutOfRangeException(nameof(pageNumber));
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-        var (items, totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize);
+        (List<ArticleCategoryCache>? items, int totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize);
         return new PagedResultDto<ArticleCategoryResponseDto>(
             items.Select(MapToDto).ToList(),
             totalCount,
@@ -82,7 +81,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
         try
         {
             // Try to find by ID first, then by Name
-            var existing = await _repo.GetByIdAsync(dto.Id) ?? await _repo.GetByNameAsync(dto.Name);
+            ArticleCategoryCache? existing = await _repo.GetByIdAsync(dto.Id) ?? await _repo.GetByNameAsync(dto.Name);
 
             if (existing != null)
             {
@@ -110,7 +109,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
             // Wait a bit and try to get the category that was just created
             await Task.Delay(100);
 
-            var existing = await _repo.GetByNameAsync(dto.Name);
+            ArticleCategoryCache? existing = await _repo.GetByNameAsync(dto.Name);
             if (existing != null)
             {
                 _logger.LogInformation("Found existing category '{Name}'. Updating instead.", dto.Name);
@@ -126,7 +125,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
     }
     public async Task SyncUpdatedAsync(ArticleCategoryResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        ArticleCategoryCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncUpdated: category {Id} not in cache, inserting instead", dto.Id);
@@ -143,7 +142,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
 
     public async Task SyncDeletedAsync(ArticleCategoryResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        ArticleCategoryCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncDeleted: category {Id} not in cache, skipping", dto.Id);
@@ -157,7 +156,7 @@ public sealed class ArticleCategoryCacheService : IArticleCategoryCacheService
 
     public async Task SyncRestoredAsync(ArticleCategoryResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        ArticleCategoryCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncRestored: article {Id} not in cache, inserting instead", dto.Id);

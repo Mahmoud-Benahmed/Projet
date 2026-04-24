@@ -2,7 +2,6 @@
 using ERP.InvoiceService.Application.Interfaces;
 using ERP.InvoiceService.Domain.LocalCache.Article;
 using InvoiceService.Application.DTOs;
-using Microsoft.EntityFrameworkCore;
 
 namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache;
 
@@ -29,40 +28,41 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task<ArticleResponseDto?> GetByIdAsync(Guid id)
     {
-        var article = await _repo.GetByIdAsync(id);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByIdAsync(id);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<ArticleResponseDto?> GetByBarCodeAsync(string barCode)
     {
-        var article = await _repo.GetByBarCodeAsync(barCode);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByBarCodeAsync(barCode);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<ArticleResponseDto?> GetByCodeRefAsync(string codeRef)
     {
-        var article = await _repo.GetByCodeRefAsync(codeRef);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByCodeRefAsync(codeRef);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<List<ArticleResponseDto>> GetAllAsync()
     {
-        var articles = await _repo.GetAllAsync();
+        List<Domain.LocalCache.Article.ArticleCache> articles = await _repo.GetAllAsync();
         return articles.Select(MapToDto).ToList();
     }
 
     public async Task<List<ArticleResponseDto>> GetAllActiveAsync()
     {
-        var articles = await _repo.GetAllActiveAsync();
+        List<Domain.LocalCache.Article.ArticleCache> articles = await _repo.GetAllActiveAsync();
         return articles.Select(MapToDto).ToList();
     }
 
-    public async Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize)
+    public async Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null)
     {
         if (pageNumber < 1) throw new ArgumentOutOfRangeException(nameof(pageNumber));
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-        var (items, totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize);
+        (List<Domain.LocalCache.Article.ArticleCache>? items, int totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize, search);
+
         return new PagedResultDto<ArticleResponseDto>(
             items.Select(MapToDto).ToList(),
             totalCount,
@@ -75,7 +75,7 @@ public sealed class ArticleCacheService : IArticleCacheService
     public async Task SyncCreatedAsync(ArticleResponseDto dto)
     {
         // 1. Get existing category (or create it)
-        var category = await _categoryRepo.GetByIdAsync(dto.Category.Id)
+        ArticleCategoryCache? category = await _categoryRepo.GetByIdAsync(dto.Category.Id)
                        ?? await _categoryRepo.GetByNameAsync(dto.Category.Name);
 
         if (category == null)
@@ -87,7 +87,7 @@ public sealed class ArticleCacheService : IArticleCacheService
         }
 
         // 2. Check if article already exists
-        var existing = await _repo.GetByIdAsync(dto.Id)
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id)
                        ?? await _repo.GetByBarCodeAsync(dto.BarCode)
                        ?? await _repo.GetByCodeRefAsync(dto.CodeRef);
 
@@ -100,7 +100,7 @@ public sealed class ArticleCacheService : IArticleCacheService
         else
         {
             // Create new article using the factory overload
-            var article = Domain.LocalCache.Article.ArticleCache.FromEvent(dto, category);
+            Domain.LocalCache.Article.ArticleCache article = Domain.LocalCache.Article.ArticleCache.FromEvent(dto, category);
             await _repo.AddAsync(article);
         }
 
@@ -109,7 +109,7 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task SyncUpdatedAsync(ArticleResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning(
@@ -127,7 +127,7 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task SyncDeletedAsync(ArticleResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncDeleted: article {Id} not in cache, skipping", dto.Id);
@@ -141,7 +141,7 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task SyncRestoredAsync(ArticleResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncRestored: article {Id} not in cache, inserting instead", dto.Id);
