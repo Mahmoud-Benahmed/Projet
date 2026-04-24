@@ -2,7 +2,6 @@
 using ERP.FournisseurService.Application.Interfaces;
 using ERP.FournisseurService.Domain;
 using Microsoft.EntityFrameworkCore;
-using static ERP.FournisseurService.Properties.ApiRoutes;
 
 namespace ERP.FournisseurService.Infrastructure.Persistence.Seeders;
 
@@ -12,7 +11,7 @@ public class FournisseurSeeder
     private readonly ILogger<FournisseurSeeder> _logger;
     private readonly IFournisseurService _fournisseurService;
 
-    public FournisseurSeeder(FournisseurDbContext context, 
+    public FournisseurSeeder(FournisseurDbContext context,
                             ILogger<FournisseurSeeder> logger,
                             IFournisseurService fournisseurService)
     {
@@ -29,9 +28,10 @@ public class FournisseurSeeder
             return;
         }
 
-        var fournisseurs = BuildFournisseurs();
-        foreach(Fournisseur f in fournisseurs){
-            var dto = MapToDto(f);
+        List<Fournisseur> fournisseurs = BuildFournisseurs();
+        foreach (Fournisseur f in fournisseurs)
+        {
+            CreateFournisseurRequestDto dto = MapToDto(f);
             await _fournisseurService.CreateAsync(dto);
         }
 
@@ -42,10 +42,10 @@ public class FournisseurSeeder
 
     private static List<Fournisseur> BuildFournisseurs()
     {
-        var fournisseurs = new List<Fournisseur>();
+        List<Fournisseur> fournisseurs = new List<Fournisseur>();
 
         // ── 1. Standard local supplier ─────────────────────────────────────────
-        var techSupply = Fournisseur.Create(
+        Fournisseur techSupply = Fournisseur.Create(
             name: "TechSupply Tunisie",
             address: "Zone Industrielle Ben Arous, Tunis 2013",
             phone: "+216 71 100 001",
@@ -56,7 +56,7 @@ public class FournisseurSeeder
         fournisseurs.Add(techSupply);
 
         // ── 2. International supplier ──────────────────────────────────────────
-        var globalElec = Fournisseur.Create(
+        Fournisseur globalElec = Fournisseur.Create(
             name: "Global Electronics SARL",
             address: "45 Rue du Commerce, Sfax 3000",
             phone: "+216 74 100 002",
@@ -67,7 +67,7 @@ public class FournisseurSeeder
         fournisseurs.Add(globalElec);
 
         // ── 3. Raw materials supplier ──────────────────────────────────────────
-        var matierePremiere = Fournisseur.Create(
+        Fournisseur matierePremiere = Fournisseur.Create(
             name: "Matières Premières du Nord",
             address: "Route de Bizerte Km 12, Tunis 1080",
             phone: "+216 71 100 003",
@@ -78,7 +78,7 @@ public class FournisseurSeeder
         fournisseurs.Add(matierePremiere);
 
         // ── 4. Packaging supplier — no email ──────────────────────────────────
-        var packPro = Fournisseur.Create(
+        Fournisseur packPro = Fournisseur.Create(
             name: "PackPro Industrie",
             address: "Centre Industriel, Sousse 4000",
             phone: "+216 73 100 004",
@@ -89,7 +89,7 @@ public class FournisseurSeeder
         fournisseurs.Add(packPro);
 
         // ── 5. IT services supplier ────────────────────────────────────────────
-        var itServices = Fournisseur.Create(
+        Fournisseur itServices = Fournisseur.Create(
             name: "IT Solutions Pro",
             address: "Les Berges du Lac II, Tunis 1053",
             phone: "+216 71 100 005",
@@ -100,7 +100,7 @@ public class FournisseurSeeder
         fournisseurs.Add(itServices);
 
         // ── 6. Blocked supplier — payment dispute ──────────────────────────────
-        var blockedSupplier = Fournisseur.Create(
+        Fournisseur blockedSupplier = Fournisseur.Create(
             name: "Fournisseur Bloqué SARL",
             address: "Bardo, Tunis 2000",
             phone: "+216 71 100 006",
@@ -112,7 +112,7 @@ public class FournisseurSeeder
         fournisseurs.Add(blockedSupplier);
 
         // ── 7. Soft-deleted supplier — to test GetPagedDeleted ─────────────────
-        var deletedSupplier = Fournisseur.Create(
+        Fournisseur deletedSupplier = Fournisseur.Create(
             name: "Société Dissoute",
             address: "Adresse inconnue",
             phone: "+216 71 100 007",
@@ -124,7 +124,7 @@ public class FournisseurSeeder
         fournisseurs.Add(deletedSupplier);
 
         // ── 8. Wholesale food supplier ─────────────────────────────────────────
-        var foodSupply = Fournisseur.Create(
+        Fournisseur foodSupply = Fournisseur.Create(
             name: "AgroFood Distribution",
             address: "Marché de Gros, Bir El Kassaa 2059",
             phone: "+216 71 100 008",
@@ -135,7 +135,7 @@ public class FournisseurSeeder
         fournisseurs.Add(foodSupply);
 
         // ── 9. Office supplies supplier ────────────────────────────────────────
-        var officePro = Fournisseur.Create(
+        Fournisseur officePro = Fournisseur.Create(
             name: "OfficePro Fournitures",
             address: "Avenue de la Liberté, Tunis 1002",
             phone: "+216 71 100 009",
@@ -146,7 +146,7 @@ public class FournisseurSeeder
         fournisseurs.Add(officePro);
 
         // ── 10. Logistics / transport supplier ────────────────────────────────
-        var logistix = Fournisseur.Create(
+        Fournisseur logistix = Fournisseur.Create(
             name: "Logistix Transport",
             address: "Route Nationale 1, Hammam Lif 2050",
             phone: "+216 71 100 010",
