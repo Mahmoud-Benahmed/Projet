@@ -4,7 +4,6 @@ using ERP.StockService.Domain.LocalCache.Client;
 using ERP.StockService.Domain.LocalCache.Fournisseur;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Reflection.Emit;
 
 namespace ERP.StockService.Infrastructure.Persistence;
 
@@ -194,6 +193,7 @@ internal sealed class ArtCategoryCacheConfiguration : IEntityTypeConfiguration<D
         b.Property(c => c.UpdatedAt).IsRequired(false);
 
         b.HasIndex(c => c.Name).IsUnique();
+        b.HasQueryFilter(c => !c.IsDeleted);
     }
 }
 
@@ -232,6 +232,7 @@ internal sealed class ArticleCacheConfiguration : IEntityTypeConfiguration<Artic
 
         b.HasIndex(a => a.IsDeleted);
         b.HasIndex(a => a.CategoryId);
+        b.HasQueryFilter(a => !a.IsDeleted);
     }
 }
 
@@ -259,6 +260,7 @@ internal sealed class ClientCacheConfiguration : IEntityTypeConfiguration<Client
          .HasFilter("[IsDeleted] = 0");
 
         b.HasIndex(c => c.IsBlocked);
+        b.HasQueryFilter(c => !c.IsDeleted);
     }
 }
 
@@ -285,6 +287,7 @@ internal sealed class CltCategoryCacheConfiguration : IEntityTypeConfiguration<D
          .HasFilter("[IsDeleted] = 0");
 
         b.HasIndex(c => c.IsActive);
+        b.HasQueryFilter(c => !c.IsDeleted);
     }
 }
 
@@ -310,7 +313,7 @@ internal sealed class ClientCategoryConfiguration : IEntityTypeConfiguration<Dom
          .OnDelete(DeleteBehavior.Restrict);
     }
 }
-internal sealed class  FournisseurCacheConfiguration : IEntityTypeConfiguration<FournisseurCache>
+internal sealed class FournisseurCacheConfiguration : IEntityTypeConfiguration<FournisseurCache>
 {
     public void Configure(EntityTypeBuilder<FournisseurCache> entity)
     {
@@ -349,6 +352,8 @@ internal sealed class  FournisseurCacheConfiguration : IEntityTypeConfiguration<
         entity.Property(e => e.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("GETUTCDATE()");
+
+        entity.HasQueryFilter(c => !c.IsDeleted);
     }
 }
 
@@ -356,8 +361,8 @@ internal sealed class InvoiceBonSortieMappingConfiguration : IEntityTypeConfigur
 {
     public void Configure(EntityTypeBuilder<InvoiceBonSortieMapping> entity)
     {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.InvoiceId).IsUnique();
-            entity.HasIndex(e => e.BonSortieId);
+        entity.HasKey(e => e.Id);
+        entity.HasIndex(e => e.InvoiceId).IsUnique();
+        entity.HasIndex(e => e.BonSortieId);
     }
 }
