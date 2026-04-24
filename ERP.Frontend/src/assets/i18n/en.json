@@ -19,6 +19,7 @@
     "AUDIT_LOG": "Audit Log"
   },
   "COMMON": {
+    "LOAD_MORE": "Load more",
     "LEAVE": "Leave",
     "STAY": "Stay",
     "PROCESSING": "Processing...",
@@ -83,17 +84,20 @@
     "UNIT_REQUIRED": "Unit is required",
     "ADDRESS_REQUIRED": "Address is required (min 5 characters)",
     "CODE_REQUIRED": "Code is required (min 2, max 20 characters)",
-    "DELAI_RETOUR_REQUIRED": "Délai retour is required and must be ≥ 0",
+    "DELAI_RETOUR_REQUIRED": "Return delay is required",
+    "DELAI_RETOUR_INVALID": "Return delay must be at least 7 days and cannot exceed 270 days",
     "DISCOUNT_RATE_INVALID": "Discount rate must be between 0 and 100",
-    "CREDIT_LIMIT_INVALID": "Credit limit must be ≥ 0",
-    "MULTIPLIER_INVALID": "Multiplier must be ≥ 0",
+    "CREDIT_LIMIT_INVALID": "Credit limit must be ≥ 1000",
+    "MULTIPLIER_INVALID": "Multiplier must be ≥ 1",
     "PASSWORD_REQUIRED": "Password is required",
     "PASSWORD_WEAK": "Weak",
     "PASSWORD_FAIR": "Fair",
     "PASSWORD_GOOD": "Good",
     "PASSWORD_STRONG": "Very Strong",
-    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être supérieur à 0",
-    "MAX_QUANTITY": "Maximum quantity allowed is {{max}}"
+    "PHONE_INVALID": "Invalid phone number",
+    "MAX_QUANTITY": "Maximum quantity allowed is {{max}}",
+    "DUE_PAYMENT_PERIOD_INVALID": "The payment due period must be at least 7 days and cannot exceed 180 days",
+    "DUE_PAYMENT_PERIOD_REQUIRED": "The payment due period is required"
   },
   "ERRORS": {
     "AUTH_001": "This email is already in use.",
@@ -394,7 +398,7 @@
       "PHONE": "PHONE",
       "TAX_NUMBER": "TAX NUMBER",
       "CREDIT_LIMIT": "CREDIT LIMIT",
-      "DELAI_RETOUR": "DELAI RETOUR",
+      "DELAI_RETOUR": "Return Delay (days)",
       "DUE_PAYMENT_PERIOD": "Due Payment Period",
       "STATUS": "STATUS",
       "CREATED_AT": "CREATED AT",
@@ -471,7 +475,7 @@
       "CODE_PLACEHOLDER": "e.g. CAT-A",
       "DELAI_RETOUR": "Return Delay (days)",
       "DELAI_RETOUR_PLACEHOLDER": "e.g. 30",
-      "DISCOUNT_RATE": "Discount Rate (%)",
+      "DISCOUNT_RATE": "Discount Rate",
       "DISCOUNT_RATE_PLACEHOLDER": "e.g. 10",
       "CREDIT_LIMIT_MULTIPLIER": "Credit Limit Multiplier",
       "CREDIT_LIMIT_PLACEHOLDER": "e.g. 1.5",
@@ -617,7 +621,10 @@
         "QUANTITY": "Quantity *",
         "PRICE": "Price *",
         "REMARQUE": "Note",
-        "REMARQUE_PLACEHOLDER": "Optional remark"
+        "REMARQUE_PLACEHOLDER": "Optional remark",
+        "MOTIF_REQUIRED": "The reason is required for return receipts.",
+        "SOURCE_REQUIRED": "The source receipt is required for outgoing and return receipts.",
+        "LIGNES_REQUIRED": "Please add at least one line to create the receipt."
       },
       "SUCCESS": {
         "CREATED": "Receipt created successfully.",
@@ -642,6 +649,8 @@
     "ERRORS": {
       "QUANTITY_EXCEEDS_STOCK":"Quantity cannot exceed {{stock}}",
       "ARTICLES_NOT_FOUND": "No articles available in stock",
+      "CLIENTS_NOT_FOUND": "No clients available",
+      "FOURNISSEURS_NOT_FOUND": "No suppliers available",
       "INSUFFICIENT_STOCK": "Quantity {{requested}} exceeds available stock {{max}}",
       "INSUFFICIENT_STOCK_DETAIL": "{{article}}: requested {{requested}}, available {{available}}"
     },
@@ -656,7 +665,6 @@
       "CRITICAL_STOCK": "⚠️ Critical stock! Only {{count}} units left."
     }
   },
-
   "INVOICES": {
     "KEYWORD": "Invoice",
     "KEYWORD_PLURAL": "Invoices",
@@ -766,7 +774,7 @@
       "DISCOUNT_RATE":"Discount Rate ({{rate}} %)",
       "YOU_SAVE": "Amount saved",
       "CREDIT_LIMIT_REMAINING": "Remaining Credit:",
-      "CREDIT_LIMIT_CURRENT_USAGE": "Current Outstanding:",
+      "CREDIT_LIMIT_CURRENT_USAGE": "Credit used:",
       "NO_LIMIT":"No credit limit set",
       "CREDIT_LIMIT_WARNING":"Credit limit warning",
       "STOCK":"Qty in stock",
@@ -838,7 +846,7 @@
     },
     "ERRORS": {    
       "HAS_SUFFICIENT_CREDIT": "Credit available: {{remainingCredit}} TND",
-      "INSUFFICIENT_CREDIT": "Credit limit exceeded. Limit: {{creditLimit}} TND, Current outstanding: {{currentOutstanding}} TND, This invoice: {{invoiceTotal}} TND",
+      "INSUFFICIENT_CREDIT": "Credit limit exceeded. Limit: {{creditLimit}} TND, Current used: {{currentOutstanding}} TND, This invoice: {{invoiceTotal}} TND",
       "LOAD_FAILED": "Failed to load invoices.",
       "LOAD_DELETED_FAILED": "Failed to load deleted invoices.",
       "LOAD_STATS_FAILED": "Failed to load statistics.",
@@ -855,7 +863,9 @@
       "CLIENT_NOT_FOUND": "Client not found",
       "CREDIT_LIMIT_EXCEEDED": "Credit limit exceeded. Cannot create invoice.",
       "CREDIT_LIMIT_EXCEEDED_ARTICLES": "Cannot add items – client credit limit exceeded",
-      "VALIDATION_FAILED": "Validation failed. Please try again."
+      "VALIDATION_FAILED": "Validation failed. Please try again.",
+      "CLIENT_BLOCKED": "Client {{client}} is blocked",
+      "CLIENT_DELETED": "Client {{client}} is deleted"
     },
     "SUCCESS": {
       "CREATED": "Invoice created successfully.",

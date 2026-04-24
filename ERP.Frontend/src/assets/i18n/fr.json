@@ -19,6 +19,7 @@
     "AUDIT_LOG": "Journal d'audit"
   },
   "COMMON": {
+    "LOAD_MORE": "Charger plus",
     "LEAVE": "Quitter",
     "STAY": "Rester",
     "PROCESSING": "Traitement en cours...",
@@ -63,7 +64,6 @@
     "ACTIONS": "ACTIONS"
   },
   "VALIDATION": {
-    "MAX_QUANTITY": "La quantité maximale autorisée est {{max}}",
     "REQUIRED": "Ce champ est obligatoire",
     "MIN_LENGTH": "Minimum {{min}} caractères requis",
     "MAX_LENGTH": "Maximum {{max}} caractères autorisés",
@@ -84,16 +84,20 @@
     "UNIT_REQUIRED": "L'unité est requise",
     "ADDRESS_REQUIRED": "L'adresse est requise (min 5 caractères)",
     "CODE_REQUIRED": "Le code est requis (min 2, max 20 caractères)",
-    "DELAI_RETOUR_REQUIRED": "Le délai de retour est requis et doit être ≥ 0",
+    "DELAI_RETOUR_REQUIRED": "Le délai de retour est requis",
+    "DELAI_RETOUR_INVALID": "Le délai de retour doit être d'au moins 7 jours et ne dépasse pas 270 jours",
     "DISCOUNT_RATE_INVALID": "Le taux de remise doit être compris entre 0 et 100",
-    "CREDIT_LIMIT_INVALID": "La limite de crédit doit être ≥ 0",
-    "MULTIPLIER_INVALID": "Le multiplicateur doit être ≥ 0",
+    "CREDIT_LIMIT_INVALID": "La limite de crédit doit être ≥ 1000",
+    "MULTIPLIER_INVALID": "Le multiplicateur doit être ≥ 1",
     "PASSWORD_REQUIRED": "Le mot de passe est requis",
     "PASSWORD_WEAK": "Faible",
     "PASSWORD_FAIR": "Moyen",
     "PASSWORD_GOOD": "Bon",
     "PASSWORD_STRONG": "Très fort",
-    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être supérieur à 0"
+    "PHONE_INVALID": "Numéro de téléphone invalide",
+    "MAX_QUANTITY": "La quantité maximale autorisée est {{max}}",
+    "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être d'au moins 7 jours et ne dépasse pas 180 jours",
+    "DUE_PAYMENT_PERIOD_REQUIRED": "Le délai de paiement est requis"
   },
   "ERRORS": {
     "AUTH_001": "Cet email est déjà utilisé.",
@@ -607,7 +611,10 @@
         "QUANTITY": "Quantité *",
         "PRICE": "Prix *",
         "REMARQUE": "Remarque",
-        "REMARQUE_PLACEHOLDER": "Remarque optionnelle"
+        "REMARQUE_PLACEHOLDER": "Remarque optionnelle",
+        "MOTIF_REQUIRED": "Le motif est requis pour les bons de retour.",
+        "SOURCE_REQUIRED": "Le bon source est requis pour les bons de sortie et de retour",
+        "LIGNES_REQUIRED": "Veuillez ajouter au moins une ligne pour créer le bon."
       },
       "SUCCESS": {
         "CREATED": "Bon créé avec succès.",
@@ -631,7 +638,9 @@
     },
     "ERRORS": {
       "QUANTITY_EXCEEDS_STOCK":"Quantité ne doit pas dépasser {{stock}}",
-      "ARTICLES_NOT_FOUND": "Aucun article disponible en stock",
+      "ARTICLES_NOT_FOUND": "Aucun article disponible en stock. Ajouter des articles pour créer des bons de sortie ou de retour.",
+      "CLIENTS_NOT_FOUND": "Aucun client trouvé. Ajouter des clients pour créer des bons de sortie ou de retour.",
+      "FOURNISSEURS_NOT_FOUND": "Aucun fournisseur trouvé. Ajouter des fournisseurs pour créer des bons d'entrée.",
       "INSUFFICIENT_STOCK": "La quantité {{requested}} dépasse le stock disponible {{max}}",
       "INSUFFICIENT_STOCK_DETAIL": "{{article}} : demandé {{requested}}, disponible {{available}}"
     },
@@ -756,7 +765,7 @@
       "DISCOUNT_RATE":"Taux de remise (%)",
       "YOU_SAVE": "Montant remisé",
       "CREDIT_LIMIT_REMAINING": "Crédit permis restant :",
-      "CREDIT_LIMIT_CURRENT_USAGE": "Encours actuel :",
+      "CREDIT_LIMIT_CURRENT_USAGE": "Crédit consommé:",
       "CREDIT_LIMIT_WARNING":"Alterte limite de crédit",
       "NO_LIMIT":"Sans limite",
       "STOCK":"Qté en stock",
@@ -781,7 +790,7 @@
       "INVOICE_DATE": "Date facture *",
       "DUE_DATE": "Date d'échéance *",
       "DUE_DATE_AUTO_TOOLTIP":"La date d'échéance de la facture est pré-calculée en se basant sur la période de paiement du client séléctionné.",
-      "DUE_DATE_HINT": "La date d'échéance: {{days}} depuis la date de facturation.",
+      "DUE_DATE_HINT": "La date d'échéance: {{days}} jours depuis la date de facturation.",
 
       "CLIENT": "Client *",
       "CLIENT_ADDRESS": "Adresse client *",
@@ -844,7 +853,9 @@
       "CANCEL_FAILED": "Échec de l'annulation de la facture.",
       "LOAD_DETAILS_FAILED": "Échec du chargement des détails de la facture.",
       "LOAD_CLIENTS_FAILED": "Échec du chargement des clients.",
-      "LOAD_ARTICLES_FAILED": "Échec du chargement des articles."
+      "LOAD_ARTICLES_FAILED": "Échec du chargement des articles.",
+      "CLIENT_BLOCKED": "Client {{client}} est bloqué",
+      "CLIENT_DELETED": "Client {{client}} is supprimé"
     },
     "SUCCESS": {
       "CREATED": "Facture créée avec succès.",
