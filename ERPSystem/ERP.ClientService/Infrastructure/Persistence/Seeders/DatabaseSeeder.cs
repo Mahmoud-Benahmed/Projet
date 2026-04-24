@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ERP.ClientService.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Seeders;
 
@@ -33,7 +34,7 @@ public class DatabaseSeeder
 
         _logger.LogInformation("Starting database seed...");
 
-        var categories = await _categorySeeder.SeedAsync();
+        List<CategoryResponseDto> categories = await _categorySeeder.SeedAsync();
 
         await _clientSeeder.SeedAsync(categories);
 
@@ -63,8 +64,8 @@ public static class DatabaseSeederExtensions
     /// </summary>
     public static async Task SeedDatabaseAsync(this IServiceProvider services)
     {
-        using var scope = services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        using IServiceScope scope = services.CreateScope();
+        DatabaseSeeder seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedAsync();
     }
 }

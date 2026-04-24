@@ -17,21 +17,21 @@ public class CategorySeeder
     public async Task<List<CategoryResponseDto>> SeedAsync()
     {
         // Check if categories already exist
-        var existingCategories = await _categoryService.GetAllAsync();
+        List<CategoryResponseDto> existingCategories = await _categoryService.GetAllAsync();
         if (existingCategories.Any())
         {
             _logger.LogInformation("Categories already seeded — returning existing.");
             return existingCategories;
         }
 
-        var categories = BuildCategoryRequests();
-        var createdCategories = new List<CategoryResponseDto>();
+        List<CreateCategoryRequestDto> categories = BuildCategoryRequests();
+        List<CategoryResponseDto> createdCategories = new List<CategoryResponseDto>();
 
-        foreach (var request in categories)
+        foreach (CreateCategoryRequestDto request in categories)
         {
             try
             {
-                var category = await _categoryService.CreateAsync(request);
+                CategoryResponseDto category = await _categoryService.CreateAsync(request);
                 createdCategories.Add(category);
                 _logger.LogInformation("Seeded category: {Name} (Code: {Code}, Id: {Id})",
                     category.Name, category.Code, category.Id);
@@ -45,7 +45,7 @@ public class CategorySeeder
         // Create and deactivate Legacy category
         try
         {
-            var legacyRequest = new CreateCategoryRequestDto(
+            CreateCategoryRequestDto legacyRequest = new CreateCategoryRequestDto(
                 Name: "Legacy",
                 Code: "LGC",
                 DelaiRetour: 10,
@@ -54,7 +54,7 @@ public class CategorySeeder
                 DiscountRate: null,
                 CreditLimitMultiplier: null);
 
-            var legacy = await _categoryService.CreateAsync(legacyRequest);
+            CategoryResponseDto legacy = await _categoryService.CreateAsync(legacyRequest);
             await _categoryService.DeactivateAsync(legacy.Id);
             createdCategories.Add(legacy);
             _logger.LogInformation("Seeded and deactivated category: Legacy (Id: {Id})", legacy.Id);

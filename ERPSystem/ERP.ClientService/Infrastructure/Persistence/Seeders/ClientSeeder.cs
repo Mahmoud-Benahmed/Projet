@@ -24,7 +24,7 @@ public class ClientSeeder
     public async Task SeedAsync(List<CategoryResponseDto> categories)
     {
         // Check if clients already exist
-        var existingClients = await _clientService.GetAllAsync(1, 10);
+        PagedResultDto<ClientResponseDto> existingClients = await _clientService.GetAllAsync(1, 10);
         if (existingClients.Items.Any())
         {
             _logger.LogInformation("Clients already seeded — skipping.");
@@ -38,50 +38,50 @@ public class ClientSeeder
         }
 
         // Build lookup by code for easy access
-        var byCode = categories.ToDictionary(c => c.Code);
+        Dictionary<string, CategoryResponseDto> byCode = categories.ToDictionary(c => c.Code);
 
         // Get count of the dictionary (number of key-value pairs)
         int dictCount = byCode.Count;
 
-        var clientRequests = BuildClientRequests(byCode);
+        List<CreateClientRequestDto> clientRequests = BuildClientRequests(byCode);
         Random random = new Random();
 
         if (dictCount > 0)
         {
-            foreach (var request in clientRequests)
+            foreach (CreateClientRequestDto request in clientRequests)
             {
                 try
                 {
                     int randomIndex = random.Next(dictCount);// random amount of categories to assign (0 to dictCount-1)
-                    var indexList= new List<int>();
+                    List<int> indexList = new List<int>();
 
-                    for(int i=0; i<randomIndex; i++)
+                    for (int i = 0; i < randomIndex; i++)
                     {
                         indexList.Add(random.Next(dictCount));// random index to select a category from the dictionary
                     }
 
-                    var distinctIndexes = indexList.Distinct().ToList(); // Ensure unique category assignments
+                    List<int> distinctIndexes = indexList.Distinct().ToList(); // Ensure unique category assignments
 
-                    var CategoryIdsToAssign = new List<Guid>();
+                    List<Guid> CategoryIdsToAssign = new List<Guid>();
 
-                    foreach (var index in distinctIndexes)
+                    foreach (int index in distinctIndexes)
                     {
-                        var categoryId = byCode.Values.ElementAt(index).Id;
-                        if(!CategoryIdsToAssign.Contains(categoryId))
+                        Guid categoryId = byCode.Values.ElementAt(index).Id;
+                        if (!CategoryIdsToAssign.Contains(categoryId))
                             CategoryIdsToAssign.Add(categoryId);
                     }
 
                     // Create client via service (publishes event)
-                    var client = await _clientService.CreateAsync(request);
+                    ClientResponseDto client = await _clientService.CreateAsync(request);
                     _logger.LogInformation("Seeded client: {Name} (Email: {Email}, Id: {Id})",
                                                              client.Name, client.Email, client.Id);
 
-                    foreach (var categoryId in CategoryIdsToAssign)
+                    foreach (Guid categoryId in CategoryIdsToAssign)
                     {
                         try
                         {
                             await _clientService.AddCategoryAsync(client.Id, categoryId, SystemUserId);
-                            var category = byCode.Values.FirstOrDefault(c => c.Id == categoryId);
+                            CategoryResponseDto? category = byCode.Values.FirstOrDefault(c => c.Id == categoryId);
                             _logger.LogInformation("  Assigned category '{Category}' to client {Client}",
                                 category?.Name ?? categoryId.ToString(), client.Name);
                         }
@@ -113,7 +113,7 @@ public class ClientSeeder
     {
         try
         {
-            var blockedRequest = new CreateClientRequestDto(
+            CreateClientRequestDto blockedRequest = new CreateClientRequestDto(
                 Name: "Riadh Mansouri",
                 Email: "riadh.mansouri@blocked.tn",
                 Address: "Bardo, Tunis 2000",
@@ -123,7 +123,7 @@ public class ClientSeeder
                 DelaiRetour: null,
                 DuePaymentPeriod: 30);
 
-            var blocked = await _clientService.CreateAsync(blockedRequest);
+            ClientResponseDto blocked = await _clientService.CreateAsync(blockedRequest);
             await _clientService.BlockAsync(blocked.Id);
             _logger.LogInformation("Seeded and blocked client: {Name}", blocked.Name);
         }
@@ -137,7 +137,7 @@ public class ClientSeeder
     {
         try
         {
-            var deletedRequest = new CreateClientRequestDto(
+            CreateClientRequestDto deletedRequest = new CreateClientRequestDto(
                 Name: "Société Fantôme",
                 Email: "contact@fantome.tn",
                 Address: "Adresse inconnue",
@@ -147,7 +147,7 @@ public class ClientSeeder
                 DelaiRetour: null,
                 DuePaymentPeriod: 30);
 
-            var deleted = await _clientService.CreateAsync(deletedRequest);
+            ClientResponseDto deleted = await _clientService.CreateAsync(deletedRequest);
             await _clientService.DeleteAsync(deleted.Id);
             _logger.LogInformation("Seeded and soft-deleted client: {Name}", deleted.Name);
         }
@@ -159,10 +159,10 @@ public class ClientSeeder
 
     private List<CreateClientRequestDto> BuildClientRequests(Dictionary<string, CategoryResponseDto> byCode)
     {
-        var clients = new List<CreateClientRequestDto>();
+        List<CreateClientRequestDto> clients = new List<CreateClientRequestDto>();
 
         // Helper to get category ID by code
-        Guid? GetCategoryId(string code) => byCode.TryGetValue(code, out var cat) ? cat.Id : (Guid?)null;
+        Guid? GetCategoryId(string code) => byCode.TryGetValue(code, out CategoryResponseDto? cat) ? cat.Id : null;
 
         // 1. Standard retail client
         clients.Add(new CreateClientRequestDto(
@@ -209,7 +209,7 @@ public class ClientSeeder
             DuePaymentPeriod: 90));
 
         // 5. Reseller with two categories
-        var resellerCategories = new List<Guid>();
+        List<Guid> resellerCategories = new List<Guid>();
         if (GetCategoryId("RSL").HasValue) resellerCategories.Add(GetCategoryId("RSL").Value);
         if (GetCategoryId("WHL").HasValue) resellerCategories.Add(GetCategoryId("WHL").Value);
 
