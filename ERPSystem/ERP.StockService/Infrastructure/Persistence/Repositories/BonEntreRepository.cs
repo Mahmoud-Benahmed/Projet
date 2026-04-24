@@ -51,11 +51,11 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         {
             // FIX: materialise count and items from the same base query so they
             // are always consistent — same filters, same joins.
-            var query = ActiveQueryWithFournisseur()
+            IOrderedQueryable<BonEntre> query = ActiveQueryWithFournisseur()
                 .OrderByDescending(b => b.CreatedAt);
 
-            var total = await query.CountAsync();
-            var items = await query
+            int total = await query.CountAsync();
+            List<BonEntre> items = await query
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToListAsync();
@@ -66,12 +66,12 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         public async Task<(List<BonEntre> Items, int TotalCount)> GetByFournisseurAsync(
             Guid fournisseurId, int page, int size)
         {
-            var query = ActiveQueryWithFournisseur()
+            IOrderedQueryable<BonEntre> query = ActiveQueryWithFournisseur()
                 .Where(b => b.FournisseurId == fournisseurId)
                 .OrderByDescending(b => b.CreatedAt);
 
-            var total = await query.CountAsync();
-            var items = await query
+            int total = await query.CountAsync();
+            List<BonEntre> items = await query
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToListAsync();
@@ -82,14 +82,14 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         public async Task<(List<BonEntre> Items, int TotalCount)> GetPagedDeletedAsync(
             int page, int size)
         {
-            var query = _context.BonEntres
+            IOrderedQueryable<BonEntre> query = _context.BonEntres
                 .IgnoreQueryFilters()
                 .Include(b => b.Lignes)
                 .AsSplitQuery()
                 .OrderByDescending(b => b.CreatedAt);
 
-            var total = await query.CountAsync();
-            var items = await query
+            int total = await query.CountAsync();
+            List<BonEntre> items = await query
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToListAsync();
@@ -100,13 +100,13 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         public async Task<(List<BonEntre> Items, int TotalCount)> GetPagedByDateRangeAsync(
             DateTime from, DateTime to, int page, int size)
         {
-            var query = ActiveQueryWithFournisseur()
+            IOrderedQueryable<BonEntre> query = ActiveQueryWithFournisseur()
                 .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date)
                 .OrderByDescending(b => b.CreatedAt);
 
-            var total = await query.CountAsync();
+            int total = await query.CountAsync();
 
-            var items = await query
+            List<BonEntre> items = await query
                 .Skip((page - 1) * size)
                 .Take(size)
                 .ToListAsync();
@@ -116,7 +116,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
 
         public async Task DeleteByIdAsync(Guid id)
         {
-            var bon = await _context.BonEntres.FindAsync(id);
+            BonEntre? bon = await _context.BonEntres.FindAsync(id);
             if (bon != null)
             {
                 _context.Remove(bon);
@@ -127,7 +127,7 @@ namespace ERP.StockService.Infrastructure.Persistence.Repositories
         // ── stats ─────────────────────────────────────────────────────────────
         public async Task<BonStatsDto> GetStatsAsync()
         {
-            var count = await _context.BonEntres.CountAsync();
+            int count = await _context.BonEntres.CountAsync();
 
             return new BonStatsDto(
                 TotalCount: count

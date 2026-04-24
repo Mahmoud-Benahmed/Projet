@@ -19,7 +19,7 @@ public class InvoiceBonSortieMappingRepository : IInvoiceBonSortieMappingReposit
 
     public async Task<Guid?> GetBonSortieIdByInvoiceIdAsync(Guid invoiceId)
     {
-        var mapping = await _context.InvoiceBonSortieMappings
+        InvoiceBonSortieMapping? mapping = await _context.InvoiceBonSortieMappings
             .FirstOrDefaultAsync(m => m.InvoiceId == invoiceId);
         return mapping?.BonSortieId;
     }

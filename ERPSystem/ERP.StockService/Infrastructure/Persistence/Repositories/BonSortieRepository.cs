@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
@@ -21,7 +22,7 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task DeleteByIdAsync(Guid id)
     {
-        var bon = await _context.BonSorties.FindAsync(id);
+        BonSortie? bon = await _context.BonSorties.FindAsync(id);
         if (bon != null)
         {
             _context.Remove(bon);
@@ -44,11 +45,11 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<(List<BonSortie> Items, int TotalCount)> GetAllAsync(int page, int size)
     {
-        var query = _context.BonSorties
+        IIncludableQueryable<BonSortie, IReadOnlyCollection<LigneSortie>> query = _context.BonSorties
             .Include(b => b.Lignes);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonSortie> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -59,12 +60,12 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<(List<BonSortie> Items, int TotalCount)> GetPagedByClientAsync(Guid clientId, int page, int size)
     {
-        var query = _context.BonSorties
+        IQueryable<BonSortie> query = _context.BonSorties
             .Include(b => b.Lignes)
             .Where(b => b.ClientId == clientId);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonSortie> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -75,12 +76,12 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<(List<BonSortie> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size)
     {
-        var query = _context.BonSorties
+        IQueryable<BonSortie> query = _context.BonSorties
             .Include(b => b.Lignes)
             .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonSortie> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -91,13 +92,13 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<(List<BonSortie> Items, int TotalCount)> GetByClientAsync(Guid clientId, int page, int size)
     {
-        var query = _context.BonSorties
+        IQueryable<BonSortie> query = _context.BonSorties
             .Include(b => b.Lignes)
             .Where(b => b.ClientId == clientId);
 
-        var total = await query.CountAsync();
+        int total = await query.CountAsync();
 
-        var items = await query
+        List<BonSortie> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -108,7 +109,7 @@ public class BonSortieRepository : IBonSortieRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var count = await _context.BonSorties.CountAsync();
+        int count = await _context.BonSorties.CountAsync();
 
         return new BonStatsDto(
             TotalCount: count

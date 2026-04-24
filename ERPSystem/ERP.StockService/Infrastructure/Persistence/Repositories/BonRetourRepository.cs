@@ -1,5 +1,6 @@
 ﻿using ERP.StockService.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
@@ -21,7 +22,7 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task DeleteByIdAsync(Guid id)
     {
-        var bon = await _context.BonRetours.FindAsync(id);
+        BonRetour? bon = await _context.BonRetours.FindAsync(id);
         if (bon != null)
         {
             _context.Remove(bon);
@@ -39,11 +40,11 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetAllAsync(int page, int size)
     {
-        var query = _context.BonRetours
+        IIncludableQueryable<BonRetour, IReadOnlyCollection<LigneRetour>> query = _context.BonRetours
             .Include(b => b.Lignes);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonRetour> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -54,12 +55,12 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetBySourceIdAsync(Guid sourceId, int page, int size)
     {
-        var query = _context.BonRetours
+        IQueryable<BonRetour> query = _context.BonRetours
             .Include(b => b.Lignes)
             .Where(b => b.SourceId == sourceId);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonRetour> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -70,12 +71,12 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetByRetourSourceTypeAsync(RetourSourceType sourceType, int page, int size)
     {
-        var query = _context.BonRetours
+        IQueryable<BonRetour> query = _context.BonRetours
             .Include(b => b.Lignes)
             .Where(b => b.SourceType == sourceType);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonRetour> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -91,12 +92,12 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<(List<BonRetour> Items, int TotalCount)> GetPagedByDateRangeAsync(DateTime from, DateTime to, int page, int size)
     {
-        var query = _context.BonRetours
+        IQueryable<BonRetour> query = _context.BonRetours
             .Include(b => b.Lignes)
             .Where(b => b.CreatedAt.Date >= from.Date && b.CreatedAt.Date <= to.Date);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<BonRetour> items = await query
             .OrderByDescending(b => b.CreatedAt)
             .Skip((page - 1) * size)
             .Take(size)
@@ -107,7 +108,7 @@ public class BonRetourRepository : IBonRetourRepository
 
     public async Task<BonStatsDto> GetStatsAsync()
     {
-        var count = await _context.BonRetours.CountAsync();
+        int count = await _context.BonRetours.CountAsync();
 
         return new BonStatsDto(
             TotalCount: count

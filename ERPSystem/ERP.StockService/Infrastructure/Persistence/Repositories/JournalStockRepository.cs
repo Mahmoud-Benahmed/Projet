@@ -3,16 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories;
 
-public class JournalStockRepository: IJournalStockRepository
+public class JournalStockRepository : IJournalStockRepository
 {
     private readonly StockDbContext _context;
     public JournalStockRepository(StockDbContext context) => _context = context;
 
-    public async Task AddAsync(JournalStock entry) 
+    public async Task AddAsync(JournalStock entry)
         => await _context.JournalStocks.AddAsync(entry);
 
     public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
-    public async Task<List<JournalStock>> GetByArticleAsync(Guid articleId) 
+    public async Task<List<JournalStock>> GetByArticleAsync(Guid articleId)
         => await _context.JournalStocks.Where(js => js.ArticleId == articleId).ToListAsync();
 
     public async Task DeleteAsync(JournalStock entry)
@@ -25,7 +25,7 @@ public class JournalStockRepository: IJournalStockRepository
     public async Task<decimal> GetCurrentStockAsync(Guid articleId)
     {
         // Returns 0 if no movements exist yet for this article
-        var movements = await _context.JournalStocks
+        List<JournalStock> movements = await _context.JournalStocks
             .Where(j => j.ArticleId == articleId)
             .ToListAsync();
 
@@ -45,7 +45,7 @@ public class JournalStockRepository: IJournalStockRepository
             .Where(s => s.TotalStock != 0)  // ← CRITICAL: Remove zero stock articles
             .ToListAsync();
 
-        var result = new Dictionary<string, List<StockItem>>
+        Dictionary<string, List<StockItem>> result = new Dictionary<string, List<StockItem>>
         {
             ["IN_STOCK"] = stockData
                 .Where(s => s.TotalStock > 0)
@@ -63,7 +63,7 @@ public class JournalStockRepository: IJournalStockRepository
 
     public async Task<Dictionary<Guid, decimal>> GetCurrentStocksAsync(IEnumerable<Guid> articleIds)
     {
-        var ids = articleIds.ToList();
+        List<Guid> ids = articleIds.ToList();
 
         return await _context.JournalStocks
             .Where(j => ids.Contains(j.ArticleId))

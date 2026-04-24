@@ -24,19 +24,19 @@
         public async Task<string> GetNextDocumentNumberAsync(string documentType)
         {
             // Use a raw SQL query with row lock to ensure uniqueness across concurrent requests
-            var sequence = await _context.BonNumber
+            BonNumber? sequence = await _context.BonNumber
                 .FromSqlRaw(
                     @"SELECT * FROM BonNumbers WITH (UPDLOCK, ROWLOCK)
                   WHERE DocumentType = {0}",
                     documentType)
                 .FirstOrDefaultAsync();
 
-            var year = DateTime.UtcNow.Year;
+            int year = DateTime.UtcNow.Year;
 
             if (sequence == null)
             {
                 // Create new sequence for this document type
-                var prefix = DocumentPrefixes[documentType];
+                string prefix = DocumentPrefixes[documentType];
                 sequence = new BonNumber(documentType, prefix);
                 _context.BonNumber.Add(sequence);
 
