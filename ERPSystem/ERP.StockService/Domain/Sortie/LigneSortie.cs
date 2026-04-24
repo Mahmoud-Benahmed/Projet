@@ -5,7 +5,7 @@
     private LigneSortie() { }
     internal static LigneSortie Create(Guid bonSortieId, Guid articleId, decimal qty, decimal price)
     {
-        var l = new LigneSortie
+        LigneSortie l = new LigneSortie
         {
             BonSortieId = bonSortieId,
             ArticleId = articleId,

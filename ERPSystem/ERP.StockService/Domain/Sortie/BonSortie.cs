@@ -24,7 +24,7 @@ public sealed class BonSortie : PieceStock
         if (price < 0)
             throw new ArgumentException("Price cannot be negative");
 
-        var l = LigneSortie.Create(Id, articleId, qty, price);
+        LigneSortie l = LigneSortie.Create(Id, articleId, qty, price);
         _lignes.Add(l);
         return l;
     }
@@ -37,7 +37,7 @@ public sealed class BonSortie : PieceStock
     public override void ValidateLignes()
     {
         if (!_lignes.Any()) throw new InvalidOperationException("BonSortie must have at least one ligne.");
-        foreach (var l in _lignes) l.Validate();
+        foreach (LigneSortie l in _lignes) l.Validate();
     }
 
     public decimal CalculateTotal() => _lignes.Sum(l => l.CalculateTotalLigne());
