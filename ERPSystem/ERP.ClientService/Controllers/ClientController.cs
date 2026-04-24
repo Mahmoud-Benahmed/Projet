@@ -20,7 +20,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _clientService.GetAllAsync(pageNumber, pageSize);
+        PagedResultDto<ClientResponseDto> result = await _clientService.GetAllAsync(pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
@@ -29,7 +29,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _clientService.GetPagedDeletedAsync(pageNumber, pageSize);
+        PagedResultDto<ClientResponseDto> result = await _clientService.GetPagedDeletedAsync(pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
@@ -37,7 +37,7 @@ public class ClientController : ControllerBase
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> GetById([FromRoute] Guid id)
     {
-        var client = await _clientService.GetByIdAsync(id);
+        ClientResponseDto client = await _clientService.GetByIdAsync(id);
         return Ok(client);
     }
 
@@ -47,7 +47,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _clientService
+        PagedResultDto<ClientResponseDto> result = await _clientService
             .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
@@ -58,7 +58,7 @@ public class ClientController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _clientService
+        PagedResultDto<ClientResponseDto> result = await _clientService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
@@ -67,7 +67,7 @@ public class ClientController : ControllerBase
     [ProducesResponseType(typeof(ClientStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats()
     {
-        var result = await _clientService.GetStatsAsync();
+        ClientStatsDto result = await _clientService.GetStatsAsync();
         return Ok(result);
     }
 
@@ -75,7 +75,7 @@ public class ClientController : ControllerBase
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
     public async Task<ActionResult> Create([FromBody] CreateClientRequestDto request)
     {
-        var client = await _clientService.CreateAsync(request);
+        ClientResponseDto client = await _clientService.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = client.Id }, client);
     }
 
@@ -85,7 +85,7 @@ public class ClientController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateClientRequestDto request)
     {
-        var client = await _clientService.UpdateAsync(id, request);
+        ClientResponseDto client = await _clientService.UpdateAsync(id, request);
         return Ok(client);
     }
 
@@ -107,7 +107,7 @@ public class ClientController : ControllerBase
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> Block([FromRoute] Guid id)
     {
-        var client = await _clientService.BlockAsync(id);
+        ClientResponseDto client = await _clientService.BlockAsync(id);
         return Ok(client);
     }
 
@@ -115,14 +115,14 @@ public class ClientController : ControllerBase
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> Unblock([FromRoute] Guid id)
     {
-        var client = await _clientService.UnblockAsync(id);
+        ClientResponseDto client = await _clientService.UnblockAsync(id);
         return Ok(client);
     }
 
     [HttpGet(ApiRoutes.Clients.EffectiveDelaiRetour)]
     public async Task<ActionResult> GetEffectiveDelaiRetour([FromRoute] Guid id)
     {
-        var days = await _clientService.GetEffectiveDelaiRetourAsync(id);
+        int? days = await _clientService.GetEffectiveDelaiRetourAsync(id);
         return Ok(new { effectiveDays = days });
     }
 
@@ -132,7 +132,7 @@ public class ClientController : ControllerBase
         [FromQuery] decimal orderAmount,
         [FromQuery] decimal currentBalance)
     {
-        var result = await _clientService
+        bool result = await _clientService
             .CanPlaceOrderAsync(id, orderAmount, currentBalance);
         return Ok(new { canPlace = result });
     }
@@ -143,10 +143,10 @@ public class ClientController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] AddCategoryRequestDto request)
     {
-        if (!TryGetRequesterId(out var requesterId))
+        if (!TryGetRequesterId(out Guid requesterId))
             return Unauthorized();
 
-        var client = await _clientService
+        ClientResponseDto client = await _clientService
             .AddCategoryAsync(id, request.CategoryId, requesterId);
         return Ok(client);
     }
@@ -157,14 +157,14 @@ public class ClientController : ControllerBase
         [FromRoute] Guid id,
         [FromRoute] Guid categoryId)
     {
-        var client = await _clientService.RemoveCategoryAsync(id, categoryId);
+        ClientResponseDto client = await _clientService.RemoveCategoryAsync(id, categoryId);
         return Ok(client);
     }
     private bool TryGetRequesterId(out Guid requesterId)
     {
         requesterId = Guid.Empty;
-        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
-        var res = !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
+        string? raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        bool res = !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         return res;
     }
 

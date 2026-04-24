@@ -21,7 +21,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _categoryService.GetAllPagedAsync(pageNumber, pageSize);
+        PagedResultDto<CategoryResponseDto> result = await _categoryService.GetAllPagedAsync(pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
@@ -29,7 +29,7 @@ public class CategoryController : ControllerBase
     [HttpGet(ApiRoutes.Categories.GetAll)]
     public async Task<ActionResult> GetAllAsync()
     {
-        var result = await _categoryService.GetAllAsync();
+        List<CategoryResponseDto> result = await _categoryService.GetAllAsync();
         return Ok(result);
     }
 
@@ -38,7 +38,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
+        PagedResultDto<CategoryResponseDto> result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
 
@@ -46,7 +46,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(CategoryResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> GetById([FromRoute] Guid id)
     {
-        var category = await _categoryService.GetByIdAsync(id);
+        CategoryResponseDto category = await _categoryService.GetByIdAsync(id);
         return Ok(category);
     }
 
@@ -56,7 +56,7 @@ public class CategoryController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _categoryService
+        PagedResultDto<CategoryResponseDto> result = await _categoryService
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
         return Ok(new { items = result.Items, totalCount = result.TotalCount });
     }
@@ -65,7 +65,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(CategoryStatsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStats()
     {
-        var result = await _categoryService.GetStatsAsync();
+        CategoryStatsDto result = await _categoryService.GetStatsAsync();
         return Ok(result);
     }
 
@@ -73,7 +73,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(CategoryResponseDto), StatusCodes.Status201Created)]
     public async Task<ActionResult> Create([FromBody] CreateCategoryRequestDto request)
     {
-        var category = await _categoryService.CreateAsync(request);
+        CategoryResponseDto category = await _categoryService.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
     }
 
@@ -83,7 +83,7 @@ public class CategoryController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateCategoryRequestDto request)
     {
-        var category = await _categoryService.UpdateAsync(id, request);
+        CategoryResponseDto category = await _categoryService.UpdateAsync(id, request);
         return Ok(category);
     }
 
@@ -105,7 +105,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(CategoryResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> Activate([FromRoute] Guid id)
     {
-        var category = await _categoryService.ActivateAsync(id);
+        CategoryResponseDto category = await _categoryService.ActivateAsync(id);
         return Ok(category);
     }
 
@@ -113,7 +113,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(CategoryResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> Deactivate([FromRoute] Guid id)
     {
-        var category = await _categoryService.DeactivateAsync(id);
+        CategoryResponseDto category = await _categoryService.DeactivateAsync(id);
         return Ok(category);
     }
 }
