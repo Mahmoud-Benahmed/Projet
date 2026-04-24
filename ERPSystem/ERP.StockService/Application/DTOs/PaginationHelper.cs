@@ -10,8 +10,8 @@ namespace ERP.StockService.Infrastructure.Persistence
             int pageSize,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy)
         {
-            var totalCount = await query.CountAsync();
-            var items = await orderBy(query)
+            int totalCount = await query.CountAsync();
+            List<T> items = await orderBy(query)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

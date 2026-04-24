@@ -1,5 +1,4 @@
-﻿using ERP.StockService.Domain;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ERP.StockService.Application.DTOs;
 
@@ -50,7 +49,7 @@ public sealed record BonSortieResponseDto(
     Guid Id, Guid ClientId,
     string numero, string? Observation,
     DateTime CreatedAt, DateTime? UpdatedAt,
-    List<LigneResponseDto> Lignes, 
+    List<LigneResponseDto> Lignes,
     decimal Total);
 
 // ── BonRetour ─────────────────────────────────────────────────────────────────
@@ -115,11 +114,11 @@ public static class BonSortieMapping
 {
     public static BonSortieResponseDto ToResponseDto(this BonSortie bon) =>
         new(
-            bon.Id, 
+            bon.Id,
             bon.ClientId,
-            bon.Numero, 
-            bon.Observation, 
-            bon.CreatedAt, 
+            bon.Numero,
+            bon.Observation,
+            bon.CreatedAt,
             bon.UpdatedAt,
             bon.Lignes.Select(l => new LigneResponseDto(
                 l.Id, l.ArticleId, l.Quantity, l.Price, l.CalculateTotalLigne()
