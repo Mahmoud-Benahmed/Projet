@@ -79,7 +79,7 @@ public class Client
             throw new InvalidOperationException(
                 $"Client already has category '{category.Name}'.");
 
-        var clientCategory = ClientCategory.Create(Id, category.Id, assignedById);
+        ClientCategory clientCategory = ClientCategory.Create(Id, category.Id, Guid.Empty, category);
         ClientCategories.Add(clientCategory);
 
         UpdatedAt = DateTime.UtcNow;
@@ -90,7 +90,7 @@ public class Client
     {
         GuardNotDeleted();
 
-        var existing = ClientCategories
+        ClientCategory? existing = ClientCategories
             .FirstOrDefault(cc => cc.CategoryId == category.Id);
 
         if (existing is null)
@@ -161,7 +161,7 @@ public class Client
     {
         if (DelaiRetour.HasValue) return DelaiRetour.Value;
 
-        var categoryMax = ClientCategories
+        int categoryMax = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false })
             .Select(c => c.DelaiRetour)
@@ -178,7 +178,7 @@ public class Client
             return null;
 
         // Get the highest multiplier from active categories
-        var multiplier = ClientCategories
+        decimal multiplier = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false } && c.CreditLimitMultiplier.HasValue)
             .Select(c => c.CreditLimitMultiplier!.Value)  // Use ! after filtering
@@ -205,7 +205,7 @@ public class Client
     {
         if (DuePaymentPeriod.HasValue) return DuePaymentPeriod.Value;
 
-        var categoryMax = ClientCategories
+        int categoryMax = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false })
             .Select(c => c.DuePaymentPeriod)
@@ -219,7 +219,7 @@ public class Client
     {
         if (IsBlocked || IsDeleted) return false;
 
-        var limit = GetEffectiveCreditLimit();
+        decimal? limit = GetEffectiveCreditLimit();
 
         // If no credit limit set, allow order
         if (!limit.HasValue) return true;
@@ -229,7 +229,7 @@ public class Client
 
     public bool IsWithinDelaiRetour(DateTime documentDate)
     {
-        var window = GetEffectiveDelaiRetour();
+        int? window = GetEffectiveDelaiRetour();
         if (!window.HasValue) return false;
         return (DateTime.UtcNow - documentDate).TotalDays <= window.Value;
     }

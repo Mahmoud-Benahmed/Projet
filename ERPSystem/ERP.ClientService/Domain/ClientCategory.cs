@@ -9,8 +9,8 @@ public sealed class ClientCategory
 {
     public Guid ClientId { get; private set; }
     public Guid CategoryId { get; private set; }
-    public Guid AssignedById { get; private set; }  // userId who made the assignment
     public DateTime AssignedAt { get; private set; }
+    public Guid? AssignedById { get; private set; }  // userId who made the assignment
 
     // Navigation properties
     public Client? Client { get; private set; } = default!;
@@ -22,12 +22,14 @@ public sealed class ClientCategory
     internal static ClientCategory Create(
         Guid clientId,
         Guid categoryId,
-        Guid assignedById) =>
+        Guid? assignedById = null,
+        Category? category = null) =>
         new()
         {
             ClientId = clientId,
             CategoryId = categoryId,
             AssignedById = assignedById,
             AssignedAt = DateTime.UtcNow,
+            Category = category
         };
 }
