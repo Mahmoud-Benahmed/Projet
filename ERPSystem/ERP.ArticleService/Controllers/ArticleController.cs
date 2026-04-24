@@ -21,7 +21,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetAll)]
         public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetAllPagedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _articleService.GetAllAsync(pageNumber, pageSize);
+            PagedResultDto<ArticleResponseDto> result = await _articleService.GetAllAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
         }
 
@@ -32,7 +32,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetDeletedRoute)]
         public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetDeletedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
+            PagedResultDto<ArticleResponseDto> result = await _articleService.GetPagedDeletedAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
         }
 
@@ -42,7 +42,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetById)]
         public async Task<ActionResult<ArticleResponseDto>> GetById([FromRoute] Guid id)
         {
-            var article = await _articleService.GetByIdAsync(id);
+            ArticleResponseDto article = await _articleService.GetByIdAsync(id);
             return Ok(article);
         }
 
@@ -52,7 +52,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetByCode)]
         public async Task<ActionResult<ArticleResponseDto>> GetByCode([FromQuery] string code)
         {
-            var article = await _articleService.GetByCodeAsync(code);
+            ArticleResponseDto article = await _articleService.GetByCodeAsync(code);
             return Ok(article);
         }
 
@@ -62,7 +62,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Articles.GetPagedByCategory)]
         public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetPagedByCategory([FromQuery] Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
+            PagedResultDto<ArticleResponseDto> result = await _articleService.GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
         }
 
@@ -70,7 +70,7 @@ namespace ERP.ArticleService.API.Controllers
         [ProducesResponseType(typeof(ArticleStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStats()
         {
-            var result = await _articleService.GetStatsAsync();
+            ArticleStatsDto result = await _articleService.GetStatsAsync();
             return Ok(result);
         }
 
@@ -84,7 +84,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _articleService.GetPagedByLibelleAsync(
+            PagedResultDto<ArticleResponseDto> result = await _articleService.GetPagedByLibelleAsync(
                 libelleFilter, pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
         }
@@ -95,7 +95,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPost(ApiRoutes.Articles.Create)]
         public async Task<ActionResult<ArticleResponseDto>> Create([FromBody] CreateArticleRequestDto request)
         {
-            var article = await _articleService.CreateAsync(request);
+            ArticleResponseDto article = await _articleService.CreateAsync(request);
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = article.Id },
@@ -108,7 +108,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPut(ApiRoutes.Articles.Update)]
         public async Task<ActionResult<ArticleResponseDto>> Update([FromRoute] Guid id, [FromBody] UpdateArticleRequestDto request)
         {
-            var article = await _articleService.UpdateAsync(id, request);
+            ArticleResponseDto article = await _articleService.UpdateAsync(id, request);
             return Ok(article);
         }
 

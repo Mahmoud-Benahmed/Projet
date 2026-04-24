@@ -22,14 +22,14 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Categories.GetAll)]
         public async Task<ActionResult<List<Category>>> GetAll()
         {
-            var categories = await _categoryService.GetAllAsync();
+            List<CategoryResponseDto> categories = await _categoryService.GetAllAsync();
             return Ok(categories);
         }
 
         [HttpGet(ApiRoutes.Categories.Stats)]
         public async Task<ActionResult<CategoryStatsDto>> GetStats()
         {
-            var stats = await _categoryService.GetStatsAsync();
+            CategoryStatsDto stats = await _categoryService.GetStatsAsync();
             return Ok(stats);
         }
 
@@ -38,7 +38,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
+            PagedResultDto<CategoryResponseDto> result = await _categoryService.GetPagedDeletedAsync(pageNumber, pageSize);
             return Ok(new { items = result.Items, totalCount = result.TotalCount });
         }
 
@@ -49,7 +49,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Categories.GetById)]
         public async Task<ActionResult<Category>> GetById([FromRoute] Guid id)
         {
-            var category = await _categoryService.GetByIdAsync(id);
+            CategoryResponseDto category = await _categoryService.GetByIdAsync(id);
             return Ok(category);
         }
 
@@ -59,7 +59,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Categories.GetByName)]
         public async Task<ActionResult<Category>> GetByName([FromQuery] string name)
         {
-            var category = await _categoryService.GetByNameAsync(name);
+            CategoryResponseDto category = await _categoryService.GetByNameAsync(name);
             return Ok(category);
         }
 
@@ -71,7 +71,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _categoryService.GetPagedAsync(pageNumber, pageSize);
+            PagedResultDto<CategoryResponseDto> result = await _categoryService.GetPagedAsync(pageNumber, pageSize);
             return Ok(new { result.Items, result.TotalCount });
         }
 
@@ -81,14 +81,14 @@ namespace ERP.ArticleService.API.Controllers
         [HttpGet(ApiRoutes.Categories.GetBelowTVA)]
         public async Task<ActionResult<List<Category>>> GetBelowTVA([FromQuery] decimal tva)
         {
-            var result = await _categoryService.GetBelowTVAAsync(tva);
+            List<CategoryResponseDto> result = await _categoryService.GetBelowTVAAsync(tva);
             return Ok(result);
         }
 
         [HttpGet(ApiRoutes.Categories.GetHigherThanTVA)]
         public async Task<ActionResult<List<Category>>> GetHigherThanTVA([FromQuery] decimal tva)
         {
-            var result = await _categoryService.GetHigherThanTVAAsync(tva);
+            List<CategoryResponseDto> result = await _categoryService.GetHigherThanTVAAsync(tva);
             return Ok(result);
         }
 
@@ -97,7 +97,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] decimal min,
             [FromQuery] decimal max)
         {
-            var result = await _categoryService.GetBetweenTVAAsync(min, max);
+            List<CategoryResponseDto> result = await _categoryService.GetBetweenTVAAsync(min, max);
             return Ok(result);
         }
 
@@ -111,7 +111,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _categoryService.GetPagedByDateRangeAsync(
+            PagedResultDto<CategoryResponseDto> result = await _categoryService.GetPagedByDateRangeAsync(
                 from, to, pageNumber, pageSize);
 
             return Ok(new { result.Items, result.TotalCount });
@@ -123,7 +123,7 @@ namespace ERP.ArticleService.API.Controllers
         [HttpPost(ApiRoutes.Categories.Create)]
         public async Task<ActionResult<Category>> Create([FromBody] CategoryRequestDto request)
         {
-            var category = await _categoryService.CreateAsync(request);
+            CategoryResponseDto category = await _categoryService.CreateAsync(request);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -139,7 +139,7 @@ namespace ERP.ArticleService.API.Controllers
             [FromRoute] Guid id,
             [FromBody] CategoryRequestDto request)
         {
-            var category = await _categoryService.UpdateAsync(id, request);
+            CategoryResponseDto category = await _categoryService.UpdateAsync(id, request);
             return Ok(category);
         }
 
