@@ -1,4 +1,6 @@
-﻿namespace ERP.FournisseurService.Domain;
+﻿using System.Net.Mail;
+
+namespace ERP.FournisseurService.Domain;
 
 public sealed class Fournisseur
 {
@@ -119,7 +121,7 @@ public sealed class Fournisseur
     {
         try
         {
-            var addr = new System.Net.Mail.MailAddress(email);
+            MailAddress addr = new System.Net.Mail.MailAddress(email);
             return addr.Address == email.Trim();
         }
         catch
