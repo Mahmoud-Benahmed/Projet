@@ -270,7 +270,7 @@
         <div class="detail-item">
           <span class="detail-label">{{ 'CLIENTS.DETAILS.CREDIT_LIMIT' | translate }}</span>
           <span class="detail-value">
-            {{ selectedClient.creditLimit != null ? (selectedClient.creditLimit | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale) : '—' }}
+            {{ selectedClient.creditLimit != null ? (selectedClient.creditLimit | currency: currencyCode : 'symbol' : '1.2-2' : currencyLocale): '—' }}
           </span>
         </div>
         <div class="detail-item" *ngIf="selectedClient.creditLimit != null">
@@ -424,6 +424,9 @@
               <mat-icon>phone</mat-icon>
             </div>
             <input class="form__input" type="text" formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate"/>
+            <span class="form__error" *ngIf="clientForm.get('phone')?.invalid && clientForm.get('phone')?.touched">
+              {{ 'VALIDATION.PHONE_INVALID' | translate }}
+            </span>
           </div>
 
           <div class="form__field">
@@ -441,37 +444,38 @@
               <label>{{ 'CLIENTS.FORM.CREDIT_LIMIT' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>account_balance_wallet</mat-icon>
             </div>
-            <input class="form__input" type="number" formControlName="creditLimit" [placeholder]="'CLIENTS.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" step="0.01" min="0"
-              [class.form__input--error]="clientForm.get('creditLimit')?.invalid && clientForm.get('creditLimit')?.touched"/>
+            <input class="form__input" type="number" formControlName="creditLimit" [placeholder]="'CLIENTS.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" 
+                          step="0.01" min="1000"
+                          [class.form__input--error]="clientForm.get('creditLimit')?.invalid && clientForm.get('creditLimit')?.touched"/>
             <span class="form__error" *ngIf="clientForm.get('creditLimit')?.invalid && clientForm.get('creditLimit')?.touched">
               {{ 'VALIDATION.CREDIT_LIMIT_INVALID' | translate }}
             </span>
-
-            <div class="form__field">
-              <div class="form__label">
-                <label>{{ 'CLIENTS.FORM.DUE_PAYMENT_PERIOD' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
-                <mat-icon>schedule</mat-icon>
-              </div>
-              <input class="form__input" type="number" formControlName="duePaymentPeriod"
-                [placeholder]="'CLIENTS.FORM.DUE_PAYMENT_PERIOD_PLACEHOLDER' | translate" min="1"
-                [class.form__input--error]="clientForm.get('duePaymentPeriod')?.invalid && clientForm.get('duePaymentPeriod')?.touched"/>
-              <span class="form__error" *ngIf="clientForm.get('duePaymentPeriod')?.invalid && clientForm.get('duePaymentPeriod')?.touched">
-                {{ 'VALIDATION.DUE_PAYMENT_PERIOD_INVALID' | translate }}
-              </span>
-            </div>
           </div>
 
           <div class="form__field">
             <div class="form__label">
-              <label>{{ 'CLIENTS.FORM.DELAI_RETOUR' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
-              <mat-icon>assignment_return</mat-icon>
+              <label>{{ 'CLIENTS.FORM.DUE_PAYMENT_PERIOD' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
+              <mat-icon>schedule</mat-icon>
             </div>
-            <input class="form__input" type="number" formControlName="delaiRetour" [placeholder]="'CLIENTS.FORM.DELAI_RETOUR_PLACEHOLDER' | translate" min="0"
-              [class.form__input--error]="clientForm.get('delaiRetour')?.invalid && clientForm.get('delaiRetour')?.touched"/>
-            <span class="form__error" *ngIf="clientForm.get('delaiRetour')?.invalid && clientForm.get('delaiRetour')?.touched">
-              {{ 'VALIDATION.DELAI_RETOUR_REQUIRED' | translate }}
+            <input class="form__input" type="number" formControlName="duePaymentPeriod"
+              [placeholder]="'CLIENTS.FORM.DUE_PAYMENT_PERIOD_PLACEHOLDER' | translate" min="7" max="180"
+              [class.form__input--error]="clientForm.get('duePaymentPeriod')?.invalid && clientForm.get('duePaymentPeriod')?.touched"/>
+            <span class="form__error" *ngIf="clientForm.get('duePaymentPeriod')?.invalid && clientForm.get('duePaymentPeriod')?.touched">
+              {{ 'VALIDATION.DUE_PAYMENT_PERIOD_INVALID' | translate }}
             </span>
           </div>
+        </div>
+
+        <div class="form__field">
+          <div class="form__label">
+            <label>{{ 'CLIENTS.FORM.DELAI_RETOUR' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
+            <mat-icon>assignment_return</mat-icon>
+          </div>
+          <input class="form__input" type="number" formControlName="delaiRetour" [placeholder]="'CLIENTS.FORM.DELAI_RETOUR_PLACEHOLDER' | translate" min="7" max="270"
+            [class.form__input--error]="clientForm.get('delaiRetour')?.invalid && clientForm.get('delaiRetour')?.touched"/>
+            <span class="form__error" *ngIf="clientForm.get('delaiRetour')?.invalid && clientForm.get('delaiRetour')?.touched">
+              {{ 'VALIDATION.DELAI_RETOUR_INVALID' | translate }}
+            </span>
         </div>
 
         <div class="form__actions">

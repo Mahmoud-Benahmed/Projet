@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, ValidatorFn, ValidationErrors, AbstractControl } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -102,13 +102,13 @@ export class ClientsComponent implements OnInit {
   ) {
     this.clientForm = this.fb.group({
       name:             ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
-      email:            ['', [Validators.required, Validators.email]],
-      address:          ['', [Validators.required, Validators.minLength(5)]],
-      phone:            [''],
-      taxNumber:        [''],
-      creditLimit:      [null, [Validators.min(0.01)]],
-      delaiRetour:      [null, [Validators.min(1)]],
-      duePaymentPeriod: [null, [Validators.min(1)]],
+      email:            ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
+      address:          ['', [Validators.required, Validators.minLength(5), Validators.maxLength(500)]],
+      phone:            ['', [Validators.maxLength(20), Validators.pattern(/^[\d\s]+$/)]],
+      taxNumber:        ['', [Validators.maxLength(50)]],
+      creditLimit:      [null, this.optionalMin(1000)],
+      duePaymentPeriod: [null, this.optionalRange(7, 180)],  // backend: Range(7, 180)
+      delaiRetour:      [null, this.optionalRange(7, 270)],
     });
   }
 
@@ -124,6 +124,7 @@ export class ClientsComponent implements OnInit {
       this.clientsService.getById(this.clientIdFromRoute).subscribe({
         next: (client) => {
           this.selectedClient = client;
+          this.loadCreditLimitInfo();
           this.setViewMode('view');
   
           this.loadCategories();
@@ -335,16 +336,21 @@ export class ClientsComponent implements OnInit {
     this.previousMode = this.viewMode();
     this.selectedClient = client;
     this.setViewMode('edit');
+
     this.clientForm.patchValue({
       name:             client.name,
       email:            client.email,
       address:          client.address,
       phone:            client.phone ?? '',
       taxNumber:        client.taxNumber ?? '',
+      // nullable decimals — 0 is not a valid credit limit per backend [Range(0.01, ...)]
       creditLimit:      client.creditLimit ?? null,
-      delaiRetour:      client.delaiRetour ?? null,
-      duePaymentPeriod: client.duePaymentPeriod ?? null,
+      // non-nullable int in response but optional in update — treat 0 as unset
+      duePaymentPeriod: client.duePaymentPeriod > 0 ? client.duePaymentPeriod : null,
+      // nullable int — null stays null
+      delaiRetour:      client.delaiRetour && client.delaiRetour > 0 ? client.delaiRetour : null,
     });
+
     this.cdr.markForCheck();
   }
 
@@ -657,5 +663,32 @@ export class ClientsComponent implements OnInit {
       .map(c => c.discountRate)
       .filter((rate): rate is number => rate !== null && rate !== undefined);
     return rates.length > 0 ? Math.max(...rates) * 100 : 0;
+  }
+
+    // Helper: optional number validator (allows null/undefined)
+  optionalMin(minValue: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const val = control.value;
+      if (val === null || val === undefined || val === '') return null;
+      const num = Number(val);
+      if (isNaN(num)) return { min: true };
+      return num >= minValue ? null : { min: true };
+    };
+  }
+
+  optionalPositive(): ValidatorFn {
+    return this.optionalMin(0.01);
+  }
+
+  optionalRange(min: number, max: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const val = control.value;
+      if (val === null || val === undefined || val === '') return null;
+      const num = Number(val);
+      if (isNaN(num)) return { range: true };
+      if (num < min) return { min: { min, actual: num } };
+      if (num > max) return { max: { max, actual: num } };
+      return null;
+    };
   }
 }
