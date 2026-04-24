@@ -29,13 +29,13 @@ namespace ERP.AuthService.Infrastructure.Security
                 IEnumerable<string> privileges,
                 UserSettings settings)
         {
-            var key = new SymmetricSecurityKey(
+            SymmetricSecurityKey key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             key.KeyId = "erp-key-1";
 
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new List<Claim>
+            List<Claim> claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(CLAIM_LOGIN, login),
@@ -49,10 +49,10 @@ namespace ERP.AuthService.Infrastructure.Security
             .Concat(privileges.Select(p => new Claim(CLAIM_PRIVILEGE, p)))
             .ToList();
 
-            var expires = DateTime.UtcNow
+            DateTime expires = DateTime.UtcNow
                 .AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
 
-            var token = new JwtSecurityToken(
+            JwtSecurityToken token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
@@ -64,8 +64,8 @@ namespace ERP.AuthService.Infrastructure.Security
 
         public string GenerateRefreshToken()
         {
-            var randomBytes = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
+            byte[] randomBytes = new byte[64];
+            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomBytes);
             return Convert.ToBase64String(randomBytes);
         }
@@ -80,10 +80,10 @@ namespace ERP.AuthService.Infrastructure.Security
             if (string.IsNullOrWhiteSpace(token))
                 return null;
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
 
             // Configure validation parameters
-            var validationParameters = new TokenValidationParameters
+            TokenValidationParameters validationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -103,10 +103,10 @@ namespace ERP.AuthService.Infrastructure.Security
             try
             {
                 // Validate token
-                var principal = tokenHandler.ValidateToken(
+                ClaimsPrincipal principal = tokenHandler.ValidateToken(
                     token,
                     validationParameters,
-                    out var validatedToken);
+                    out SecurityToken? validatedToken);
 
                 // Additional validation: ensure token is JWT and algorithm is correct
                 if (validatedToken is JwtSecurityToken jwtToken &&
@@ -143,9 +143,9 @@ namespace ERP.AuthService.Infrastructure.Security
             if (string.IsNullOrWhiteSpace(token))
                 return CustomTokenValidationResult.Invalid("Token is null or empty");
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
 
-            var validationParameters = new TokenValidationParameters
+            TokenValidationParameters validationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -162,10 +162,10 @@ namespace ERP.AuthService.Infrastructure.Security
 
             try
             {
-                var principal = tokenHandler.ValidateToken(
+                ClaimsPrincipal principal = tokenHandler.ValidateToken(
                     token,
                     validationParameters,
-                    out var validatedToken);
+                    out SecurityToken? validatedToken);
 
                 if (validatedToken is not JwtSecurityToken jwtToken ||
                     !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256,
@@ -175,12 +175,12 @@ namespace ERP.AuthService.Infrastructure.Security
                 }
 
                 // Extract claims
-                var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub);
-                var loginClaim = principal.FindFirst(CLAIM_LOGIN);
-                var roleClaim = principal.FindFirst(CLAIM_ROLE);
+                Claim? userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub);
+                Claim? loginClaim = principal.FindFirst(CLAIM_LOGIN);
+                Claim? roleClaim = principal.FindFirst(CLAIM_ROLE);
 
-                var userId = userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var uid)
-                    ? uid : (Guid?)null;
+                Guid? userId = userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid uid)
+                    ? uid : null;
 
                 return CustomTokenValidationResult.Valid(
                     principal,
@@ -220,7 +220,7 @@ namespace ERP.AuthService.Infrastructure.Security
         {
             try
             {
-                var handler = new JwtSecurityTokenHandler();
+                JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
                 if (handler.CanReadToken(token))
                 {
                     return handler.ReadJwtToken(token);
@@ -238,11 +238,11 @@ namespace ERP.AuthService.Infrastructure.Security
         /// </summary>
         public bool IsTokenExpired(string token)
         {
-            var jwtToken = ReadToken(token);
+            JwtSecurityToken? jwtToken = ReadToken(token);
             if (jwtToken == null)
                 return true;
 
-            var expiration = jwtToken.ValidTo;
+            DateTime expiration = jwtToken.ValidTo;
             return expiration <= DateTime.UtcNow;
         }
 
@@ -251,12 +251,12 @@ namespace ERP.AuthService.Infrastructure.Security
         /// </summary>
         public double GetTokenRemainingLifetime(string token)
         {
-            var jwtToken = ReadToken(token);
+            JwtSecurityToken? jwtToken = ReadToken(token);
             if (jwtToken == null)
                 return 0;
 
-            var expiration = jwtToken.ValidTo;
-            var remaining = expiration - DateTime.UtcNow;
+            DateTime expiration = jwtToken.ValidTo;
+            TimeSpan remaining = expiration - DateTime.UtcNow;
 
             return remaining.TotalSeconds > 0 ? remaining.TotalSeconds : 0;
         }
