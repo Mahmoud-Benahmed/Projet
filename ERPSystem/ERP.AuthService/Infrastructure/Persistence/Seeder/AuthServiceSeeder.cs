@@ -19,8 +19,8 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             IPasswordHasher<AuthUser> passwordHasher, // ← moved before configuration
             IConfiguration configuration)
         {
-            var controles = await SeedControlesAsync(controleRepository);
-            var roles = await SeedRolesAsync(roleRepository);
+            Dictionary<string, Controle> controles = await SeedControlesAsync(controleRepository);
+            Dictionary<string, Role> roles = await SeedRolesAsync(roleRepository);
             await SeedPrivilegesAsync(privilegeRepository, roles, controles);
             await SeedUsersAsync(userRepository, roleRepository, configuration, passwordHasher);
         }
@@ -31,16 +31,16 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
         {
             await controleRepository.DeleteAllAsync();
 
-            var result = new Dictionary<string, Controle>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, Controle> result = new Dictionary<string, Controle>(StringComparer.OrdinalIgnoreCase);
 
             // Deduplicate by Code — same code may appear under multiple categories
-            var distinctDefs = PrivilegeRegistry.All
+            IEnumerable<PrivilegeDefinition> distinctDefs = PrivilegeRegistry.All
                 .GroupBy(d => d.Code, StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First());
 
-            foreach (var def in distinctDefs)
+            foreach (PrivilegeDefinition? def in distinctDefs)
             {
-                var controle = new Controle(def.Category, def.Code, def.Description);
+                Controle controle = new Controle(def.Category, def.Code, def.Description);
                 await controleRepository.AddAsync(controle);
                 result[def.Code] = controle;
             }
@@ -55,21 +55,21 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
         {
             await roleRepository.DeleteAllAsync();
 
-            var result = new Dictionary<string, Role>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, Role> result = new Dictionary<string, Role>(StringComparer.OrdinalIgnoreCase);
             string[] roleNames = [Roles.SystemAdmin, Roles.Accountant, Roles.SalesManager, Roles.StockManager];
 
             foreach (string roleName in roleNames)
             {
                 try
                 {
-                    var role = new Role(roleName);
+                    Role role = new Role(roleName);
                     await roleRepository.AddAsync(role);
                     result[roleName] = role;
                 }
                 catch (MongoWriteException ex) when (ex.WriteError?.Code == 11000)
                 {
                     // Already exists → fetch it instead
-                    var existing = await roleRepository.GetByLibelleAsync(roleName.ToUpper());
+                    Role? existing = await roleRepository.GetByLibelleAsync(roleName.ToUpper());
                     result[roleName] = existing!;
                 }
             }
@@ -88,26 +88,26 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
         {
             await privilegeRepository.DeleteAllAsync();
 
-            foreach (var rolePair in roles)
+            foreach (KeyValuePair<string, Role> rolePair in roles)
             {
-                var roleName = rolePair.Key;
-                var role = rolePair.Value;
+                string roleName = rolePair.Key;
+                Role role = rolePair.Value;
 
-                foreach (var def in PrivilegeRegistry.All)
+                foreach (PrivilegeDefinition def in PrivilegeRegistry.All)
                 {
-                    if (!controles.TryGetValue(def.Code, out var controle))
+                    if (!controles.TryGetValue(def.Code, out Controle? controle))
                     {
                         continue;
                     }
 
                     bool isGranted = RoleHasPrivilege(roleName, def.Category, def.Code);
 
-                    var existing = await privilegeRepository
+                    Privilege? existing = await privilegeRepository
                         .GetByRoleIdAndControleIdAsync(role.Id, controle.Id);
 
                     if (existing is null)
                     {
-                        var privilege = new Privilege(role.Id, controle.Id, isGranted);
+                        Privilege privilege = new Privilege(role.Id, controle.Id, isGranted);
                         await privilegeRepository.AddAsync(privilege);
                     }
                 }
@@ -188,7 +188,7 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             Privileges.Stock.UPDATE_STOCK => true,
             Privileges.Stock.ADD_ENTRY => true,
 
-            Privileges.Fournisseurs.VIEW_FOURNISSEURS=> true,
+            Privileges.Fournisseurs.VIEW_FOURNISSEURS => true,
             Privileges.Fournisseurs.CREATE_FOURNISSEUR => true,
             Privileges.Fournisseurs.UPDATE_FOURNISSEUR => true,
             Privileges.Fournisseurs.DELETE_FOURNISSEUR => true,
@@ -209,7 +209,7 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
             // Articles - view only
             Privileges.Articles.VIEW_ARTICLES => true,
 
-            Privileges.Stock.VIEW_STOCK=> true,
+            Privileges.Stock.VIEW_STOCK => true,
 
 
             // Invoices — view + validate only
@@ -241,13 +241,13 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
 
             List<Role> roles = await roleRepository.GetAllAsync();
 
-            var adminRole = roles.Find(r => r.Libelle == Roles.SystemAdmin) ?? throw new InvalidOperationException($"Role '{Roles.SystemAdmin}' not found. Ensure roles are seeded before users.");
-            var salesRole = roles.Find(r => r.Libelle == Roles.SalesManager) ?? throw new InvalidOperationException($"Role '{Roles.SalesManager}' not found.");
-            var stockRole = roles.Find(r => r.Libelle == Roles.StockManager) ?? throw new InvalidOperationException($"Role '{Roles.StockManager}' not found.");
-            var accountRole = roles.Find(r => r.Libelle == Roles.Accountant) ?? throw new InvalidOperationException($"Role '{Roles.Accountant}' not found.");
+            Role adminRole = roles.Find(r => r.Libelle == Roles.SystemAdmin) ?? throw new InvalidOperationException($"Role '{Roles.SystemAdmin}' not found. Ensure roles are seeded before users.");
+            Role salesRole = roles.Find(r => r.Libelle == Roles.SalesManager) ?? throw new InvalidOperationException($"Role '{Roles.SalesManager}' not found.");
+            Role stockRole = roles.Find(r => r.Libelle == Roles.StockManager) ?? throw new InvalidOperationException($"Role '{Roles.StockManager}' not found.");
+            Role accountRole = roles.Find(r => r.Libelle == Roles.Accountant) ?? throw new InvalidOperationException($"Role '{Roles.Accountant}' not found.");
 
 
-            var seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
+            List<(string Login, string Email, string FullName, string Password, Guid roleId)> seedUsers = new List<(string Login, string Email, string FullName, string Password, Guid roleId)>
             {
                 ("admin_erp1234",   "admin@erp.com",    "John DOE",         "Admin@1234",   adminRole.Id),
                 ("sales_erp1234",   "sales@erp.com",    "Sales Alex",       "Sales@1234",   salesRole.Id),
@@ -255,25 +255,25 @@ namespace ERPrivileges.AuthService.Infrastructure.Persistence.Seeder
                 ("account_erp1234", "account@erPrivileges.com",  "Accountant Jane",  "Account@1234", accountRole.Id),
             };
 
-            foreach (var (login, email, fullName, password, roleId) in seedUsers)
+            foreach ((string? login, string? email, string? fullName, string? password, Guid roleId) in seedUsers)
             {
                 if (await userRepository.ExistsByEmailAsync(email))
                     continue;
 
-                var random = new Random();
-                var themes = Enum.GetValues<Theme>();
-                var languages = Enum.GetValues<Language>();
+                Random random = new Random();
+                Theme[] themes = Enum.GetValues<Theme>();
+                Language[] languages = Enum.GetValues<Language>();
 
-                var settings = new UserSettings
+                UserSettings settings = new UserSettings
                 {
                     Theme = themes[random.Next(themes.Length)],
                     Language = languages[random.Next(languages.Length)]
                 };
 
-                var user = new AuthUser(login, email, fullName, roleId, settings);
+                AuthUser user = new AuthUser(login, email, fullName, roleId, settings);
 
 
-                var hashedPassword = passwordHasher.HashPassword(user, password);
+                string hashedPassword = passwordHasher.HashPassword(user, password);
                 user.SetPasswordHash(hashedPassword);
 
                 await userRepository.AddAsync(user);
