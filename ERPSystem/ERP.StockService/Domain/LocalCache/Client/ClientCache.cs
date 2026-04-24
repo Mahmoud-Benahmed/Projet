@@ -24,26 +24,19 @@ public class ClientCache
 
     public static ClientCache Create(
         Guid id,
-        string name, 
-        string email, 
+        string name,
+        string email,
         string address,
-        DateTime createdAt, 
-        bool isBlocked = false, 
+        DateTime createdAt,
+        bool isBlocked = false,
         bool isDeleted = false,
         DateTime? updatedAt = null,
         decimal? creditLimit = null,  // ← Made nullable with default
-        string? phone = null, 
+        string? phone = null,
         string? taxNumber = null,
         int? delaiRetour = null,
         int? duePaymentPeriod = null)
     {
-        ValidateName(name);
-        ValidateEmail(email);
-        ValidateAddress(address);
-        ValidateCreditLimit(creditLimit);
-        ValidateDelaiRetour(delaiRetour);
-        ValidateDuePaymentPeriod(duePaymentPeriod);
-
         return new ClientCache
         {
             Id = id,
@@ -62,22 +55,18 @@ public class ClientCache
 
     public void Update(
         string name,
-        string email, 
+        string email,
         string address,
-        DateTime createdAt, 
-        bool isBlocked = false, 
+        DateTime createdAt,
+        bool isBlocked = false,
         bool isDeleted = false,
-        DateTime? updatedAt= null,
+        DateTime? updatedAt = null,
         decimal? creditLimit = null,  // ← Made nullable with default
-        string? phone = null, 
+        string? phone = null,
         string? taxNumber = null,
         int? delaiRetour = null,
         int? duePaymentPeriod = null)
     {
-        ValidateName(name);
-        ValidateEmail(email);
-        ValidateAddress(address);
-
         Name = name.Trim();
         Email = email.Trim().ToLowerInvariant();
         Address = address.Trim();
@@ -103,7 +92,7 @@ public class ClientCache
             throw new InvalidOperationException(
                 $"Client already has category '{category.Name}'.");
 
-        var clientCategory = ClientCategoryCache.Create(Id, category.Id);
+        ClientCategoryCache clientCategory = ClientCategoryCache.Create(Id, category.Id);
         ClientCategories.Add(clientCategory);
 
         UpdatedAt = DateTime.UtcNow;
@@ -114,7 +103,7 @@ public class ClientCache
     {
         GuardNotDeleted();
 
-        var existing = ClientCategories
+        ClientCategoryCache? existing = ClientCategories
             .FirstOrDefault(cc => cc.CategoryId == category.Id);
 
         if (existing is null)
@@ -173,7 +162,7 @@ public class ClientCache
 
     public bool IsWithinDelaiRetour(DateTime documentDate)
     {
-        var window = DelaiRetour;
+        int? window = DelaiRetour;
         if (!window.HasValue) return false;
         return (DateTime.UtcNow - documentDate).TotalDays <= window.Value;
     }
@@ -182,46 +171,5 @@ public class ClientCache
     {
         if (IsDeleted)
             throw new InvalidOperationException("Cannot modify a deleted client.");
-    }
-
-    private static void ValidateName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name is required.", nameof(name));
-        if (name.Trim().Length > 200)
-            throw new ArgumentException("Name cannot exceed 200 characters.", nameof(name));
-    }
-
-    private static void ValidateEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email is required.", nameof(email));
-        if (!email.Contains('@'))
-            throw new ArgumentException("Email is not valid.", nameof(email));
-    }
-
-    private static void ValidateAddress(string address)
-    {
-        if (string.IsNullOrWhiteSpace(address))
-            throw new ArgumentException("Address is required.", nameof(address));
-    }
-
-    private static void ValidateCreditLimit(decimal? creditLimit)
-    {
-        if (creditLimit.HasValue && creditLimit <= 0)
-            throw new ArgumentException("Credit limit must be positive.", nameof(creditLimit));
-    }
-
-    private static void ValidateDelaiRetour(int? days)
-    {
-        if (days.HasValue && days <= 0)
-            throw new ArgumentException("Return delay must be at least 1 day.", nameof(days));
-    }
-
-    private static void ValidateDuePaymentPeriod(int? days)
-    {
-        if (days.HasValue && days <= 0)
-            throw new ArgumentException(
-                "Due payment period must be at least 1 day.", nameof(days));
     }
 }

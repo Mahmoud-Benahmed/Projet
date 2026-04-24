@@ -1,5 +1,4 @@
-﻿using ERP.StockService.Application.DTOs;
-namespace ERP.StockService.Domain.LocalCache.Client;
+﻿namespace ERP.StockService.Domain.LocalCache.Client;
 
 public sealed class CategoryCache
 {
@@ -40,15 +39,8 @@ public sealed class CategoryCache
         decimal? creditLimitMultiplier = null,
         bool isActive = true,
         bool isDeleted = false,
-        DateTime? updatedAt= null)
+        DateTime? updatedAt = null)
     {
-        ValidateName(name);
-        ValidateCode(code);
-        ValidateDelaiRetour(delaiRetour);
-        ValidateDiscountRate(discountRate);
-        ValidateCreditLimitMultiplier(creditLimitMultiplier);
-        ValidateDuePaymentPeriod(duePaymentPeriod);            // <-- add this
-
         return new CategoryCache
         {
             Id = id,
@@ -76,17 +68,11 @@ public sealed class CategoryCache
     bool isDeleted,
     DateTime createdAt,
     int duePaymentPeriod,          // ← int, not int?
-    DateTime? updatedAt= null,
+    DateTime? updatedAt = null,
     bool useBulkPricing = false,
     decimal? discountRate = null,
     decimal? creditLimitMultiplier = null)
-    {   ValidateName(name);
-        ValidateCode(code);
-        ValidateDelaiRetour(delaiRetour);
-        ValidateDuePaymentPeriod(duePaymentPeriod);
-        ValidateDiscountRate(discountRate);
-        ValidateCreditLimitMultiplier(creditLimitMultiplier);
-
+    {
         Name = name.Trim();
         Code = code.Trim().ToUpperInvariant();
         DelaiRetour = delaiRetour;
@@ -94,10 +80,10 @@ public sealed class CategoryCache
         UseBulkPricing = useBulkPricing;
         DiscountRate = discountRate;
         CreditLimitMultiplier = creditLimitMultiplier;
-        CreatedAt= createdAt;
+        CreatedAt = createdAt;
         UpdatedAt = DateTime.UtcNow;
-        IsDeleted= isDeleted;
-        IsActive= isActive;
+        IsDeleted = isDeleted;
+        IsActive = isActive;
     }
 
     public void Delete()
@@ -119,54 +105,4 @@ public sealed class CategoryCache
         if (IsDeleted)
             throw new InvalidOperationException("Cannot modify a deleted category.");
     }
-
-    private static void ValidateName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name is required.", nameof(name));
-        if (name.Trim().Length > 200)
-            throw new ArgumentException("Name cannot exceed 200 characters.", nameof(name));
-    }
-
-    private static void ValidateCode(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException("Code is required.", nameof(code));
-        if (code.Trim().Length > 50)
-            throw new ArgumentException("Code cannot exceed 50 characters.", nameof(code));
-    }
-
-    private static void ValidateDelaiRetour(int delaiRetour)
-    {
-        if (delaiRetour <= 0)
-            throw new ArgumentException(
-                "Return delay must be at least 1 day.", nameof(delaiRetour));
-    }
-
-    private static void ValidateDiscountRate(decimal? discountRate)
-    {
-        if (!discountRate.HasValue) return;
-        if (discountRate < 0 || discountRate > 1)
-            throw new ArgumentException(
-                "Discount rate must be between 0 and 1 (0% – 100%).",
-                nameof(discountRate));
-    }
-
-    private static void ValidateCreditLimitMultiplier(decimal? multiplier)
-    {
-        if (!multiplier.HasValue) return;
-        if (multiplier < 0)
-            throw new ArgumentException(
-                "Credit limit multiplier must be positive.",
-                nameof(multiplier));
-    }
-
-    private static void ValidateDuePaymentPeriod(int days)
-    {
-        if (days <= 0)
-            throw new ArgumentException(
-                "Due payment period must be at least 1 day.", nameof(days));
-    }
-
-    
 }

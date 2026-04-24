@@ -38,7 +38,6 @@ public sealed class FournisseurCache
     // Static factory method
     public static FournisseurCache FromEvent(FournisseurResponseDto dto)
     {
-        ValidateArgs(dto.Name, dto.Address, dto.Phone, dto.TaxNumber, dto.RIB, dto.Email);
         return new FournisseurCache
         {
             Id = Guid.NewGuid(),
@@ -48,8 +47,8 @@ public sealed class FournisseurCache
             TaxNumber = dto.TaxNumber.Trim(),
             RIB = dto.RIB.Trim(),
             Email = dto.Email?.Trim(),
-            IsBlocked= dto.IsBlocked,
-            IsDeleted= dto.IsDeleted,
+            IsBlocked = dto.IsBlocked,
+            IsDeleted = dto.IsDeleted,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -60,7 +59,6 @@ public sealed class FournisseurCache
         string name, string address, string phone,
         string taxNumber, string rib, string? email = null)
     {
-        ValidateArgs(name, address, phone, taxNumber, rib, email);
         Name = name.Trim();
         Address = address.Trim();
         Phone = phone.Trim();
@@ -87,41 +85,4 @@ public sealed class FournisseurCache
     public void MarkRestored() => IsDeleted = false;
     public void Block() => IsBlocked = true;
     public void Unblock() => IsBlocked = false;
-
-
-    private static void ValidateArgs(
-        string name, string address, string phone,
-        string taxNumber, string rib, string? email)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name is required.", nameof(name));
-
-        if (string.IsNullOrWhiteSpace(address))
-            throw new ArgumentException("Address is required.", nameof(address));
-
-        if (string.IsNullOrWhiteSpace(phone))
-            throw new ArgumentException("Phone is required.", nameof(phone));
-
-        if (string.IsNullOrWhiteSpace(taxNumber))
-            throw new ArgumentException("TaxNumber is required.", nameof(taxNumber));
-
-        if (string.IsNullOrWhiteSpace(rib))
-            throw new ArgumentException("RIB is required.", nameof(rib));
-
-        if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
-            throw new ArgumentException("Email is not valid.", nameof(email));
-    }
-
-    private static bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email.Trim();
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }

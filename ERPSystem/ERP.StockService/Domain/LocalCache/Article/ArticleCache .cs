@@ -1,5 +1,4 @@
-﻿using Confluent.Kafka;
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 
 namespace ERP.StockService.Domain.LocalCache.Article;
 
