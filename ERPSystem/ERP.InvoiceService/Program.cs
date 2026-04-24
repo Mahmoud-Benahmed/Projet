@@ -11,7 +11,6 @@ using ERP.InvoiceService.Infrastructure.Messaging.Events.ArticleEvents.ArticleCa
 using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
 using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
 using ERP.InvoiceService.Infrastructure.Persistence;
-using ERP.InvoiceService.Infrastructure.Persistence.Repositories;
 using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache;
 using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
 using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ClientCache;
@@ -22,14 +21,14 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables();
 
 // =========================
 // DATABASE
 // =========================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' is not configured.");
 
 builder.Services.AddDbContext<InvoiceDbContext>(options =>
@@ -46,7 +45,7 @@ builder.Services.AddControllers()
 builder.Services.AddHttpClient<IStockServiceHttpClient, StockServiceHttpClient>(client =>
 {
     client.BaseAddress = new Uri(
-        builder.Configuration["Services:StockService:BaseUrl"] 
+        builder.Configuration["Services:StockService:BaseUrl"]
         ?? throw new InvalidOperationException(
             "StockServiceUrl not configured."));
 });
@@ -60,7 +59,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        var message = string.Join(" | ", context.ModelState.Values
+        string message = string.Join(" | ", context.ModelState.Values
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage));
 
@@ -121,28 +120,28 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 
 // =========================
 // KAFKA TOPIC VERIFICATION & CREATION
 // =========================
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    IConfiguration configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    var bootstrapServers = configuration["Kafka:BootstrapServers"]
+    string bootstrapServers = configuration["Kafka:BootstrapServers"]
         ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured.");
 
-    var adminConfig = new AdminClientConfig
+    AdminClientConfig adminConfig = new AdminClientConfig
     {
         BootstrapServers = bootstrapServers
     };
 
-    using var adminClient = new AdminClientBuilder(adminConfig).Build();
+    using IAdminClient adminClient = new AdminClientBuilder(adminConfig).Build();
 
-    var requiredTopics = new[] {
+    string[] requiredTopics = new[] {
         ArticleTopics.Created, ArticleTopics.Updated,
         ArticleTopics.Deleted, ArticleTopics.Restored,
 
@@ -156,11 +155,11 @@ using (var scope = app.Services.CreateScope())
         ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored
     };
 
-    var maxRetries = 30;
-    var retryDelay = TimeSpan.FromSeconds(2);
+    int maxRetries = 30;
+    TimeSpan retryDelay = TimeSpan.FromSeconds(2);
 
     // First, try to create all topics
-    var topicSpecifications = requiredTopics.Select(topic => new TopicSpecification
+    IEnumerable<TopicSpecification> topicSpecifications = requiredTopics.Select(topic => new TopicSpecification
     {
         Name = topic,
         NumPartitions = 1,  // Adjust based on your needs
@@ -186,10 +185,10 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
-            var existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
+            Metadata metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
+            HashSet<string> existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
 
-            var missingTopics = requiredTopics.Where(t => !existingTopics.Contains(t)).ToList();
+            List<string> missingTopics = requiredTopics.Where(t => !existingTopics.Contains(t)).ToList();
 
             if (!missingTopics.Any())
             {
@@ -213,7 +212,7 @@ using (var scope = app.Services.CreateScope())
 app.UseExceptionHandler(
     errApp => errApp.Run(async ctx =>
     {
-        var feature = ctx.Features.Get<IExceptionHandlerFeature>();
+        IExceptionHandlerFeature? feature = ctx.Features.Get<IExceptionHandlerFeature>();
         if (feature?.Error is InvoiceDomainException domainEx)
         {
             ctx.Response.StatusCode = 400;
@@ -225,9 +224,9 @@ app.UseExceptionHandler(
 // =========================
 // MIGRATIONS
 // =========================
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<InvoiceDbContext>();
+    InvoiceDbContext context = scope.ServiceProvider.GetRequiredService<InvoiceDbContext>();
 
     await context.Database.EnsureDeletedAsync();
     await context.Database.MigrateAsync();
