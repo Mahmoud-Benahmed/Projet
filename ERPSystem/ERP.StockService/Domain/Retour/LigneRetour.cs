@@ -6,7 +6,7 @@
     private LigneRetour() { }
     internal static LigneRetour Create(Guid bonRetourId, Guid articleId, decimal qty, decimal price, string? remarque = null)
     {
-        var l = new LigneRetour
+        LigneRetour l = new LigneRetour
         {
             BonRetourId = bonRetourId,
             ArticleId = articleId,

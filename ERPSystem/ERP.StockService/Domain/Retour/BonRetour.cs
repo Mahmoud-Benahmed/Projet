@@ -69,7 +69,7 @@ public sealed class BonRetour : PieceStock
         if (_lignes.Any(l => l.ArticleId == articleId))
             throw new InvalidOperationException("Article already exists in lignes.");
 
-        var ligne = LigneRetour.Create(Id, articleId, qty, price);
+        LigneRetour ligne = LigneRetour.Create(Id, articleId, qty, price);
         _lignes.Add(ligne);
 
         return ligne;
@@ -81,7 +81,7 @@ public sealed class BonRetour : PieceStock
     {
         if (!_lignes.Any())
             throw new InvalidOperationException("BonRetour must have at least one ligne.");
-        foreach (var l in _lignes)
+        foreach (LigneRetour l in _lignes)
             l.Validate();
     }
 
