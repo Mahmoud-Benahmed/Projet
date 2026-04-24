@@ -46,7 +46,7 @@ public sealed class BonEntre : PieceStock
         if (_lignes.Any(l => l.ArticleId == articleId))
             qty++;
 
-        var ligne = LigneEntre.Create(Id, articleId, qty, price);
+        LigneEntre ligne = LigneEntre.Create(Id, articleId, qty, price);
         _lignes.Add(ligne);
 
         return ligne;
@@ -65,7 +65,7 @@ public sealed class BonEntre : PieceStock
         if (!_lignes.Any())
             throw new InvalidOperationException("No lignes to remove.");
 
-        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
+        LigneEntre ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
             ?? throw new InvalidOperationException("Ligne not found.");
 
         // 🔥 Business rule: cannot remove last ligne
@@ -87,7 +87,7 @@ public sealed class BonEntre : PieceStock
         if (price < 0)
             throw new ArgumentException("Price cannot be negative.");
 
-        var ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
+        LigneEntre ligne = _lignes.FirstOrDefault(l => l.Id == ligneId)
             ?? throw new InvalidOperationException("Ligne not found.");
 
         ligne.Update(qty, price);
@@ -99,7 +99,7 @@ public sealed class BonEntre : PieceStock
         if (!_lignes.Any())
             throw new InvalidOperationException("BonEntre must have at least one ligne.");
 
-        foreach (var l in _lignes)
+        foreach (LigneEntre l in _lignes)
             l.Validate();
     }
 

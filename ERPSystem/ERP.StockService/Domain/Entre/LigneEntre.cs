@@ -9,7 +9,7 @@ public sealed class LigneEntre : LigneStock
 
     internal static LigneEntre Create(Guid bonEntreId, Guid articleId, decimal qty, decimal price)
     {
-        var ligne = new LigneEntre
+        LigneEntre ligne = new LigneEntre
         {
             BonEntreId = bonEntreId,
             ArticleId = articleId,
