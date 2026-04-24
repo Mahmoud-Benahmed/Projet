@@ -782,7 +782,8 @@ $bp-xl:  1200px;
 
   &__body {
     padding: 1.75rem 1.5rem;
-
+    overflow: auto;
+    z-index: 0;
     @media (max-width: $bp-md) { padding: 1.25rem 1rem; }
     @media (max-width: $bp-sm) { padding: 1rem 0.85rem; }
   }
@@ -1443,5 +1444,199 @@ $bp-xl:  1200px;
   &::before {
     content: "⚠️ ";
     font-size: 12px;
+  }
+}
+
+// Client dropdown (used only in sortie form)
+.client-dropdown {
+  position: relative;
+
+  &__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    background-image: none !important;
+    padding-right: 0.9rem;
+  }
+
+  &__placeholder {
+    color: $text-lo;
+  }
+
+  &__panel {
+    position: absolute;
+    z-index: 200;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: $bg-card;
+    border: 1px solid $border;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  &__search {
+    padding: 8px;
+    border-bottom: 1px solid $border;
+
+    &-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid $border;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      box-sizing: border-box;
+      background: $bg-page;
+      color: $text-hi;
+
+      &::placeholder {
+        color: $text-lo;
+      }
+
+      &:focus {
+        border-color: $blue;
+      }
+    }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    max-height: 260px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $border-hi;
+      border-radius: 4px;
+    }
+  }
+
+  &__load-more {
+    padding: 6px 8px;
+    border-top: 1px solid $border;
+
+    &-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: $bg-card-hi;
+      border: 1px solid $border;
+      border-radius: 6px;
+      color: $text-mid;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.78rem;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+
+      &:hover {
+        border-color: $blue-border;
+        color: $blue;
+        background: $blue-bg;
+      }
+    }
+
+    &-count {
+      color: $text-lo;
+      font-size: 0.72rem;
+    }
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 2px;
+    transition: background 0.12s;
+
+    &:hover {
+      background: $bg-card-hi;
+    }
+
+    &--selected {
+      background: $blue-bg;
+
+      .client-dropdown__name {
+        color: $blue;
+      }
+
+      .client-dropdown__email {
+        color: $blue;
+        opacity: 0.75;
+      }
+    }
+  }
+
+  &__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-hi;
+  }
+
+  &__email {
+    font-size: 0.75rem;
+    color: $text-lo;
+  }
+
+  &__loading,
+  &__empty {
+    padding: 12px;
+    text-align: center;
+    color: $text-lo;
+    font-size: 0.8rem;
+    list-style: none;
+  }
+
+  &__footer {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: $text-lo;
+    border-top: 1px solid $border;
+    text-align: right;
+    background: $bg-card-hi;
+  }
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+  }
+}
+
+// Spinner animation for dropdown loading (shared has .spinner but not .spin)
+.spin {
+  animation: spin 0.8s linear infinite;
+  display: block;
+  margin: 0 auto;
+}
+
+// Responsive adjustments for bon-specific components
+@media (max-width: 768px) {
+  .inline-ligne-form__body {
+    grid-template-columns: 1fr;
+  }
+
+  .table--inner {
+    .td--truncate {
+      max-width: 120px;
+    }
   }
 }
