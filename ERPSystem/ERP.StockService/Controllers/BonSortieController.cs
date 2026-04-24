@@ -19,14 +19,14 @@ public class BonSortieController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetAllAsync(page, size);
+        PagedResultDto<BonSortieResponseDto> result = await _service.GetAllAsync(page, size);
         return Ok(result);
     }
 
     [HttpGet(ApiRoutes.BonSorties.GetById)]
     public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
-        var result = await _service.GetByIdAsync(id);
+        BonSortieResponseDto result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
 
@@ -36,7 +36,7 @@ public class BonSortieController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedByClientAsync(clientId, page, size);
+        PagedResultDto<BonSortieResponseDto> result = await _service.GetPagedByClientAsync(clientId, page, size);
         return Ok(result);
     }
 
@@ -47,14 +47,14 @@ public class BonSortieController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
+        PagedResultDto<BonSortieResponseDto> result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
         return Ok(result);
     }
 
     [HttpGet(ApiRoutes.BonSorties.GetStats)]
     public async Task<IActionResult> GetStats()
     {
-        var result = await _service.GetStatsAsync();
+        BonStatsDto result = await _service.GetStatsAsync();
         return Ok(result);
     }
 
@@ -64,7 +64,7 @@ public class BonSortieController : ControllerBase
     [HttpPost(ApiRoutes.BonSorties.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonSortieRequestDto dto)
     {
-        var result = await _service.CreateAsync(dto);
+        BonSortieResponseDto result = await _service.CreateAsync(dto);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -76,7 +76,7 @@ public class BonSortieController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonSortieRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        BonSortieResponseDto result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 

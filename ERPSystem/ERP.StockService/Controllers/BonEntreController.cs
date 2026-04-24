@@ -20,14 +20,14 @@ public class BonEntreController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetAllAsync(page, size);
+        PagedResultDto<BonEntreResponseDto> result = await _service.GetAllAsync(page, size);
         return Ok(result);
     }
 
     [HttpGet(ApiRoutes.BonEntres.GetById)]
     public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
-        var result = await _service.GetByIdAsync(id);
+        BonEntreResponseDto result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
 
@@ -37,7 +37,7 @@ public class BonEntreController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedByFournisseurAsync(fournisseurId, page, size);
+        PagedResultDto<BonEntreResponseDto> result = await _service.GetPagedByFournisseurAsync(fournisseurId, page, size);
         return Ok(result);
     }
 
@@ -48,7 +48,7 @@ public class BonEntreController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
+        PagedResultDto<BonEntreResponseDto> result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
         return Ok(result);
     }
 
@@ -58,7 +58,7 @@ public class BonEntreController : ControllerBase
     [HttpPost(ApiRoutes.BonEntres.Create)]
     public async Task<IActionResult> Create([FromBody] CreateBonEntreRequestDto dto)
     {
-        var result = await _service.CreateAsync(dto);
+        BonEntreResponseDto result = await _service.CreateAsync(dto);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -70,7 +70,7 @@ public class BonEntreController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonEntreRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        BonEntreResponseDto result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 
@@ -85,14 +85,14 @@ public class BonEntreController : ControllerBase
     [HttpGet(ApiRoutes.BonEntres.GetStats)]
     public async Task<IActionResult> GetStats()
     {
-        var result = await _service.GetStatsAsync();
+        BonStatsDto result = await _service.GetStatsAsync();
         return Ok(result);
     }
 
     private bool TryGetRequesterId(out Guid requesterId)
     {
         requesterId = Guid.Empty;
-        var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+        string? raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
         return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
     }
 }

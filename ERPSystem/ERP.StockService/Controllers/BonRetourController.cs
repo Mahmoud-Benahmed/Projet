@@ -23,14 +23,14 @@ public class BonRetoursController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetAllAsync(page, size);
+        PagedResultDto<BonRetourResponseDto> result = await _service.GetAllAsync(page, size);
         return Ok(result);
     }
 
     [HttpGet(ApiRoutes.BonRetours.GetById)]
     public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
-        var result = await _service.GetByIdAsync(id);
+        BonRetourResponseDto result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
 
@@ -40,7 +40,7 @@ public class BonRetoursController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedBySourceAsync(sourceId, page, size);
+        PagedResultDto<BonRetourResponseDto> result = await _service.GetPagedBySourceAsync(sourceId, page, size);
         return Ok(result);
     }
 
@@ -51,14 +51,14 @@ public class BonRetoursController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int size = 10)
     {
-        var result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
+        PagedResultDto<BonRetourResponseDto> result = await _service.GetPagedByDateRangeAsync(from, to, page, size);
         return Ok(result);
     }
 
     [HttpGet(ApiRoutes.BonRetours.GetStats)]
     public async Task<IActionResult> GetStats()
     {
-        var result = await _service.GetStatsAsync();
+        BonStatsDto result = await _service.GetStatsAsync();
         return Ok(result);
     }
 
@@ -70,7 +70,7 @@ public class BonRetoursController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateBonRetourRequestDto dto)
     {
 
-        var result = await _service.CreateAsync(dto);
+        BonRetourResponseDto result = await _service.CreateAsync(dto);
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Id },
@@ -82,7 +82,7 @@ public class BonRetoursController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] UpdateBonRetourRequestDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
+        BonRetourResponseDto result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 
