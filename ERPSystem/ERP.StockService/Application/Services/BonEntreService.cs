@@ -2,6 +2,8 @@
 using ERP.StockService.Application.Exceptions;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain;
+using ERP.StockService.Domain.LocalCache.Article;
+using Microsoft.EntityFrameworkCore.Storage;
 
 
 namespace ERP.StockService.Application.Services;
@@ -17,7 +19,7 @@ public class BonEntreService : IBonEntreService
     public BonEntreService(
         IBonEntreRepository repo,
         IArticleCacheRepository articleCacheRepository,
-        IBonNumeroRepository bonNumberRepository, 
+        IBonNumeroRepository bonNumberRepository,
         IJournalStockRepository journalStockRepository,
         IFournisseurCacheRepository fornisseurCacheRepo)
     {
@@ -39,23 +41,23 @@ public class BonEntreService : IBonEntreService
         if (dto.Lignes is null or { Count: 0 })
             throw new ArgumentException("At least one ligne is required.");
 
-        var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
-        var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+        List<Guid> articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+        List<ArticleCache> articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
 
-        var foundIds = articles.Select(a => a.Id).ToHashSet();
-        var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+        HashSet<Guid> foundIds = articles.Select(a => a.Id).ToHashSet();
+        List<Guid> missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
         if (missingIds.Count != 0)
             throw new InvalidOperationException(
                 $"Articles not found: {string.Join(", ", missingIds)}");
 
 
-        await using var transaction = await _repo.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _repo.BeginTransactionAsync();
         try
         {
-            var numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
-            var bon = BonEntre.Create(numero, dto.FournisseurId, dto.Observation);
+            string numero = await _bonNumberRepo.GetNextDocumentNumberAsync("BON_ENTRE");
+            BonEntre bon = BonEntre.Create(numero, dto.FournisseurId, dto.Observation);
 
-            foreach (var l in dto.Lignes)
+            foreach (LigneRequestDto l in dto.Lignes)
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
 
             bon.ValidateLignes();
@@ -63,10 +65,10 @@ public class BonEntreService : IBonEntreService
             await _repo.AddAsync(bon);
             await _repo.SaveChangesAsync();
 
-            var stockMap = await _journalStockRepository
+            Dictionary<Guid, decimal> stockMap = await _journalStockRepository
                 .GetCurrentStocksAsync(bon.Lignes.Select(l => l.ArticleId));
 
-            foreach (var ligne in bon.Lignes)
+            foreach (LigneEntre ligne in bon.Lignes)
             {
                 decimal stockBefore = stockMap.GetValueOrDefault(ligne.ArticleId, 0);
 
@@ -102,7 +104,7 @@ public class BonEntreService : IBonEntreService
         _ = await _fournisseurCacheRepository.GetByIdAsync(dto.FournisseurId)
             ?? throw new KeyNotFoundException($"Fournisseur with Id:{dto.FournisseurId} not found.");
 
-        var bon = await _repo.GetByIdAsync(id)
+        BonEntre bon = await _repo.GetByIdAsync(id)
             ?? throw new BonEntreNotFoundException(id);
 
         Dictionary<Guid, decimal> oldQtyMap = [];
@@ -111,11 +113,11 @@ public class BonEntreService : IBonEntreService
         // Only process lines if they were provided
         if (dto.Lignes is not null)
         {
-            var articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
-            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+            List<Guid> articleIds = dto.Lignes.Select(l => l.ArticleId).Distinct().ToList();
+            List<ArticleCache> articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
 
-            var foundIds = articles.Select(a => a.Id).ToHashSet();
-            var missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
+            HashSet<Guid> foundIds = articles.Select(a => a.Id).ToHashSet();
+            List<Guid> missingIds = articleIds.Where(id => !foundIds.Contains(id)).ToList();
             if (missingIds.Count != 0)
                 throw new InvalidOperationException(
                     $"Articles not found: {string.Join(", ", missingIds)}");
@@ -126,7 +128,7 @@ public class BonEntreService : IBonEntreService
                 .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
 
             bon.ClearLignes();
-            foreach (var l in dto.Lignes)
+            foreach (LigneRequestDto l in dto.Lignes)
                 bon.AddLigne(l.ArticleId, l.Quantity, l.Price);
 
             bon.ValidateLignes();
@@ -134,7 +136,7 @@ public class BonEntreService : IBonEntreService
 
         bon.Update(dto.FournisseurId, dto.Observation);
 
-        await using var transaction = await _repo.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _repo.BeginTransactionAsync();
         try
         {
             await _repo.SaveChangesAsync();
@@ -147,7 +149,7 @@ public class BonEntreService : IBonEntreService
                     .GroupBy(l => l.ArticleId)
                     .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
 
-                foreach (var ligne in bon.Lignes)
+                foreach (LigneEntre ligne in bon.Lignes)
                 {
                     oldQtyMap.TryGetValue(ligne.ArticleId, out decimal oldQty);
                     decimal delta = ligne.Quantity - oldQty;
@@ -168,7 +170,7 @@ public class BonEntreService : IBonEntreService
                     ));
                 }
 
-                foreach (var (articleId, oldQty) in oldQtyMap)
+                foreach ((Guid articleId, decimal oldQty) in oldQtyMap)
                 {
                     if (newQtyMap.ContainsKey(articleId)) continue;
 
@@ -206,15 +208,15 @@ public class BonEntreService : IBonEntreService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
+        BonEntre bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
 
-        await using var transaction = await _repo.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _repo.BeginTransactionAsync();
         try
         {
-            foreach (var ligne in bon.Lignes)
+            foreach (LigneEntre ligne in bon.Lignes)
             {
                 decimal stockBefore = await _journalStockRepository.GetCurrentStockAsync(ligne.ArticleId);
-                var reversal = JournalStock.Create(
+                JournalStock reversal = JournalStock.Create(
                     articleId: ligne.ArticleId,
                     ligneId: ligne.Id,
                     pieceId: bon.Id,
@@ -239,14 +241,14 @@ public class BonEntreService : IBonEntreService
     // =========================
     public async Task<BonEntreResponseDto> GetByIdAsync(Guid id)
     {
-        var bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
+        BonEntre bon = await _repo.GetByIdAsync(id) ?? throw new BonEntreNotFoundException(id);
         return bon.ToResponseDto();
     }
 
     public async Task<PagedResultDto<BonEntreResponseDto>> GetAllAsync(int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetAllAsync(page, size);
+        (List<BonEntre>? items, int total) = await _repo.GetAllAsync(page, size);
         return new PagedResultDto<BonEntreResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
@@ -255,7 +257,7 @@ public class BonEntreService : IBonEntreService
         Guid fournisseurId, int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetByFournisseurAsync(fournisseurId, page, size);
+        (List<BonEntre>? items, int total) = await _repo.GetByFournisseurAsync(fournisseurId, page, size);
         return new PagedResultDto<BonEntreResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
@@ -270,7 +272,7 @@ public class BonEntreService : IBonEntreService
             (from, to) = (to, from);
         }
 
-        var (items, total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
+        (List<BonEntre>? items, int total) = await _repo.GetPagedByDateRangeAsync(from, to, page, size);
         return new PagedResultDto<BonEntreResponseDto>(
             items.Select(b => b.ToResponseDto()).ToList(), total, page, size);
     }
