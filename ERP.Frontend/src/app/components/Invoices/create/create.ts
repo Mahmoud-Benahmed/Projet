@@ -8,12 +8,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ClientResponseDto, ClientsService } from '../../../services/clients/clients.service';
 import { StockItem, StockService } from '../../../services/stock.service';
-import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of, Subject } from 'rxjs';
 import { AuthService } from '../../../services/auth/auth.service';
 import { CreateInvoiceDto, InvoiceService, TaxCalculationMode } from '../../../services/invoice.service';
-import { ArticleService, UnitEnum } from '../../../services/articles/articles.service';
+import { ArticleResponseDto, ArticleService, UnitEnum } from '../../../services/articles/articles.service';
 import { HttpError } from '../../../interfaces/ErrorDto';
 import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface PendingItem {
   _localId: string;
@@ -100,6 +101,27 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   inlineItemLocalId = '';
   inlineItemOpen = false;
 
+
+  clientPage = 1;
+  clientPageSize = 10;
+  clientTotalCount = 0;
+  clientsLoading = false;
+  hasMoreClients = true;
+  clientDropdownOpen = false;
+  selectedClientLabel = '';
+  private clientSearchSubject$ = new Subject<string>();
+
+  articleDropdownOpen = false;
+  articleDropdownItems: ArticleResponseDto[] = [];   // paginated list for dropdown
+  articlePage = 1;
+  articlePageSize = 10;
+  articleTotalCount = 0;
+  articleSearchQuery = '';
+  articlesLoading = false;
+  hasMoreArticles = true;
+  selectedArticleLabel = '';
+  private articleSearchSubject$ = new Subject<string>();
+
   // ── Alerts ────────────────────────────────────────────────────────────────
   errors: string[] = [];
   successMessage: string | null = null
@@ -152,22 +174,37 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   }
 
   // service load calls
-  loadClients(): Observable<ClientResponseDto[]> {
-    return this.clientsService.getAll(1, 1000).pipe(
-      map(res => {
-        this.clients = res.items;
-        return this.clients;
-      }),
-      catchError(() => {
-        this.clients = [];
-        return of([]);
-      })
-    );
+  loadClients(page: number, append = false): void {
+    if (this.clientsLoading) return;
+    this.clientsLoading = true;
+
+    this.stock.getClientsPaged(page, this.clientPageSize, this.clientSearchQuery)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.clients = append
+            ? [...this.clients, ...res.items]
+            : res.items;
+          this.clientTotalCount = res.totalCount;
+          this.clientPage = page;
+          this.hasMoreClients = this.clients.length < res.totalCount;
+          this.clientsLoading = false;
+          // Auto-select first client if nothing selected yet
+          if (!append && this.clients.length > 0 && !this.invoiceForm.get('clientId')?.value) {
+            this.selectClient(this.clients[0]);
+          }
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.clientsLoading = false;
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   loadArticlesWithStock(): Observable<StockItem[]> {
     return forkJoin({
-      articles: this.articleService.getAll(1, 1000).pipe(catchError(() => of({ items: [] }))),
+      articles: this.stock.getArticlesPaged(1, 1000).pipe(catchError(() => of({ items: [] }))),
       stock: this.stock.getStockArticles().pipe(catchError(() => of({ inStock: [], outStock: [] })))
     }).pipe(
       map((results) => {
@@ -196,7 +233,6 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
 
   reload(): void {
     forkJoin({
-      clients: this.loadClients(),
       articles: this.loadArticlesWithStock()
     }).subscribe({
       next: () => {
@@ -261,6 +297,9 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
 
     this.cdr.markForCheck();
     this.loadCreditLimitInfo();
+    if (this.articleDropdownOpen) {
+      this.loadArticlesForDropdown(true);
+    }
   }
 
   // Form helpers
@@ -513,29 +552,7 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
       .filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
       .slice(0, 8);
   }
-  selectClient(client: ClientResponseDto): void {
-    this.selectedClientForValidation = client;
 
-    let invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
-    if (!invoiceDate) {
-      invoiceDate = new Date().toISOString().split('T')[0];
-      this.invoiceForm.patchValue({ invoiceDate });
-    }
-
-    this.invoiceForm.patchValue({
-      clientId: client.id,
-      clientFullName: client.name,
-      clientAddress: client.address ?? '',
-      dueDate: this.calculateDueDate(invoiceDate, client.duePaymentPeriod),
-    });
-
-    // Mark form as dirty to trigger unsaved changes detection
-    this.invoiceForm.markAsDirty();
-    
-    this.clientSearchQuery = client.name;
-    this.filteredClients = [];
-    this.checkClientLimitsAndDiscount();
-  }
 
   onClientSelectChange(event: Event): void {
     const id = (event.target as HTMLSelectElement).value;
@@ -585,11 +602,6 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   }
 
   getSubmitButtonTooltip(): string {
-    if(!this.creditLimitInfo.hasSufficientCredit && this.selectedClientForValidation?.creditLimit) return this.translate.instant('INVOICES.ERRORS.INSUFFICIENT_CREDIT', {
-        creditLimit: this.selectedClientForValidation.creditLimit.toFixed(2),
-        currentOutstanding: this.creditLimitInfo.currentUsage.toFixed(2),
-        invoiceTotal: this.invoiceTotalTTC()
-      });
     if (this.isValidating) return this.translate.instant('COMMON.PROCESSING');
     if (this.invoiceForm.invalid) return this.translate.instant('VALIDATION.REQUIRED');
     if (this.pendingItems.length === 0) return this.translate.instant('INVOICES.FORM.NO_ITEMS_YET');
@@ -648,11 +660,11 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
 
     // ── UI-level guards only ──────────────────────────────────────────────
     if (selectedClient.isBlocked) {
-      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_BLOCKED'));
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_BLOCKED', {client: selectedClient.name}));
       return;
     }
     if (selectedClient.isDeleted) {
-      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_DELETED'));
+      this.flash('error', this.translate.instant('INVOICES.ERRORS.CLIENT_DELETED', {client: selectedClient.name}));
       return;
     }
 
@@ -736,6 +748,134 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
 
   trackById(_: number, item: { id: string }) { return item.id; }
   trackByLocalId(_: number, item: PendingItem) { return item._localId; }
+
+
+  onClientSearch(query: string): void {
+    this.clientSearchSubject$.next(query);
+  }
+
+  loadMoreClients(): void {
+    if (!this.hasMoreClients || this.clientsLoading) return;
+    this.loadClients(this.clientPage + 1, true);
+  }
+
+  selectClient(client: ClientResponseDto): void {
+    console.log('Selecting client:', client);
+    this.invoiceForm.patchValue({ clientId: client.id });
+    this.selectedClientLabel = `${client.name} - ${client.email}`;
+    this.clientDropdownOpen = false;
+    this.selectedClientForValidation = client;
+
+    let invoiceDate = this.invoiceForm.get('invoiceDate')?.value;
+    if (!invoiceDate) {
+      invoiceDate = new Date().toISOString().split('T')[0];
+      this.invoiceForm.patchValue({ invoiceDate });
+    }
+
+    this.invoiceForm.patchValue({
+      clientId: client.id,
+      clientFullName: client.name,
+      clientAddress: client.address ?? '',
+      dueDate: this.calculateDueDate(invoiceDate, client.duePaymentPeriod),
+    });
+
+    // Mark form as dirty to trigger unsaved changes detection
+    this.invoiceForm.markAsDirty();
+    
+    this.clientSearchQuery = client.name;
+    this.filteredClients = [];
+    this.loadCreditLimitInfo();
+    this.checkClientLimitsAndDiscount();
+    this.cdr.markForCheck();
+  }
+
+  private restoreClientLabel(): void {
+    const clientId = this.invoiceForm.get('clientId')?.value;
+    if (!clientId) return;
+    const found = this.clients.find(c => c.id === clientId);
+    if (found) {
+      this.selectedClientLabel = `${found.name} - ${found.email}`;
+      this.cdr.markForCheck();
+    }
+  }
+
+
+  toggleClientDropdown(): void {
+    this.clientDropdownOpen = !this.clientDropdownOpen;
+    if (this.clientDropdownOpen) {
+      this.clientSearchQuery = '';
+      this.loadClients(1, false);
+    }
+  }
+  
+  loadArticlesForDropdown(resetPage = true): void {
+    if (resetPage) {
+      this.articlePage = 1;
+    }
+
+    // Filter articles based on search query
+    let filtered = this.articles.filter(a =>
+      a.libelle?.toLowerCase().includes(this.articleSearchQuery.toLowerCase()) ||
+      a.codeRef?.toLowerCase().includes(this.articleSearchQuery.toLowerCase()) ||
+      a.barCode?.toLowerCase().includes(this.articleSearchQuery.toLowerCase())
+    );
+
+    this.articleTotalCount = filtered.length;
+    this.hasMoreArticles = this.articlePage * this.articlePageSize < this.articleTotalCount;
+
+    // Paginate
+    const start = (this.articlePage - 1) * this.articlePageSize;
+    const end = start + this.articlePageSize;
+    this.articleDropdownItems = filtered.slice(start, end);
+
+    this.cdr.markForCheck();
+  }
+
+
+  selectArticleForLigne(article: ArticleResponseDto): void {
+    // Find the same article in this.articles to get the available stock
+    const stockArticle = this.articles.find(a => a.id === article.id);
+    if (!stockArticle) return;
+
+    this.itemForm.patchValue({
+      articleId: article.id,
+      uniPriceHT: article.prix ?? 0,
+      taxRate: article.tva ?? 19
+    });
+
+    this.selectedArticleLabel = `${article.codeRef} — ${article.libelle}`;
+    this.articleDropdownOpen = false;
+
+    // Set max quantity validator based on available stock
+    this.updateQuantityValidator(stockArticle.quantity ?? 0);
+    this.cdr.markForCheck();
+  }
+
+  toggleArticleDropdown(): void {
+    if (!this.articleDropdownOpen) {
+      // Reset search and pagination when opening
+      this.articleSearchQuery = '';
+      this.articlePage = 1;
+      this.loadArticlesForDropdown(true);
+    }
+    this.articleDropdownOpen = !this.articleDropdownOpen;
+  }
+
+  onArticleSearch(query: string): void {
+    this.articleSearchQuery = query;
+    this.loadArticlesForDropdown(true);  // reset to first page
+  }
+
+  getArticleMaxQty(articleId: string): number {
+    const a = this.articles.find(x => x.id === articleId);
+    return (a as any)?._maxQty ?? Infinity;
+  }
+
+  loadMoreArticles(): void {
+    if (!this.hasMoreArticles || this.articlesLoading) return;
+    this.articlePage++;
+    this.loadArticlesForDropdown(false);  // append mode
+  }
 
   // Template
   get pageTitle():string{
