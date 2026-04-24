@@ -12,8 +12,8 @@ public class ClientService : IClientService
     private readonly ICategoryRepository _categoryRepository;
     private readonly IEventPublisher _eventPublisher;
 
-    public ClientService(IClientRepository clientRepository, 
-                        ICategoryRepository categoryRepository, 
+    public ClientService(IClientRepository clientRepository,
+                        ICategoryRepository categoryRepository,
                         IEventPublisher eventPublisher)
     {
         _clientRepository = clientRepository;
@@ -26,11 +26,11 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> CreateAsync(CreateClientRequestDto request)
     {
-        var existing = await _clientRepository.GetByEmailAsync(request.Email);
+        Client? existing = await _clientRepository.GetByEmailAsync(request.Email);
         if (existing is not null)
             throw new ClientAlreadyExistsException(request.Email);
 
-        var client = Client.Create(
+        Client client = Client.Create(
             name: request.Name,
             email: request.Email,
             address: request.Address,
@@ -42,7 +42,7 @@ public class ClientService : IClientService
 
         await _clientRepository.AddAsync(client);
         await _clientRepository.SaveChangesAsync();
-        var res= client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Created, res);
         return res;
     }
@@ -52,7 +52,7 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> GetByIdAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.ToResponseDto();
     }
 
@@ -61,12 +61,12 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> UpdateAsync(Guid id, UpdateClientRequestDto request)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
-        var normalised = request.Email.Trim().ToLowerInvariant();
+        string normalised = request.Email.Trim().ToLowerInvariant();
         if (client.Email != normalised)
         {
-            var existing = await _clientRepository.GetByEmailAsync(request.Email);
+            Client? existing = await _clientRepository.GetByEmailAsync(request.Email);
             if (existing is not null)
                 throw new ClientAlreadyExistsException(request.Email);
         }
@@ -90,7 +90,7 @@ public class ClientService : IClientService
             client.ClearDelaiRetour();
 
         await _clientRepository.SaveChangesAsync();
-        var res = client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
         return res;
     }
@@ -100,11 +100,11 @@ public class ClientService : IClientService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Delete();
         await _clientRepository.SaveChangesAsync();
-        var res = client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Deleted, res);
     }
 
@@ -113,14 +113,14 @@ public class ClientService : IClientService
     // =========================
     public async Task RestoreAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdDeletedAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdDeletedAsync(id) ?? throw new ClientNotFoundException(id);
 
         if (!client.IsDeleted)
             return;
 
         client.Restore();
         await _clientRepository.SaveChangesAsync();
-        var res = client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Restored, res);
     }
 
@@ -129,22 +129,22 @@ public class ClientService : IClientService
     // =========================
     public async Task<ClientResponseDto> BlockAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Block();
         await _clientRepository.SaveChangesAsync();
-        var res = client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
         return res;
     }
 
     public async Task<ClientResponseDto> UnblockAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
 
         client.Unblock();
         await _clientRepository.SaveChangesAsync();
-        var res = client.ToResponseDto();
+        ClientResponseDto res = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, res);
         return res;
     }
@@ -156,28 +156,28 @@ public class ClientService : IClientService
     public async Task<ClientResponseDto> AddCategoryAsync(
         Guid clientId, Guid categoryId, Guid assignedById)
     {
-        var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
+        Client client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
 
-        var category = await _categoryRepository.GetByIdAsync(categoryId) ?? throw new CategoryNotFoundException(categoryId);
+        Category category = await _categoryRepository.GetByIdAsync(categoryId) ?? throw new CategoryNotFoundException(categoryId);
 
         client.AddCategory(category, assignedById);
         await _clientRepository.SaveChangesAsync();
-        var dto = client.ToResponseDto();
+        ClientResponseDto dto = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, dto);
         return dto;
     }
 
     public async Task<ClientResponseDto> RemoveCategoryAsync(Guid clientId, Guid categoryId)
     {
-        var client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
+        Client client = await _clientRepository.GetByIdAsync(clientId) ?? throw new ClientNotFoundException(clientId);
 
-        var category = await _categoryRepository.GetByIdAsync(categoryId)
+        Category category = await _categoryRepository.GetByIdAsync(categoryId)
             ?? throw new CategoryNotFoundException(categoryId);
 
         client.RemoveCategory(category);
 
         await _clientRepository.SaveChangesAsync();
-        var dto = client.ToResponseDto();
+        ClientResponseDto dto = client.ToResponseDto();
         await _eventPublisher.PublishAsync(ClientTopics.Updated, dto);
         return dto;
     }
@@ -189,7 +189,7 @@ public class ClientService : IClientService
         int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _clientRepository.GetAllAsync(pageNumber, pageSize);
+        (List<Client>? items, int totalCount) = await _clientRepository.GetAllAsync(pageNumber, pageSize);
         return new PagedResultDto<ClientResponseDto>(
             items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
     }
@@ -198,7 +198,7 @@ public class ClientService : IClientService
         int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _clientRepository
+        (List<Client>? items, int totalCount) = await _clientRepository
             .GetPagedDeletedAsync(pageNumber, pageSize);
         return new PagedResultDto<ClientResponseDto>(
             items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
@@ -208,7 +208,7 @@ public class ClientService : IClientService
         Guid categoryId, int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _clientRepository
+        (List<Client>? items, int totalCount) = await _clientRepository
             .GetPagedByCategoryIdAsync(categoryId, pageNumber, pageSize);
         return new PagedResultDto<ClientResponseDto>(
             items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
@@ -221,7 +221,7 @@ public class ClientService : IClientService
         if (string.IsNullOrWhiteSpace(nameFilter))
             throw new ArgumentException("Name filter cannot be empty.");
 
-        var (items, totalCount) = await _clientRepository
+        (List<Client>? items, int totalCount) = await _clientRepository
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
         return new PagedResultDto<ClientResponseDto>(
             items.Select(c => c.ToResponseDto()).ToList(), totalCount, pageNumber, pageSize);
@@ -238,14 +238,14 @@ public class ClientService : IClientService
     // =========================
     public async Task<int?> GetEffectiveDelaiRetourAsync(Guid id)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.GetEffectiveDelaiRetour();
     }
 
     public async Task<bool> CanPlaceOrderAsync(
         Guid id, decimal orderAmount, decimal currentBalance)
     {
-        var client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
+        Client client = await _clientRepository.GetByIdAsync(id) ?? throw new ClientNotFoundException(id);
         return client.CanPlaceOrder(orderAmount, currentBalance);
     }
 

@@ -22,18 +22,18 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task<CategoryResponseDto> CreateAsync(CreateCategoryRequestDto request)
     {
-        var existing = await _categoryRepository.GetByCodeAsync(request.Code);
+        Category? existing = await _categoryRepository.GetByCodeAsync(request.Code);
         if (existing is not null)
             throw new CategoryAlreadyExistsException(request.Code);
 
-        var category = Category.Create(
+        Category category = Category.Create(
             request.Name, request.Code, request.DelaiRetour, request.DuePaymentPeriod,
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
 
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Created, res);
         return res;
     }
@@ -43,7 +43,7 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task<CategoryResponseDto> GetByIdAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        Category? category = await _categoryRepository.GetByIdAsync(id);
         if (category is null || category.IsDeleted)
             throw new CategoryNotFoundException(id);
         return MapToDto(category);
@@ -54,14 +54,14 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task<CategoryResponseDto> UpdateAsync(Guid id, UpdateCategoryRequestDto request)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        Category? category = await _categoryRepository.GetByIdAsync(id);
         if (category is null || category.IsDeleted)
             throw new CategoryNotFoundException(id);
 
-        var normalised = request.Code.Trim().ToUpperInvariant();
+        string normalised = request.Code.Trim().ToUpperInvariant();
         if (category.Code != normalised)
         {
-            var existing = await _categoryRepository.GetByCodeAsync(request.Code);
+            Category? existing = await _categoryRepository.GetByCodeAsync(request.Code);
             if (existing is not null)
                 throw new CategoryAlreadyExistsException(request.Code);
         }
@@ -72,7 +72,7 @@ public class CategoryService : ICategoryService
 
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
         return res;
     }
@@ -82,7 +82,7 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
+        Category category = await _categoryRepository.GetByIdAsync(id) ?? throw new CategoryNotFoundException(id);
 
         if (category.ClientCategories != null && category.ClientCategories.Any())
             throw new CategoryAssignedToUsersException("This category is assigned to existing users.");
@@ -90,7 +90,7 @@ public class CategoryService : ICategoryService
         category.Delete();
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Deleted, res);
     }
 
@@ -99,7 +99,7 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task RestoreAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdDeletedAsync(id)
+        Category category = await _categoryRepository.GetByIdDeletedAsync(id)
             ?? throw new CategoryNotFoundException(id);
 
         if (!category.IsDeleted)
@@ -108,7 +108,7 @@ public class CategoryService : ICategoryService
         category.Restore();
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Restored, res);
     }
 
@@ -117,28 +117,28 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task<CategoryResponseDto> ActivateAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        Category? category = await _categoryRepository.GetByIdAsync(id);
         if (category is null || category.IsDeleted)
             throw new CategoryNotFoundException(id);
 
         category.Activate();
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
         return res;
     }
 
     public async Task<CategoryResponseDto> DeactivateAsync(Guid id)
     {
-        var category = await _categoryRepository.GetByIdAsync(id);
+        Category? category = await _categoryRepository.GetByIdAsync(id);
         if (category is null || category.IsDeleted)
             throw new CategoryNotFoundException(id);
 
         category.Deactivate();
         await _categoryRepository.SaveChangesAsync();
 
-        var res = category.ToResponseDto();
+        CategoryResponseDto res = category.ToResponseDto();
         await _eventPublisher.PublishAsync(CategoryTopics.Updated, res);
         return MapToDto(category);
     }
@@ -148,14 +148,14 @@ public class CategoryService : ICategoryService
     // =========================
     public async Task<List<CategoryResponseDto>> GetAllAsync()
     {
-        var items = await _categoryRepository.GetAllAsync();
+        List<Category> items = await _categoryRepository.GetAllAsync();
         return items.Select(c => MapToDto(c)).ToList();
     }
     public async Task<PagedResultDto<CategoryResponseDto>> GetAllPagedAsync(
         int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _categoryRepository.GetAllPagedAsync(pageNumber, pageSize);
+        (List<Category>? items, int totalCount) = await _categoryRepository.GetAllPagedAsync(pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
     }
 
@@ -163,7 +163,7 @@ public class CategoryService : ICategoryService
         int pageNumber, int pageSize)
     {
         ValidatePaging(pageNumber, pageSize);
-        var (items, totalCount) = await _categoryRepository
+        (List<Category>? items, int totalCount) = await _categoryRepository
             .GetPagedDeletedAsync(pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(
             items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
@@ -175,7 +175,7 @@ public class CategoryService : ICategoryService
         if (string.IsNullOrWhiteSpace(nameFilter))
             throw new ArgumentException("Name filter cannot be empty.");
 
-        var (items, totalCount) = await _categoryRepository
+        (List<Category>? items, int totalCount) = await _categoryRepository
             .GetPagedByNameAsync(nameFilter, pageNumber, pageSize);
         return new PagedResultDto<CategoryResponseDto>(
             items.Select(c => MapToDto(c)).ToList(), totalCount, pageNumber, pageSize);
