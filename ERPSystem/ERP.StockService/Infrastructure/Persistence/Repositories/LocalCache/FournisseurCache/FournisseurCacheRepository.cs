@@ -80,38 +80,6 @@ public class FournisseurCacheRepository : IFournisseurCacheRepository
         }
     }
 
-    public async Task<List<FournisseurCache>> GetAllAsync()
-    {
-        try
-        {
-            return await _dbContext.FournisseurCaches
-                .Where(f => !f.IsDeleted)
-                .OrderBy(f => f.Name)
-                .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting all fournisseurs");
-            throw;
-        }
-    }
-
-    public async Task<List<FournisseurCache>> GetActiveAsync()
-    {
-        try
-        {
-            return await _dbContext.FournisseurCaches
-                .Where(f => !f.IsDeleted && !f.IsBlocked)
-                .OrderBy(f => f.Name)
-                .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting active fournisseurs");
-            throw;
-        }
-    }
-
     public async Task<List<FournisseurCache>> GetBlockedAsync()
     {
         try
@@ -128,27 +96,32 @@ public class FournisseurCacheRepository : IFournisseurCacheRepository
         }
     }
 
-    public async Task<List<FournisseurCache>> GetPagedAsync(int pageNumber, int pageSize)
+    public async Task<(List<FournisseurCache> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber, int pageSize, string? search = null)
     {
-        try
-        {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
 
-            return await _dbContext.FournisseurCaches
-                .Where(f => !f.IsDeleted)
-                .OrderBy(f => f.Name)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-        }
-        catch (Exception ex)
+        IQueryable<FournisseurCache> baseQuery = _dbContext.FournisseurCaches.AsQueryable().AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            _logger.LogError(ex, "Error getting paged fournisseurs - Page: {PageNumber}, Size: {PageSize}",
-                pageNumber, pageSize);
-            throw;
+            string q = search.Trim().ToLower();
+            baseQuery = baseQuery.Where(c =>
+                c.Name.ToLower().Contains(q) ||
+                c.Email.ToLower().Contains(q)
+            );
         }
+        int totalCount = await baseQuery.CountAsync();
+
+        List<FournisseurCache> items = await baseQuery
+            .OrderBy(c => c.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<bool> ExistsAsync(Guid id)
@@ -231,7 +204,7 @@ public class FournisseurCacheRepository : IFournisseurCacheRepository
             if (fournisseurs == null)
                 throw new ArgumentNullException(nameof(fournisseurs));
 
-            var fournisseurList = fournisseurs.ToList();
+            List<FournisseurCache> fournisseurList = fournisseurs.ToList();
             if (!fournisseurList.Any())
                 return;
 
@@ -286,7 +259,7 @@ public class FournisseurCacheRepository : IFournisseurCacheRepository
     {
         try
         {
-            var fournisseur = await GetByIdAsync(id);
+            FournisseurCache? fournisseur = await GetByIdAsync(id);
             if (fournisseur != null)
             {
                 _dbContext.FournisseurCaches.Remove(fournisseur);

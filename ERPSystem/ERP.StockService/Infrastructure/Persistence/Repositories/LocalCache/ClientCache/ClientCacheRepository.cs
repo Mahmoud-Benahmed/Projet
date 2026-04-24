@@ -1,5 +1,4 @@
 ﻿using ERP.StockService.Application.Interfaces;
-using ERP.StockService.Domain.LocalCache.Client;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.StockService.Infrastructure.Persistence.Repositories.LocalCache;
@@ -46,25 +45,37 @@ public class ClientCacheRepository : IClientCacheRepository
             .FirstOrDefaultAsync(c => c.Email == email && !c.IsDeleted);
     }
 
-    public async Task<List<Domain.LocalCache.Client.ClientCache>> GetAllAsync()
+    public async Task<(List<Domain.LocalCache.Client.ClientCache> Items, int TotalCount)> GetPagedAsync(
+        int pageNumber, int pageSize, string? search = null)
     {
-        return await _dbContext.ClientCaches
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        IQueryable<Domain.LocalCache.Client.ClientCache> baseQuery = _dbContext.ClientCaches.AsQueryable().AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string q = search.Trim().ToLower();
+            baseQuery = baseQuery.Where(c =>
+                c.Name.ToLower().Contains(q) ||
+                c.Email.ToLower().Contains(q)
+            );
+        }
+
+        int totalCount = await baseQuery.CountAsync(); // counts filtered results
+
+        List<Domain.LocalCache.Client.ClientCache> items = await baseQuery
+            .OrderBy(c => c.Name)
             .Include(c => c.ClientCategories)
             .ThenInclude(cc => cc.Category)
-            .Where(c => !c.IsDeleted)
-            .OrderBy(c => c.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return (items, totalCount);
     }
 
-    public async Task<List<Domain.LocalCache.Client.ClientCache>> GetActiveAsync()
-    {
-        return await _dbContext.ClientCaches
-            .Include(c => c.ClientCategories)
-            .ThenInclude(cc => cc.Category)
-            .Where(c => !c.IsDeleted && !c.IsBlocked)
-            .OrderBy(c => c.Name)
-            .ToListAsync();
-    }
 
     public async Task<bool> ExistsAsync(Guid id)
     {

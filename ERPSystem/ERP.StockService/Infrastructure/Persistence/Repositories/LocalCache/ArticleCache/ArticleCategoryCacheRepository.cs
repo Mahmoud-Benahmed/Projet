@@ -31,12 +31,12 @@ public sealed class ArticleCategoryCacheRepository : IArticleCategoryCacheReposi
     public async Task<(List<ArticleCategoryCache> Items, int TotalCount)> GetPagedAsync(
         int pageNumber, int pageSize)
     {
-        var query = _db.ArticleCategoryCaches
+        IOrderedQueryable<ArticleCategoryCache> query = _db.ArticleCategoryCaches
             .Where(c => !c.IsDeleted)
             .OrderBy(c => c.Name);
 
-        var totalCount = await query.CountAsync();
-        var items = await query
+        int totalCount = await query.CountAsync();
+        List<ArticleCategoryCache> items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
