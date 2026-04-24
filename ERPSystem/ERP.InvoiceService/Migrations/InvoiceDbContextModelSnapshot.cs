@@ -54,8 +54,8 @@ namespace ERP.InvoiceService.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal>("Prix")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("TVA")
                         .HasPrecision(5, 2)
@@ -136,15 +136,15 @@ namespace ERP.InvoiceService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal?>("CreditLimitMultiplier")
-                        .HasPrecision(8, 4)
-                        .HasColumnType("decimal(8,4)");
+                        .HasPrecision(8, 3)
+                        .HasColumnType("decimal(8,3)");
 
                     b.Property<int>("DelaiRetour")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("DiscountRate")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("decimal(5,4)");
+                        .HasPrecision(5, 3)
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<int>("DuePaymentPeriod")
                         .HasColumnType("int");
@@ -192,8 +192,8 @@ namespace ERP.InvoiceService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal?>("CreditLimit")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<int?>("DelaiRetour")
                         .HasColumnType("int");
@@ -284,7 +284,8 @@ namespace ERP.InvoiceService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("DiscountRate")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
@@ -311,13 +312,16 @@ namespace ERP.InvoiceService.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("TotalHT")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("TotalTTC")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("TotalTVA")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -349,26 +353,28 @@ namespace ERP.InvoiceService.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal>("EffectivePriceHT")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("TaxRate")
-                        .HasColumnType("decimal(5,4)");
+                        .HasPrecision(5, 3)
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<decimal>("TotalHT")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("TotalTTC")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("UniPriceHT")
-                        .HasColumnType("decimal(18,4)");
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.HasKey("Id");
 
