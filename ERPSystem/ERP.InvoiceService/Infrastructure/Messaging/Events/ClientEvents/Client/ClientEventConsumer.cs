@@ -4,6 +4,7 @@ using ERP.InvoiceService.Application.Interfaces;
 using System.Text.Json;
 
 namespace ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
+
 public sealed class ClientEventConsumer : BackgroundService
 {
     private readonly IConsumer<string, string> _consumer;
@@ -22,7 +23,7 @@ public sealed class ClientEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -47,13 +48,13 @@ public sealed class ClientEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     // Log raw message for debugging
                     _logger.LogDebug("Raw message received on {Topic}: {Message}",
                         result.Topic, result.Message.Value);
 
-                    var dto = JsonSerializer.Deserialize<ClientResponseDto>(
+                    ClientResponseDto? dto = JsonSerializer.Deserialize<ClientResponseDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto is null)
@@ -77,12 +78,12 @@ public sealed class ClientEventConsumer : BackgroundService
                     }
 
                     // Create a new scope for each message
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (IServiceScope scope = _scopeFactory.CreateScope())
                     {
                         // FIXED: Use IClientCacheService instead of IArticleCacheService
-                        var clientCacheService = scope.ServiceProvider.GetRequiredService<IClientCacheService>();
+                        IClientCacheService clientCacheService = scope.ServiceProvider.GetRequiredService<IClientCacheService>();
 
-                        var handler = scope.ServiceProvider.GetRequiredService<IClientEventHandler>();
+                        IClientEventHandler handler = scope.ServiceProvider.GetRequiredService<IClientEventHandler>();
 
                         switch (result.Topic)
                         {

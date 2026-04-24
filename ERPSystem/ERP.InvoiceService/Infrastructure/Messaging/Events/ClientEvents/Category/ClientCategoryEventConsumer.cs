@@ -24,7 +24,7 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -60,13 +60,13 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     // Log raw message for debugging
                     _logger.LogDebug("Raw message received on {Topic}: {Message}", result.Topic, result.Message.Value);
 
                     // Determine event type based on topic for logging purpose
-                    var eventType = result.Topic switch
+                    string eventType = result.Topic switch
                     {
                         ClientCategoryTopics.Created => "Created",
                         ClientCategoryTopics.Updated => "Updated",
@@ -76,7 +76,7 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
                     };
 
                     // For create, update, restore events, deserialize full DTO
-                    var dto = JsonSerializer.Deserialize<ClientCategoryResponseDto>(
+                    ClientCategoryResponseDto? dto = JsonSerializer.Deserialize<ClientCategoryResponseDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto == null)
@@ -95,9 +95,9 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
                         continue;
                     }
 
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (IServiceScope scope = _scopeFactory.CreateScope())
                     {
-                        var handler = scope.ServiceProvider.GetRequiredService<IClientCategoryEventHandler>();
+                        IClientCategoryEventHandler handler = scope.ServiceProvider.GetRequiredService<IClientCategoryEventHandler>();
 
                         switch (result.Topic)
                         {

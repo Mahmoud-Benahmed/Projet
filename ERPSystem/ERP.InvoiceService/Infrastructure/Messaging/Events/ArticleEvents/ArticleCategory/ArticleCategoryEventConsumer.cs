@@ -23,7 +23,7 @@ public sealed class ArticleCategoryEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -47,12 +47,12 @@ public sealed class ArticleCategoryEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     // Log raw message
                     _logger.LogInformation("Raw category message: {Raw}", result.Message.Value);
 
-                    var dto = JsonSerializer.Deserialize<ArticleCategoryResponseDto>(
+                    ArticleCategoryResponseDto? dto = JsonSerializer.Deserialize<ArticleCategoryResponseDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto is null)
@@ -72,9 +72,9 @@ public sealed class ArticleCategoryEventConsumer : BackgroundService
                         continue;
                     }
 
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (IServiceScope scope = _scopeFactory.CreateScope())
                     {
-                        var handler = scope.ServiceProvider.GetRequiredService<IArticleCategoryEventHandler>();
+                        IArticleCategoryEventHandler handler = scope.ServiceProvider.GetRequiredService<IArticleCategoryEventHandler>();
 
                         switch (result.Topic)
                         {
