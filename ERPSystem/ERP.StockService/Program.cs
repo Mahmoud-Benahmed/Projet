@@ -24,13 +24,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 // =========================
 // DATABASE
 // =========================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "ConnectionString 'DefaultConnection' is not configured.");
 
@@ -103,7 +103,7 @@ builder.Services
         // Unified validation error response — Data Annotations return this shape
         options.InvalidModelStateResponseFactory = context =>
         {
-            var message = string.Join(" | ", context.ModelState.Values
+            string message = string.Join(" | ", context.ModelState.Values
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
 
@@ -120,27 +120,27 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // =========================
 // KAFKA TOPIC VERIFICATION & CREATION
 // =========================
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    IConfiguration configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    var bootstrapServers = configuration["Kafka:BootstrapServers"]
+    string bootstrapServers = configuration["Kafka:BootstrapServers"]
         ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured.");
 
-    var adminConfig = new AdminClientConfig
+    AdminClientConfig adminConfig = new AdminClientConfig
     {
         BootstrapServers = bootstrapServers
     };
 
-    using var adminClient = new AdminClientBuilder(adminConfig).Build();
+    using IAdminClient adminClient = new AdminClientBuilder(adminConfig).Build();
 
-    var requiredTopics = new[] {
+    string[] requiredTopics = new[] {
         ArticleTopics.Created, ArticleTopics.Updated,
         ArticleTopics.Deleted, ArticleTopics.Restored,
 
@@ -156,11 +156,11 @@ using (var scope = app.Services.CreateScope())
         InvoiceTopics.Created, InvoiceTopics.Cancelled,
     };
 
-    var maxRetries = 30;
-    var retryDelay = TimeSpan.FromSeconds(2);
+    int maxRetries = 30;
+    TimeSpan retryDelay = TimeSpan.FromSeconds(2);
 
     // First, try to create all topics
-    var topicSpecifications = requiredTopics.Select(topic => new TopicSpecification
+    IEnumerable<TopicSpecification> topicSpecifications = requiredTopics.Select(topic => new TopicSpecification
     {
         Name = topic,
         NumPartitions = 1,  // Adjust based on your needs
@@ -186,10 +186,10 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
-            var existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
+            Metadata metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
+            HashSet<string> existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
 
-            var missingTopics = requiredTopics.Where(t => !existingTopics.Contains(t)).ToList();
+            List<string> missingTopics = requiredTopics.Where(t => !existingTopics.Contains(t)).ToList();
 
             if (!missingTopics.Any())
             {
@@ -212,9 +212,9 @@ using (var scope = app.Services.CreateScope())
 // =========================
 // MIGRATIONS & SEEDING
 // =========================
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<StockDbContext>();
+    StockDbContext db = scope.ServiceProvider.GetRequiredService<StockDbContext>();
     await db.Database.EnsureDeletedAsync();
     await db.Database.MigrateAsync();
 }

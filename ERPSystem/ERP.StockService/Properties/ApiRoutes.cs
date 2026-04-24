@@ -47,4 +47,36 @@ public static class ApiRoutes
         public const string Update = $"{Root}/{{id:guid}}";
         public const string Delete = $"{Root}/{{id:guid}}";
     }
+
+    public static class Cache
+    {
+        private const string Base = "cache";
+
+        public static class Articles
+        {
+            private const string Root = $"{Base}/articles";
+
+            public const string GetById = $"{Root}/{{id:guid}}";
+            public const string GetByBarCode = $"{Root}/by-barcode/{{barcode}}";
+            public const string GetByRefCode = $"{Root}/by-refcode/{{refcode}}";
+            public const string GetPaged = Root;
+
+        }
+        public static class Clients
+        {
+            private const string Root = $"{Base}/clients";
+
+            public const string GetById = $"{Root}/{{id:guid}}";
+            public const string GetPaged = Root;
+
+        }
+        public static class Fournisseurs
+        {
+            private const string Root = $"{Base}/fournisseurs";
+
+            public const string GetById = $"{Root}/{{id:guid}}";
+            public const string GetPaged = Root;
+
+        }
+    }
 }
