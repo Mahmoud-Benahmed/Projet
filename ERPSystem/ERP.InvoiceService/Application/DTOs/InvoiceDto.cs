@@ -43,9 +43,7 @@ public record InvoiceItemDto(
 // ════════════════════════════════════════════════════════════════════════════
 // CREATE / COMMAND DTOs
 // ════════════════════════════════════════════════════════════════════════════
-
 public record CreateInvoiceDto(
-
     [Required] DateTime InvoiceDate,
     [Required] DateTime DueDate,
     [Required(ErrorMessage = "Tax calculation mode is required.")] TaxCalculationMode TaxMode,
