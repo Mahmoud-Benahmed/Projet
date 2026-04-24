@@ -33,13 +33,13 @@ public class GlobalExceptionMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var response = exception switch
+        ErrorResponse response = exception switch
         {
-            InsufficientStockException ex => new ErrorResponse 
+            InsufficientStockException ex => new ErrorResponse
             {
-                Code= "STOCK_001",
-                Message= ex.Message,
-                StatusCode=(int)HttpStatusCode.BadRequest
+                Code = "STOCK_001",
+                Message = ex.Message,
+                StatusCode = (int)HttpStatusCode.BadRequest
             },
 
             BonEntreNotFoundException ex => new ErrorResponse
