@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, firstValueFrom } from 'rxjs';
 import { environment } from '../environment'; 
 import { TranslateService } from '@ngx-translate/core';
+import { ArticleResponseDto } from './articles/articles.service';
+import { ClientResponseDto } from './clients/clients.service';
 
 // ── DTOs ─────────────────────────────────────────────
 
@@ -313,12 +315,12 @@ export class InvoiceService {
 
     // Only UI-level guards — backend will re-validate everything securely
     if (client.isBlocked) {
-      errors.push(this.t('INVOICES.ERRORS.CLIENT_BLOCKED'));
+      errors.push(this.t('INVOICES.ERRORS.CLIENT_BLOCKED', {client: client.name}));
       return { isValid: false, errors, warnings };
     }
 
     if (client.isDeleted) {
-      errors.push(this.t('INVOICES.ERRORS.CLIENT_DELETED'));
+      errors.push(this.t('INVOICES.ERRORS.CLIENT_DELETED', {client: client.name}));
       return { isValid: false, errors, warnings };
     }
 
@@ -342,4 +344,50 @@ export class InvoiceService {
   getInvoicePdfUrl(invoiceId: string): string {
     return `${this.baseUrl}/${invoiceId}/pdf`;
   }
+
+
+  // ARticle caching
+  getArticleById(id: string): Observable<ArticleResponseDto> {
+    return this.http.get<ArticleResponseDto>(
+      `${this.baseUrl}/cache/articles/${id}`
+    );
+  }
+
+  getArticlesPaged(pageNumber = 1, pageSize = 10, search = ''): Observable<PagedResultDto<ArticleResponseDto>> {
+    var params = new HttpParams()
+      .set('pageNumber', pageNumber)
+      .set('pageSize', pageSize);
+
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http.get<PagedResultDto<ArticleResponseDto>>(
+      `${this.baseUrl}/cache/articles`,
+      { params }
+    );
+  }
+
+  // CLient caching
+  getClientById(id: string): Observable<ClientResponseDto> {
+    return this.http.get<ClientResponseDto>(
+      `${this.baseUrl}/cache/clients/${id}`
+    );
+  }
+  
+  getClientsPaged(pageNumber = 1, pageSize = 10, search= ''): Observable<PagedResultDto<ClientResponseDto>> {
+    var params = new HttpParams()
+      .set('pageNumber', pageNumber)
+      .set('pageSize', pageSize);
+    
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+    return this.http.get<PagedResultDto<ClientResponseDto>>(
+      `${this.baseUrl}/cache/clients`,
+      { params }
+    );
+  }
+
+  
 }

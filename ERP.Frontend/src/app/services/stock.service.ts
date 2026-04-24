@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment';
-import { ArticleResponseDto } from './articles/articles.service';
+import { ArticleResponseDto, PagedResultDto } from './articles/articles.service';
+import { ClientResponseDto } from './clients/clients.service';
+import { FournisseurResponse } from './fournisseur.service';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export enum RetourSourceType {
@@ -317,4 +319,87 @@ export class StockService {
         }))
       );
   }
+
+  
+  
+    // ARticle caching
+    getArticleById(id: string): Observable<ArticleResponseDto> {
+      return this.http.get<ArticleResponseDto>(
+        `${this.base}/cache/articles/${id}`
+      );
+    }
+  
+    getArticleByBarcode(barcode: string): Observable<ArticleResponseDto> {
+      const params = new HttpParams().set('barcode', barcode);
+  
+      return this.http.get<ArticleResponseDto>(
+        `${this.base}/cache/articles/by-barcode`,
+        { params }
+      );
+    }
+  
+    getArticleByRefCode(refcode: string): Observable<ArticleResponseDto> {
+      const params = new HttpParams().set('refcode', refcode);
+  
+      return this.http.get<ArticleResponseDto>(
+        `${this.base}/cache/articles/by-refcode`,
+        { params }
+      );
+    }
+  
+    getArticlesPaged(pageNumber = 1, pageSize = 10, search = ''): Observable<PagedResultDto<ArticleResponseDto>> {
+      var params = new HttpParams()
+        .set('pageNumber', pageNumber)
+        .set('pageSize', pageSize);
+  
+      if (search?.trim()) {
+        params = params.set('search', search.trim());
+      }
+  
+      return this.http.get<PagedResultDto<ArticleResponseDto>>(
+        `${this.base}/cache/articles`,
+        { params }
+      );
+    }
+
+    // CLient caching
+    getClientById(id: string): Observable<ClientResponseDto> {
+      return this.http.get<ClientResponseDto>(
+        `${this.base}/cache/clients/${id}`
+      );
+    }
+
+    getClientsPaged(pageNumber = 1, pageSize = 10, search= ''): Observable<PagedResultDto<ClientResponseDto>> {
+      var params = new HttpParams()
+        .set('pageNumber', pageNumber)
+        .set('pageSize', pageSize);
+      
+      if (search?.trim()) {
+        params = params.set('search', search.trim());
+      }
+      return this.http.get<PagedResultDto<ClientResponseDto>>(
+        `${this.base}/cache/clients`,
+        { params }
+      );
+    }
+
+    // FOURNISSEUR caching
+    getFournisseurById(id: string): Observable<FournisseurResponse> {
+      return this.http.get<FournisseurResponse>(
+        `${this.base}/cache/fournisseurs/${id}`
+      );
+    }
+    
+    getFournisseursPaged(pageNumber = 1, pageSize = 10, search= ''): Observable<PagedResultDto<FournisseurResponse>> {
+      var params = new HttpParams()
+        .set('pageNumber', pageNumber)
+        .set('pageSize', pageSize);
+      if (search?.trim()) {
+        params = params.set('search', search.trim());
+      }
+      return this.http.get<PagedResultDto<FournisseurResponse>>(
+        `${this.base}/cache/fournisseurs`,
+        { params }
+      );
+    }
 }
