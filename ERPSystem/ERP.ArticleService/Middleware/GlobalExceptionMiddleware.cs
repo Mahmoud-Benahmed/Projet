@@ -32,7 +32,7 @@ namespace ERP.ArticleService.Middleware
 
         private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var response = exception switch
+            ErrorResponse response = exception switch
             {
                 ArticleNotFoundException ex => new ErrorResponse
                 {
