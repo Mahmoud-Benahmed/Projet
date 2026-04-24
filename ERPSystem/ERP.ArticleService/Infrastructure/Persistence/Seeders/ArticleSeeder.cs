@@ -1,5 +1,4 @@
-﻿using DotNetEnv;
-using ERP.ArticleService.Application.DTOs;
+﻿using ERP.ArticleService.Application.DTOs;
 using ERP.ArticleService.Application.Interfaces;
 
 namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
@@ -23,17 +22,17 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
         public async Task SeedAsync()
         {
             // Load all categories by name for lookup
-            var categories = await _categoryService.GetAllAsync();
-            var categoryMap = categories.ToDictionary(c => c.Name, c => c.Id);
+            List<CategoryResponseDto> categories = await _categoryService.GetAllAsync();
+            Dictionary<string, Guid> categoryMap = categories.ToDictionary(c => c.Name, c => c.Id);
 
-            var seedData = SeedDataConstants.Articles.All;
+            (string Libelle, decimal Prix, string CategoryName, UnitEnum Unit, int TVA)[] seedData = SeedDataConstants.Articles.All;
 
-            var usedBarcodes = new HashSet<string>();
-            var random = new Random();
+            HashSet<string> usedBarcodes = new HashSet<string>();
+            Random random = new Random();
 
-            foreach (var (libelle, prix, categoryName, unit, tva) in seedData)
+            foreach ((string? libelle, decimal prix, string? categoryName, UnitEnum unit, int tva) in seedData)
             {
-                if (!categoryMap.TryGetValue(categoryName, out var categoryId))
+                if (!categoryMap.TryGetValue(categoryName, out Guid categoryId))
                 {
                     _logger.LogWarning(
                         "Category '{CategoryName}' not found for article '{Libelle}', skipping.",
@@ -52,9 +51,9 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                     usedBarcodes.Add(barCode);
 
                     // Ensure TVA is valid (must be > 0)
-                    var validTva = tva > 0 ? tva : 19;
+                    int validTva = tva > 0 ? tva : 19;
 
-                    var createRequest = new CreateArticleRequestDto(
+                    CreateArticleRequestDto createRequest = new CreateArticleRequestDto(
                         Libelle: libelle,
                         Prix: prix,
                         Unit: unit,
@@ -63,7 +62,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
                         TVA: validTva
                     );
 
-                    var article = await _articleService.CreateAsync(createRequest);
+                    ArticleResponseDto article = await _articleService.CreateAsync(createRequest);
 
                     _logger.LogInformation(
                         "Seeded article: '{Code}' - {Libelle} (TVA: {TVA}%, Unit: {Unit})",
@@ -80,8 +79,8 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
         private static string GenerateEAN13()
         {
-            var random = new Random();
-            var digits = new int[12];
+            Random random = new Random();
+            int[] digits = new int[12];
 
             // Ensure first digit is not zero (EAN-13 standard)
             digits[0] = random.Next(1, 10);

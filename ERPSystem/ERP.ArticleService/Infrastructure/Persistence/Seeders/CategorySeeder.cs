@@ -16,11 +16,11 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
         public async Task SeedAsync()
         {
-            foreach (var (name, tva) in SeedDataConstants.Categories.All)
+            foreach ((string? name, int tva) in SeedDataConstants.Categories.All)
             {
                 try
                 {
-                    var dto = new CategoryRequestDto(name, tva);
+                    CategoryRequestDto dto = new CategoryRequestDto(name, tva);
                     await _categoryService.CreateAsync(dto);
                     _logger.LogInformation("✓ Seeded category: '{Name}' (TVA: {TVA}%)", name, tva);
                 }

@@ -16,7 +16,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
 
         public async Task SeedAsync()
         {
-            var exists = await _context.ArticleCodes.AnyAsync();
+            bool exists = await _context.ArticleCodes.AnyAsync();
             if (exists)
             {
                 _logger.LogInformation("ArticleCode row already exists, skipping.");
@@ -24,7 +24,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence.Seeders
             }
 
             // Single config row — prefix and padding must match FormatCode expectations
-            var articleCode = new ArticleCode("ART", 6);
+            ArticleCode articleCode = new ArticleCode("ART", 6);
             await _context.ArticleCodes.AddAsync(articleCode);
             await _context.SaveChangesAsync();
             _logger.LogInformation("ArticleCode config row seeded: ART, padding 6.");
