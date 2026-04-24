@@ -76,10 +76,10 @@ export class ClientCategoriesComponent implements OnInit {
     this.categoryForm = this.fb.group({
       name:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
       code:                  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      delaiRetour:           [null, [Validators.required, Validators.min(7)]],
-      duePaymentPeriod:      [null, [Validators.required, Validators.min(7)]],
-      discountRate:          [null, [Validators.min(0), Validators.max(1)]],
-      creditLimitMultiplier: [null, [Validators.min(1)]],
+      delaiRetour:           [null, [Validators.required, Validators.min(7), Validators.max(270)]],
+      duePaymentPeriod:      [null, [Validators.required, Validators.min(7), Validators.max(180)]],
+      discountRate:          [null, [Validators.min(0), Validators.max(100)]],
+      creditLimitMultiplier: [null, [Validators.min(1), Validators.max(2)]],
       useBulkPricing:        [false],
     });
   }
@@ -321,7 +321,7 @@ export class ClientCategoriesComponent implements OnInit {
         delaiRetour:           val.delaiRetour,
         duePaymentPeriod:      val.duePaymentPeriod,          // ← added
         useBulkPricing:        val.useBulkPricing ?? false,
-        discountRate:          val.discountRate ?? null,
+        discountRate: val.discountRate != null && val.discountRate !== '' ? val.discountRate / 100 : null,
         creditLimitMultiplier: val.creditLimitMultiplier ?? null,
       };
       this.categoriesService.create(dto).subscribe({
