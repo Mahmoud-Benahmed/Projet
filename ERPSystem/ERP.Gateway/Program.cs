@@ -8,15 +8,15 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Yarp.ReverseProxy.Transforms;
 
-var builder = WebApplication.CreateBuilder(args);
-var config = builder.Configuration;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+ConfigurationManager config = builder.Configuration;
 
 string GetAuthServiceAddress()
 {
     // Read from ReverseProxy configuration
-    var authCluster = config.GetSection("ReverseProxy:Clusters:authCluster");
-    var destination = authCluster.GetSection("Destinations:authDestination");
-    var address = destination["Address"];
+    IConfigurationSection authCluster = config.GetSection("ReverseProxy:Clusters:authCluster");
+    IConfigurationSection destination = authCluster.GetSection("Destinations:authDestination");
+    string? address = destination["Address"];
 
     if (string.IsNullOrEmpty(address))
     {
@@ -26,7 +26,7 @@ string GetAuthServiceAddress()
     return address.TrimEnd('/'); // Remove trailing slash if present
 }
 
-var authServiceUrl = GetAuthServiceAddress();
+string authServiceUrl = GetAuthServiceAddress();
 
 builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
 {
@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.MapInboundClaims = false;
 
-    var signingKey = new SymmetricSecurityKey(
+    SymmetricSecurityKey signingKey = new SymmetricSecurityKey(
         Encoding.UTF8.GetBytes(config["JWT:Secret"]
             ?? throw new InvalidOperationException("JWT:Secret is not configured.")));
     signingKey.KeyId = "erp-key-1";
@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(options =>
         },
         OnTokenValidated = async context =>
         {
-            var tokenString = context.Request.Headers["Authorization"].ToString()?.Replace("Bearer ", "");
+            string? tokenString = context.Request.Headers["Authorization"].ToString()?.Replace("Bearer ", "");
 
             if (string.IsNullOrEmpty(tokenString))
             {
@@ -83,8 +83,8 @@ builder.Services.AddAuthentication(options =>
             }
 
             // Call AuthService to validate token and check user existence
-            var authServiceClient = context.HttpContext.RequestServices.GetRequiredService<IAuthServiceClient>();
-            var validationResult = await authServiceClient.ValidateTokenAsync(tokenString);
+            IAuthServiceClient authServiceClient = context.HttpContext.RequestServices.GetRequiredService<IAuthServiceClient>();
+            TokenValidationResponse validationResult = await authServiceClient.ValidateTokenAsync(tokenString);
             if (!validationResult.IsValid)
             {
                 context.Fail(validationResult.Reason ?? "User validation failed");
@@ -92,7 +92,7 @@ builder.Services.AddAuthentication(options =>
             }
 
             // Optionally: Add additional claims from the validation result
-            var identity = context.Principal?.Identity as ClaimsIdentity;
+            ClaimsIdentity? identity = context.Principal?.Identity as ClaimsIdentity;
             if (identity != null && validationResult.User != null)
             {
                 identity.AddClaim(new Claim("user_validated", "true"));
@@ -135,7 +135,7 @@ builder.Services.AddAuthorization(options =>
          .RequireRole(Roles.SystemAdmin));
 
     // ── Individual privilege policies ──────────────────────────────────────
-    foreach (var privilege in PrivilegeRegistry.All)
+    foreach (PrivilegeDefinition privilege in PrivilegeRegistry.All)
     {
         options.AddPolicy(privilege.Code, p =>
             p.RequireAuthenticatedUser()
@@ -271,7 +271,7 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("UserPolicy", context =>
     {
         context.Items["RateLimitPolicyName"] = "UserPolicy";
-        var userId = context.User?.Identity?.IsAuthenticated == true
+        string? userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
 
@@ -289,7 +289,7 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("WritePolicy", context =>
     {
         context.Items["RateLimitPolicyName"] = "WritePolicy";
-        var userId = context.User?.Identity?.IsAuthenticated == true
+        string? userId = context.User?.Identity?.IsAuthenticated == true
             ? context.User.FindFirst("sub")?.Value
             : context.Connection.RemoteIpAddress?.ToString();
 
@@ -310,8 +310,8 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = 429;
         context.HttpContext.Response.ContentType = "application/json";
 
-        var policyName = context.HttpContext.Items["RateLimitPolicyName"]?.ToString();
-        var retrySeconds = policyName switch
+        string? policyName = context.HttpContext.Items["RateLimitPolicyName"]?.ToString();
+        int retrySeconds = policyName switch
         {
             "LoginPolicy" => 5 * 60,
             _ => 60
@@ -323,7 +323,7 @@ builder.Services.AddRateLimiter(options =>
             ? $"{s / 60} minute{(s / 60 > 1 ? "s" : "")}"
             : $"{s} second{(s > 1 ? "s" : "")}";
 
-        var message = policyName switch
+        string message = policyName switch
         {
             "LoginPolicy" => $"Too many login attempts. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
             "WritePolicy" => $"Too many write operations. Please wait {FormatWaitTime(retrySeconds)} before retrying.",
@@ -358,14 +358,14 @@ builder.Services.AddReverseProxy()
     {
         context.AddRequestTransform(async transformContext =>
         {
-            var user = transformContext.HttpContext.User;
+            ClaimsPrincipal user = transformContext.HttpContext.User;
 
-            var sub = user.FindFirstValue("sub");
+            string? sub = user.FindFirstValue("sub");
             if (!string.IsNullOrEmpty(sub))
                 transformContext.ProxyRequest.Headers
                     .TryAddWithoutValidation("X-User-Id", sub);
 
-            var role = user.FindFirstValue("role");
+            string? role = user.FindFirstValue("role");
             if (!string.IsNullOrEmpty(role))
                 transformContext.ProxyRequest.Headers
                     .TryAddWithoutValidation("X-User-Role", role);
@@ -376,7 +376,7 @@ builder.Services.AddReverseProxy()
 // Pipeline
 //////////////////////////////////////////////////
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
