@@ -23,7 +23,7 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _auditLogService.GetAllAsync(pageNumber, pageSize);
+            PagedResultDto<AuditLogResponseDto> result = await _auditLogService.GetAllAsync(pageNumber, pageSize);
             return Ok(result);
         }
 
@@ -35,7 +35,7 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _auditLogService.GetByUserAsync(userId, pageNumber, pageSize);
+            PagedResultDto<AuditLogResponseDto> result = await _auditLogService.GetByUserAsync(userId, pageNumber, pageSize);
             return Ok(result);
         }
 
@@ -44,7 +44,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(long), StatusCodes.Status200OK)]
         public async Task<IActionResult> Count()
         {
-            var count = await _auditLogService.CountAsync();
+            long count = await _auditLogService.CountAsync();
             return Ok(count);
         }
 

@@ -24,10 +24,10 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetMe()
         {
             // Extract authUserId from the JWT claim
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var user = await _authService.GetByIdAsync(requesterId);
+            AuthUserGetResponseDto user = await _authService.GetByIdAsync(requesterId);
 
             if (user == null)
                 return NotFound();
@@ -39,12 +39,12 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var role = User.FindFirstValue("role");
+            string? role = User.FindFirstValue("role");
 
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var user = await _authService.GetByIdAsync(id);
+            AuthUserGetResponseDto? user = await _authService.GetByIdAsync(id);
             if (user is null) return NotFound();
 
             bool isSelf = requesterId == id;
@@ -64,7 +64,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetByLogin(string login)
         {
-            var result = await _authService.GetByLoginAsync(login);
+            AuthUserGetResponseDto result = await _authService.GetByLoginAsync(login);
             return Ok(result);
         }
 
@@ -74,10 +74,10 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
 
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetAllAsync(pageNumber, pageSize, requesterId);
+            PagedResultDto<AuthUserGetResponseDto> result = await _authService.GetAllAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -85,10 +85,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDeactivated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, requesterId);
+            PagedResultDto<AuthUserGetResponseDto> result = await _authService.GetPagedByStatusAsync(false, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -96,10 +96,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetActivated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, requesterId);
+            PagedResultDto<AuthUserGetResponseDto> result = await _authService.GetPagedByStatusAsync(true, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -107,7 +107,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Activate(Guid id)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.ActivateAsync(id, requesterId);
@@ -119,7 +119,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Deactivate(Guid id)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.DeactivateAsync(id, requesterId);
@@ -131,7 +131,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteSoft(Guid id)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.SoftDeleteAsync(id, requesterId);
@@ -142,7 +142,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Restore(Guid id)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.RestoreAsync(id, requesterId);
@@ -153,10 +153,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(PagedResultDto<AuthUserGetResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDeleted([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, requesterId);
+            PagedResultDto<AuthUserGetResponseDto> result = await _authService.GetDeletedPagedAsync(pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -168,10 +168,10 @@ namespace ERP.AuthService.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, requesterId);
+            PagedResultDto<AuthUserGetResponseDto> result = await _authService.GetPagedByRoleAsync(roleId, pageNumber, pageSize, requesterId);
             return Ok(result);
         }
 
@@ -180,7 +180,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> ExistsByLogin(string login)
         {
-            var result = await _authService.ExistsByLogin(login);
+            bool result = await _authService.ExistsByLogin(login);
             return Ok(result);
         }
 
@@ -188,7 +188,7 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> ExistsByEmail(string email)
         {
-            var result = await _authService.ExistsByEmail(email);
+            bool result = await _authService.ExistsByEmail(email);
             return Ok(result);
         }
 
@@ -196,10 +196,10 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(UserStatsDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStats()
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
-            var result = await _authService.GetStatsAsync(requesterId);
+            UserStatsDto result = await _authService.GetStatsAsync(requesterId);
             return Ok(result);
         }
 
@@ -208,9 +208,9 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register(RegisterRequestDto request)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
-            var result = await _authService.RegisterAsync(request, requesterId);
+            AuthUserGetResponseDto result = await _authService.RegisterAsync(request, requesterId);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
@@ -218,15 +218,15 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdateProfileDto updatedProfile)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
-            var canManageUsers = User.HasClaim("privilege", Privileges.Users.UPDATE_USER);
-            var isOwner = requesterId == id;
+            bool canManageUsers = User.HasClaim("privilege", Privileges.Users.UPDATE_USER);
+            bool isOwner = requesterId == id;
 
             if (!isOwner && !canManageUsers)
                 return Unauthorized();
 
-            var result = await _authService.UpdateProfile(id, updatedProfile);
+            AuthUserGetResponseDto result = await _authService.UpdateProfile(id, updatedProfile);
             return Ok(result);
         }
 
@@ -235,9 +235,9 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> UpdateSettings([FromRoute] Guid id,
                                                         [FromBody] UserSettingsRequestDto settings)
         {
-            if (!TryGetRequesterId(out var requesterId) || !requesterId.Equals(id))
+            if (!TryGetRequesterId(out Guid requesterId) || !requesterId.Equals(id))
                 return Unauthorized();
-            var result = await _authService.UpdateSettings(id, settings);
+            UserSettingsResponseDto result = await _authService.UpdateSettings(id, settings);
             return Ok(result);
         }
 
@@ -245,7 +245,7 @@ namespace ERP.AuthService.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
         {
-            var result = await _authService.LoginAsync(request);
+            AuthResponseDto result = await _authService.LoginAsync(request);
             return Ok(result);
         }
 
@@ -253,7 +253,7 @@ namespace ERP.AuthService.Controllers
         [HttpPut("change-password/profile")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.ChangePasswordAsync(
@@ -267,7 +267,7 @@ namespace ERP.AuthService.Controllers
         [HttpPut("change-password/{userId:guid}")]
         public async Task<IActionResult> AdminChangePassword(Guid userId, [FromBody] AdminChangeProfileRequest request)
         {
-            if (!TryGetRequesterId(out var requesterId))
+            if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             await _authService.ChangePasswordByAdminAsync(userId, request, requesterId);
@@ -279,7 +279,7 @@ namespace ERP.AuthService.Controllers
         public async Task<IActionResult> Refresh(RefreshTokenRequestDto request)
         {
 
-            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            AuthResponseDto result = await _authService.RefreshTokenAsync(request.RefreshToken);
             return Ok(result);
         }
 
@@ -293,7 +293,7 @@ namespace ERP.AuthService.Controllers
         private bool TryGetRequesterId(out Guid requesterId)
         {
             requesterId = Guid.Empty;
-            var raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+            string? raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
             return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         }
 
@@ -303,8 +303,8 @@ namespace ERP.AuthService.Controllers
             if (string.IsNullOrEmpty(authorization) || !authorization.StartsWith("Bearer "))
                 return BadRequest(new { isValid = false, reason = "No token provided" });
 
-            var token = authorization.Substring("Bearer ".Length);
-            var result = await _authService.ValidateTokenAsync(token);
+            string token = authorization.Substring("Bearer ".Length);
+            TokenValidationResultDto result = await _authService.ValidateTokenAsync(token);
 
             if (!result.IsValid)
                 return Unauthorized(new { isValid = false, reason = result.ExpirationReason });
