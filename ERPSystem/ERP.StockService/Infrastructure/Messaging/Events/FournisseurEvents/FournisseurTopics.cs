@@ -1,6 +1,6 @@
 ﻿namespace ERP.StockService.Infrastructure.Messaging.Events.FournisseurEvents;
 
-public static class FournisseurTopics   
+public static class FournisseurTopics
 {
     public const string Created = "fournisseur.created";
     public const string Updated = "fournisseur.updated";

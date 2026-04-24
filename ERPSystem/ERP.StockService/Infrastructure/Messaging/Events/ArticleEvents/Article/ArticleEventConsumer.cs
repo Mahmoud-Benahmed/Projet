@@ -24,11 +24,11 @@ public sealed class ArticleEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
-            GroupId =  configuration["Kafka:ConsumerGroups:Article"] ?? throw new InvalidOperationException("Kafka:ConsumerGroups:Article not configured"),
+            GroupId = configuration["Kafka:ConsumerGroups:Article"] ?? throw new InvalidOperationException("Kafka:ConsumerGroups:Article not configured"),
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false,
         };
@@ -48,13 +48,13 @@ public sealed class ArticleEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     // Log raw message for debugging
                     _logger.LogDebug("Raw message received on {Topic}: {Message}",
                         result.Topic, result.Message.Value);
 
-                    var dto = JsonSerializer.Deserialize<ArticleResponseDto>(
+                    ArticleResponseDto? dto = JsonSerializer.Deserialize<ArticleResponseDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto is null)
@@ -85,23 +85,23 @@ public sealed class ArticleEventConsumer : BackgroundService
                     }
 
                     // Create a new scope for each message
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (IServiceScope scope = _scopeFactory.CreateScope())
                     {
-                        var categoryCacheService = scope.ServiceProvider.GetRequiredService<IArticleCategoryCacheService>();
+                        IArticleCategoryCacheService categoryCacheService = scope.ServiceProvider.GetRequiredService<IArticleCategoryCacheService>();
 
                         // Check if category exists (using async properly)
-                        var categoryExists = await categoryCacheService.ExistsAsync(dto.Category.Name) || await categoryCacheService.GetByIdAsync(dto.Category.Id) != null;
+                        bool categoryExists = await categoryCacheService.ExistsAsync(dto.Category.Name) || await categoryCacheService.GetByIdAsync(dto.Category.Id) != null;
 
                         if (!categoryExists)
                         {
-                            _logger.LogWarning("Category {CategoryId} ({CategoryName}) not found in cache for article {ArticleId}. " + 
+                            _logger.LogWarning("Category {CategoryId} ({CategoryName}) not found in cache for article {ArticleId}. " +
                                                 "Creating category first.",
                                                 dto.Category.Id, dto.Category.Name, dto.Id);
 
                             await categoryCacheService.SyncCreatedAsync(dto.Category);
                         }
 
-                        var handler = scope.ServiceProvider.GetRequiredService<IArticleEventHandler>();
+                        IArticleEventHandler handler = scope.ServiceProvider.GetRequiredService<IArticleEventHandler>();
 
                         switch (result.Topic)
                         {

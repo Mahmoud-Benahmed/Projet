@@ -1,5 +1,4 @@
 ﻿using Confluent.Kafka;
-using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Application.DTOs;
 using System.Text.Json;
 
@@ -24,7 +23,7 @@ public sealed class InvoiceEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -50,12 +49,12 @@ public sealed class InvoiceEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     _logger.LogDebug("Raw message received on {Topic}: {Message}",
                         result.Topic, result.Message.Value);
 
-                    var dto = JsonSerializer.Deserialize<InvoiceDto>(
+                    InvoiceDto? dto = JsonSerializer.Deserialize<InvoiceDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto is null)
@@ -65,8 +64,8 @@ public sealed class InvoiceEventConsumer : BackgroundService
                         continue;
                     }
 
-                    using var scope = _scopeFactory.CreateScope();
-                    var handler = scope.ServiceProvider.GetRequiredService<IInvoiceEventHandler>();
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    IInvoiceEventHandler handler = scope.ServiceProvider.GetRequiredService<IInvoiceEventHandler>();
 
                     switch (result.Topic)
                     {
@@ -74,7 +73,7 @@ public sealed class InvoiceEventConsumer : BackgroundService
                             await handler.HandleCreatedAsync(dto);
                             break;
                         case InvoiceTopics.Cancelled:
-                            await handler.HandleCancelledAsync(dto); 
+                            await handler.HandleCancelledAsync(dto);
                             break;
                         default:
                             _logger.LogWarning("Unhandled invoice topic: {Topic}", result.Topic);

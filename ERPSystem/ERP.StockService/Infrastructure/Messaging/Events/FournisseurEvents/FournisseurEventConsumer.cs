@@ -1,6 +1,5 @@
 ﻿using Confluent.Kafka;
 using ERP.StockService.Application.DTOs;
-using ERP.StockService.Application.Interfaces;
 using System.Text.Json;
 
 namespace ERP.StockService.Infrastructure.Messaging.Events.FournisseurEvents;
@@ -23,7 +22,7 @@ public sealed class FournisseurEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        var config = new ConsumerConfig
+        ConsumerConfig config = new ConsumerConfig
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
@@ -48,13 +47,13 @@ public sealed class FournisseurEventConsumer : BackgroundService
             {
                 try
                 {
-                    var result = _consumer.Consume(stoppingToken);
+                    ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
                     // Log raw message for debugging
                     _logger.LogDebug("Raw message received on {Topic}: {Message}",
                         result.Topic, result.Message.Value);
 
-                    var dto = JsonSerializer.Deserialize<FournisseurResponseDto>(
+                    FournisseurResponseDto? dto = JsonSerializer.Deserialize<FournisseurResponseDto>(
                         result.Message.Value, _jsonOptions);
 
                     if (dto is null)
@@ -78,9 +77,9 @@ public sealed class FournisseurEventConsumer : BackgroundService
                     }
 
                     // Create a new scope for each message
-                    using (var scope = _scopeFactory.CreateScope())
+                    using (IServiceScope scope = _scopeFactory.CreateScope())
                     {
-                        var handler = scope.ServiceProvider.GetRequiredService<IFournisseurEventHandler>();
+                        IFournisseurEventHandler handler = scope.ServiceProvider.GetRequiredService<IFournisseurEventHandler>();
 
                         switch (result.Topic)
                         {
