@@ -20,7 +20,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using System.Text;
 
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // ── Add environment variables
 builder.Configuration.AddEnvironmentVariables();
@@ -53,7 +53,7 @@ builder.Services
 
 builder.Services.AddSingleton<MongoDbContext>(sp =>
 {
-    var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
+    MongoSettings settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
     return new MongoDbContext(settings.ConnectionString, settings.DatabaseName);
 });
 
@@ -71,14 +71,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnMessageReceived = context =>
             {
-                var authHeader = context.Request.Headers["Authorization"].ToString();
+                string authHeader = context.Request.Headers["Authorization"].ToString();
                 if (authHeader.StartsWith("Bearer "))
                     context.Token = authHeader["Bearer ".Length..].Trim();
                 return Task.CompletedTask;
             }
         };
 
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new Exception("JWT:Secret not found"));
+        byte[] key = Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new Exception("JWT:Secret not found"));
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -102,7 +102,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        var message = string.Join(" | ", context.ModelState.Values
+        string message = string.Join(" | ", context.ModelState.Values
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage));
 
@@ -137,14 +137,14 @@ builder.Services.AddHttpContextAccessor();
 
 //builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // ── Seed data
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
+    IServiceProvider services = scope.ServiceProvider;
 
-    var dbContext = services.GetRequiredService<MongoDbContext>();
+    MongoDbContext dbContext = services.GetRequiredService<MongoDbContext>();
 
     // ── Initialize MongoDB indexes
     await MongoDbInitializer.InitializeAsync(dbContext);
