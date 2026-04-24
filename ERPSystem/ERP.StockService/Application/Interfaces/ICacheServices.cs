@@ -9,7 +9,7 @@ public interface IArticleCacheService
     Task<ArticleResponseDto?> GetByCodeRefAsync(string codeRef);
     Task<List<ArticleResponseDto>> GetAllAsync();
     Task<List<ArticleResponseDto>> GetAllActiveAsync();
-    Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize);
+    Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
 
     // Called by the Kafka event handler
     Task SyncCreatedAsync(ArticleResponseDto dto);
@@ -36,7 +36,7 @@ public interface IArticleCategoryCacheService
 public interface IClientCacheService
 {
     Task<ClientResponseDto?> GetByIdAsync(Guid id);
-    Task<List<ClientResponseDto>> GetAllAsync();
+    Task<PagedResultDto<ClientResponseDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task<bool> ExistsAsync(Guid id);
     Task SyncCreatedAsync(ClientResponseDto dto);
     Task SyncUpdatedAsync(ClientResponseDto dto);
@@ -66,11 +66,10 @@ public interface IClientCategoryCacheService
 public interface IFournisseurCacheService
 {
     // Read operations
+    Task<PagedResultDto<FournisseurResponseDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task<FournisseurResponseDto?> GetByIdAsync(Guid id);
     Task<FournisseurResponseDto?> GetByNameAsync(string name);
     Task<FournisseurResponseDto?> GetByTaxNumberAsync(string taxNumber);
-    Task<List<FournisseurResponseDto>> GetAllAsync();
-    Task<List<FournisseurResponseDto>> GetActiveAsync();
     Task<List<FournisseurResponseDto>> GetBlockedAsync();
     Task<bool> ExistsAsync(Guid id);
 

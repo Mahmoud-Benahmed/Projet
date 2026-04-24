@@ -1,5 +1,4 @@
-﻿using ERP.StockService.Application.Services.LocalCache.ArticleCache;
-using ERP.StockService.Domain.LocalCache.Article;
+﻿using ERP.StockService.Domain.LocalCache.Article;
 using ERP.StockService.Domain.LocalCache.Client;
 using ERP.StockService.Domain.LocalCache.Fournisseur;
 
@@ -13,7 +12,7 @@ public interface IArticleCacheRepository
     Task<ArticleCache?> GetByCodeRefAsync(string codeRef);
     Task<List<ArticleCache>> GetAllAsync();
     Task<List<ArticleCache>> GetAllActiveAsync();
-    Task<(IEnumerable<ArticleCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+    Task<(List<ArticleCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task AddAsync(ArticleCache article);
     Task SaveChangesAsync();
 
@@ -39,8 +38,7 @@ public interface IClientCacheRepository
     Task<ClientCache?> GetByIdAsync(Guid id);
     Task<ClientCache?> GetByNameAsync(string name);
     Task<ClientCache?> GetByEmailAsync(string email);
-    Task<List<ClientCache>> GetAllAsync();
-    Task<List<ClientCache>> GetActiveAsync();
+    Task<(List<ClientCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task<bool> ExistsAsync(Guid id);
     Task AddAsync(ClientCache client);
     Task UpdateAsync(ClientCache client);
@@ -84,10 +82,8 @@ public interface IFournisseurCacheRepository
     Task<FournisseurCache?> GetByNameAsync(string name);
     Task<FournisseurCache?> GetByTaxNumberAsync(string taxNumber);
     Task<FournisseurCache?> GetByEmailAsync(string email);
-    Task<List<FournisseurCache>> GetAllAsync();
-    Task<List<FournisseurCache>> GetActiveAsync();
+    Task<(List<FournisseurCache> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
     Task<List<FournisseurCache>> GetBlockedAsync();
-    Task<List<FournisseurCache>> GetPagedAsync(int pageNumber, int pageSize);
     Task<bool> ExistsAsync(Guid id);
     Task<bool> ExistsByNameAsync(string name);
     Task<bool> ExistsByTaxNumberAsync(string taxNumber);
