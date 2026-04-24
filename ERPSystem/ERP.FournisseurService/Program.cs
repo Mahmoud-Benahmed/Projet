@@ -9,13 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 // =========================
 // DATABASE
 // =========================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "ConnectionString 'DefaultConnection' is not configured.");
 
@@ -47,7 +47,7 @@ builder.Services
         // Unified validation error response — Data Annotations return this shape
         options.InvalidModelStateResponseFactory = context =>
         {
-            var message = string.Join(" | ", context.ModelState.Values
+            string message = string.Join(" | ", context.ModelState.Values
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
 
@@ -68,15 +68,15 @@ builder.Services.AddDatabaseSeeders();
 // =========================
 // BUILD
 // =========================
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // =========================
 // AUTO MIGRATE & SEED
 // =========================
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<FournisseurDbContext>();
-    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    FournisseurDbContext db = scope.ServiceProvider.GetRequiredService<FournisseurDbContext>();
+    DatabaseSeeder seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
 
     await db.Database.EnsureDeletedAsync();
     await db.Database.MigrateAsync();
