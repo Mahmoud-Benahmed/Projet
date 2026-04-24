@@ -57,9 +57,9 @@ namespace InvoiceService.Domain
             ArticleId = articleId;
             ArticleName = articleLibelle;
             ArticleBarCode = articleBarCode;
-            Quantity = quantity;
-            UniPriceHT = uniPriceHT;
-            TaxRate = taxRate;
+            Quantity = Math.Round(quantity, 3, MidpointRounding.AwayFromZero); ;
+            UniPriceHT = Math.Round(uniPriceHT, 3, MidpointRounding.AwayFromZero);
+            TaxRate = Math.Round(taxRate, 3, MidpointRounding.AwayFromZero);
 
             // ──── CALCULATE TOTALS ────
             CalculateSubtotal();
@@ -71,18 +71,18 @@ namespace InvoiceService.Domain
 
         public void Update(decimal quantity, decimal uniPriceHT, decimal taxRate)
         {
-            Quantity = quantity;
-            UniPriceHT = uniPriceHT;
-            TaxRate = taxRate;
+            Quantity = Math.Round(quantity, 3, MidpointRounding.AwayFromZero);
+            UniPriceHT = Math.Round(uniPriceHT, 3, MidpointRounding.AwayFromZero);
+            TaxRate = Math.Round(taxRate, 3, MidpointRounding.AwayFromZero);
             CalculateSubtotal();
 
         }
         public void CalculateSubtotal(decimal discountRate = 0)
         {
-            var multiplier = 1 - (discountRate / 100m);
-            EffectivePriceHT = UniPriceHT * multiplier;
-            TotalHT = Quantity * EffectivePriceHT;
-            TotalTTC = TotalHT * (1 + TaxRate);
+            decimal multiplier = Math.Round(1 - (discountRate / 100m), 3, MidpointRounding.AwayFromZero); ;
+            EffectivePriceHT = Math.Round(UniPriceHT * multiplier, 3, MidpointRounding.AwayFromZero); ;
+            TotalHT = Math.Round(Quantity * EffectivePriceHT, 3, MidpointRounding.AwayFromZero);
+            TotalTTC = Math.Round(TotalHT * (1 + TaxRate), 3, MidpointRounding.AwayFromZero); ;
         }
     }
 

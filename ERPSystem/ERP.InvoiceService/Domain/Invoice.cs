@@ -11,7 +11,7 @@ namespace InvoiceService.Domain
         public TaxCalculationMode TaxCalculationMode { get; private set; }
         public DateTime InvoiceDate { get; private set; }
         public decimal DiscountRate { get; private set; }
-        public DateTime DueDate { get; private set; }
+        public DateTime DueDate { get; private set; } // last date to pay the invoice in the period between InvoiceDate and DueDate before the invoice is considered overdue and lead to create additional invoices for each period of delay
         public decimal TotalHT { get; private set; }
         public decimal TotalTVA { get; private set; }
         public decimal TotalTTC { get; private set; }
@@ -47,7 +47,7 @@ namespace InvoiceService.Domain
             InvoiceNumber = invoiceNumber;
             InvoiceDate = invoiceDate;
             TaxCalculationMode = taxCalculation;
-            DiscountRate = discountRate;
+            DiscountRate = Math.Round(discountRate, 2, MidpointRounding.AwayFromZero);
             DueDate = dueDate;
             ClientId = clientId;
             ClientFullName = clientFullName;
@@ -86,7 +86,7 @@ namespace InvoiceService.Domain
             if (Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Items can only be removed from DRAFT invoices.");
 
-            var item = _items.FirstOrDefault(i => i.Id == itemId)
+            InvoiceItem item = _items.FirstOrDefault(i => i.Id == itemId)
                 ?? throw new InvoiceDomainException($"Item with id '{itemId}' not found.");
 
             _items.Remove(item);
@@ -96,7 +96,7 @@ namespace InvoiceService.Domain
         public void CalculateTotals()
         {
             // Each item recalculates using the invoice-level discount
-            foreach (var item in _items)
+            foreach (InvoiceItem item in _items)
                 item.CalculateSubtotal(DiscountRate);  // ← discount flows from invoice to items
 
             TotalHT = _items.Sum(i => i.TotalHT);
@@ -106,15 +106,15 @@ namespace InvoiceService.Domain
                 if (TotalHT == 0) { TotalTVA = 0; TotalTTC = 0; }
                 else
                 {
-                    var avgRate = _items.Sum(i => i.TotalHT * i.TaxRate) / TotalHT;
-                    TotalTVA = Math.Round(TotalHT * avgRate, 2);
+                    decimal avgRate = _items.Sum(i => i.TotalHT * i.TaxRate) / TotalHT;
+                    TotalTVA = Math.Round(TotalHT * avgRate, 2, MidpointRounding.AwayFromZero);
                     TotalTTC = TotalHT + TotalTVA;
                 }
             }
             else
             {
-                TotalTVA = Math.Round(_items.Sum(i => i.TotalTTC - i.TotalHT), 2);
-                TotalTTC = TotalHT + TotalTVA;
+                TotalTVA = Math.Round(_items.Sum(i => i.TotalHT * i.TaxRate), 2, MidpointRounding.AwayFromZero);
+                TotalTTC = Math.Round(TotalHT + TotalTVA, 2, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -183,7 +183,7 @@ namespace InvoiceService.Domain
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
             TaxCalculationMode = taxCalculationMode;
-            DiscountRate = discountRate;
+            DiscountRate = Math.Round(discountRate, 2, MidpointRounding.AwayFromZero);
             InvoiceDate = invoiceDate;
             DueDate = dueDate;
             ClientId = clientId;
