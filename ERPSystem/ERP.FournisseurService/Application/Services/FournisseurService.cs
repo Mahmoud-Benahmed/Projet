@@ -1,7 +1,7 @@
 ﻿using ERP.FournisseurService.Application.DTOs;
+using ERP.FournisseurService.Application.Exceptions;
 using ERP.FournisseurService.Application.Interfaces;
 using ERP.FournisseurService.Domain;
-using ERP.FournisseurService.Application.Exceptions;
 using ERP.FournisseurService.Infrastructure.Messaging;
 
 namespace ERP.FournisseurService.Application.Services;
@@ -22,12 +22,12 @@ public class FournisseurService : IFournisseurService
     // =========================
     public async Task<FournisseurResponseDto> CreateAsync(CreateFournisseurRequestDto dto)
     {
-        var f = Fournisseur.Create(
+        Fournisseur f = Fournisseur.Create(
             dto.Name, dto.Address, dto.Phone,
             dto.TaxNumber, dto.RIB, dto.Email);
         await _repo.AddAsync(f);
         await _repo.SaveChangesAsync();
-        var res= f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Created, res);
         return res;
     }
@@ -37,10 +37,10 @@ public class FournisseurService : IFournisseurService
     // =========================
     public async Task<FournisseurResponseDto> UpdateAsync(Guid id, UpdateFournisseurRequestDto dto)
     {
-        var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Update(dto.Name, dto.Address, dto.Phone, dto.TaxNumber, dto.RIB, dto.Email);
         await _repo.SaveChangesAsync();
-        var res = f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
         return res;
     }
@@ -50,20 +50,20 @@ public class FournisseurService : IFournisseurService
     // =========================
     public async Task DeleteAsync(Guid id)
     {
-        var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Delete();
         await _repo.SaveChangesAsync();
-        var res = f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Deleted, res);
     }
 
     public async Task RestoreAsync(Guid id)
     {
-        var f = await _repo.GetByIdDeletedAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdDeletedAsync(id) ?? throw new FournisseurNotFoundException(id);
         if (!f.IsDeleted) return;
         f.Restore();
         await _repo.SaveChangesAsync();
-        var res = f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Restored, res);
     }
 
@@ -72,20 +72,20 @@ public class FournisseurService : IFournisseurService
     // =========================
     public async Task<FournisseurResponseDto> BlockAsync(Guid id)
     {
-        var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Block();
         await _repo.SaveChangesAsync();
-        var res = f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
         return res;
     }
 
     public async Task<FournisseurResponseDto> UnblockAsync(Guid id)
     {
-        var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         f.Unblock();
         await _repo.SaveChangesAsync();
-        var res = f.ToResponseDto();
+        FournisseurResponseDto res = f.ToResponseDto();
         await _eventPublisher.PublishAsync(FournisseurTopics.Updated, res);
         return res;
     }
@@ -95,14 +95,14 @@ public class FournisseurService : IFournisseurService
     // =========================
     public async Task<FournisseurResponseDto> GetByIdAsync(Guid id)
     {
-        var f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
+        Fournisseur f = await _repo.GetByIdAsync(id) ?? throw new FournisseurNotFoundException(id);
         return f.ToResponseDto();
     }
 
     public async Task<PagedResultDto<FournisseurResponseDto>> GetAllAsync(int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetAllAsync(page, size);
+        (List<Fournisseur>? items, int total) = await _repo.GetAllAsync(page, size);
         return new PagedResultDto<FournisseurResponseDto>(
             items.Select(f => f.ToResponseDto()).ToList(), total, page, size);
     }
@@ -110,7 +110,7 @@ public class FournisseurService : IFournisseurService
     public async Task<PagedResultDto<FournisseurResponseDto>> GetPagedDeletedAsync(int page, int size)
     {
         ValidatePaging(page, size);
-        var (items, total) = await _repo.GetPagedDeletedAsync(page, size);
+        (List<Fournisseur>? items, int total) = await _repo.GetPagedDeletedAsync(page, size);
         return new PagedResultDto<FournisseurResponseDto>(
             items.Select(f => f.ToResponseDto()).ToList(), total, page, size);
     }
@@ -122,7 +122,7 @@ public class FournisseurService : IFournisseurService
         if (string.IsNullOrWhiteSpace(nameFilter))
             throw new ArgumentException("Name filter cannot be empty.", nameof(nameFilter));
 
-        var (items, total) = await _repo.GetPagedByNameAsync(nameFilter, page, size);
+        (List<Fournisseur>? items, int total) = await _repo.GetPagedByNameAsync(nameFilter, page, size);
         return new PagedResultDto<FournisseurResponseDto>(
             items.Select(f => f.ToResponseDto()).ToList(), total, page, size);
     }
