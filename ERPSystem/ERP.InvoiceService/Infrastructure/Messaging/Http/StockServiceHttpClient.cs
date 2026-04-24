@@ -31,8 +31,8 @@ public class StockServiceHttpClient : IStockServiceHttpClient
             response = await _httpClient.GetAsync("stock/articles");
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<StockStatusResponse>(json, _jsonOptions);
+            string json = await response.Content.ReadAsStringAsync();
+            StockStatusResponse? result = JsonSerializer.Deserialize<StockStatusResponse>(json, _jsonOptions);
 
             return result ?? new StockStatusResponse();
         }
