@@ -10,7 +10,7 @@ namespace ERP.AuthService.Infrastructure.Messaging
 
         public KafkaEventPublisher(IConfiguration configuration)
         {
-            var config = new ProducerConfig
+            ProducerConfig config = new ProducerConfig
             {
                 BootstrapServers = configuration["Kafka:BootstrapServers"]
                     ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured.")
@@ -20,7 +20,7 @@ namespace ERP.AuthService.Infrastructure.Messaging
 
         public async Task PublishAsync<T>(string topic, T @event)
         {
-            var message = new Message<string, string>
+            Message<string, string> message = new Message<string, string>
             {
                 Key = Guid.NewGuid().ToString(),
                 Value = JsonSerializer.Serialize(@event)
