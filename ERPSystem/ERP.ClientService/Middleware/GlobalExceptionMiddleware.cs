@@ -37,7 +37,7 @@ public class GlobalExceptionMiddleware
     private static async Task HandleExceptionAsync(
         HttpContext context, Exception exception)
     {
-        var response = exception switch
+        ErrorResponse response = exception switch
         {
             // ── Specific not-found exceptions first (most specific → least) ───
             ClientNotFoundException ex => new ErrorResponse
