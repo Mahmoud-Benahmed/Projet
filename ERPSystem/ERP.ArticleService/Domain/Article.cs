@@ -22,7 +22,7 @@
 
         private Article() { }
 
-        public Article(string code, string libelle, decimal prix, UnitEnum unit,Category category, string barCode, int? tva)
+        public Article(string code, string libelle, decimal prix, UnitEnum unit, Category category, string barCode, int? tva)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentException("Code is required");
@@ -33,7 +33,7 @@
             if (prix <= 0)
                 throw new ArgumentException("Prix must be positive");
 
-            var resolvedTVA = tva ?? category.TVA;
+            int resolvedTVA = tva ?? category.TVA;
             if (resolvedTVA <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
@@ -49,7 +49,7 @@
             CreatedAt = DateTime.UtcNow;
         }
 
-        public void Update(string libelle, decimal prix, UnitEnum unit,Category category, string barCode, int? tva)
+        public void Update(string libelle, decimal prix, UnitEnum unit, Category category, string barCode, int? tva)
         {
             if (string.IsNullOrWhiteSpace(libelle))
                 throw new ArgumentException("Libelle is required");
@@ -60,11 +60,11 @@
             if (prix <= 0)
                 throw new ArgumentException("Prix must be positive");
 
-            var resolvedTVA = tva ?? category.TVA;
+            int resolvedTVA = tva ?? category.TVA;
             if (resolvedTVA <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
-            var hasChanged = !string.Equals(libelle, Libelle, StringComparison.OrdinalIgnoreCase)
+            bool hasChanged = !string.Equals(libelle, Libelle, StringComparison.OrdinalIgnoreCase)
                             || prix != Prix
                             || category.Id != CategoryId
                             || !string.Equals(barCode, BarCode, StringComparison.OrdinalIgnoreCase)
