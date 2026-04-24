@@ -53,18 +53,21 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             entity.Property(i => i.AdditionalNotes)
                   .HasMaxLength(1000);
 
-            entity.Property(i => i.TotalHT)
-                  .HasColumnType("decimal(18,4)");
+            entity.Property(x => x.DiscountRate)
+                .HasPrecision(5, 2);
 
-            entity.Property(i => i.TotalTVA)
-                  .HasColumnType("decimal(18,4)");
+            entity.Property(x => x.TotalHT)
+                .HasPrecision(18, 3);
 
-            entity.Property(i => i.TotalTTC)
-                  .HasColumnType("decimal(18,4)");
+            entity.Property(x => x.TotalTVA)
+                .HasPrecision(18, 3);
+
+            entity.Property(x => x.TotalTTC)
+                .HasPrecision(18, 3);
 
             entity.Property(i => i.TaxCalculationMode)
-              .HasConversion<string>()
-              .HasMaxLength(20);
+                .HasConversion<string>()
+                .HasMaxLength(20);
 
             entity.Property(i => i.Status)
                   .HasConversion<string>()
@@ -95,7 +98,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                   .HasMaxLength(200);
 
             entity.Property(ii => ii.Quantity)
-                  .HasColumnType("decimal(18,4)")
+                  .HasPrecision(18, 3)
                   .IsRequired();
 
             entity.Property(ii => ii.ArticleBarCode)
@@ -103,16 +106,18 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                   .HasMaxLength(100);
 
             entity.Property(ii => ii.UniPriceHT)
-                  .HasColumnType("decimal(18,4)");
-
-            entity.Property(ii => ii.TaxRate)
-                  .HasColumnType("decimal(5,4)");
+                .HasPrecision(18, 3);
 
             entity.Property(ii => ii.TotalHT)
-                  .HasColumnType("decimal(18,4)");
+                .HasPrecision(18, 3);
 
             entity.Property(ii => ii.TotalTTC)
-                  .HasColumnType("decimal(18,4)");
+                .HasPrecision(18, 3);
+
+            entity.Property(ii => ii.TaxRate)
+                .HasPrecision(5, 3);
+
+            entity.Ignore(ii => ii.EffectivePriceHT);
 
             entity.Property<Guid>("InvoiceId").IsRequired();
         }
@@ -147,6 +152,8 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             b.Property(c => c.UpdatedAt).IsRequired(false);
 
             b.HasIndex(c => c.Name).IsUnique();
+
+            b.HasQueryFilter(c => !c.IsDeleted);
         }
     }
 
@@ -160,7 +167,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             b.Property(a => a.CodeRef).IsRequired().HasMaxLength(50);
             b.Property(a => a.BarCode).IsRequired().HasMaxLength(13);
             b.Property(a => a.Libelle).IsRequired().HasMaxLength(200);
-            b.Property(a => a.Prix).HasPrecision(18, 4);
+            b.Property(a => a.Prix).HasPrecision(18, 3);
             b.Property(a => a.TVA).HasPrecision(5, 2);
             b.Property(a => a.Unit).IsRequired().HasMaxLength(50);
             b.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
@@ -184,6 +191,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
             b.HasIndex(a => a.IsDeleted);
             b.HasIndex(a => a.CategoryId);
+            b.HasQueryFilter(a => !a.IsDeleted);
         }
     }
 
@@ -199,7 +207,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             b.Property(c => c.Address).IsRequired().HasMaxLength(500);
             b.Property(c => c.Phone).HasMaxLength(20);
             b.Property(c => c.TaxNumber).HasMaxLength(50);
-            b.Property(c => c.CreditLimit).HasPrecision(18, 4);
+            b.Property(c => c.CreditLimit).HasPrecision(18, 3);
             b.Property(c => c.DelaiRetour);        // nullable int — no IsRequired
             b.Property(c => c.DuePaymentPeriod);   // nullable int — no IsRequired
             b.Property(c => c.IsBlocked).IsRequired();
@@ -211,6 +219,8 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
              .HasFilter("[IsDeleted] = 0");
 
             b.HasIndex(c => c.IsBlocked);
+
+            b.HasQueryFilter(c => !c.IsDeleted);
         }
     }
 
@@ -225,8 +235,8 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             b.Property(c => c.Code).IsRequired().HasMaxLength(50);
             b.Property(c => c.DelaiRetour).IsRequired();
             b.Property(c => c.DuePaymentPeriod).IsRequired();
-            b.Property(c => c.DiscountRate).HasPrecision(5, 4);
-            b.Property(c => c.CreditLimitMultiplier).HasPrecision(8, 4);
+            b.Property(c => c.DiscountRate).HasPrecision(5, 3);
+            b.Property(c => c.CreditLimitMultiplier).HasPrecision(8, 3);
             b.Property(c => c.UseBulkPricing).IsRequired();
             b.Property(c => c.IsActive).IsRequired();
             b.Property(c => c.IsDeleted).IsRequired();
@@ -237,6 +247,8 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
              .HasFilter("[IsDeleted] = 0");
 
             b.HasIndex(c => c.IsActive);
+
+            b.HasQueryFilter(c => !c.IsDeleted);
         }
     }
 

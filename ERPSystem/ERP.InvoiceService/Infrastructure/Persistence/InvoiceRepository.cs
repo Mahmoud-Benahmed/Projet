@@ -1,6 +1,7 @@
 using InvoiceService.Application.Interfaces;
 using InvoiceService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using static InvoiceService.Application.Interfaces.IInvoiceRepository;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence
@@ -45,7 +46,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
 
         public async Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false)
         {
-            var query = includeDeleted
+            IQueryable<Invoice> query = includeDeleted
                 ? _context.Invoices.IgnoreQueryFilters()
                 : _context.Invoices.AsQueryable();
 
@@ -82,12 +83,12 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 .Where(i => i.InvoiceId == invoice.Id)
                 .ExecuteDeleteAsync();
 
-            foreach (var entry in _context.ChangeTracker.Entries<InvoiceItem>().ToList())
+            foreach (EntityEntry<InvoiceItem>? entry in _context.ChangeTracker.Entries<InvoiceItem>().ToList())
             {
                 entry.State = EntityState.Detached;
             }
 
-            foreach (var item in invoice.Items)
+            foreach (InvoiceItem item in invoice.Items)
             {
                 _context.InvoiceItems.Add(item);
             }
