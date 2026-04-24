@@ -28,40 +28,41 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task<ArticleResponseDto?> GetByIdAsync(Guid id)
     {
-        var article = await _repo.GetByIdAsync(id);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByIdAsync(id);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<ArticleResponseDto?> GetByBarCodeAsync(string barCode)
     {
-        var article = await _repo.GetByBarCodeAsync(barCode);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByBarCodeAsync(barCode);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<ArticleResponseDto?> GetByCodeRefAsync(string codeRef)
     {
-        var article = await _repo.GetByCodeRefAsync(codeRef);
+        Domain.LocalCache.Article.ArticleCache? article = await _repo.GetByCodeRefAsync(codeRef);
         return article is null ? null : MapToDto(article);
     }
 
     public async Task<List<ArticleResponseDto>> GetAllAsync()
     {
-        var articles = await _repo.GetAllAsync();
+        List<Domain.LocalCache.Article.ArticleCache> articles = await _repo.GetAllAsync();
         return articles.Select(MapToDto).ToList();
     }
 
     public async Task<List<ArticleResponseDto>> GetAllActiveAsync()
     {
-        var articles = await _repo.GetAllActiveAsync();
+        List<Domain.LocalCache.Article.ArticleCache> articles = await _repo.GetAllActiveAsync();
         return articles.Select(MapToDto).ToList();
     }
 
-    public async Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize)
+    public async Task<PagedResultDto<ArticleResponseDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null)
     {
         if (pageNumber < 1) throw new ArgumentOutOfRangeException(nameof(pageNumber));
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-        var (items, totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize);
+        (List<Domain.LocalCache.Article.ArticleCache>? items, int totalCount) = await _repo.GetPagedAsync(pageNumber, pageSize, search);
+
         return new PagedResultDto<ArticleResponseDto>(
             items.Select(MapToDto).ToList(),
             totalCount,
@@ -77,7 +78,7 @@ public sealed class ArticleCacheService : IArticleCacheService
             _logger.LogInformation("SyncCreatedAsync starting for article {ArticleId}", dto.Id);
 
             // CRITICAL: Ensure the category exists locally and get the local Category ID
-            var localCategory = await _categoryRepo.GetByNameAsync(dto.Category.Name);
+            ArticleCategoryCache? localCategory = await _categoryRepo.GetByNameAsync(dto.Category.Name);
 
             if (localCategory == null)
             {
@@ -93,7 +94,7 @@ public sealed class ArticleCacheService : IArticleCacheService
             }
 
             // Create a copy of the DTO with the LOCAL Category ID
-            var localDto = dto with
+            ArticleResponseDto localDto = dto with
             {
                 Category = dto.Category with
                 {
@@ -101,7 +102,7 @@ public sealed class ArticleCacheService : IArticleCacheService
                 }
             };
 
-            var existing = await _repo.GetByIdAsync(dto.Id) ??
+            Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id) ??
                           await _repo.GetByBarCodeAsync(dto.BarCode) ??
                           await _repo.GetByCodeRefAsync(dto.CodeRef);
 
@@ -113,7 +114,7 @@ public sealed class ArticleCacheService : IArticleCacheService
             else
             {
                 _logger.LogInformation("Adding new article {Id} to cache", dto.Id);
-                var article = Domain.LocalCache.Article.ArticleCache.FromEvent(localDto);  // Use localDto
+                Domain.LocalCache.Article.ArticleCache article = Domain.LocalCache.Article.ArticleCache.FromEvent(localDto);  // Use localDto
                 await _repo.AddAsync(article);
             }
 
@@ -139,7 +140,7 @@ public sealed class ArticleCacheService : IArticleCacheService
         _logger.LogInformation("SyncUpdatedAsync starting for article {ArticleId}", dto.Id);
 
         // CRITICAL: Ensure the category exists locally and get the local Category ID
-        var localCategory = await _categoryRepo.GetByNameAsync(dto.Category.Name);
+        ArticleCategoryCache? localCategory = await _categoryRepo.GetByNameAsync(dto.Category.Name);
 
         if (localCategory == null)
         {
@@ -154,7 +155,7 @@ public sealed class ArticleCacheService : IArticleCacheService
         }
 
         // Create a copy of the DTO with the LOCAL Category ID
-        var localDto = dto with
+        ArticleResponseDto localDto = dto with
         {
             Category = dto.Category with
             {
@@ -162,7 +163,7 @@ public sealed class ArticleCacheService : IArticleCacheService
             }
         };
 
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncUpdated: article {Id} not in cache, inserting instead", dto.Id);
@@ -175,7 +176,7 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task SyncDeletedAsync(ArticleResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogWarning("SyncDeleted: article {Id} not in cache, skipping", dto.Id);
@@ -189,7 +190,7 @@ public sealed class ArticleCacheService : IArticleCacheService
 
     public async Task SyncRestoredAsync(ArticleResponseDto dto)
     {
-        var existing = await _repo.GetByIdAsync(dto.Id);
+        Domain.LocalCache.Article.ArticleCache? existing = await _repo.GetByIdAsync(dto.Id);
         if (existing is null)
         {
             _logger.LogError("SyncRestored: article {Id} not in cache. Cache may be out of sync. Dropping event.", dto.Id);

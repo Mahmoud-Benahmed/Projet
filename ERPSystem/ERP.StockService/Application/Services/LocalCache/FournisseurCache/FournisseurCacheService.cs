@@ -27,7 +27,7 @@ public class FournisseurCacheService : IFournisseurCacheService
     {
         try
         {
-            var fournisseur = await _repository.GetByIdAsync(id);
+            FournisseurCache? fournisseur = await _repository.GetByIdAsync(id);
             return fournisseur != null ? MapToDto(fournisseur) : null;
         }
         catch (Exception ex)
@@ -41,7 +41,7 @@ public class FournisseurCacheService : IFournisseurCacheService
     {
         try
         {
-            var fournisseur = await _repository.GetByNameAsync(name);
+            FournisseurCache? fournisseur = await _repository.GetByNameAsync(name);
             return fournisseur != null ? MapToDto(fournisseur) : null;
         }
         catch (Exception ex)
@@ -55,7 +55,7 @@ public class FournisseurCacheService : IFournisseurCacheService
     {
         try
         {
-            var fournisseur = await _repository.GetByTaxNumberAsync(taxNumber);
+            FournisseurCache? fournisseur = await _repository.GetByTaxNumberAsync(taxNumber);
             return fournisseur != null ? MapToDto(fournisseur) : null;
         }
         catch (Exception ex)
@@ -65,39 +65,32 @@ public class FournisseurCacheService : IFournisseurCacheService
         }
     }
 
-    public async Task<List<FournisseurResponseDto>> GetAllAsync()
+    public async Task<PagedResultDto<FournisseurResponseDto>> GetPagedAsync(
+        int pageNumber, int pageSize, string? search = null)
     {
-        try
-        {
-            var fournisseurs = await _repository.GetAllAsync();
-            return fournisseurs.Select(MapToDto).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting all fournisseurs");
-            throw;
-        }
-    }
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber));
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-    public async Task<List<FournisseurResponseDto>> GetActiveAsync()
-    {
-        try
-        {
-            var fournisseurs = await _repository.GetActiveAsync();
-            return fournisseurs.Select(MapToDto).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting active fournisseurs");
-            throw;
-        }
+        (List<FournisseurCache>? items, int totalCount) = await _repository
+            .GetPagedAsync(pageNumber, pageSize, search);
+
+        List<FournisseurResponseDto> dtos = items.Select(MapToDto).ToList();
+
+        return new PagedResultDto<FournisseurResponseDto>(
+            dtos,
+            totalCount,
+            pageNumber,
+            pageSize
+        );
     }
 
     public async Task<List<FournisseurResponseDto>> GetBlockedAsync()
     {
         try
         {
-            var fournisseurs = await _repository.GetBlockedAsync();
+            List<FournisseurCache> fournisseurs = await _repository.GetBlockedAsync();
             return fournisseurs.Select(MapToDto).ToList();
         }
         catch (Exception ex)
@@ -136,7 +129,7 @@ public class FournisseurCacheService : IFournisseurCacheService
         try
         {
             // If the exact same ID already exists, just update it
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            FournisseurCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing != null)
             {
                 _logger.LogInformation("Fournisseur {FournisseurId} already exists. Updating.", dto.Id);
@@ -147,7 +140,7 @@ public class FournisseurCacheService : IFournisseurCacheService
             }
 
             // Name collision — update the existing record in place (don't delegate via DTO)
-            var existingByName = await _repository.GetByNameAsync(dto.Name);
+            FournisseurCache? existingByName = await _repository.GetByNameAsync(dto.Name);
             if (existingByName != null)
             {
                 _logger.LogWarning(
@@ -162,7 +155,7 @@ public class FournisseurCacheService : IFournisseurCacheService
             // Email collision — same pattern
             if (!string.IsNullOrWhiteSpace(dto.Email))
             {
-                var existingByEmail = await _repository.GetByEmailAsync(dto.Email);
+                FournisseurCache? existingByEmail = await _repository.GetByEmailAsync(dto.Email);
                 if (existingByEmail != null)
                 {
                     _logger.LogWarning(
@@ -176,7 +169,7 @@ public class FournisseurCacheService : IFournisseurCacheService
             }
 
             // Tax number collision — just skip (as before)
-            var existingByTax = await _repository.GetByTaxNumberAsync(dto.TaxNumber);
+            FournisseurCache? existingByTax = await _repository.GetByTaxNumberAsync(dto.TaxNumber);
             if (existingByTax != null)
             {
                 _logger.LogWarning(
@@ -186,7 +179,7 @@ public class FournisseurCacheService : IFournisseurCacheService
             }
 
             // Fresh insert
-            var fournisseur = new FournisseurCache(dto);
+            FournisseurCache fournisseur = new FournisseurCache(dto);
             await _repository.AddAsync(fournisseur);
             await _repository.SaveChangesAsync();
 
@@ -210,7 +203,7 @@ public class FournisseurCacheService : IFournisseurCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            FournisseurCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing == null)
             {
                 _logger.LogError(
@@ -240,7 +233,7 @@ public class FournisseurCacheService : IFournisseurCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            FournisseurCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing == null)
             {
                 _logger.LogWarning("Fournisseur {FournisseurId} not found for deletion", dto.Id);
@@ -268,7 +261,7 @@ public class FournisseurCacheService : IFournisseurCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            FournisseurCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing == null)
             {
                 _logger.LogWarning("Fournisseur {FournisseurId} not found for restore", dto.Id);
@@ -293,7 +286,7 @@ public class FournisseurCacheService : IFournisseurCacheService
     {
         try
         {
-            var existing = await _repository.GetByIdAsync(id);
+            FournisseurCache? existing = await _repository.GetByIdAsync(id);
             if (existing == null)
             {
                 _logger.LogWarning("Fournisseur {FournisseurId} not found for block/unblock operation", id);

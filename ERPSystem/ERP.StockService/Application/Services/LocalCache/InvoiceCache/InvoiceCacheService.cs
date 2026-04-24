@@ -4,7 +4,7 @@ using ERP.StockService.Domain;
 
 namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
 {
-    public class InvoiceCacheService:IInvoiceCacheService
+    public class InvoiceCacheService : IInvoiceCacheService
     {
         private readonly IJournalStockRepository _journalStockRepo;
         private readonly IBonRetourService _bonRetourService;
@@ -12,8 +12,8 @@ namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
         private readonly IInvoiceBonSortieMappingRepository _invoiceBonSortieMappingRepo;
 
         public InvoiceCacheService(
-                                    IJournalStockRepository journalStockRepo, 
-                                    IBonRetourService bonRetourService, 
+                                    IJournalStockRepository journalStockRepo,
+                                    IBonRetourService bonRetourService,
                                     IBonSortieService bonSortieService,
                                     IInvoiceBonSortieMappingRepository invoiceBonSortieMappingRepo)
         {
@@ -28,11 +28,11 @@ namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
             if (invoiceDto.Items == null || invoiceDto.Items.Count == 0)
                 throw new ArgumentException("Invoice has no items to sync.");
 
-            var articleIds = invoiceDto.Items.Select(i => i.ArticleId).Distinct();
-            var stockMap = await _journalStockRepo.GetCurrentStocksAsync(articleIds);
+            IEnumerable<Guid> articleIds = invoiceDto.Items.Select(i => i.ArticleId).Distinct();
+            Dictionary<Guid, decimal> stockMap = await _journalStockRepo.GetCurrentStocksAsync(articleIds);
 
             // Create BonSortie to record stock going out
-            var createBonSortieDto = new CreateBonSortieRequestDto(
+            CreateBonSortieRequestDto createBonSortieDto = new CreateBonSortieRequestDto(
                 ClientId: invoiceDto.ClientId,
                 Observation: $"Auto-generated from Invoice {invoiceDto.InvoiceNumber}",
                 Lignes: invoiceDto.Items.Select(i => new LigneRequestDto(
@@ -42,8 +42,8 @@ namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
                 )).ToList()
             );
 
-            var bonSortie = await _bonSortieService.CreateAsync(createBonSortieDto);
-            var mapping = new InvoiceBonSortieMapping(invoiceDto.Id, bonSortie.Id);
+            BonSortieResponseDto bonSortie = await _bonSortieService.CreateAsync(createBonSortieDto);
+            InvoiceBonSortieMapping mapping = new InvoiceBonSortieMapping(invoiceDto.Id, bonSortie.Id);
             await _invoiceBonSortieMappingRepo.AddAsync(mapping);
             await _invoiceBonSortieMappingRepo.SaveChangesAsync();
         }
@@ -53,13 +53,13 @@ namespace ERP.StockService.Application.Services.LocalCache.InvoiceCache
             if (invoiceDto.Items == null || invoiceDto.Items.Count == 0)
                 throw new ArgumentException("Invoice has no items to sync.");
 
-            var bonSortieId = await _invoiceBonSortieMappingRepo.GetBonSortieIdByInvoiceIdAsync(invoiceDto.Id);
+            Guid? bonSortieId = await _invoiceBonSortieMappingRepo.GetBonSortieIdByInvoiceIdAsync(invoiceDto.Id);
 
             if (bonSortieId == null)
                 throw new InvalidOperationException($"No BonSortie found for invoice {invoiceDto.Id}");
 
             // Create BonRetour to reverse the stock movement
-            var createBonRetourDto = new CreateBonRetourRequestDto(
+            CreateBonRetourRequestDto createBonRetourDto = new CreateBonRetourRequestDto(
                 SourceId: bonSortieId.Value,
                 SourceType: RetourSourceType.BonSortie,
                 Motif: $"Invoice {invoiceDto.InvoiceNumber} cancelled",

@@ -23,21 +23,29 @@ public class ClientCacheService : IClientCacheService
 
     public async Task<ClientResponseDto?> GetByIdAsync(Guid id)
     {
-        var client = await _clientCacheRepository.GetByIdAsync(id);
-        return client != null ? await MapToDtoAsync(client) : null;
+        Domain.LocalCache.Client.ClientCache? client = await _clientCacheRepository.GetByIdAsync(id);
+        return client != null ? MapToDto(client) : null;
     }
 
-    public async Task<List<ClientResponseDto>> GetAllAsync()
+    public async Task<PagedResultDto<ClientResponseDto>> GetPagedAsync(
+        int pageNumber, int pageSize, string? search = null)
     {
-        var clients = await _clientCacheRepository.GetAllAsync();
-        var result = new List<ClientResponseDto>();
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber));
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-        foreach (var client in clients)
-        {
-            result.Add(await MapToDtoAsync(client));
-        }
+        (List<Domain.LocalCache.Client.ClientCache>? items, int totalCount) = await _clientCacheRepository
+            .GetPagedAsync(pageNumber, pageSize, search); // ← pass search down
 
-        return result;
+        List<ClientResponseDto> dtos = items.Select(MapToDto).ToList();
+
+        return new PagedResultDto<ClientResponseDto>(
+            dtos,
+            totalCount,
+            pageNumber,
+            pageSize
+        );
     }
 
     public async Task<bool> ExistsAsync(Guid id)
@@ -59,7 +67,7 @@ public class ClientCacheService : IClientCacheService
         try
         {
             // Check if client already exists
-            var existing = await _clientCacheRepository.GetByIdAsync(dto.Id);
+            Domain.LocalCache.Client.ClientCache? existing = await _clientCacheRepository.GetByIdAsync(dto.Id);
             if (existing != null)
             {
                 _logger.LogInformation("Client {ClientName} (Id: {ClientId}) already exists in cache. Updating instead.",
@@ -68,8 +76,8 @@ public class ClientCacheService : IClientCacheService
                 return;
             }
 
-            var existingByName = await _clientCacheRepository.GetByNameAsync(dto.Name);
-            var existingByEmail = await _clientCacheRepository.GetByEmailAsync(dto.Email);
+            Domain.LocalCache.Client.ClientCache? existingByName = await _clientCacheRepository.GetByNameAsync(dto.Name);
+            Domain.LocalCache.Client.ClientCache? existingByEmail = await _clientCacheRepository.GetByEmailAsync(dto.Email);
 
             if (existingByName != null)
             {
@@ -93,7 +101,7 @@ public class ClientCacheService : IClientCacheService
 
 
             // Create new client with all parameters
-            var clientCache = Domain.LocalCache.Client.ClientCache.Create(
+            Domain.LocalCache.Client.ClientCache clientCache = Domain.LocalCache.Client.ClientCache.Create(
                 id: dto.Id,
                 name: dto.Name,
                 email: dto.Email,
@@ -141,7 +149,7 @@ public class ClientCacheService : IClientCacheService
 
         try
         {
-            var existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
+            Domain.LocalCache.Client.ClientCache? existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
             if (existing == null)
             {
                 _logger.LogWarning("Client {ClientId} not found for update. Creating instead.", dto.Id);
@@ -192,7 +200,7 @@ public class ClientCacheService : IClientCacheService
 
         try
         {
-            var existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
+            Domain.LocalCache.Client.ClientCache? existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
             if (existing == null)
             {
                 _logger.LogWarning("Client {ClientId} not found for deletion", dto.Id);
@@ -223,7 +231,7 @@ public class ClientCacheService : IClientCacheService
 
         try
         {
-            var existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
+            Domain.LocalCache.Client.ClientCache? existing = await _clientCacheRepository.GetByIdAsync(dto.Id) ?? await _clientCacheRepository.GetByEmailAsync(dto.Email);
             if (existing == null)
             {
                 _logger.LogWarning("Client {ClientId} not found for restore", dto.Id);
@@ -256,10 +264,10 @@ public class ClientCacheService : IClientCacheService
 
     private async Task AssignCategoriesToClientAsync(Guid clientId, IEnumerable<ClientCategoryResponseDto> categories)
     {
-        foreach (var categoryDto in categories)
+        foreach (ClientCategoryResponseDto categoryDto in categories)
         {
             // Check if category exists in master data
-            var category = await _clientCategoryRepository.GetByIdAsync(categoryDto.Id);
+            CategoryCache? category = await _clientCategoryRepository.GetByIdAsync(categoryDto.Id);
 
             if (category == null)
             {
@@ -289,25 +297,25 @@ public class ClientCacheService : IClientCacheService
     private async Task UpdateClientCategoriesAsync(Guid clientId, IEnumerable<ClientCategoryResponseDto> newCategories)
     {
         // Get existing assignments
-        var existingAssignments = await _clientCategoryRepository.GetClientAssignmentsAsync(clientId);
-        var existingCategoryIds = existingAssignments.Select(a => a.CategoryId).ToHashSet();
-        var newCategoryIds = newCategories.Select(c => c.Id).ToHashSet();
+        List<ClientCategoryCache> existingAssignments = await _clientCategoryRepository.GetClientAssignmentsAsync(clientId);
+        HashSet<Guid> existingCategoryIds = existingAssignments.Select(a => a.CategoryId).ToHashSet();
+        HashSet<Guid> newCategoryIds = newCategories.Select(c => c.Id).ToHashSet();
 
         // Remove categories that are no longer assigned
-        var categoriesToRemove = existingCategoryIds.Except(newCategoryIds);
-        foreach (var categoryId in categoriesToRemove)
+        IEnumerable<Guid> categoriesToRemove = existingCategoryIds.Except(newCategoryIds);
+        foreach (Guid categoryId in categoriesToRemove)
         {
             await _clientCategoryRepository.UnassignCategoryFromClientAsync(clientId, categoryId);
         }
 
         // Add new categories
-        var categoriesToAdd = newCategoryIds.Except(existingCategoryIds);
-        foreach (var categoryId in categoriesToAdd)
+        IEnumerable<Guid> categoriesToAdd = newCategoryIds.Except(existingCategoryIds);
+        foreach (Guid categoryId in categoriesToAdd)
         {
-            var categoryDto = newCategories.First(c => c.Id == categoryId);
+            ClientCategoryResponseDto categoryDto = newCategories.First(c => c.Id == categoryId);
 
             // Ensure category exists in master data
-            var category = await _clientCategoryRepository.GetByIdAsync(categoryId);
+            CategoryCache? category = await _clientCategoryRepository.GetByIdAsync(categoryId);
             if (category == null && categoryDto != null)
             {
                 category = CategoryCache.Create(
@@ -334,28 +342,24 @@ public class ClientCacheService : IClientCacheService
         }
     }
 
-    private async Task<ClientResponseDto> MapToDtoAsync(Domain.LocalCache.Client.ClientCache client)
+    private ClientResponseDto MapToDto(Domain.LocalCache.Client.ClientCache client)
     {
-        var assignments = await _clientCategoryRepository.GetClientAssignmentsAsync(client.Id);
-
-        // Get client counts for each category
-        var categoryIds = assignments.Select(a => a.CategoryId).ToList();
-        var clientCounts = await _clientCategoryRepository.GetClientCountsByCategoryIdsAsync(categoryIds);
-
-        var categoryDtos = assignments.Select(assignment => new ClientCategoryResponseDto(
-            Id: assignment.Category.Id,
-            Name: assignment.Category.Name,
-            Code: assignment.Category.Code,
-            DelaiRetour: assignment.Category.DelaiRetour,
-            DuePaymentPeriod: assignment.Category.DuePaymentPeriod,
-            DiscountRate: assignment.Category.DiscountRate,
-            CreditLimitMultiplier: assignment.Category.CreditLimitMultiplier,
-            UseBulkPricing: assignment.Category.UseBulkPricing,
-            IsActive: assignment.Category.IsActive,
-            IsDeleted: assignment.Category.IsDeleted,
-            CreatedAt: assignment.Category.CreatedAt,
-            UpdatedAt: assignment.Category.UpdatedAt
-        )).ToList();
+        List<ClientCategoryResponseDto> categoryDtos = client.ClientCategories
+            .Select(assignment => new ClientCategoryResponseDto(
+                Id: assignment.Category.Id,
+                Name: assignment.Category.Name,
+                Code: assignment.Category.Code,
+                DelaiRetour: assignment.Category.DelaiRetour,
+                DuePaymentPeriod: assignment.Category.DuePaymentPeriod,
+                DiscountRate: assignment.Category.DiscountRate,
+                CreditLimitMultiplier: assignment.Category.CreditLimitMultiplier,
+                UseBulkPricing: assignment.Category.UseBulkPricing,
+                IsActive: assignment.Category.IsActive,
+                IsDeleted: assignment.Category.IsDeleted,
+                CreatedAt: assignment.Category.CreatedAt,
+                UpdatedAt: assignment.Category.UpdatedAt
+            ))
+            .ToList();
 
         return new ClientResponseDto(
             Id: client.Id,

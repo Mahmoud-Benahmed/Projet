@@ -1,5 +1,4 @@
-﻿using Confluent.Kafka;
-using ERP.StockService.Application.DTOs;
+﻿using ERP.StockService.Application.DTOs;
 using ERP.StockService.Application.Interfaces;
 using ERP.StockService.Domain.LocalCache.Client;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +29,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
     {
         try
         {
-            var category = await _repository.GetByIdAsync(id);
+            CategoryCache? category = await _repository.GetByIdAsync(id);
             return category != null ? await MapToDto(category) : null;
         }
         catch (Exception ex)
@@ -44,9 +43,9 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
     {
         try
         {
-            var categories = await _repository.GetByClientIdAsync(clientId);
-            var categoryDtos = new List<ClientCategoryResponseDto>();
-            foreach (var category in categories)
+            List<CategoryCache> categories = await _repository.GetByClientIdAsync(clientId);
+            List<ClientCategoryResponseDto> categoryDtos = new List<ClientCategoryResponseDto>();
+            foreach (CategoryCache category in categories)
             {
                 categoryDtos.Add(await MapToDto(category));
             }
@@ -63,9 +62,9 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
     {
         try
         {
-            var categories = await _repository.GetAllAsync();
-            var categoryDtos = new List<ClientCategoryResponseDto>();
-            foreach (var category in categories)
+            List<CategoryCache> categories = await _repository.GetAllAsync();
+            List<ClientCategoryResponseDto> categoryDtos = new List<ClientCategoryResponseDto>();
+            foreach (CategoryCache category in categories)
             {
                 categoryDtos.Add(await MapToDto(category));
             }
@@ -130,8 +129,8 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
         try
         {
             // Check if category already exists
-            var existing = await _repository.GetByIdAsync(dto.Id);
-            var existingByCode = await _repository.GetByCodeAsync(dto.Code);
+            CategoryCache? existing = await _repository.GetByIdAsync(dto.Id);
+            CategoryCache? existingByCode = await _repository.GetByCodeAsync(dto.Code);
             if (existing != null && existingByCode != null)
             {
                 _logger.LogInformation("Category {CategoryName} already exists, updating instead", existing.Name);
@@ -139,7 +138,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
                 return;
             }
 
-            if(existing == null && existingByCode != null)
+            if (existing == null && existingByCode != null)
             {
                 _logger.LogInformation($"Deleting existing Category with Code {dto.Code} Due to ID mismatch.");
                 await _repository.DeleteCategoryAsync(existingByCode.Id);
@@ -151,7 +150,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
 
 
             // Create new category master data
-            var category = CategoryCache.Create(
+            CategoryCache category = CategoryCache.Create(
                     id: dto.Id,
                     name: dto.Name,
                     code: dto.Code,
@@ -190,7 +189,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id) ?? await _repository.GetByCodeAsync(dto.Code);
+            CategoryCache? existing = await _repository.GetByIdAsync(dto.Id) ?? await _repository.GetByCodeAsync(dto.Code);
             if (existing == null)
             {
                 _logger.LogWarning("Category {CategoryId} not found for update, creating instead", dto.Id);
@@ -201,7 +200,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
             // Check for code conflict if code changed
             if (existing.Code != dto.Code)
             {
-                var existingByCode = await _repository.GetByCodeAsync(dto.Code);
+                CategoryCache? existingByCode = await _repository.GetByCodeAsync(dto.Code);
                 if (existingByCode != null && existingByCode.Id != dto.Id)
                 {
                     _logger.LogError(
@@ -245,7 +244,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            CategoryCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing == null)
             {
                 _logger.LogWarning("Category {CategoryId} not found for deletion", dto.Id);
@@ -272,7 +271,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
 
         try
         {
-            var existing = await _repository.GetByIdAsync(dto.Id);
+            CategoryCache? existing = await _repository.GetByIdAsync(dto.Id);
             if (existing == null)
             {
                 _logger.LogWarning("Category {CategoryId} not found for restore", dto.Id);
@@ -302,21 +301,21 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
         try
         {
             // Check if client exists
-            var clientExists = await _clientRepository.ExistsAsync(clientId);
+            bool clientExists = await _clientRepository.ExistsAsync(clientId);
             if (!clientExists)
             {
                 throw new InvalidOperationException($"Client {clientId} not found");
             }
 
             // Check if category exists
-            var categoryExists = await _repository.ExistsAsync(categoryId);
+            bool categoryExists = await _repository.ExistsAsync(categoryId);
             if (!categoryExists)
             {
                 throw new InvalidOperationException($"Category {categoryId} not found");
             }
 
             // Check if already assigned
-            var alreadyAssigned = await _repository.ExistsForClientAsync(clientId, categoryId);
+            bool alreadyAssigned = await _repository.ExistsForClientAsync(clientId, categoryId);
             if (alreadyAssigned)
             {
                 _logger.LogInformation("Category {CategoryId} already assigned to client {ClientId}",
@@ -361,21 +360,21 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
         if (dtos == null)
             throw new ArgumentNullException(nameof(dtos));
 
-        var dtoList = dtos.ToList();
+        List<ClientCategoryResponseDto> dtoList = dtos.ToList();
         if (!dtoList.Any())
             return;
 
         try
         {
             // Check if client exists
-            var clientExists = await _clientRepository.ExistsAsync(clientId);
+            bool clientExists = await _clientRepository.ExistsAsync(clientId);
             if (!clientExists)
             {
                 _logger.LogWarning("Client {ClientId} not found when adding categories. Skipping.", clientId);
                 return;
             }
 
-            foreach (var dto in dtoList)
+            foreach (ClientCategoryResponseDto? dto in dtoList)
             {
                 // Sync category master data first
                 await SyncCreatedAsync(dto);
@@ -416,7 +415,7 @@ public class ClientCategoryCacheService : IClientCategoryCacheService
 
     private async Task<ClientCategoryResponseDto> MapToDto(CategoryCache category)
     {
-        var clientCount = await _repository.GetCountForClientAsync(category.Id);
+        int clientCount = await _repository.GetCountForClientAsync(category.Id);
 
         return new ClientCategoryResponseDto(
             Id: category.Id,
