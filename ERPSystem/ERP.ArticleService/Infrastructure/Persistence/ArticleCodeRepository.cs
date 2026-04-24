@@ -1,5 +1,7 @@
 ﻿using ERP.ArticleService.Application.Interfaces;
+using ERP.ArticleService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.ArticleService.Infrastructure.Persistence
 {
@@ -20,11 +22,11 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         /// </summary>
         public async Task<string> GenerateArticleCodeAsync()
         {
-            await using var transaction = await _context.Database
+            await using IDbContextTransaction transaction = await _context.Database
                 .BeginTransactionAsync();
             try
             {
-                var articleCode = await _context.ArticleCodes
+                ArticleCode? articleCode = await _context.ArticleCodes
                     .FromSqlRaw("SELECT TOP 1 * FROM ArticleCodes WITH (UPDLOCK, ROWLOCK)")
                     .FirstOrDefaultAsync();
 
@@ -35,7 +37,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
 
                 articleCode.Increment();
 
-                var generatedCode = articleCode.FormatCode(DateTime.UtcNow.Year);
+                string generatedCode = articleCode.FormatCode(DateTime.UtcNow.Year);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

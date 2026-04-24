@@ -133,7 +133,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             int pageNumber,
             int pageSize)
         {
-            var query = _context.Categories
+            IQueryable<Category> query = _context.Categories
                 .Where(c => EF.Functions.Like(c.Name, $"%{nameFilter.Trim()}%"));
 
             return await PaginationHelper.ToPagedResultAsync(
@@ -149,7 +149,7 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             if (from > to)
                 throw new ArgumentException("'from' date must be earlier than or equal to 'to' date.");
 
-            var query = _context.Categories
+            IQueryable<Category> query = _context.Categories
                 .Where(c => c.CreatedAt >= from && c.CreatedAt <= to);
 
             return await PaginationHelper.ToPagedResultAsync(
@@ -159,8 +159,8 @@ namespace ERP.ArticleService.Infrastructure.Persistence
         public async Task<CategoryStatsDto> GetStatsAsync()
         {
             // IgnoreQueryFilters to count ALL categories including deleted
-            var active = await _context.Categories.CountAsync(_ => true);
-            var deleted = await _context.Categories.IgnoreQueryFilters().CountAsync(c => c.IsDeleted);
+            int active = await _context.Categories.CountAsync(_ => true);
+            int deleted = await _context.Categories.IgnoreQueryFilters().CountAsync(c => c.IsDeleted);
 
 
             return new CategoryStatsDto(active, deleted);
