@@ -17,7 +17,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
-        var statusColor = invoice.Status switch
+        Color statusColor = invoice.Status switch
         {
             "PAID" => Colors.Green.Medium,
             "UNPAID" => Colors.Orange.Medium,
@@ -25,7 +25,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
             _ => Colors.Grey.Medium
         };
 
-        var document = Document.Create(container =>
+        Document document = Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -118,14 +118,14 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         });
 
                         // Rows
-                        var index = 0;
-                        var discountRate = invoice.DiscountRate; // global discount percentage
+                        int index = 0;
+                        decimal discountRate = invoice.DiscountRate; // global discount percentage
 
-                        foreach (var item in invoice.Items)
+                        foreach (InvoiceItemDto item in invoice.Items)
                         {
-                            var bgColor = index++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten3;
-                            var netPriceHT = item.UniPriceHT * (1 - discountRate / 100m);
-                            var totalTTC = item.Quantity * netPriceHT * (1 + item.TaxRate);
+                            Color bgColor = index++ % 2 == 0 ? Colors.White : Colors.Grey.Lighten3;
+                            decimal netPriceHT = item.UniPriceHT * (1 - discountRate / 100m);
+                            decimal totalTTC = item.Quantity * netPriceHT * (1 + item.TaxRate);
 
                             table.Cell().Background(bgColor).Padding(6).Text(item.ArticleName);
                             table.Cell().Background(bgColor).Padding(6).Text($"{item.Quantity:N2}").AlignRight();
@@ -143,7 +143,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     col.Item().AlignRight().Width(260).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(totals =>
                     {
                         // Original subtotal (before discount)
-                        var originalTotalHT = invoice.Items.Sum(i => i.Quantity * i.UniPriceHT);
+                        decimal originalTotalHT = invoice.Items.Sum(i => i.Quantity * i.UniPriceHT);
                         totals.Item().Row(r =>
                         {
                             r.RelativeItem().Text("Subtotal (HT):").Bold();
@@ -153,7 +153,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         // Discount line (if applicable)
                         if (invoice.DiscountRate > 0)
                         {
-                            var discountAmountHT = originalTotalHT - invoice.TotalHT;
+                            decimal discountAmountHT = originalTotalHT - invoice.TotalHT;
                             totals.Item().Row(r =>
                             {
                                 r.RelativeItem().Text($"Discount ({invoice.DiscountRate:F0}%):").Bold()
@@ -173,7 +173,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         // TVA breakdown
                         if (invoice.TaxMode == TaxCalculationMode.INVOICE)
                         {
-                            var effectiveRate = invoice.TotalHT > 0
+                            decimal effectiveRate = invoice.TotalHT > 0
                                 ? (invoice.TotalTVA / invoice.TotalHT) * 100
                                 : 0;
                             totals.Item().Row(r =>
