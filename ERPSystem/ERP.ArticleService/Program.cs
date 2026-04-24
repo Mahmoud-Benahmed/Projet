@@ -7,7 +7,7 @@ using ERP.ArticleService.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables();
 
@@ -15,7 +15,7 @@ builder.Configuration.AddEnvironmentVariables();
 // DATABASE
 // =========================
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' is not configured.");
 
 // ── Database
@@ -34,7 +34,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        var message = string.Join(" | ", context.ModelState.Values
+        string message = string.Join(" | ", context.ModelState.Values
             .SelectMany(v => v.Errors)
             .Select(e => e.ErrorMessage));
 
@@ -78,16 +78,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
+    IServiceProvider services = scope.ServiceProvider;
+    ILogger<Program> logger = services.GetRequiredService<ILogger<Program>>();
 
     try
     {
-        var context = services.GetRequiredService<ArticleDbContext>();
+        ArticleDbContext context = services.GetRequiredService<ArticleDbContext>();
 
         logger.LogInformation("Resetting database...");
         await context.Database.EnsureDeletedAsync();
@@ -100,15 +100,15 @@ using (var scope = app.Services.CreateScope())
 
         // ✅ RESOLVE SEEDERS FROM DI (NOT using 'new')
         logger.LogInformation("Seeding article codes...");
-        var articleCodeSeeder = services.GetRequiredService<ArticleCodeSeeder>();
+        ArticleCodeSeeder articleCodeSeeder = services.GetRequiredService<ArticleCodeSeeder>();
         await articleCodeSeeder.SeedAsync();
 
         logger.LogInformation("Seeding categories...");
-        var categorySeeder = services.GetRequiredService<CategorySeeder>();
+        CategorySeeder categorySeeder = services.GetRequiredService<CategorySeeder>();
         await categorySeeder.SeedAsync();
 
         logger.LogInformation("Seeding articles...");
-        var articleSeeder = services.GetRequiredService<ArticleSeeder>();
+        ArticleSeeder articleSeeder = services.GetRequiredService<ArticleSeeder>();
         await articleSeeder.SeedAsync();
 
         logger.LogInformation("✅ All seeding completed successfully!");
