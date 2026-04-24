@@ -1,3 +1,5 @@
+using ERP.InvoiceService.Application.DTOs;
+using ERP.InvoiceService.Application.Interfaces;
 using ERP.InvoiceService.Properties;
 using InvoiceService.Application.DTOs;
 using InvoiceService.Application.Interfaces;
@@ -12,10 +14,17 @@ namespace InvoiceService.API.Controllers
     {
         private readonly IInvoicesService _invoiceService;
         private readonly IInvoicePdfGenerator _pdfGenerator;
-        public InvoicesController(IInvoicesService invoiceService, IInvoicePdfGenerator pdfGenerator)
+        private readonly IArticleCacheService _articleCacheService;
+        private readonly IClientCacheService _clientcacheService;
+        public InvoicesController(IInvoicesService invoiceService,
+                                IInvoicePdfGenerator pdfGenerator,
+                                IArticleCacheService articleCacheService,
+                                IClientCacheService clientcacheService)
         {
             _invoiceService = invoiceService;
             _pdfGenerator = pdfGenerator;
+            _articleCacheService = articleCacheService;
+            _clientcacheService = clientcacheService;
         }
         // ════════════════════════════════════════════════════════════════════════════
         // GET OPERATIONS
@@ -23,31 +32,31 @@ namespace InvoiceService.API.Controllers
         [HttpGet(ApiRoutes.Invoices.GetAll)]
         public async Task<IActionResult> GetAll([FromQuery] bool includeDeleted = false)
         {
-            var invoices = await _invoiceService.GetAllAsync(includeDeleted);
+            List<InvoiceDto> invoices = await _invoiceService.GetAllAsync(includeDeleted);
             return Ok(invoices);
         }
 
         [HttpGet(ApiRoutes.Invoices.GetById)]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            var invoice = await _invoiceService.GetByIdAsync(id);
+            InvoiceDto invoice = await _invoiceService.GetByIdAsync(id);
             return Ok(invoice);
         }
 
         [HttpGet(ApiRoutes.Invoices.GetByClient)]
         public async Task<IActionResult> GetByClient([FromRoute] Guid clientId)
         {
-            var invoices = await _invoiceService.GetByClientIdAsync(clientId);
+            List<InvoiceDto> invoices = await _invoiceService.GetByClientIdAsync(clientId);
             return Ok(invoices);
         }
 
         [HttpGet(ApiRoutes.Invoices.GetByStatus)]
         public async Task<IActionResult> GetByStatus([FromRoute] string status)
         {
-            if (!Enum.TryParse<InvoiceStatus>(status, ignoreCase: true, out var invoiceStatus))
+            if (!Enum.TryParse<InvoiceStatus>(status, ignoreCase: true, out InvoiceStatus invoiceStatus))
                 return BadRequest($"Invalid status value: '{status}'. Valid values: DRAFT, UNPAID, PAID, CANCELLED");
 
-            var invoices = await _invoiceService.GetByStatusAsync(invoiceStatus);
+            List<InvoiceDto> invoices = await _invoiceService.GetByStatusAsync(invoiceStatus);
             return Ok(invoices);
         }
 
@@ -57,7 +66,7 @@ namespace InvoiceService.API.Controllers
         [HttpPost(ApiRoutes.Invoices.Create)]
         public async Task<IActionResult> Create([FromBody] CreateInvoiceDto dto)
         {
-            var invoice = await _invoiceService.CreateAsync(dto);
+            InvoiceDto invoice = await _invoiceService.CreateAsync(dto);
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = invoice.Id },
@@ -67,7 +76,7 @@ namespace InvoiceService.API.Controllers
         [HttpPost(ApiRoutes.Invoices.AddItem)]
         public async Task<IActionResult> AddItem([FromRoute] Guid id, [FromBody] AddInvoiceItemDto dto)
         {
-            var invoice = await _invoiceService.AddItemAsync(id, dto);
+            InvoiceDto invoice = await _invoiceService.AddItemAsync(id, dto);
             return Ok(invoice);
         }
 
@@ -77,7 +86,7 @@ namespace InvoiceService.API.Controllers
         [HttpPut(ApiRoutes.Invoices.Update)]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateInvoiceDto dto)
         {
-            var invoice = await _invoiceService.UpdateAsync(id, dto);
+            InvoiceDto invoice = await _invoiceService.UpdateAsync(id, dto);
             return Ok(invoice);
         }
 
@@ -94,21 +103,21 @@ namespace InvoiceService.API.Controllers
         [HttpPut(ApiRoutes.Invoices.Finalize)]
         public async Task<IActionResult> Finalize([FromRoute] Guid id)
         {
-            var invoice = await _invoiceService.FinalizeAsync(id);
+            InvoiceDto invoice = await _invoiceService.FinalizeAsync(id);
             return Ok(invoice);
         }
 
         [HttpPut(ApiRoutes.Invoices.MarkAsPaid)]
         public async Task<IActionResult> MarkAsPaid([FromRoute] Guid id)
         {
-            var invoice = await _invoiceService.MarkAsPaidAsync(id);
+            InvoiceDto invoice = await _invoiceService.MarkAsPaidAsync(id);
             return Ok(invoice);
         }
 
         [HttpPut(ApiRoutes.Invoices.Cancel)]
         public async Task<IActionResult> Cancel([FromRoute] Guid id)
         {
-            var invoice = await _invoiceService.CancelAsync(id);
+            InvoiceDto invoice = await _invoiceService.CancelAsync(id);
             return Ok(invoice);
         }
 
@@ -136,12 +145,55 @@ namespace InvoiceService.API.Controllers
         [HttpGet(ApiRoutes.Invoices.ToPdf)]
         public async Task<IActionResult> GetInvoicePdf([FromRoute] Guid id)
         {
-            var invoice = await _invoiceService.GetByIdAsync(id);
+            InvoiceDto invoice = await _invoiceService.GetByIdAsync(id);
             if (invoice == null)
                 return NotFound();
 
-            var pdfBytes = _pdfGenerator.GenerateInvoicePdf(invoice);
+            byte[] pdfBytes = _pdfGenerator.GenerateInvoicePdf(invoice);
             return File(pdfBytes, "application/pdf", $"Invoice_{invoice.InvoiceNumber}.pdf");
         }
+
+
+        // ════════════════════════════════════════════════════════════════════════════
+        // ARTICLES CACHE
+        // ════════════════════════════════════════════════════════════════════════════
+
+        [HttpGet(ApiRoutes.Invoices.Cache.Articles.GetById)]
+        public async Task<ActionResult<ArticleResponseDto?>> GetArticleCacheById([FromRoute] Guid id)
+        {
+            return Ok(await _articleCacheService.GetByIdAsync(id));
+        }
+
+        // invoices/cache/articles
+
+        [HttpGet(ApiRoutes.Invoices.Cache.Articles.GetPaged)]
+        public async Task<ActionResult<PagedResultDto<ArticleResponseDto>>> GetArticleCachePagedAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            return Ok(await _articleCacheService.GetPagedAsync(pageNumber, pageSize, search));
+        }
+
+
+
+        // ════════════════════════════════════════════════════════════════════════════
+        // CLIENTS CACHE
+        // ════════════════════════════════════════════════════════════════════════════
+        [HttpGet(ApiRoutes.Invoices.Cache.Clients.GetById)]
+        public async Task<ActionResult<ClientResponseDto?>> GetClientCacheById([FromRoute] Guid id)
+        {
+            return Ok(await _clientcacheService.GetByIdAsync(id));
+        }
+
+        // invoices/cache/clients
+
+        [HttpGet(ApiRoutes.Invoices.Cache.Clients.GetPaged)]
+        public async Task<ActionResult<PagedResultDto<ClientResponseDto>>> GetClientCachePagedAsync(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null)
+        {
+            return Ok(await _clientcacheService.GetPagedAsync(pageNumber, pageSize, search));
+        }
+
+
     }
 }
