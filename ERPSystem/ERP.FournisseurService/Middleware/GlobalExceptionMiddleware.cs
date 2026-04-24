@@ -1,6 +1,6 @@
-﻿using System.Net;
+﻿using ERP.FournisseurService.Application.Exceptions;
+using System.Net;
 using System.Text.Json;
-using ERP.FournisseurService.Application.Exceptions;
 
 namespace ERP.FournisseurService.Middleware;
 
@@ -21,7 +21,7 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
 
     private static Task HandleExceptionAsync(HttpContext context, Exception ex)
     {
-        var (statusCode, message) = ex switch
+        (HttpStatusCode statusCode, string? message) = ex switch
         {
             FournisseurNotFoundException e => (HttpStatusCode.NotFound, e.Message),
             FournisseurBlockedException e => (HttpStatusCode.Conflict, e.Message),
@@ -35,7 +35,7 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var body = JsonSerializer.Serialize(new
+        string body = JsonSerializer.Serialize(new
         {
             status = (int)statusCode,
             error = statusCode.ToString(),
