@@ -32,7 +32,7 @@ namespace InvoiceService.Middleware
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
 
-            var (statusCode, message) = exception switch
+            (HttpStatusCode statusCode, string? message) = exception switch
             {
                 KeyNotFoundException e =>
                     (HttpStatusCode.NotFound, e.Message),
