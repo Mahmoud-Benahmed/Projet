@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace ERP.InvoiceService.Domain.LocalCache.Client;
+﻿namespace ERP.InvoiceService.Domain.LocalCache.Client;
 
 public class ClientCache
 {
@@ -33,13 +31,6 @@ public class ClientCache
         int? duePaymentPeriod = null,
         bool isBlocked = false, bool isDeleted = false, DateTime? createdAt = null, DateTime? updatedAt = null)
     {
-        ValidateName(name);
-        ValidateEmail(email);
-        ValidateAddress(address);
-        ValidateCreditLimit(creditLimit);
-        ValidateDelaiRetour(delaiRetour);
-        ValidateDuePaymentPeriod(duePaymentPeriod);
-
         return new ClientCache
         {
             Id = id,
@@ -51,25 +42,31 @@ public class ClientCache
             CreditLimit = creditLimit,
             DelaiRetour = delaiRetour,
             DuePaymentPeriod = duePaymentPeriod,
-            CreatedAt = DateTime.UtcNow,
+            IsBlocked = isBlocked,
+            IsDeleted = isDeleted,
+            CreatedAt = createdAt ?? DateTime.UtcNow,  // ← was always DateTime.UtcNow
+            UpdatedAt = updatedAt,
         };
     }
 
     public void Update(
-        string name, string email, string address, decimal? creditLimit = null, int? delaiRetour = null, int? duePaymentPeriod = null,
+        string name, string email, string address, decimal? creditLimit = null,
+        int? delaiRetour = null, int? duePaymentPeriod = null,
         string? phone = null, string? taxNumber = null,
-        bool isBlocked = false, bool isDeleted = false, DateTime? createdAt = null, DateTime? updatedAt = null)
+        bool isBlocked = false, bool isDeleted = false,
+        DateTime? createdAt = null, DateTime? updatedAt = null)
     {
-        GuardNotDeleted();
-        ValidateName(name);
-        ValidateEmail(email);
-        ValidateAddress(address);
-
         Name = name.Trim();
         Email = email.Trim().ToLowerInvariant();
         Address = address.Trim();
         Phone = phone?.Trim();
         TaxNumber = taxNumber?.Trim();
+        CreditLimit = creditLimit;        // ← was missing
+        DelaiRetour = delaiRetour;        // ← was missing
+        DuePaymentPeriod = duePaymentPeriod; // ← was missing
+        IsBlocked = isBlocked;            // ← was missing
+        IsDeleted = isDeleted;            // ← was missing
+        CreatedAt = createdAt ?? CreatedAt;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -84,7 +81,7 @@ public class ClientCache
             throw new InvalidOperationException(
                 $"Client already has category '{category.Name}'.");
 
-        var clientCategory = ClientCategoryCache.Create(Id, category.Id);
+        ClientCategoryCache clientCategory = ClientCategoryCache.Create(Id, category.Id);
         ClientCategories.Add(clientCategory);
 
         UpdatedAt = DateTime.UtcNow;
@@ -95,7 +92,7 @@ public class ClientCache
     {
         GuardNotDeleted();
 
-        var existing = ClientCategories
+        ClientCategoryCache? existing = ClientCategories
             .FirstOrDefault(cc => cc.CategoryId == category.Id);
 
         if (existing is null)
@@ -109,7 +106,6 @@ public class ClientCache
 
     public void SetCreditLimit(decimal limit)
     {
-        ValidateCreditLimit(limit);
         CreditLimit = limit;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -122,7 +118,6 @@ public class ClientCache
 
     public void SetDelaiRetour(int days)
     {
-        ValidateDelaiRetour(days);
         DelaiRetour = days;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -166,7 +161,7 @@ public class ClientCache
     {
         if (DelaiRetour.HasValue) return DelaiRetour.Value;
 
-        var categoryMax = ClientCategories
+        int categoryMax = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false })
             .Select(c => c.DelaiRetour)
@@ -183,7 +178,7 @@ public class ClientCache
             return null;
 
         // Get the highest multiplier from active categories
-        var multiplier = ClientCategories
+        decimal multiplier = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false } && c.CreditLimitMultiplier.HasValue)
             .Select(c => c.CreditLimitMultiplier!.Value)  // Use ! after filtering
@@ -195,7 +190,6 @@ public class ClientCache
 
     public void SetDuePaymentPeriod(int days)
     {
-        ValidateDuePaymentPeriod(days);
         DuePaymentPeriod = days;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -210,7 +204,7 @@ public class ClientCache
     {
         if (DuePaymentPeriod.HasValue) return DuePaymentPeriod.Value;
 
-        var categoryMax = ClientCategories
+        int categoryMax = ClientCategories
             .Select(cc => cc.Category)
             .Where(c => c is { IsActive: true, IsDeleted: false })
             .Select(c => c.DuePaymentPeriod)
@@ -224,7 +218,7 @@ public class ClientCache
     {
         if (IsBlocked || IsDeleted) return false;
 
-        var limit = GetEffectiveCreditLimit();
+        decimal? limit = GetEffectiveCreditLimit();
 
         // If no credit limit set, allow order
         if (!limit.HasValue) return true;
@@ -234,7 +228,7 @@ public class ClientCache
 
     public bool IsWithinDelaiRetour(DateTime documentDate)
     {
-        var window = GetEffectiveDelaiRetour();
+        int? window = GetEffectiveDelaiRetour();
         if (!window.HasValue) return false;
         return (DateTime.UtcNow - documentDate).TotalDays <= window.Value;
     }
@@ -243,46 +237,5 @@ public class ClientCache
     {
         if (IsDeleted)
             throw new InvalidOperationException("Cannot modify a deleted client.");
-    }
-
-    private static void ValidateName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name is required.", nameof(name));
-        if (name.Trim().Length > 200)
-            throw new ArgumentException("Name cannot exceed 200 characters.", nameof(name));
-    }
-
-    private static void ValidateEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email is required.", nameof(email));
-        if (!email.Contains('@'))
-            throw new ArgumentException("Email is not valid.", nameof(email));
-    }
-
-    private static void ValidateAddress(string address)
-    {
-        if (string.IsNullOrWhiteSpace(address))
-            throw new ArgumentException("Address is required.", nameof(address));
-    }
-
-    private static void ValidateCreditLimit(decimal? creditLimit)
-    {
-        if (creditLimit.HasValue && creditLimit <= 0)
-            throw new ArgumentException("Credit limit must be positive.", nameof(creditLimit));
-    }
-
-    private static void ValidateDelaiRetour(int? days)
-    {
-        if (days.HasValue && days <= 0)
-            throw new ArgumentException("Return delay must be at least 1 day.", nameof(days));
-    }
-
-    private static void ValidateDuePaymentPeriod(int? days)
-    {
-        if (days.HasValue && days <= 0)
-            throw new ArgumentException(
-                "Due payment period must be at least 1 day.", nameof(days));
     }
 }
