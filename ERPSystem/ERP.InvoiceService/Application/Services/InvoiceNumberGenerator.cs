@@ -1,6 +1,7 @@
 ﻿// InvoiceService.Infrastructure.Persistence/InvoiceNumberGenerator.cs
 using InvoiceService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ERP.InvoiceService.Infrastructure.Persistence;
 
@@ -16,15 +17,15 @@ public class InvoiceNumberGenerator : IInvoiceNumberGenerator
 
     public async Task<string> GenerateNextInvoiceNumberAsync()
     {
-        var currentYear = DateTime.UtcNow.Year;
+        int currentYear = DateTime.UtcNow.Year;
 
         // Use a distributed lock or database transaction
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             // Get or create sequence with a lock
-            var sequence = await _context.InvoiceSequences
+            InvoiceSequence? sequence = await _context.InvoiceSequences
                 .FirstOrDefaultAsync(s => s.Year == currentYear);
 
             if (sequence == null)
@@ -41,8 +42,8 @@ public class InvoiceNumberGenerator : IInvoiceNumberGenerator
             }
 
             // Generate number
-            var nextNumber = sequence.GetNextNumber();
-            var invoiceNumber = sequence.FormatInvoiceNumber();
+            int nextNumber = sequence.GetNextNumber();
+            string invoiceNumber = sequence.FormatInvoiceNumber();
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
