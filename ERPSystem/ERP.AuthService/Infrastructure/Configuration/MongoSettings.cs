@@ -5,6 +5,6 @@
         public string ConnectionString { get; set; } = default!;
         public string DatabaseName { get; set; } = default!;
         public string Username { get; set; } = default!;
-        public string Password { get; set; }
+        public required string Password { get; set; }
     }
 }
