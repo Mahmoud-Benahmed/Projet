@@ -61,8 +61,8 @@ public class AuthUser
 
     public void UpdateSettings(string theme, string language)
     {
-        Settings.Theme = Enum.TryParse<Theme>(theme, true, out var t) ? t : Theme.light;
-        Settings.Language = Enum.TryParse<Language>(language, true, out var l) ? l : Language.en;
+        Settings.Theme = Enum.TryParse<Theme>(theme, true, out Theme t) ? t : Theme.light;
+        Settings.Language = Enum.TryParse<Language>(language, true, out Language l) ? l : Language.en;
         UpdatedAt = DateTime.UtcNow;
     }
 
