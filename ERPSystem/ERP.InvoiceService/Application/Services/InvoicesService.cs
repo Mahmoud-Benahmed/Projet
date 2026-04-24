@@ -1,4 +1,5 @@
 using ERP.InvoiceService.Application.Interfaces;
+using ERP.InvoiceService.Domain.LocalCache.Client;
 using ERP.InvoiceService.Infrastructure.Messaging;
 using ERP.InvoiceService.Infrastructure.Messaging.Events;
 using ERP.InvoiceService.Infrastructure.Persistence;
@@ -17,9 +18,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         private readonly IArticleCacheRepository _articleCacheRepository;
         private readonly IEventPublisher _eventPublisher;
         private readonly IStockServiceHttpClient _stockClient;
-
         private readonly ILogger<InvoicesService> _logger;
-
 
         public InvoicesService(
             ILogger<InvoicesService> logger,
@@ -41,23 +40,23 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         public async Task<InvoiceDto> GetByIdAsync(Guid id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
+            Invoice invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
 
             return invoice.ToDto();
         }
         public async Task<List<InvoiceDto>> GetAllAsync(bool includeDeleted = false)
         {
-            var invoices = await _invoiceRepository.GetAllAsync(includeDeleted);
+            IEnumerable<Invoice> invoices = await _invoiceRepository.GetAllAsync(includeDeleted);
             return invoices.Select(i => i.ToDto()).ToList();
         }
         public async Task<List<InvoiceDto>> GetByClientIdAsync(Guid clientId)
         {
-            var invoices = await _invoiceRepository.GetByClientIdAsync(clientId);
+            IEnumerable<Invoice> invoices = await _invoiceRepository.GetByClientIdAsync(clientId);
             return invoices.Select(i => i.ToDto()).ToList();
         }
         public async Task<List<InvoiceDto>> GetByStatusAsync(InvoiceStatus status)
         {
-            var invoices = await _invoiceRepository.GetByStatusAsync(status);
+            IEnumerable<Invoice> invoices = await _invoiceRepository.GetByStatusAsync(status);
             return invoices.Select(i => i.ToDto()).ToList();
         }
 
@@ -73,25 +72,25 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             if (dto.InvoiceDate > dto.DueDate)
                 throw new InvoiceDomainException("Due date cannot be before invoice date.");
 
-            var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
+            Domain.LocalCache.Client.ClientCache client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
 
-            var stockStatus = await _stockClient.GetStockStatusAsync();
+            StockStatusResponse stockStatus = await _stockClient.GetStockStatusAsync();
             ValidateStockAvailability(dto.Items, stockStatus);
 
             _logger.LogInformation("\n\nCreating invoice for client {ClientId} with {ItemCount} items\n\n", dto.ClientId, dto.Items.Count);
             _logger.LogDebug("\n\nInvoice details: {@InvoiceDto}\n\n", dto);
 
-            var discountRate = GetClientDiscountRate(client);
-            var discountMultiplier = 1 - (discountRate / 100m);
+            decimal discountRate = GetClientDiscountRate(client);
+            decimal discountMultiplier = 1 - (discountRate / 100m);
 
             _logger.LogInformation("\n\nClient {ClientId} has discount rate of {DiscountRate}%, applying multiplier of {DiscountMultiplier}\n\n", dto.ClientId, discountRate, discountMultiplier);
 
 
 
-            var invoiceNumber = await _invoiceNumberGenerator.GenerateNextInvoiceNumberAsync();
+            string invoiceNumber = await _invoiceNumberGenerator.GenerateNextInvoiceNumberAsync();
 
             // ──── CREATE INVOICE ────
-            var invoice = new Invoice(
+            Invoice invoice = new Invoice(
                 invoiceNumber,
                 dto.InvoiceDate,
                 dto.DueDate,
@@ -104,17 +103,17 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
 
             // Load all articles once (single database call)
-            var articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
-            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+            List<Guid> articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
+            List<Domain.LocalCache.Article.ArticleCache> articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
             if (articles == null || !articles.Any())
                 throw new InvalidOperationException("No articles found for the given IDs.");
 
-            var articleDictionary = articles.ToDictionary(a => a.Id, a => a);
+            Dictionary<Guid, Domain.LocalCache.Article.ArticleCache> articleDictionary = articles.ToDictionary(a => a.Id, a => a);
 
             // Now loop through items - no database calls here!
-            foreach (var itemDto in dto.Items)
+            foreach (CreateInvoiceItemDto itemDto in dto.Items)
             {
-                if (articleDictionary.TryGetValue(itemDto.ArticleId, out var article))
+                if (articleDictionary.TryGetValue(itemDto.ArticleId, out Domain.LocalCache.Article.ArticleCache? article))
                 {
                     invoice.AddItem(new InvoiceItem(
                         invoice.Id,
@@ -134,12 +133,12 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             invoice.CalculateTotals();
 
             _logger.LogInformation("\n\nCalculated invoice totals: \nTotalHT={TotalHT}, \nTotalTVA={TotalTVA}, \nTotalTTC={TotalTTC}\n\n", invoice.TotalHT, invoice.TotalTVA, invoice.TotalTTC);
-            
+
             await CheckClientCreditLimit(client.Id, invoice.TotalTTC);
 
             await _invoiceRepository.AddAsync(invoice);
 
-            var payload = invoice.ToDto();
+            InvoiceDto payload = invoice.ToDto();
 
             if (invoice.Status == InvoiceStatus.UNPAID)
                 await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
@@ -149,18 +148,18 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         public async Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
 
-            var client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
+            Domain.LocalCache.Client.ClientCache client = await _clientCacheRepository.GetByIdAsync(dto.ClientId) ?? throw new KeyNotFoundException($"Client with Id {dto.ClientId} not found.");
 
             if (invoice.Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Only DRAFT invoices can be updated.");
 
-            var stockStatus = await _stockClient.GetStockStatusAsync();
-            var updateDTOs= dto.Items.Select(i => new CreateInvoiceItemDto
+            StockStatusResponse stockStatus = await _stockClient.GetStockStatusAsync();
+            List<CreateInvoiceItemDto> updateDTOs = dto.Items.Select(i => new CreateInvoiceItemDto
             (
                 ArticleId: i.ArticleId,
                 Quantity: i.Quantity,
@@ -168,12 +167,12 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 TaxRate: i.TaxRate
             )).ToList();
             ValidateStockAvailability(updateDTOs, stockStatus);
-            
+
             _logger.LogInformation("\n\nUpdating invoice {InvoiceId} for client {ClientId} with {ItemCount} items\n\n", id, dto.ClientId, dto.Items.Count);
             _logger.LogDebug("\n\nInvoice details: {@InvoiceDto}\n\n", dto);
 
-            var discountRate = GetClientDiscountRate(client);
-            var discountMultiplier = 1 - (discountRate / 100);
+            decimal discountRate = GetClientDiscountRate(client);
+            decimal discountMultiplier = 1 - (discountRate / 100);
 
             _logger.LogInformation("\n\nClient {ClientId} has discount rate of {DiscountRate}%, applying multiplier of {DiscountMultiplier}\n\n", dto.ClientId, discountRate, discountMultiplier);
 
@@ -191,19 +190,19 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             );
 
             // Load all articles once (single database call)
-            var articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
-            var articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
+            List<Guid> articleIds = dto.Items.Select(i => i.ArticleId).Distinct().ToList();
+            List<Domain.LocalCache.Article.ArticleCache> articles = await _articleCacheRepository.GetByIdsAsync(articleIds);
             if (articles == null || !articles.Any())
                 throw new InvalidOperationException("No articles found for the given IDs.");
 
-            var articleDictionary = articles.ToDictionary(a => a.Id, a => a);
+            Dictionary<Guid, Domain.LocalCache.Article.ArticleCache> articleDictionary = articles.ToDictionary(a => a.Id, a => a);
 
             invoice.ClearItems();
-            foreach (var itemDto in dto.Items)
+            foreach (UpdateInvoiceItemDto itemDto in dto.Items)
             {
-                if (articleDictionary.TryGetValue(itemDto.ArticleId, out var article))
+                if (articleDictionary.TryGetValue(itemDto.ArticleId, out Domain.LocalCache.Article.ArticleCache? article))
                 {
-                    var discountedPrice = itemDto.UniPriceHT * discountMultiplier;
+                    decimal discountedPrice = itemDto.UniPriceHT * discountMultiplier;
                     _logger.LogInformation("\n\nAdding item to invoice: \nArticleId={ArticleId}, \nQuantity={Quantity}, \nUniPriceHT={UniPriceHT}, \nDiscountedPrice={DiscountedPrice}, \nTaxRate={TaxRate}\n\n",
                         itemDto.ArticleId, itemDto.Quantity, itemDto.UniPriceHT, discountedPrice, itemDto.TaxRate);
                     invoice.AddItem(new InvoiceItem(
@@ -234,7 +233,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         public async Task<InvoiceDto> AddItemAsync(Guid id, AddInvoiceItemDto dto)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
@@ -242,13 +241,13 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             if (invoice.Status != InvoiceStatus.DRAFT)
                 throw new InvoiceDomainException("Items can only be added to DRAFT invoices.");
 
-            var invoiceTotalTTC = invoice.TotalTTC + (dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate)));
+            decimal invoiceTotalTTC = invoice.TotalTTC + (dto.Quantity * dto.UniPriceHT * (1 + (dto.TaxRate)));
 
             await CheckClientCreditLimit(invoice.ClientId, invoiceTotalTTC);
 
-            var article = await _articleCacheRepository.GetByIdAsync(dto.ArticleId) ?? throw new KeyNotFoundException($"Article with Id: {dto.ArticleId} not found.");
+            Domain.LocalCache.Article.ArticleCache article = await _articleCacheRepository.GetByIdAsync(dto.ArticleId) ?? throw new KeyNotFoundException($"Article with Id: {dto.ArticleId} not found.");
 
-            var item = new InvoiceItem(
+            InvoiceItem item = new InvoiceItem(
                 id,
                 dto.ArticleId,
                 article.Libelle,
@@ -268,7 +267,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         public async Task RemoveItemAsync(Guid id, Guid itemId)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
@@ -285,7 +284,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         public async Task<InvoiceDto> FinalizeAsync(Guid id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
@@ -305,7 +304,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.UpdateAsync(invoice);
 
-            var payload = invoice.ToDto();
+            InvoiceDto payload = invoice.ToDto();
 
             // Draft invoices are not published when created with InvoiceStatus.DRAFT in CreateAsync (method above),
             // They are considered created once their Status is UNPAID Meaning that the stock will be effected only by the UNPAID invoices not the DRAFT ones,
@@ -319,7 +318,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         public async Task<InvoiceDto> MarkAsPaidAsync(Guid id)
         {
             // ──── GET INVOICE ────
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
@@ -334,7 +333,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         }
         public async Task<InvoiceDto> CancelAsync(Guid id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (invoice is null || invoice.IsDeleted)
                 throw new InvoiceNotFoundException(id);
@@ -343,7 +342,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.UpdateAsync(invoice);
 
-            var payload = invoice.ToDto();
+            InvoiceDto payload = invoice.ToDto();
             await _eventPublisher.PublishAsync(InvoiceTopics.Cancelled, payload);
 
             return payload;
@@ -355,7 +354,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         public async Task DeleteAsync(Guid id)
         {
             // ──── GET INVOICE ────
-            var invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
+            Invoice invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
 
             invoice.Delete();
 
@@ -364,7 +363,7 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         }
         public async Task RestoreAsync(Guid id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
+            Invoice invoice = await _invoiceRepository.GetByIdAsync(id) ?? throw new InvoiceNotFoundException(id);
 
             // ──── RESTORE ────
             invoice.Restore();
@@ -379,44 +378,44 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
         // =========================
         public async Task<InvoiceStatsDto> GetStatsAsync(int topClientsCount = 5)
         {
-            var projections = (await _invoiceRepository.GetStatsProjectionAsync()).ToList();
-            var deletedCount = await _invoiceRepository.GetDeletedCountAsync();
+            List<IInvoiceRepository.InvoiceStatProjection> projections = (await _invoiceRepository.GetStatsProjectionAsync()).ToList();
+            int deletedCount = await _invoiceRepository.GetDeletedCountAsync();
 
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
 
             // ── Status buckets ───────────────────────────────────────────────────────
-            var drafts = projections.Where(i => i.Status == InvoiceStatus.DRAFT).ToList();
-            var unpaid = projections.Where(i => i.Status == InvoiceStatus.UNPAID).ToList();
-            var paid = projections.Where(i => i.Status == InvoiceStatus.PAID).ToList();
-            var cancelled = projections.Where(i => i.Status == InvoiceStatus.CANCELLED).ToList();
-            var overdue = unpaid.Where(i => i.DueDate < now).ToList();
+            List<IInvoiceRepository.InvoiceStatProjection> drafts = projections.Where(i => i.Status == InvoiceStatus.DRAFT).ToList();
+            List<IInvoiceRepository.InvoiceStatProjection> unpaid = projections.Where(i => i.Status == InvoiceStatus.UNPAID).ToList();
+            List<IInvoiceRepository.InvoiceStatProjection> paid = projections.Where(i => i.Status == InvoiceStatus.PAID).ToList();
+            List<IInvoiceRepository.InvoiceStatProjection> cancelled = projections.Where(i => i.Status == InvoiceStatus.CANCELLED).ToList();
+            List<IInvoiceRepository.InvoiceStatProjection> overdue = unpaid.Where(i => i.DueDate < now).ToList();
 
             // ── Revenue (PAID only) ──────────────────────────────────────────────────
-            var revenueHT = paid.Sum(i => i.TotalHT);
-            var revenueTTC = paid.Sum(i => i.TotalTTC);
-            var tvaColl = paid.Sum(i => i.TotalTVA);
+            decimal revenueHT = paid.Sum(i => i.TotalHT);
+            decimal revenueTTC = paid.Sum(i => i.TotalTTC);
+            decimal tvaColl = paid.Sum(i => i.TotalTVA);
 
             // ── Outstanding (UNPAID) ─────────────────────────────────────────────────
-            var outstandingHT = unpaid.Sum(i => i.TotalHT);
-            var outstandingTTC = unpaid.Sum(i => i.TotalTTC);
+            decimal outstandingHT = unpaid.Sum(i => i.TotalHT);
+            decimal outstandingTTC = unpaid.Sum(i => i.TotalTTC);
 
             // ── Overdue ──────────────────────────────────────────────────────────────
-            var overdueHT = overdue.Sum(i => i.TotalHT);
-            var overdueTTC = overdue.Sum(i => i.TotalTTC);
+            decimal overdueHT = overdue.Sum(i => i.TotalHT);
+            decimal overdueTTC = overdue.Sum(i => i.TotalTTC);
 
             // ── Average invoice value (PAID + UNPAID, i.e. real commercial invoices) ─
-            var activeInvoices = paid.Concat(unpaid).ToList();
-            var avgValueHT = activeInvoices.Count > 0
+            List<IInvoiceRepository.InvoiceStatProjection> activeInvoices = paid.Concat(unpaid).ToList();
+            decimal avgValueHT = activeInvoices.Count > 0
                 ? activeInvoices.Average(i => i.TotalHT)
                 : 0m;
 
             // ── Average days to due (proxy for payment cycle) — PAID invoices only ───
-            var avgPaymentDays = paid.Count > 0
+            double avgPaymentDays = paid.Count > 0
                 ? paid.Average(i => (i.DueDate - i.InvoiceDate).TotalDays)
                 : 0d;
 
             // ── Top clients by paid revenue TTC ─────────────────────────────────────
-            var topClients = paid
+            List<ClientRevenueDto> topClients = paid
                 .GroupBy(i => new { i.ClientId, i.ClientFullName })
                 .Select(g => new ClientRevenueDto
                 (
@@ -430,19 +429,19 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 .ToList();
 
             // ── Monthly breakdown (current calendar year) ────────────────────────────
-            var currentYear = now.Year;
-            var yearInvoices = projections
+            int currentYear = now.Year;
+            List<IInvoiceRepository.InvoiceStatProjection> yearInvoices = projections
                 .Where(i => i.InvoiceDate.Year == currentYear)
                 .ToList();
 
-            var monthlyBreakdown = Enumerable.Range(1, 12)
+            List<MonthlyStatsDto> monthlyBreakdown = Enumerable.Range(1, 12)
                 .Select(month =>
                 {
-                    var issued = yearInvoices
+                    List<IInvoiceRepository.InvoiceStatProjection> issued = yearInvoices
                         .Where(i => i.InvoiceDate.Month == month)
                         .ToList();
 
-                    var monthPaid = issued
+                    List<IInvoiceRepository.InvoiceStatProjection> monthPaid = issued
                         .Where(i => i.Status == InvoiceStatus.PAID)
                         .ToList();
 
@@ -489,13 +488,13 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         private async Task CheckClientCreditLimit(Guid clientId, decimal invoiceTotalTTC, Guid? excludeInvoiceId = null)
         {
-            var client = await _clientCacheRepository.GetByIdAsync(clientId)
+            Domain.LocalCache.Client.ClientCache client = await _clientCacheRepository.GetByIdAsync(clientId)
                 ?? throw new KeyNotFoundException($"Client with Id: {clientId} not found.");
 
-            var invoices = await _invoiceRepository.GetByClientIdAsNoTrackingAsync(clientId);
+            IEnumerable<Invoice> invoices = await _invoiceRepository.GetByClientIdAsNoTrackingAsync(clientId);
 
             // Exclude current invoice if updating
-            var clientCurrentCredit = invoices
+            decimal clientCurrentCredit = invoices
                 .Where(i => i.Status == InvoiceStatus.UNPAID
                             && (excludeInvoiceId == null || i.Id != excludeInvoiceId))
                 .Sum(i => i.TotalTTC);
@@ -509,30 +508,30 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
         private void ValidateStockAvailability(List<CreateInvoiceItemDto> items, StockStatusResponse stockStatus)
         {
-            var errors = new List<string>();
+            List<string> errors = new List<string>();
 
             // Create lookup dictionary for O(1) access
-            var inStockLookup = stockStatus.IN_STOCK.ToDictionary(
+            Dictionary<Guid, decimal> inStockLookup = stockStatus.IN_STOCK.ToDictionary(
                 s => s.ArticleId,
                 s => s.Quantity
             );
 
-            var outStockLookup = stockStatus.OUT_STOCK.ToDictionary(
+            Dictionary<Guid, decimal> outStockLookup = stockStatus.OUT_STOCK.ToDictionary(
                 s => s.ArticleId,
                 s => s.Quantity
             );
 
-            foreach (var item in items)
+            foreach (CreateInvoiceItemDto item in items)
             {
                 decimal availableQuantity = 0;
 
                 // Check if article has positive stock
-                if (inStockLookup.TryGetValue(item.ArticleId, out var inStock))
+                if (inStockLookup.TryGetValue(item.ArticleId, out decimal inStock))
                 {
                     availableQuantity = inStock;
                 }
                 // Check if article has negative stock (oversold)
-                else if (outStockLookup.TryGetValue(item.ArticleId, out var outStock))
+                else if (outStockLookup.TryGetValue(item.ArticleId, out decimal outStock))
                 {
                     // Article has negative stock - cannot fulfill
                     errors.Add($"Article {item.ArticleId} has negative stock ({-outStock} units). Cannot fulfill order.");
@@ -564,13 +563,13 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             if (client.ClientCategories == null || !client.ClientCategories.Any())
                 return 0m;
 
-            var bulkCategories = client.ClientCategories
+            List<ClientCategoryCache> bulkCategories = client.ClientCategories
                 .Where(cc => cc.Category?.UseBulkPricing == true)
                 .ToList();
 
             if (!bulkCategories.Any()) return 0m;
 
-            var highest = bulkCategories.Max(cc => cc.Category!.DiscountRate) ?? 0m;
+            decimal highest = bulkCategories.Max(cc => cc.Category!.DiscountRate) ?? 0m;
             return highest <= 1 ? highest * 100 : highest;
         }
     }
