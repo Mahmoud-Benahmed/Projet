@@ -35,14 +35,14 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<(List<AuthUser>, int)> GetPagedByStatusAsync(bool status, int pageNumber, int pageSize, Guid? excludeId = null)
         {
-            var filter = Builders<AuthUser>.Filter.Where(u => u.IsActive == status && !u.IsDeleted);
+            FilterDefinition<AuthUser> filter = Builders<AuthUser>.Filter.Where(u => u.IsActive == status && !u.IsDeleted);
 
             return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
         }
 
         public async Task<(List<AuthUser>, int)> GetPagedByRoleAsync(Guid role, int pageNumber, int pageSize, Guid? excludeId = null)
         {
-            var filter = Builders<AuthUser>.Filter.Where(u => u.RoleId == role && u.IsActive);
+            FilterDefinition<AuthUser> filter = Builders<AuthUser>.Filter.Where(u => u.RoleId == role && u.IsActive);
 
             return await GetPagedAsync(pageNumber, pageSize, excludeId, filter);
         }
@@ -60,7 +60,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<AuthUser?> UpdateAsync(AuthUser user)
         {
-            var result = await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
+            ReplaceOneResult result = await _collection.ReplaceOneAsync(x => x.Id == user.Id, user);
             return result.ModifiedCount > 0 ? user : null;
         }
 
@@ -81,7 +81,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<UserStatsDto> GetStatsAsync(Guid? excludeId = default)
         {
-            var pipeline = new List<BsonDocument>();
+            List<BsonDocument> pipeline = new List<BsonDocument>();
 
             // Stage 1: exclude specific ID if provided
             if (excludeId.HasValue)
@@ -129,7 +129,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
                     }))}
             }));
 
-            var result = await _collection
+            BsonDocument result = await _collection
                 .Aggregate<BsonDocument>(pipeline)
                 .FirstOrDefaultAsync();
 
@@ -158,7 +158,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             pageNumber = Math.Max(pageNumber, 1);
             pageSize = Math.Max(pageSize, 1);
 
-            var filters = new List<FilterDefinition<AuthUser>>();
+            List<FilterDefinition<AuthUser>> filters = new List<FilterDefinition<AuthUser>>();
 
             // deleted filter
             if (!includeDeleted)
@@ -174,13 +174,13 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             if (excludeId.HasValue)
                 filters.Add(Builders<AuthUser>.Filter.Where(u => u.Id != excludeId.Value));
 
-            var finalFilter = Builders<AuthUser>.Filter.And(filters);
+            FilterDefinition<AuthUser> finalFilter = Builders<AuthUser>.Filter.And(filters);
 
             sort ??= Builders<AuthUser>.Sort.Ascending(u => u.CreatedAt);
 
-            var totalCount = (int)await _collection.CountDocumentsAsync(finalFilter);
+            int totalCount = (int)await _collection.CountDocumentsAsync(finalFilter);
 
-            var items = await _collection
+            List<AuthUser> items = await _collection
                 .Find(finalFilter)
                 .Sort(sort)
                 .Skip((pageNumber - 1) * pageSize)

@@ -18,7 +18,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<List<AuditLog>> GetByUserAsync(Guid userId, int pageNumber, int pageSize)
         {
-            var filter = Builders<AuditLog>.Filter.Or(
+            FilterDefinition<AuditLog> filter = Builders<AuditLog>.Filter.Or(
                 Builders<AuditLog>.Filter.Eq(x => x.PerformedBy, userId),
                 Builders<AuditLog>.Filter.Eq(x => x.TargetUserId, userId)
             );

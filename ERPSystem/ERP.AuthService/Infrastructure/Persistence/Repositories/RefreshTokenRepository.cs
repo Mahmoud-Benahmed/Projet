@@ -21,7 +21,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(RefreshToken refreshToken)
         {
-            var update = Builders<RefreshToken>.Update
+            UpdateDefinition<RefreshToken> update = Builders<RefreshToken>.Update
                 .Set(x => x.IsRevoked, refreshToken.IsRevoked)
                 .Set(x => x.RevokedAt, refreshToken.RevokedAt);
 
@@ -34,7 +34,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task RevokeAllByUserIdAsync(Guid userId)
         {
-            var update = Builders<RefreshToken>
+            UpdateDefinition<RefreshToken> update = Builders<RefreshToken>
                 .Update
                 .Set(x => x.IsRevoked, true)
                 .Set(x => x.RevokedAt, DateTime.UtcNow);

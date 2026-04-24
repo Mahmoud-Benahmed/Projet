@@ -26,9 +26,9 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         {
             pageNumber = Math.Max(pageNumber, 1);
             pageSize = Math.Max(pageSize, 1);
-            var filter = Builders<Role>.Filter.Empty;
-            var totalCount = (int)await _collection.CountDocumentsAsync(filter);
-            var items = await _collection.Find(filter)
+            FilterDefinition<Role> filter = Builders<Role>.Filter.Empty;
+            int totalCount = (int)await _collection.CountDocumentsAsync(filter);
+            List<Role> items = await _collection.Find(filter)
                 .Sort(Builders<Role>.Sort.Ascending(r => r.Libelle))
                 .Skip((pageNumber - 1) * pageSize)
                 .Limit(pageSize)

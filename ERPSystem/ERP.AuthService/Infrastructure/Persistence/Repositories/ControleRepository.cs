@@ -14,7 +14,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
         }
         public async Task<List<Controle>> GetByIdsAsync(IEnumerable<Guid> ids)
         {
-            var filter = Builders<Controle>.Filter.In(x => x.Id, ids);
+            FilterDefinition<Controle> filter = Builders<Controle>.Filter.In(x => x.Id, ids);
             return await _collection.Find(filter).ToListAsync();
         }
 
@@ -38,7 +38,7 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
 
         public async Task<(List<Controle> Items, int TotalCount)> GetByCategoryAsync(string category, int pageNum, int pageSize)
         {
-            var filter = Builders<Controle>.Filter.Eq(x => x.Category, category);
+            FilterDefinition<Controle> filter = Builders<Controle>.Filter.Eq(x => x.Category, category);
 
             return await GetPagedAsync(pageNum, pageSize, filter, collation: new Collation("en", strength: CollationStrength.Secondary));
         }
@@ -74,24 +74,24 @@ namespace ERP.AuthService.Infrastructure.Persistence.Repositories
             pageNumber = Math.Max(pageNumber, 1);
             pageSize = Math.Max(pageSize, 1);
 
-            var filters = new List<FilterDefinition<Controle>>();
+            List<FilterDefinition<Controle>> filters = new List<FilterDefinition<Controle>>();
 
             // custom filter
             if (filter != null)
                 filters.Add(filter);
 
-            var finalFilter = filters.Count > 0
+            FilterDefinition<Controle> finalFilter = filters.Count > 0
                                     ? Builders<Controle>.Filter.And(filters)
                                     : Builders<Controle>.Filter.Empty;
 
             sort ??= Builders<Controle>.Sort.Ascending(c => c.Libelle);
 
-            var findOptions = new FindOptions { Collation = collation };
+            FindOptions findOptions = new FindOptions { Collation = collation };
 
-            var totalCount = (int)await _collection.CountDocumentsAsync(
+            int totalCount = (int)await _collection.CountDocumentsAsync(
                 finalFilter, new CountOptions { Collation = collation });
 
-            var items = await _collection
+            List<Controle> items = await _collection
                 .Find(finalFilter, new FindOptions { Collation = collation })
                 .Sort(sort)
                 .Skip((pageNumber - 1) * pageSize)
