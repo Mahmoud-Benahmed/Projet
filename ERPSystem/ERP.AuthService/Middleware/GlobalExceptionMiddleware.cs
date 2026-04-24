@@ -45,11 +45,11 @@ public class GlobalExceptionMiddleware
         try
         {
 
-            var sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
+            string? sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
 
-            Guid.TryParse(sub, out var performedBy);
+            Guid.TryParse(sub, out Guid performedBy);
 
-            var action = exception switch
+            AuditAction action = exception switch
             {
                 InvalidCredentialsException => AuditAction.Login,
                 InvalidRefreshTokenException => AuditAction.TokenRefreshed,
@@ -86,7 +86,7 @@ public class GlobalExceptionMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, code, message) = exception switch
+        (int statusCode, string? code, string? message) = exception switch
         {
             EmailAlreadyExistsException => ((int)HttpStatusCode.Conflict, "AUTH_001", "AUTH_001"),
             InvalidCredentialsException => ((int)HttpStatusCode.Unauthorized, "AUTH_002", "AUTH_002"),

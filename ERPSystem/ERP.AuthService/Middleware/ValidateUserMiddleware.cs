@@ -1,4 +1,5 @@
 ﻿using ERP.AuthService.Application.Interfaces.Repositories;
+using ERP.AuthService.Domain;
 
 namespace ERP.AuthService.Middleware
 {
@@ -15,11 +16,11 @@ namespace ERP.AuthService.Middleware
         {
             if (context.User.Identity?.IsAuthenticated == true)
             {
-                var sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
+                string? sub = context.Request.Headers["X-User-Id"].FirstOrDefault();
 
-                if (Guid.TryParse(sub, out var userId))
+                if (Guid.TryParse(sub, out Guid userId))
                 {
-                    var user = await userRepository.GetByIdAsync(userId);
+                    AuthUser? user = await userRepository.GetByIdAsync(userId);
 
                     if (user is null)
                     {
