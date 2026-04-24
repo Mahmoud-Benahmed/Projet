@@ -23,8 +23,11 @@ public record CreateClientRequestDto(
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
     string Address,
 
-    [Range(1, 120 , ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+    [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 day and not exceed 180 days")]
     int? DuePaymentPeriod = null,
+
+    [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+    int? DelaiRetour = null,
 
     [RegularExpression(@"^[\d\s]+$", ErrorMessage = "Phone must contain digits and spaces only.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
@@ -33,11 +36,8 @@ public record CreateClientRequestDto(
     [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
     string? TaxNumber = null,
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
-    decimal? CreditLimit = null,
-
-    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
-    int? DelaiRetour = null
+    [Range(1000, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
+    decimal? CreditLimit = null
 );
 
 public record UpdateClientRequestDto(
@@ -54,8 +54,11 @@ public record UpdateClientRequestDto(
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
     string Address,
 
-    [Range(1, 120 , ErrorMessage = "Due payment period must be at least 1 day and not exceed 120")]
+    [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 day and not exceed 180 days")]
     int? DuePaymentPeriod = null,
+
+    [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+    int? DelaiRetour = null,
 
     [RegularExpression(@"^[\d\s]+$", ErrorMessage = "Phone must contain digits and spaces only.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
@@ -64,11 +67,8 @@ public record UpdateClientRequestDto(
     [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
     string? TaxNumber = null,
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
-    decimal? CreditLimit = null,
-
-    [Range(1, int.MaxValue, ErrorMessage = "Return delay must be at least 1 day.")]
-    int? DelaiRetour = null
+    [Range(1000, double.MaxValue, ErrorMessage = "Credit limit must be positive.")]
+    decimal? CreditLimit = null
 );
 
 public record AddCategoryRequestDto(

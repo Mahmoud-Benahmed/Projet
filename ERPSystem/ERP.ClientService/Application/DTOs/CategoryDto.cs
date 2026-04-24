@@ -25,10 +25,10 @@ namespace ERP.ClientService.Application.DTOs
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+        [Range(7, 270, ErrorMessage = "Return delay must be at least 7 days and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(7,180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
+        [Range(7,180, ErrorMessage = "Due payment period must be at least 7 day and not exceed 180 days.")]
         int DuePaymentPeriod,               // ← added
 
         bool UseBulkPricing = false,
@@ -36,7 +36,7 @@ namespace ERP.ClientService.Application.DTOs
         [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
         decimal? DiscountRate = null,
 
-        [Range(0, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        [Range(1, 2, ErrorMessage = "Credit limit multiplier must be positive.")]
         decimal? CreditLimitMultiplier = null
     );
 
@@ -62,7 +62,7 @@ namespace ERP.ClientService.Application.DTOs
         [Range(0.0, 1.0, ErrorMessage = "Discount rate must be between 0 and 1 (0% – 100%).")]
         decimal? DiscountRate = null,
 
-        [Range(0, double.MaxValue, ErrorMessage = "Credit limit multiplier must be positive.")]
+        [Range(1, 2, ErrorMessage = "Credit limit multiplier must be positive.")]
         decimal? CreditLimitMultiplier = null
     );
     public sealed record CategoryResponseDto(
