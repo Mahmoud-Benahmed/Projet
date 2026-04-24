@@ -110,7 +110,7 @@ public static class PrivilegeRegistry
     // In PrivilegeRegistry, after the list definition:
     static PrivilegeRegistry()
     {
-        var duplicates = All
+        List<string> duplicates = All
             .GroupBy(d => d.Code, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
