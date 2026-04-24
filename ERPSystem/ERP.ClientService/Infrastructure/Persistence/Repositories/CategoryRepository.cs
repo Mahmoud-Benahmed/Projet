@@ -2,6 +2,7 @@
 using ERP.ClientService.Application.Interfaces;
 using ERP.ClientService.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace ERP.ClientService.Infrastructure.Persistence.Repositories;
 
@@ -45,13 +46,13 @@ public class CategoryRepository : ICategoryRepository
     public async Task<(List<Category> Items, int TotalCount)> GetAllPagedAsync(
         int pageNumber, int pageSize)
     {
-        var query = _context.Categories
+        IIncludableQueryable<Category, Client?> query = _context.Categories
                             .OrderBy(c => c.Name)
                             .Include(c => c.ClientCategories)
                             .ThenInclude(cc => cc.Client);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Category> items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -62,15 +63,15 @@ public class CategoryRepository : ICategoryRepository
     public async Task<(List<Category> Items, int TotalCount)> GetPagedDeletedAsync(
         int pageNumber, int pageSize)
     {
-        var query = _context.Categories
+        IOrderedQueryable<Category> query = _context.Categories
                             .IgnoreQueryFilters()
                             .Where(c => c.IsDeleted)
                             .Include(c => c.ClientCategories)
                             .ThenInclude(cc => cc.Client)
                             .OrderByDescending(c => c.UpdatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Category> items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -81,15 +82,15 @@ public class CategoryRepository : ICategoryRepository
     public async Task<(List<Category> Items, int TotalCount)> GetPagedByNameAsync(
         string nameFilter, int pageNumber, int pageSize)
     {
-        var term = nameFilter.Trim().ToLower();
-        var query = _context.Categories
+        string term = nameFilter.Trim().ToLower();
+        IOrderedQueryable<Category> query = _context.Categories
                             .Where(c => c.Name.ToLower().Contains(term))
                             .Include(c => c.ClientCategories)
                             .ThenInclude(cc => cc.Client)
                             .OrderBy(c => c.Name);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Category> items = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

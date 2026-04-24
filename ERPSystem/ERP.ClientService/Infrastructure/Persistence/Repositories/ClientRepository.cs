@@ -38,10 +38,10 @@ public class ClientRepository : IClientRepository
     public async Task<(List<Client> Items, int TotalCount)> GetAllAsync(
         int pageNumber, int pageSize)
     {
-        var query = _context.Clients.OrderBy(c => c.Name);
+        IOrderedQueryable<Client> query = _context.Clients.OrderBy(c => c.Name);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Client> items = await query
             .Include(c => c.ClientCategories)
                 .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
@@ -54,13 +54,13 @@ public class ClientRepository : IClientRepository
     public async Task<(List<Client> Items, int TotalCount)> GetPagedByCategoryIdAsync(
         Guid categoryId, int pageNumber, int pageSize)
     {
-        var query = _context.Clients
+        IOrderedQueryable<Client> query = _context.Clients
                             .Where(c => c.ClientCategories
                                 .Any(cc => cc.CategoryId == categoryId))
                             .OrderBy(c => c.Name);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Client> items = await query
             .Include(c => c.ClientCategories)
                 .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
@@ -73,13 +73,13 @@ public class ClientRepository : IClientRepository
     public async Task<(List<Client> Items, int TotalCount)> GetPagedDeletedAsync(
         int pageNumber, int pageSize)
     {
-        var query = _context.Clients
+        IOrderedQueryable<Client> query = _context.Clients
                             .IgnoreQueryFilters()
                             .Where(c => c.IsDeleted)
                             .OrderByDescending(c => c.UpdatedAt);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Client> items = await query
             .Include(c => c.ClientCategories)
                 .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
@@ -92,13 +92,13 @@ public class ClientRepository : IClientRepository
     public async Task<(List<Client> Items, int TotalCount)> GetPagedByNameAsync(
         string nameFilter, int pageNumber, int pageSize)
     {
-        var term = nameFilter.Trim().ToLower();
-        var query = _context.Clients
+        string term = nameFilter.Trim().ToLower();
+        IOrderedQueryable<Client> query = _context.Clients
                             .Where(c => c.Name.ToLower().Contains(term))
                             .OrderBy(c => c.Name);
 
-        var total = await query.CountAsync();
-        var items = await query
+        int total = await query.CountAsync();
+        List<Client> items = await query
             .Include(c => c.ClientCategories)
                 .ThenInclude(cc => cc.Category)
             .Skip((pageNumber - 1) * pageSize)
@@ -132,7 +132,7 @@ public class ClientRepository : IClientRepository
             .OrderByDescending(x => x.ClientCount)
             .ToListAsync();
 
-        var perCategoryDto = perCategory
+        List<CategoryClientCountDto> perCategoryDto = perCategory
             .Select(x => new CategoryClientCountDto(x.Id, x.Name, x.ClientCount))
             .ToList();
 
