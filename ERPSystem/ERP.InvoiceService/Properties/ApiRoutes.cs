@@ -7,7 +7,7 @@ public static class ApiRoutes
     {
         private const string Root = $"{Base}/invoices";
 
-        public const string ToPdf= $"{Root}/{{id:guid}}/pdf";
+        public const string ToPdf = $"{Root}/{{id:guid}}/pdf";
         public const string GetAll = Root;
         public const string GetById = $"{Root}/{{id:guid}}";
         public const string GetByClient = $"{Root}/client/{{clientId:guid}}";
@@ -30,5 +30,25 @@ public static class ApiRoutes
         public const string Delete = $"{Root}/{{id:guid}}";
 
         public const string Restore = $"{Root}/{{id:guid}}/restore";
+
+        public static class Cache
+        {
+            public static class Articles
+            {
+                private const string Root = $"{Invoices.Root}/cache/articles";
+                public const string GetById = $"{Root}/{{id:guid}}";
+                public const string GetByBarCode = $"{Root}/by-barcode/{{barcode}}";
+                public const string GetByRefCode = $"{Root}/by-refcode/{{refcode}}";
+                public const string GetPaged = Root;
+            }
+
+            public static class Clients
+            {
+                private const string Root = $"{Invoices.Root}/cache/clients";
+                public const string GetById = $"{Root}/{{id:guid}}";
+                public const string GetPaged = Root;
+
+            }
+        }
     }
 }
