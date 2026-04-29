@@ -34,6 +34,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
             return await _context.Invoices
                 .IgnoreQueryFilters()
                 .Include(i => i.Items)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(i => i.Id == id);
         }
 
@@ -41,34 +42,88 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
         {
             return await _context.Invoices
                 .Include(i => i.Items)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(i => i.InvoiceNumber == invoiceNumber);
         }
 
-        public async Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false)
+        public async Task<(List<Invoice> Items, int TotalCount)> GetAllAsync(
+            int pageNumber,
+            int pageSize,
+            bool includeDeleted = false)
         {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
             IQueryable<Invoice> query = includeDeleted
                 ? _context.Invoices.IgnoreQueryFilters()
-                : _context.Invoices.AsQueryable();
+                : _context.Invoices;
 
-            return await query
+            query = query.AsNoTracking();
+
+            int totalCount = await query.CountAsync();
+
+            var items = await query
                 .Include(i => i.Items)
+                .AsSplitQuery()
+                .OrderByDescending(i => i.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalCount);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByClientIdAsync(Guid clientId)
+        public async Task<(List<Invoice> Items, int TotalCount)> GetByClientIdAsync(
+            Guid clientId,
+            int pageNumber,
+            int pageSize)
         {
-            return await _context.Invoices
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            IQueryable<Invoice> query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.ClientId == clientId);
+
+            int totalCount = await query.CountAsync();
+
+            List<Invoice> items = await query
                 .Include(i => i.Items)
-                .Where(i => i.ClientId == clientId)
+                .AsSplitQuery()
+                .OrderByDescending(i => i.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalCount);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByStatusAsync(InvoiceStatus status)
+        public async Task<(List<Invoice> Items, int TotalCount)> GetByStatusAsync(
+            InvoiceStatus status,
+            int pageNumber,
+            int pageSize)
         {
-            return await _context.Invoices
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            IQueryable<Invoice> query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.Status == status);
+
+            int totalCount = await query.CountAsync();
+
+            List<Invoice> items = await query
                 .Include(i => i.Items)
-                .Where(i => i.Status == status)
+                .AsSplitQuery()
+                .OrderByDescending(i => i.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalCount);
         }
 
         public async Task AddAsync(Invoice invoice)
@@ -110,7 +165,7 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
         /// Items are intentionally excluded — no Include() — keeping the query lean.
         /// The global soft-delete query filter applies automatically (non-deleted only).
         /// </summary>
-        public async Task<IEnumerable<InvoiceStatProjection>> GetStatsProjectionAsync()
+        public async Task<List<InvoiceStatProjection>> GetStatsProjectionAsync()
         {
             return await _context.Invoices
                 .AsNoTracking()
@@ -140,11 +195,12 @@ namespace ERP.InvoiceService.Infrastructure.Persistence
                 .CountAsync(i => i.IsDeleted);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId)
+        public async Task<List<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId)
         {
             return await _context.Invoices
                 .AsNoTracking()
                 .Include(i => i.Items)
+                .AsSplitQuery()
                 .Where(i => i.ClientId == clientId)
                 .ToListAsync();
         }

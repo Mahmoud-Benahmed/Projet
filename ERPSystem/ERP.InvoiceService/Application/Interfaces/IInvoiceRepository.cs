@@ -7,16 +7,16 @@ namespace InvoiceService.Application.Interfaces
         // ── Existing queries ─────────────────────────────────────────────────────
         Task<Invoice?> GetByIdAsync(Guid id);
         Task<Invoice?> GetByInvoiceNumberAsync(string invoiceNumber);
-        Task<IEnumerable<Invoice>> GetAllAsync(bool includeDeleted = false);
-        Task<IEnumerable<Invoice>> GetByClientIdAsync(Guid clientId);
-        Task<IEnumerable<Invoice>> GetByStatusAsync(InvoiceStatus status);
+        Task<(List<Invoice> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, bool includeDeleted = false);
+        Task<(List<Invoice> Items, int TotalCount)> GetByClientIdAsync(Guid clientId, int pageNumber, int pageSize);
+        Task<(List<Invoice> Items, int TotalCount)> GetByStatusAsync(InvoiceStatus status, int pageNumber, int pageSize);
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);
         Task<bool> ExistsByInvoiceNumberAsync(string invoiceNumber);
-        Task<IEnumerable<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId);
+        Task<List<Invoice>> GetByClientIdAsNoTrackingAsync(Guid clientId);
 
         // ── Stats queries ────────────────────────────────────────────────────────
-        Task<IEnumerable<InvoiceStatProjection>> GetStatsProjectionAsync();
+        Task<List<InvoiceStatProjection>> GetStatsProjectionAsync();
         Task<int> GetDeletedCountAsync();
 
         // ── Nested projection read-model ─────────────────────────────────────────

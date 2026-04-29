@@ -131,6 +131,7 @@ namespace InvoiceService.Domain
             Status = InvoiceStatus.UNPAID;
             UpdatedAt = DateTime.UtcNow;
         }
+        
         /// <exception cref="InvoiceDomainException">Thrown if not in UNPAID status</exception>
         public void MarkAsPaid()
         {
@@ -140,12 +141,10 @@ namespace InvoiceService.Domain
             Status = InvoiceStatus.PAID;
             UpdatedAt = DateTime.UtcNow;
         }
+
         /// <exception cref="InvoiceDomainException">Thrown if PAID or already CANCELLED</exception>
         public void CancelInvoice()
         {
-            if (Status != InvoiceStatus.UNPAID)
-                throw new InvoiceDomainException("UNPAID invoices are only the ones can be cancelled.");
-
             Status = InvoiceStatus.CANCELLED;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -156,6 +155,9 @@ namespace InvoiceService.Domain
             if (IsDeleted)
                 return;
 
+            if(Status == InvoiceStatus.PAID || Status == InvoiceStatus.UNPAID)
+                throw new InvoiceDomainException("Cannot Delete a PAID or UNPAID invoice");
+
             IsDeleted = true;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -163,6 +165,9 @@ namespace InvoiceService.Domain
         public void Restore()
         {
             if (!IsDeleted)
+                return;
+
+            if (Status == InvoiceStatus.PAID || Status == InvoiceStatus.UNPAID)
                 return;
 
             IsDeleted = false;
