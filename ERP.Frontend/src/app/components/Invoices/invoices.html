@@ -32,8 +32,9 @@
     <div class="stats-grid" *ngIf="isList()">
 
       <div class="stat-card stat-card--gray"
-           [class.stat-card--current]="statusFilter === 'ALL'"
-           (click)="setStatusFilter('ALL')">
+          [class.stat-card--current]="statusFilter === 'ALL'"
+          [class.stat-card--disabled]="stats.total === 0"
+          (click)="setStatusFilter('ALL')">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">{{ 'INVOICES.STATS.TOTAL' | translate }}</p>
@@ -44,8 +45,9 @@
       </div>
 
       <div class="stat-card stat-card--amber"
-           [class.stat-card--current]="statusFilter === 'DRAFT'"
-           (click)="setStatusFilter('DRAFT')">
+          [class.stat-card--current]="statusFilter === 'DRAFT'"
+          [class.stat-card--disabled]="stats.draft === 0"
+          (click)="setStatusFilter('DRAFT')">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">{{ 'INVOICES.STATS.DRAFT' | translate }}</p>
@@ -56,8 +58,9 @@
       </div>
 
       <div class="stat-card stat-card--red"
-           [class.stat-card--current]="statusFilter === 'UNPAID'"
-           (click)="setStatusFilter('UNPAID')">
+          [class.stat-card--current]="statusFilter === 'UNPAID'"
+          [class.stat-card--disabled]="stats.unpaid === 0"
+          (click)="setStatusFilter('UNPAID')">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">{{ 'INVOICES.STATS.UNPAID' | translate }}</p>
@@ -68,8 +71,9 @@
       </div>
 
       <div class="stat-card stat-card--green"
-           [class.stat-card--current]="statusFilter === 'PAID'"
-           (click)="setStatusFilter('PAID')">
+          [class.stat-card--current]="statusFilter === 'PAID'"
+          [class.stat-card--disabled]="stats.paid === 0"
+          (click)="setStatusFilter('PAID')">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">{{ 'INVOICES.STATS.PAID' | translate }}</p>
@@ -80,8 +84,9 @@
       </div>
 
       <div class="stat-card stat-card--blue"
-           [class.stat-card--current]="statusFilter === 'CANCELLED'"
-           (click)="setStatusFilter('CANCELLED')">
+          [class.stat-card--current]="statusFilter === 'CANCELLED'"
+          [class.stat-card--disabled]="stats.cancelled === 0"
+          (click)="setStatusFilter('CANCELLED')">
         <div class="stat-card__body">
           <div>
             <p class="stat-card__label">{{ 'INVOICES.STATS.CANCELLED' | translate }}</p>
@@ -206,7 +211,7 @@
                   <mat-icon style="font-size:16px;width:16px;height:16px;">visibility</mat-icon>
                 </button>
                 <button class="icon-btn icon-btn--delete" [matTooltip]="'INVOICES.ACTIONS.DELETE' | translate"
-                        *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.DELETE_INVOICE) && inv.status === 'DRAFT' && !inv.isDeleted"
+                        *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.DELETE_INVOICE) && (inv.status === 'DRAFT' || inv.status=== 'CANCELLED')  && !inv.isDeleted"
                         (click)="delete(inv)">
                   <mat-icon style="font-size:16px;width:16px;height:16px;">delete_outline</mat-icon>
                 </button>

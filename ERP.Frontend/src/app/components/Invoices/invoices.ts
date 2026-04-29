@@ -115,7 +115,32 @@ export class InvoicesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.reload();
+      // load articles + invoices + stats in parallel
+      forkJoin({
+          articles: this.loadArticlesWithStock(),
+          invoices: this.invoiceService.getAll(this.currentPage, this.currentSize),
+          stats: this.invoiceService.getStats()
+      }).subscribe({
+          next: ({ invoices, stats }) => {
+              this.invoices   = invoices.items.filter(inv=> !inv.isDeleted);
+              this.totalCount = this.invoices.length ?? 0;
+              this.stats = {
+                total: stats.totalInvoices,
+                cancelled: stats.cancelledCount,
+                deleted: stats.deletedCount,
+                draft: stats.draftCount,
+                paid: stats.paidCount,
+                unpaid: stats.unpaidCount
+              }
+              this.cdr.markForCheck();
+
+          },
+          error: () => {
+              this.invoices = [];
+              this.cdr.markForCheck();
+              this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED'));
+          }
+      });
   }
 
   ngAfterViewInit(): void {
@@ -143,6 +168,18 @@ export class InvoicesComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadDeletedInvoices(): void {
+    this.invoiceService.getAll(this.currentPage, this.currentSize, true).subscribe({
+      next: (res) => {
+        this.deletedInvoices = res.items.filter(i => i.isDeleted); // ← isDeleted not !isDeleted
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED'));
+      }
+    });
+  }
+
   private loadCurrentView(): void {
     if (this.isDeletedList()) this.loadDeletedInvoices();
     else if (this.isStats()) this.loadStats();
@@ -156,21 +193,20 @@ export class InvoicesComponent implements OnInit, OnDestroy {
 
     req$.subscribe({
       next: res => {
-        this.invoices = res.items;
-        this.totalCount = res.totalCount;
-        if (this.statusFilter === 'ALL') this.refreshStats();
-      },
-      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED')),
-    });
-  }
+        this.invoices   = Array.isArray(res.items) ? res.items : [];
+        this.totalCount = res.totalCount ?? 0;
+        // ← remove deletedInvoices and stats.deleted assignment here
 
-  loadDeletedInvoices(): void {
-    this.invoiceService.getDeleted(this.currentPage, this.currentSize).subscribe({
-      next: res => {
-        this.deletedInvoices = res.items;
-        this.totalCount = res.totalCount;
+        if (this.statusFilter === 'ALL') this.loadStats(); // ← stats.deleted comes from here
+
+        this.cdr.markForCheck();
       },
-      error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_DELETED_FAILED')),
+      error: () => {
+        this.invoices   = [];
+        this.totalCount = 0;
+        this.cdr.markForCheck();
+        this.flash('error', this.translate.instant('INVOICES.ERRORS.LOAD_FAILED'));
+      },
     });
   }
 
@@ -179,6 +215,14 @@ export class InvoicesComponent implements OnInit, OnDestroy {
     this.invoiceStats = null;
     this.invoiceService.getStats().subscribe({
       next: stats => {
+        this.stats = {
+          total: stats.totalInvoices,
+          cancelled: stats.cancelledCount,
+          deleted: stats.deletedCount,
+          draft: stats.draftCount,
+          paid: stats.paidCount,
+          unpaid: stats.unpaidCount
+        }
         this.invoiceStats = stats;
         this.statsLoading = false;
         setTimeout(() => this.renderStatusPieChart(), 100);
@@ -211,23 +255,6 @@ export class InvoicesComponent implements OnInit, OnDestroy {
         return of([]);
       })
     );
-  }
-
-  private refreshStats(): void {
-    this.stats.total = this.totalCount;
-    (['DRAFT', 'UNPAID', 'PAID', 'CANCELLED'] as const).forEach(status => {
-      this.invoiceService.getByStatus(status, 1, 1).subscribe({
-        next: res => {
-          if (status === 'DRAFT')     this.stats.draft     = res.totalCount;
-          if (status === 'UNPAID')    this.stats.unpaid    = res.totalCount;
-          if (status === 'PAID')      this.stats.paid      = res.totalCount;
-          if (status === 'CANCELLED') this.stats.cancelled = res.totalCount;
-        },
-      });
-    });
-    this.invoiceService.getDeleted(1, 1).subscribe({
-      next: res => this.stats.deleted = res.totalCount,
-    });
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
