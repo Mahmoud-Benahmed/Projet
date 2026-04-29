@@ -17,6 +17,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ModalComponent } from '../../modal/modal';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoadingOverlayComponent } from "../../loading-overlay/loading-overlay";
+import { InvoiceCacheDto, PaymentService } from '../../../services/payment.service';
+import { CreatePaymentModal } from '../../payments/create-modal/create-modal';
 
 @Component({
   selector: 'app-invoices-view',
@@ -40,12 +42,13 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
   private translate = inject(TranslateService);
   private cdr = inject(ChangeDetectorRef);
   private location= inject(Location);
-  
+
   // ── Alerts ────────────────────────────────────────────────────────────────
   errors: string[] = [];
   successMessage: string | null = null
 
-  selectedInvoice: InvoiceDto | null = null;
+  selectedInvoice: (InvoiceDto & {  paidAmount:number, remainingAmount:number }) | null = null;
+  invoiceCache: InvoiceCacheDto | null= null;
   invoiceIdFromRoute: string|null=null;
 
   readonly PRIVILEGES = PRIVILEGES;
@@ -53,10 +56,7 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
   constructor(
       public authService: AuthService,
       private invoiceService: InvoiceService,
-      private clientsService: ClientsService,
-      private articleService: ArticleService,
-      private fb: FormBuilder,
-      private stock: StockService,
+      private paymentService: PaymentService,
       private route: ActivatedRoute,
       private router: Router,
       private dialog: MatDialog
@@ -69,70 +69,53 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
     }
 
     this.invoiceIdFromRoute = this.route.snapshot.paramMap.get('id');
-    
+
     if (!this.invoiceIdFromRoute) {
       this.cancel();
-      return; 
+      return;
     }
-    
+
     this.reload();
   }
 
   reload(): void {
-    forkJoin({
-      selectedInvoice: this.loadInvoice(this.invoiceIdFromRoute!),
-    }).subscribe({
-      next: () => {          
-      },
-      error: () => {
-        this.cdr.markForCheck();
-        this.cancel();
-      }
-    });
-  }
+    if (!this.invoiceIdFromRoute) return;
 
-  loadInvoice(invoiceId: string): Observable<InvoiceDto> {
-    return this.invoiceService.getById(invoiceId).pipe(
-        tap({
-          next: (invoice) => {
-            this.selectedInvoice = invoice;
-          },
-          error: (err) => {
-            const errorMsg = (err.error as HttpError)?.message || this.translate.instant('INVOICES.ERRORS.LOAD_FAILED');
-            this.flash('error', errorMsg);
-          }
-        })
-    );
+    forkJoin({
+      invoice: this.invoiceService.getById(this.invoiceIdFromRoute),
+      cache:   this.paymentService.getInvoiceCacheById(this.invoiceIdFromRoute).pipe(
+                catchError(() => of(null))  // ← cache may not exist yet for new invoices
+              )
+    }).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ invoice, cache }) => {
+          this.selectedInvoice = {
+            ...invoice,
+            paidAmount:      cache?.paidAmount      ?? 0,
+            remainingAmount: cache?.remainingAmount  ?? invoice.totalTTC
+          };
+          this.invoiceCache = cache;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          const errorMsg = (err.error as HttpError)?.message
+            ?? this.translate.instant('INVOICES.ERRORS.LOAD_FAILED');
+          this.flash('error', errorMsg);
+          this.cancel();
+        }
+      });
   }
 
   finalize(invoice: InvoiceDto): void {
     this.invoiceService.finalize(invoice.id).subscribe({
-      next: (updated) => {
-        if (this.selectedInvoice?.id === updated.id) {
-          this.selectedInvoice = { ...updated }; // spread to trigger reference change
-          this.cdr.markForCheck();
-        }
+      next: () => {
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.FINALIZED'));
-        this.reload();
+        this.reload(); // ← handles everything
       },
       error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.FINALIZE_FAILED')),
     });
   }
 
-  markAsPaid(invoice: InvoiceDto): void {
-      this.invoiceService.markAsPaid(invoice.id).subscribe({
-        next: (updated) => {
-          if (this.selectedInvoice?.id === updated.id) {
-            this.selectedInvoice = { ...updated }; // spread to trigger reference change
-            this.cdr.markForCheck();
-          }
-          this.flash('success', this.translate.instant('INVOICES.SUCCESS.MARKED_PAID'));
-          this.reload();
-        },
-        error: () => this.flash('error', this.translate.instant('INVOICES.ERRORS.MARK_PAID_FAILED')),
-      });
-    }
-  
   cancelInvoice(invoice: InvoiceDto): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '420px',
@@ -148,11 +131,7 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(confirmed => {
       if (!confirmed) return;
       this.invoiceService.cancel(invoice.id).subscribe({
-        next: (updated) => {
-          if (this.selectedInvoice?.id === updated.id) {
-            this.selectedInvoice = { ...updated };
-            this.cdr.markForCheck();
-          }
+        next: () => {
           this.flash('success', this.translate.instant('INVOICES.SUCCESS.CANCELLED'));
           this.reload();
         },
@@ -248,17 +227,31 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
   openEdit(id: string){
     this.router.navigate(['/invoices/edit', this.invoiceIdFromRoute]);
   }
-  
+
 
   trackById(_: number, item: { id: string }) { return item.id; }
 
-  get pageTitle():string{
-    return 'INVOICES.TITLE_EDIT';
-  }
   cancel(){
     this.location.back();
   }
   ngOnDestroy(): void {
     this.themeObserver?.disconnect();
   }
+
+  markAsPaid(invoice: InvoiceDto){
+    this.cdr.markForCheck();
+    const ref = this.dialog.open(CreatePaymentModal, {
+      width: '640px',
+      maxWidth: '72vw',
+      disableClose: true,   // ← requires explicit cancel/submit
+    });
+    this.cdr.markForCheck();
+
+    ref.afterClosed().subscribe(payment => {
+        if (payment) {
+          this.reload();
+        }
+    });
+  }
+
 }
