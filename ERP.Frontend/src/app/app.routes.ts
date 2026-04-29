@@ -26,6 +26,7 @@ import { InvoicesComponent } from './components/invoices/invoices';
 import { EditInvoiceComponent } from './components/invoices/edit/edit';
 import { CreateInvoiceComponent } from './components/invoices/create/create';
 import { ViewInvoiceComponent } from './components/invoices/view/view';
+import { CreatePaymentModal } from './components/payments/create-modal/create-modal';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
