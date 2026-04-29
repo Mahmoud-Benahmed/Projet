@@ -4,14 +4,14 @@
           <div class="page-header" id="top">
             <div>
               <p class="breadcrumb">{{ 'INVOICES.BREADCRUMB' | translate }} › {{ selectedInvoice.invoiceNumber }}</p>
-              <h1 class="page-title">{{ pageTitle | translate }}: {{ selectedInvoice.invoiceNumber }}</h1>
+              <h1 class="page-title">{{ 'INVOICES.TITLE_EDIT' | translate }}: {{ selectedInvoice.invoiceNumber }}</h1>
             </div>
             <button class="btn-back" (click)="cancel()">← {{ 'COMMON.BACK' | translate }}</button>
           </div>
         </ng-container>
         <ng-template #loading>
             <p class="breadcrumb">{{ 'INVOICES.BREADCRUMB' | translate }}</p>
-            <h1 class="page-title">{{ pageTitle | translate }}...</h1>
+            <h1 class="page-title">{{ 'INVOICES.TITLE_EDIT' | translate }}...</h1>
         </ng-template>
 
         <div *ngFor="let e of errors" class="alert alert--error">
@@ -328,10 +328,10 @@
                         </span>
                       </div>
                     </div>
-    
+
                   <div class="form__field">
                     <label class="form__label">{{ 'INVOICES.FORM.QUANTITY' | translate }}</label>
-    
+
                     <!-- Stock badge — only shown once an article is selected -->
                     <div class="stock-info-badge" *ngIf="getSelectedArticle()">
                       <mat-icon>inventory_2</mat-icon>
@@ -341,7 +341,7 @@
                         </strong>
                       </span>
                     </div>
-    
+
                     <input
                       type="number"
                       formControlName="quantity"
@@ -351,7 +351,7 @@
                       [max]="getQuantityMax()"
                       [step]="getQuantityStep(getSelectedArticle()?.unit)"
                     />
-    
+
                     <div *ngIf="itemForm.get('quantity')?.hasError('required') && itemForm.get('quantity')?.touched" class="form__error">
                       {{ 'VALIDATION.REQUIRED' | translate }}
                     </div>
@@ -363,8 +363,8 @@
     {{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: (getSelectedArticle()?.quantity ?? 0) | number:'1.2-2' } }}                </div>
                   </div>
                 </div>
-                
-                <div class="form__row form__row--2">    
+
+                <div class="form__row form__row--2">
                   <div class="form__field">
                     <label class="form__label">{{ 'INVOICES.FORM.UNIT_PRICE_HT' | translate }}</label>
                     <input class="form__input" type="number" min="0" step="0.01" formControlName="uniPriceHT" />
@@ -375,7 +375,7 @@
                       <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 0.1">— {{ 'INVOICES.FORM.DECIMALS_ALLOWED' | translate }}</span>
                     </small>
                   </div>
-    
+
                   <div class="form__field">
                     <label class="form__label">{{ 'INVOICES.FORM.TAX_RATE' | translate }} (%)</label>
                     <input type="number" class="form__input" formControlName="taxRate" min="0" max="100" step="1" />

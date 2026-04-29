@@ -76,8 +76,8 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   invoiceIdFromRoute: string|null=null;
 
   readonly TaxModes= TaxCalculationMode;
-  
-  selectedClientForValidation: ClientResponseDto | null = null;  
+
+  selectedClientForValidation: ClientResponseDto | null = null;
   private _selectedArticle: StockItem | null = null;
   private masterArticles: StockItem[] = [];
   articles: StockItem[] = [];
@@ -85,7 +85,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   filteredClients: ClientResponseDto[] = [];
   clientSearchQuery = '';
   pendingItems: PendingItem[] = [];
-  
+
   isValidating= false;
   taxCalculationMode: TaxCalculationMode= TaxCalculationMode.LINE;
   creditWarning: string | null = null;
@@ -102,7 +102,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     originalTotal: 0,
     discountedTotal: 0
   };
-  
+
   inlineItemLocalId = '';
   inlineItemOpen = false;
 
@@ -140,16 +140,16 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     private route: ActivatedRoute,
     private viewportScroller: ViewportScroller
   ) {}
-  
+
   ngOnInit(): void {
     this.buildForms();
     this.invoiceIdFromRoute = this.route.snapshot.paramMap.get('id');
-    
+
     if (!this.invoiceIdFromRoute) {
       this.cancel();
-      return; 
+      return;
     }
-    
+
     this.reload();
   }
 
@@ -163,7 +163,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       this.clientSearchQuery = client.name;
     }
 
-    this.taxCalculationMode = this.selectedInvoice.taxMode === 'INVOICE' ? TaxCalculationMode.INVOICE 
+    this.taxCalculationMode = this.selectedInvoice.taxMode === 'INVOICE' ? TaxCalculationMode.INVOICE
                                                                           : TaxCalculationMode.LINE;
 
     // Patch invoice form
@@ -322,7 +322,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     }).subscribe({
       next: () => {
           this.populateFormFromInvoice();
-          this.cdr.markForCheck();      
+          this.cdr.markForCheck();
       },
       error: (err) => {
         const errorMsg = (err.error as HttpError)?.message;
@@ -351,12 +351,14 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
 
     this.invoiceService.getClientOutstandingBalance(this.selectedClientForValidation.id).subscribe({
       next: (currentOutstanding) => {
+        const client= this.selectedClientForValidation;
+        if(!client) return;
         const result = this.invoiceService.validateCreditLimit(
-          this.selectedClientForValidation,
+          client,
           this.invoiceTotalTTC(),  // Note the parentheses for signal
           currentOutstanding
         );
-        
+
         this.creditLimitInfo = {
           hasSufficientCredit: result.hasSufficientCredit,
           currentUsage: result.currentUsage,
@@ -398,7 +400,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   getSelectedArticle(): StockItem | null {
     return this._selectedArticle;
   }
-  
+
   getStockStatusClass(availableStock: number): string {
     if (availableStock === 0) return 'stock-out';
     if (availableStock <= 5) return 'stock-critical';
@@ -440,7 +442,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     if (!unit) return '';
     return this.translate.instant(`ARTICLES.UNIT.${unit.toUpperCase()}`);
   }
-  
+
   getAvailableStock(articleId: string): number {
     return this.articles.find(a => a.id === articleId)?.quantity || 0;
   }
@@ -622,7 +624,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       // silently ignore
     }
   }
-  
+
   get duePaymentPeriodHint(): string {
     if (!this.selectedClientForValidation?.duePaymentPeriod) return '';
     return this.translate.instant('INVOICES.FORM.DUE_DATE_HINT', {
@@ -673,7 +675,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       this.syncArticles();
       this.checkClientLimitsAndDiscount();
     }
-  
+
   get canSubmit(): boolean {
     if (this.invoiceForm.invalid) return false;
     if (this.pendingItems.length === 0) return false;
@@ -741,7 +743,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
           const el = document.getElementById('top');
           el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 0); // wait for DOM update
-        
+
         setTimeout(() => {
           this.isValidating = false;
           this.cancel();
@@ -749,7 +751,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
         this.reload();
       },
       error: (err) =>{
-        const errorMsg = (err.error as HttpError)?.message 
+        const errorMsg = (err.error as HttpError)?.message
           || this.translate.instant('INVOICES.ERRORS.FINALIZE_FAILED');
         this.flash('error', errorMsg);
         this.isValidating = false;
@@ -758,7 +760,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
           const el = document.getElementById('top');
           el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 0);
-      } 
+      }
     });
   }
 
@@ -781,7 +783,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       clientId: formValue.clientId,
       clientAddress: formValue.clientAddress,
       additionalNotes: formValue.additionalNotes,
-      taxMode: this.taxCalculationMode,      
+      taxMode: this.taxCalculationMode,
       items: this.pendingItems.map(item => ({
           articleId:  item.articleId,
           quantity:   Number(item.quantity),
@@ -793,19 +795,19 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
     this.invoiceService.update(this.selectedInvoice!.id, updateDto).subscribe({
       next: () => {
         this.flash('success', this.translate.instant('INVOICES.SUCCESS.UPDATED'));
-          
+
         setTimeout(() => {
           const el = document.getElementById('top');
           el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 0); // wait for DOM update
-        
+
         setTimeout(() => {
           this.isValidating = false;
           this.cancel();
         }, 2000);
       },
       error: (err) => {
-        const errorMsg = (err.error as HttpError)?.message 
+        const errorMsg = (err.error as HttpError)?.message
           || this.translate.instant('INVOICES.ERRORS.UPDATE_FAILED');
         this.flash('error', errorMsg);
         this.isValidating = false;
@@ -862,7 +864,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
 
     // Mark form as dirty to trigger unsaved changes detection
     this.invoiceForm.markAsDirty();
-    
+
     this.clientSearchQuery = client.name;
     this.filteredClients = [];
     this.checkClientLimitsAndDiscount();
@@ -889,7 +891,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
 
     // Mark form as dirty to trigger unsaved changes detection
     this.invoiceForm.markAsDirty();
-    
+
     this.clientSearchQuery = client.name;
     this.filteredClients = [];
     this.loadCreditLimitInfo();
@@ -915,7 +917,7 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       this.loadClients(1, false);
     }
   }
-  
+
   loadArticlesForDropdown(resetPage = true): void {
     if (resetPage) {
       this.articlePage = 1;
@@ -986,11 +988,6 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
   }
 
 
-  // Template
-  get pageTitle():string{
-    return 'INVOICES.TITLE_EDIT';
-  }
-
   flash(type: 'success' | 'error', msg: string): void {
     if (type === 'success') {
       this.successMessage = msg;
@@ -1000,9 +997,9 @@ export class EditInvoiceComponent implements OnInit, OnDestroy{
       setTimeout(() => { this.errors = []; }, 4000);
     }
   }
-  
+
   dismissError(): void { this.errors = []; }
-  
+
   cancel(){
     this.location.back();
   }
