@@ -151,7 +151,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
             finalize(() => { refreshInProgress$ = null; })
           );
         }
-        
+
         return refreshInProgress$.pipe(
           switchMap(response =>
             next(req.clone({
@@ -166,8 +166,12 @@ export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
         );
       }
 
-      if(error.status === 404){
-        router.navigate(['/home']);
+      if (error.status === 404) {
+        const isCacheEndpoint = req.url.includes('/cache/');
+        if (!isCacheEndpoint) {
+          router.navigate(['/home']);
+        }
+        return throwError(() => error); // always propagate so catchError works
       }
 
       // ── Gateway / service unavailable ─────────────────────────────────────
