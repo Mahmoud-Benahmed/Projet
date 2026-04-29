@@ -205,8 +205,7 @@ builder.Services.AddAuthorization(options =>
     AddManagePolicy("MANAGE_PAYMENTS",
         Privileges.Payments.VIEW_PAYMENTS,
         Privileges.Payments.RECORD_PAYMENT,
-        Privileges.Payments.DELETE_PAYMENT,
-        Privileges.Payments.RESTORE_PAYMENT);
+        Privileges.Payments.CANCEL_PAYMENT);
 
     AddManagePolicy("MANAGE_STOCK",
         Privileges.Stock.VIEW_STOCK,

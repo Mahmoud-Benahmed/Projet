@@ -69,8 +69,7 @@
         public const string MANAGE_PAYMENTS = "MANAGE_PAYMENTS";
         public const string VIEW_PAYMENTS = "VIEW_PAYMENTS";
         public const string RECORD_PAYMENT = "RECORD_PAYMENT";
-        public const string DELETE_PAYMENT = "DELETE_PAYMENT";
-        public const string RESTORE_PAYMENT = "RESTORE_PAYMENT";
+        public const string CANCEL_PAYMENT = "CANCEL_PAYMENT";
     }
 
     public static class Stock

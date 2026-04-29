@@ -64,8 +64,7 @@ public static class PrivilegeRegistry
         new(Privileges.Payments.MANAGE_PAYMENTS, "PAIEMENT", "Manage payments"),
         new(Privileges.Payments.VIEW_PAYMENTS,   "PAIEMENT", "View payments"),
         new(Privileges.Payments.RECORD_PAYMENT,  "PAIEMENT", "Record payment"),
-        new(Privileges.Payments.DELETE_PAYMENT,  "PAIEMENT", "Delete payment"),
-        new(Privileges.Payments.RESTORE_PAYMENT, "PAIEMENT", "Restore payment"),
+        new(Privileges.Payments.CANCEL_PAYMENT,  "PAIEMENT", "Cancel payment"),
 
         // ── Stock
         new(Privileges.Stock.MANAGE_STOCK, "STOCK", "Manage stock"),
