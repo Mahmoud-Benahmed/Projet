@@ -10,6 +10,7 @@ using ERP.InvoiceService.Infrastructure.Messaging.Events.ArticleEvents.Article;
 using ERP.InvoiceService.Infrastructure.Messaging.Events.ArticleEvents.ArticleCategory;
 using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
 using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
+using ERP.InvoiceService.Infrastructure.Messaging.Events.Payment;
 using ERP.InvoiceService.Infrastructure.Persistence;
 using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache;
 using ERP.InvoiceService.Infrastructure.Persistence.Repositories.LocalCache.ArticleCache;
@@ -108,6 +109,10 @@ builder.Services.AddScoped<IClientCategoryCacheService, ClientCategoryCacheServi
 builder.Services.AddScoped<IClientCategoryEventHandler, ClientCategoryEventHandler>();
 builder.Services.AddHostedService<ClientCategoryEventConsumer>();
 
+builder.Services.AddScoped<IPaymentEventHandler, PaymentEventHandler>();
+builder.Services.AddHostedService<PaymentEventConsumer>();
+
+
 builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
 
@@ -152,7 +157,9 @@ using (IServiceScope scope = app.Services.CreateScope())
         ClientTopics.Deleted, ClientTopics.Restored,
 
         ClientCategoryTopics.Created, ClientCategoryTopics.Updated,
-        ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored
+        ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored,
+
+        PaymentTopics.Cancelled, PaymentTopics.InvoicePaid,
     };
 
     int maxRetries = 30;

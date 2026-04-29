@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using ERP.InvoiceService.Application.DTOs;
 using ERP.InvoiceService.Application.Interfaces;
+using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
 using System.Text.Json;
 
 namespace ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
