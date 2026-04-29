@@ -61,7 +61,8 @@
     "DAYS_COUNT_plural": "{{count}} days",
     "REMOVE": "Remove",
     "OR": "OR",
-    "ACTIONS": "ACTIONS"
+    "ACTIONS": "ACTIONS",
+    "SELECT": "Select an element from the dropdown"
   },
   "VALIDATION": {
     "REQUIRED": "This field is required",
@@ -390,7 +391,7 @@
     },
     "DETAILS": {
       "DISCOUNT_RATE":"Discount Rate",
-      "OUTSTANDING_BALANCE": "Outstanding Balance",
+      "OUTSTANDING_BALANCE": "Used credit",
       "REMAINING_CREDIT": "Remaining Credit",
       "NAME": "NAME",
       "EMAIL": "EMAIL",
@@ -645,7 +646,7 @@
         "OPERATION_FAILED": "Operation failed.",
         "DELETE_FAILED": "Delete failed."
       }
-    },    
+    },
     "ERRORS": {
       "QUANTITY_EXCEEDS_STOCK":"Quantity cannot exceed {{stock}}",
       "ARTICLES_NOT_FOUND": "No articles available in stock",
@@ -748,6 +749,8 @@
       "TOTAL_HT": "TOTAL HT",
       "TOTAL_TVA": "TOTAL TVA",
       "TOTAL_TTC": "TOTAL TTC",
+      "AMOUNT_PAID":"AMOUNT PAID",
+      "AMOUNT_TO_PAY":"REMAINING TO PAY",
       "NOTES": "NOTES",
       "NAME": "NAME",
       "ADDRESS": "ADDRESS",
@@ -831,7 +834,7 @@
       "MARK_AS_PAID": "Mark as Paid",
       "CANCEL": "Cancel",
       "PRINT": "Print invoice",
-      "PREVIEW": "Preview invoice" 
+      "PREVIEW": "Preview invoice"
     },
     "DIALOG": {
       "CANCEL_INVOICE_TITLE": "Cancel Invoice",
@@ -844,7 +847,7 @@
       "UNSAVED_CHANGES_TITLE": "Unsaved Changes",
       "UNSAVED_CHANGES_MESSAGE": "You have unsaved changes. Do you really want to leave?"
     },
-    "ERRORS": {    
+    "ERRORS": {
       "HAS_SUFFICIENT_CREDIT": "Credit available: {{remainingCredit}} TND",
       "INSUFFICIENT_CREDIT": "Credit limit exceeded. Limit: {{creditLimit}} TND, Current used: {{currentOutstanding}} TND, This invoice: {{invoiceTotal}} TND",
       "LOAD_FAILED": "Failed to load invoices.",
@@ -877,6 +880,46 @@
       "CANCELLED": "Invoice cancelled successfully."
     },
     "OVERDUE_TOOLTIP": "This invoice is overdue"
+  },
+  "PAYMENTS":{
+    "FORM": {
+      "TITLE":"Record payment",
+      "METHOD": "Payment method:",
+      "SELECT_METHOD":"Select payment method",
+      "PAYMENT_DATE": "Payment date:",
+      "EXTERNAL_REFERENCE": "External refernce:",
+      "NOTES": "Notes:",
+      "TOTAL_AMOUNT": "Total amount:",
+      "ALLOCATE_AMOUNTS": "Allocate payment",
+      "INVOICE": "Invoice",
+      "SELECT_INVOICE": "Select an invoice",
+      "AMOUNT": "Amount:",
+      "ADD_LINE": "Add payment",
+      "REMAINING": "Remaining"
+    },
+    "VALIDATION":{
+      "TOTAL_AMOUNT": "Total amount must be strictly positive.",
+      "ALLOCATED_AMOUNT": "Allocated amount must be strictly positive.",
+      "EXCEEDS_REMAINING": "Amount exceeds remaining to pay."
+
+    },
+    "TOOLTIPS":{
+      "TOTAL_AMOUNT": "This amount is the sum of the allocations from the payment done by the selected client. No need to set it since it will be calculated automatically."
+    },
+    "METHOD": {
+      "ESPECE":         "Cash",
+      "CHEQUE":         "Cheque",
+      "VIREMENT":       "Bank Transfer",
+      "CARTE_BANCAIRE": "Credit Card",
+      "MOBILE_PAYMENT": "Mobile Payment",
+      "AUTRE":          "Other"
+    },
+    "SUCCESS":{
+      "CREATED":"Payment created successfully."
+    },
+    "ERRORS":{
+      "CREATE_FAILED":"Failed to create payment."
+    }
   },
   "AUDIT":{
     "BREADCRUMB": "Audit Logs",

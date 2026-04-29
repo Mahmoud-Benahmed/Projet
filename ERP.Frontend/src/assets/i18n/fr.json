@@ -61,7 +61,8 @@
     "DAYS_COUNT_plural": "{{count}} jours",
     "REMOVE": "Retirer",
     "OR": "OU",
-    "ACTIONS": "ACTIONS"
+    "ACTIONS": "ACTIONS",
+    "SELECT": "Veuillez sélectionner un élément de la liste"
   },
   "VALIDATION": {
     "REQUIRED": "Ce champ est obligatoire",
@@ -380,7 +381,7 @@
     },
     "DETAILS": {
       "DISCOUNT_RATE":"Taux de remise",
-      "OUTSTANDING_BALANCE": "Solde en cours",
+      "OUTSTANDING_BALANCE": "Crédit utilisé",
       "REMAINING_CREDIT": "Crédit restant",
       "NAME": "NOM",
       "EMAIL": "EMAIL",
@@ -666,7 +667,7 @@
     "TITLE_DELETED": "Factures supprimées",
     "TITLE_ANALYTICS": "Analyses des factures",
     "TITLE_NEW": "Nouvelle facture",
-    "TITLE_EDIT": "Modification la catégorie",
+    "TITLE_EDIT": "Modification la facture",
     "TITLE_DETAILS": "Détails de la facture",
     "NEW_BUTTON": "+ Nouvelle facture",
     "BACK_BUTTON": "← Retour",
@@ -739,6 +740,8 @@
       "TOTAL_HT": "TOTAL HT",
       "TOTAL_TVA": "TOTAL TVA",
       "TOTAL_TTC": "TOTAL TTC",
+      "AMOUNT_PAID":"MONTANT PAYÉ",
+      "AMOUNT_TO_PAY":"RESTANT À PAYER",
       "NOTES": "NOTES",
       "NAME": "NOM",
       "ADDRESS": "ADRESSE",
@@ -823,7 +826,7 @@
       "MARK_AS_PAID": "Marquer comme payée",
       "CANCEL": "Annuler",
       "PRINT": "Imprimer la facture",
-      "PREVIEW": "Prévisualiser la facture" 
+      "PREVIEW": "Prévisualiser la facture"
     },
     "DIALOG": {
       "UNSAVED_CHANGES_TITLE": "Modifications non enregistrées",
@@ -836,7 +839,7 @@
       "DELETE_CONFIRM": "Supprimer",
       "GO_BACK": "Retour"
     },
-    "ERRORS": {    
+    "ERRORS": {
       "HAS_SUFFICIENT_CREDIT": "Crédit disponible : {{remainingCredit}} TND",
       "INSUFFICIENT_CREDIT": "Limite de crédit dépassée. Limite : {{creditLimit}} TND, Encours actuel : {{currentOutstanding}} TND, Cette facture : {{invoiceTotal}} TND",
       "CREDIT_LIMIT_EXCEEDED": "Impossible de créer la facture pour cet client. Sa totale dépasse le limite le client acquis. ",
@@ -867,6 +870,44 @@
       "CANCELLED": "Facture annulée avec succès."
     },
     "OVERDUE_TOOLTIP": "Cette facture est en retard"
+  },
+  "PAYMENTS":{
+    "FORM": {
+      "TITLE":"Enregistrer un paiment",
+      "METHOD": "Méthode de paiement:",
+      "SELECT_METHOD": "Veuillez sélectionner une méthod de paiement",
+      "PAYMENT_DATE": "Date de paiement:",
+      "EXTERNAL_REFERENCE":"Référence:",
+      "NOTES": "Remarques:",
+      "TOTAL_AMOUNT": "Montant total:",
+      "ALLOCATE_AMOUNTS": "Allouer montants payés",
+      "SELECT_INVOICE": "Veuillez sélectionner une facture",
+      "AMOUNT": "Montant:",
+      "ADD_LINE": "Ajouter un paiement",
+      "REMAINING": "Restant"
+    },
+    "VALIDATION":{
+      "TOTAL_AMOUNT": "Le montant total doit être strictement positif.",
+      "ALLOCATED_AMOUNT":"Le montant alloué doit être strictement positif.",
+      "EXCEEDS_REMAINING": "Montant dépasse le restant à payer."
+    },
+    "TOOLTIPS":{
+      "TOTAL_AMOUNT": "Ce montant est la somme des allocations du payment fourni par le client sélectionné. Pas besion d'y calculer car il est calculé automatiquement."
+    },
+    "METHOD": {
+      "ESPECE":         "Espèces",
+      "CHEQUE":         "Chèque",
+      "VIREMENT":       "Virement bancaire",
+      "CARTE_BANCAIRE": "Carte bancaire",
+      "MOBILE_PAYMENT": "Paiement mobile",
+      "AUTRE":          "Autre"
+    },
+    "SUCCESS":{
+      "CREATED":"Paiement créée avec succès."
+    },
+    "ERRORS":{
+      "CREATE_FAILED":"Échec de la création de le paiement."
+    }
   },
   "AUDIT": {
     "BREADCRUMB": "Journaux d'audit",
