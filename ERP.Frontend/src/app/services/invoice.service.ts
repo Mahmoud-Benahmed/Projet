@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, firstValueFrom } from 'rxjs';
-import { environment } from '../environment'; 
+import { environment } from '../environment';
 import { TranslateService } from '@ngx-translate/core';
 import { ArticleResponseDto } from './articles/articles.service';
 import { ClientResponseDto } from './clients/clients.service';
@@ -120,7 +120,7 @@ export class InvoiceService {
   // Uses the dedicated invoice microservice on port 5037
   private readonly baseUrl = `${environment.apiUrl}${environment.routes.invoices}`;
 
-  constructor(private readonly http: HttpClient, 
+  constructor(private readonly http: HttpClient,
               private readonly translate: TranslateService) { }
 
 
@@ -135,55 +135,56 @@ export class InvoiceService {
   }
 
   // ── GET ────────────────────────────────────────────
+  getAll(pageNumber = 1, pageSize = 10, includeDeleted=false): Observable<PagedResultDto<InvoiceDto>> {
+    const params= new HttpParams().set('pageNumber', pageNumber)
+                                  .set('pageSize', pageSize)
+                                  .set('includeDeleted', includeDeleted);
 
-  getAll(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
-    return this.http
-      .get<InvoiceDto[]>(this.baseUrl)
-      .pipe(map(items => this.paginate(items.filter(i => !i.isDeleted), pageNumber, pageSize)));
+    return this.http.get<PagedResultDto<InvoiceDto>>(this.baseUrl, {params});
   }
 
-  getDeleted(pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
-    return this.http
-      .get<InvoiceDto[]>(this.baseUrl, { params: new HttpParams().set('includeDeleted', 'true') })
-      .pipe(map(items => this.paginate(items.filter(i => i.isDeleted), pageNumber, pageSize)));
+  getByStatus(status: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
+      return this.http.get<PagedResultDto<InvoiceDto>>(`${this.baseUrl}/status/${status}`, {
+          params: new HttpParams()
+              .set('pageNumber', pageNumber)
+              .set('pageSize', pageSize)
+      });
+  }
+
+  getByClientId(clientId: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
+    return this.http.get<PagedResultDto<InvoiceDto>>(
+      `${this.baseUrl}/client/${clientId}`, {
+        params: new HttpParams()
+        .set('pageNumber', pageNumber)
+        .set('pageSize', pageSize)
+      });
   }
 
   getById(id: string): Observable<InvoiceDto> {
     return this.http.get<InvoiceDto>(`${this.baseUrl}/${id}`);
   }
 
-  getByStatus(status: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
-    return this.http
-      .get<InvoiceDto[]>(`${this.baseUrl}/status/${status}`)
-      .pipe(map(items => this.paginate(items, pageNumber, pageSize)));
-  }
-
-  getByClientId(clientId: string, pageNumber = 1, pageSize = 10): Observable<PagedResultDto<InvoiceDto>> {
-    return this.http
-      .get<InvoiceDto[]>(`${this.baseUrl}/client/${clientId}`)
-      .pipe(map(items => this.paginate(items, pageNumber, pageSize)));
-  }
-
-  // ✅ Get client total TTC (all invoices - for reporting)
   getClientTotalTTC(clientId: string): Observable<number> {
-    return this.http.get<InvoiceDto[]>(`${this.baseUrl}/client/${clientId}`).pipe(
-      map(invoices => {
-        const totalTTC = invoices.reduce((sum, invoice) => sum + invoice.totalTTC, 0);
-        return totalTTC;
-      })
-    );
+      return this.http.get<PagedResultDto<InvoiceDto>>(
+          `${this.baseUrl}/client/${clientId}`,
+          { params: new HttpParams().set('pageNumber', 1).set('pageSize', 1000) }
+      ).pipe(
+          map(res => (res.items ?? [])
+              .reduce((sum, i) => sum + i.totalTTC, 0)
+          )
+      );
   }
 
-  // ✅ Get client outstanding balance (UNPAID invoices only - for credit limit)
   getClientOutstandingBalance(clientId: string): Observable<number> {
-    return this.http.get<InvoiceDto[]>(`${this.baseUrl}/client/${clientId}`).pipe(
-      map(invoices => {
-        const outstandingTTC = invoices
-          .filter(invoice => invoice.status === 'UNPAID')
-          .reduce((sum, invoice) => sum + invoice.totalTTC, 0);
-        return outstandingTTC;
-      })
-    );
+      return this.http.get<PagedResultDto<InvoiceDto>>(
+          `${this.baseUrl}/client/${clientId}`,
+          { params: new HttpParams().set('pageNumber', 1).set('pageSize', 1000) }
+      ).pipe(
+          map(res => (res.items ?? [])
+              .filter(i => i.status === 'UNPAID')
+              .reduce((sum, i) => sum + i.totalTTC, 0)
+          )
+      );
   }
 
   getStats(topClientsCount = 5): Observable<InvoiceStatsDto> {
@@ -240,7 +241,7 @@ export class InvoiceService {
     }
 
     const bulkCategories = client.categories.filter((cat: any) => cat.useBulkPricing === true);
-    
+
     if (bulkCategories.length === 0) {
       return { discountRate: 0, applies: false };
     }
@@ -249,10 +250,10 @@ export class InvoiceService {
 
     // Normalize: if stored as decimal (0–1), convert to percentage (0–100)
     const normalizedRate = highestDiscount <= 1 ? highestDiscount * 100 : highestDiscount;
-    
-    return { 
-      discountRate: normalizedRate, 
-      applies: normalizedRate > 0 
+
+    return {
+      discountRate: normalizedRate,
+      applies: normalizedRate > 0
     };
   }
 
@@ -262,9 +263,9 @@ export class InvoiceService {
     discountRate: number
   ): CreateInvoiceDto['items'] {
     if (discountRate <= 0) return items;
-    
+
     const discountMultiplier = 1 - (discountRate / 100);
-    
+
     return items.map(item => ({
       ...item,
       uniPriceHT: item.uniPriceHT * discountMultiplier
@@ -273,7 +274,7 @@ export class InvoiceService {
 
   // Validate credit limit
   validateCreditLimit(
-    client: any,
+    client: ClientResponseDto,
     invoiceTotalTTC: number,
     currentOutstanding: number
   ): { hasSufficientCredit: boolean; currentUsage: number; remainingCredit: number; message: string } {
@@ -286,11 +287,11 @@ export class InvoiceService {
         message: 'No credit limit restrictions apply'
       };
     }
-    
+
     const totalWithOutstanding = currentOutstanding + invoiceTotalTTC;
     const hasSufficientCredit = totalWithOutstanding <= client.creditLimit;
     const remainingCredit = Math.max(0, client.creditLimit - currentOutstanding);
-    
+
     return {
         hasSufficientCredit,
         currentUsage: currentOutstanding,
@@ -304,7 +305,7 @@ export class InvoiceService {
       })
     }
   }
-  
+
   // invoice.service.ts
   async validateInvoiceBeforeSubmission(
     client: any,
@@ -340,7 +341,7 @@ export class InvoiceService {
   downloadInvoicePdf(invoiceId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${invoiceId}/pdf`, { responseType: 'blob' });
   }
-  
+
   getInvoicePdfUrl(invoiceId: string): string {
     return `${this.baseUrl}/${invoiceId}/pdf`;
   }
@@ -374,12 +375,12 @@ export class InvoiceService {
       `${this.baseUrl}/cache/clients/${id}`
     );
   }
-  
+
   getClientsPaged(pageNumber = 1, pageSize = 10, search= ''): Observable<PagedResultDto<ClientResponseDto>> {
     var params = new HttpParams()
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
-    
+
     if (search?.trim()) {
       params = params.set('search', search.trim());
     }
@@ -389,5 +390,5 @@ export class InvoiceService {
     );
   }
 
-  
+
 }
