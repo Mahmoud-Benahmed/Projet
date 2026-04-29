@@ -30,9 +30,10 @@ namespace InvoiceService.API.Controllers
         // GET OPERATIONS
         // ════════════════════════════════════════════════════════════════════════════
         [HttpGet(ApiRoutes.Invoices.GetAll)]
-        public async Task<IActionResult> GetAll([FromQuery] bool includeDeleted = false)
+        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, 
+                                                [FromQuery] bool includeDeleted = false)
         {
-            List<InvoiceDto> invoices = await _invoiceService.GetAllAsync(includeDeleted);
+            PagedResultDto<InvoiceDto> invoices = await _invoiceService.GetAllAsync(pageNumber, pageSize, includeDeleted);
             return Ok(invoices);
         }
 
@@ -44,19 +45,19 @@ namespace InvoiceService.API.Controllers
         }
 
         [HttpGet(ApiRoutes.Invoices.GetByClient)]
-        public async Task<IActionResult> GetByClient([FromRoute] Guid clientId)
+        public async Task<IActionResult> GetByClient([FromRoute] Guid clientId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            List<InvoiceDto> invoices = await _invoiceService.GetByClientIdAsync(clientId);
+            PagedResultDto<InvoiceDto> invoices = await _invoiceService.GetByClientIdAsync(clientId, pageNumber, pageSize);
             return Ok(invoices);
         }
 
         [HttpGet(ApiRoutes.Invoices.GetByStatus)]
-        public async Task<IActionResult> GetByStatus([FromRoute] string status)
+        public async Task<IActionResult> GetByStatus([FromRoute] string status, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (!Enum.TryParse<InvoiceStatus>(status, ignoreCase: true, out InvoiceStatus invoiceStatus))
                 return BadRequest($"Invalid status value: '{status}'. Valid values: DRAFT, UNPAID, PAID, CANCELLED");
 
-            List<InvoiceDto> invoices = await _invoiceService.GetByStatusAsync(invoiceStatus);
+            PagedResultDto<InvoiceDto> invoices = await _invoiceService.GetByStatusAsync(invoiceStatus, pageNumber, pageSize);
             return Ok(invoices);
         }
 
@@ -104,13 +105,6 @@ namespace InvoiceService.API.Controllers
         public async Task<IActionResult> Finalize([FromRoute] Guid id)
         {
             InvoiceDto invoice = await _invoiceService.FinalizeAsync(id);
-            return Ok(invoice);
-        }
-
-        [HttpPut(ApiRoutes.Invoices.MarkAsPaid)]
-        public async Task<IActionResult> MarkAsPaid([FromRoute] Guid id)
-        {
-            InvoiceDto invoice = await _invoiceService.MarkAsPaidAsync(id);
             return Ok(invoice);
         }
 

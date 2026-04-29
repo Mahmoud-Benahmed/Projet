@@ -21,7 +21,6 @@ public static class ApiRoutes
         // ──── DELETE ROUTES ────
         public const string RemoveItem = $"{Root}/{{id:guid}}/items/{{itemId:guid}}";
         public const string Finalize = $"{Root}/{{id:guid}}/finalize";
-        public const string MarkAsPaid = $"{Root}/{{id:guid}}/pay";
 
         public const string Cancel = $"{Root}/{{id:guid}}/cancel";
 
