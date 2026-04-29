@@ -1,0 +1,281 @@
+<div class="modal-header" id="top">
+  <h2 class="modal-title">{{ 'PAYMENTS.FORM.TITLE' | translate }}</h2>
+  <button type="button" class="shell-icon-btn" (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- Alerts — sit between header and content -->
+<div *ngIf="successMessage" class="modal-alert modal-alert--success" id="success">
+  <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>
+  {{ successMessage }}
+</div>
+<div *ngIf="errorMessage" class="modal-alert modal-alert--error" id="error">
+  <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+  {{ errorMessage }}
+  <button class="alert__close" (click)="errorMessage = null">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+    <form [formGroup]="form" class="form">
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'STOCK.BONS.FORM.CLIENT' | translate }}</label>
+                <mat-icon>person</mat-icon>
+            </div>
+
+            <div class="client-dropdown" [class.client-dropdown--open]="clientDropdownOpen">
+
+                <!-- Trigger -->
+                <button type="button"
+                        class="form__input client-dropdown__trigger"
+                        [class.form__input--error]="form.get('clientId')?.invalid && form.get('clientId')?.touched"
+                        (click)="toggleClientDropdown()">
+                <span [class.client-dropdown__placeholder]="!selectedClientLabel">
+                    {{ selectedClientLabel || ('STOCK.BONS.FORM.SELECT_CLIENT' | translate) }}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    [style.transform]="clientDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'"
+                    style="transition: transform 0.2s; flex-shrink:0;">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                </button>
+
+                <!-- Panel -->
+                <div class="client-dropdown__panel" *ngIf="clientDropdownOpen">
+
+                <!-- Search -->
+                <div class="client-dropdown__search">
+                    <input type="text"
+                        class="client-dropdown__search-input"
+                        [placeholder]="'COMMON.SEARCH' | translate"
+                        [ngModel]="clientSearchQuery"
+                        (ngModelChange)="onClientSearch($event)"
+                        [ngModelOptions]="{standalone: true}"
+                        (click)="$event.stopPropagation()"
+                        autofocus />
+                </div>
+
+                <!-- List -->
+                <ul class="client-dropdown__list">
+                    <li *ngFor="let c of clients"
+                        class="client-dropdown__item"
+                        [class.client-dropdown__item--selected]="form.get('clientId')?.value === c.id"
+                        (click)="selectClient(c)">
+                    <span class="client-dropdown__name">{{ c.name }}</span>
+                    <span class="client-dropdown__email">{{ c.email }}</span>
+                    </li>
+
+                    <li *ngIf="clientsLoading" class="client-dropdown__loading">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" class="spin">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    </li>
+                    <li *ngIf="!clientsLoading && clients.length === 0" class="client-dropdown__empty">
+                    {{ 'COMMON.NO_RESULTS' | translate }}
+                    </li>
+                </ul>
+
+                <!-- Load more -->
+                <div class="client-dropdown__load-more" *ngIf="hasMoreClients && !clientsLoading">
+                    <button type="button"
+                            class="client-dropdown__load-more-btn"
+                            (click)="loadMoreClients(); $event.stopPropagation()">
+                    {{ 'COMMON.LOAD_MORE' | translate }}
+                    <span class="client-dropdown__load-more-count">
+                        ({{ clients.length }} / {{ clientTotalCount }})
+                    </span>
+                    </button>
+                </div>
+
+                <!-- Footer when all loaded -->
+                <div class="client-dropdown__footer" *ngIf="!hasMoreClients && clientTotalCount > 0">
+                    {{ clients.length }} / {{ clientTotalCount }}
+                </div>
+                </div>
+            </div>
+
+            <input type="hidden" formControlName="clientId" required/>
+            <div *ngIf="clientDropdownOpen"
+                class="client-dropdown__backdrop"
+                (click)="clientDropdownOpen = false">
+            </div>
+        </div>
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'PAYMENTS.FORM.TOTAL_AMOUNT' | translate }}</label>
+                <mat-icon>payments</mat-icon>
+            </div>
+            <input type="number" readonly class="form__input" formControlName="totalAmount" [class.form__input--error]="form.get('notes')?.invalid && form.get('notes')?.touched" [matTooltip]="('PAYMENTS.TOOLTIPS.TOTAL_AMOUNT' | translate)">
+            <span class="form__error"
+                    *ngIf="form.get('totalAmount')?.value <= 0">
+                {{ 'PAYMENTS.VALIDATION.TOTAL_AMOUNT' | translate }}
+            </span>
+        </div>
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'PAYMENTS.FORM.METHOD' | translate }}</label>
+                <mat-icon>payment</mat-icon>
+            </div>
+
+            <select class="form__input form__select"
+                    formControlName="method" required
+                    [class.form__input--error]="form.get('method')?.invalid && form.get('method')?.touched">
+                <option value="" disabled selected>{{ 'PAYMENTS.FORM.SELECT_METHOD' | translate }}</option>
+                <option *ngFor="let method of paymentMethods" [value]="method">
+                {{ 'PAYMENTS.METHOD.' + method | translate }}
+                </option>
+            </select>
+
+            <span class="form__error"
+                    *ngIf="form.get('method')?.invalid && form.get('method')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+        </div>
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'PAYMENTS.FORM.PAYMENT_DATE' | translate }}</label>
+                <mat-icon>calendar_month</mat-icon>
+            </div>
+            <input type="date" class="form__input" required formControlName="paymentDate" [class.form__input--error]="form.get('paymentDate')?.invalid && form.get('paymentDate')?.touched">
+            <span class="form__error"
+                    *ngIf="form.get('paymentDate')?.invalid && form.get('paymentDate')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+        </div>
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'PAYMENTS.FORM.EXTERNAL_REFERENCE' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
+                <mat-icon>checkbook</mat-icon>
+            </div>
+            <input type="text" class="form__input" formControlName="externalReference" [class.form__input--error]="form.get('externalReference')?.invalid && form.get('externalReference')?.touched">
+            <span class="form__error"
+                    *ngIf="form.get('externalReference')?.invalid && form.get('externalReference')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+        </div>
+
+        <div class="form__field">
+            <div class="form__label">
+                <label>{{ 'PAYMENTS.FORM.NOTES' | translate }} ({{ 'COMMON.OPTIONAL' | translate }})</label>
+                <mat-icon>note</mat-icon>
+            </div>
+            <input type="text" class="form__input" formControlName="notes" [class.form__input--error]="form.get('notes')?.invalid && form.get('notes')?.touched">
+            <span class="form__error"
+                    *ngIf="form.get('notes')?.invalid && form.get('notes')?.touched">
+                {{ 'VALIDATION.REQUIRED' | translate }}
+            </span>
+        </div>
+        <div formArrayName="allocations" class="allocation-form">
+            <div class="panel">
+                <div class="panel__header">
+                    <div class="panel__title-wrap">
+                        <div class="panel__icon"><mat-icon>list_alt</mat-icon></div>
+                        <div>
+                        <h2 class="panel__title">{{ 'PAYMENTS.FORM.ALLOCATE_AMOUNTS' | translate }}</h2>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add"
+                            (click)="addLine()"
+                            [disabled]="selectedInvoiceIds.size >= invoices.length">
+                        {{ 'PAYMENTS.FORM.ADD_LINE' | translate }}
+                    </button>
+                </div>
+
+                <div class="panel__body">
+
+                    <div *ngIf="!form.get('clientId')?.value" class="allocation-empty">
+                        <mat-icon>receipt_long</mat-icon>
+                        <p>{{ 'PAYMENTS.FORM.SELECT_CLIENT_FIRST' | translate }}</p>
+                    </div>
+
+                    <ng-container *ngIf="form.get('clientId')?.value">
+                        <div *ngFor="let line of allocations.controls; let i = index"
+                            [formGroupName]="i"
+                            class="form__row">
+
+                        <!-- Invoice select -->
+                        <div class="form__field form__field--grow">
+                            <div class="form__label">
+                            <label>{{ 'PAYMENTS.FORM.INVOICE' | translate }}</label>
+                            <mat-icon>receipt_long</mat-icon>
+                            </div>
+                            <select class="form__input form__select allocation-invoice-select"
+                                    formControlName="invoiceId"
+                                    (change)="onInvoiceSelected(i)"
+                                    [class.form__input--error]="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
+                            <option value="" disabled selected>
+                                {{ invoicesLoading ? ('COMMON.LOADING' | translate) : ('PAYMENTS.FORM.SELECT_INVOICE' | translate) }}
+                            </option>
+                            <option *ngFor="let inv of availableInvoicesForLine(i)" [value]="inv.id">
+                            #{{ inv.invoiceNumber }} — {{ 'PAYMENTS.FORM.REMAINING' | translate }}: {{ inv.remainingAmount | number:'1.2-2' }} TND
+                            </option>
+                            </select>
+                            <span class="form__error"
+                                *ngIf="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
+                            {{ 'VALIDATION.REQUIRED' | translate }}
+                            </span>
+                        </div>
+
+                        <!-- Allocated amount -->
+                        <div class="form__field allocation-line__amount">
+                            <div class="form__label">
+                            <label>{{ 'PAYMENTS.FORM.AMOUNT' | translate }}</label>
+                            <mat-icon>price_check</mat-icon>
+                            </div>
+                            <input type="number"
+                                class="form__input"
+                                formControlName="allocatedAmount"
+                                min="0.01"
+                                [placeholder]="'PAYMENTS.FORM.AMOUNT' | translate"
+                                (input)="onAllocatedAmountChange()"
+                                [max]="getMaxForLine(i)"
+                                [class.form__input--error]="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched" />
+                            <span class="form__error"
+                                *ngIf="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched">
+                            {{ 'PAYMENTS.VALIDATION.ALLOCATED_AMOUNT' | translate }}
+                            </span>
+                            <span class="form__error"
+                                *ngIf="getAllocationLine(i).get('allocatedAmount')?.hasError('max')">
+                            {{ 'PAYMENTS.VALIDATION.EXCEEDS_REMAINING' | translate: { max: getMaxForLine(i) | number:'1.2-2' } }}
+                            </span>
+                        </div>
+
+                        <!-- Remove -->
+                        <button type="button"
+                                class="icon-btn icon-btn--delete"
+                                (click)="removeLine(i)"
+                                [disabled]="allocations.length === 1"
+                                [matTooltip]="'COMMON.REMOVE' | translate">
+                            <mat-icon style="font-size:24px;width:24px;height:24px;">delete_outline</mat-icon>
+                        </button>
+
+                        </div>
+                    </ng-container>
+
+                </div>
+            </div>
+        </div>
+    </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="btn-secondary" (click)="cancel()">
+    {{ 'COMMON.CANCEL' | translate }}
+  </button>
+  <button type="button"
+          class="btn-add"
+          [class.disabled]="form.invalid || isSubmitting"
+          (click)="onSubmit()">
+    <span *ngIf="!isSubmitting">{{ 'COMMON.ADD' | translate }}</span>
+    <span *ngIf="isSubmitting">{{ 'COMMON.SAVING' | translate }}...</span>
+  </button>
+</mat-dialog-actions>

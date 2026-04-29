@@ -1,0 +1,173 @@
+@use 'shared' as *;
+
+// ── Layout ────────────────────────────────────────
+.form {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+// ── Allocation panel ──────────────────────────────
+.allocation-form {
+  margin-top: 0.5rem;
+}
+
+.allocation-line__amount {
+  max-width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  @media (max-width: $bp-sm) { width: 100%; }
+}
+
+// ── Form line (one allocation row) ───────────────
+.form__line {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: $bg-page;
+
+  @media (max-width: $bp-md) {
+    flex-wrap: wrap;
+    .form__field--grow    { width: 100%; }
+    .allocation-line__amount { width: 100%; }
+  }
+}
+
+// ── Remove button alignment ───────────────────────
+.form__line .icon-btn {
+  margin-top: 6px;
+  flex-shrink: 0;
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// ── Readonly total amount ─────────────────────────
+input[type="readonly"],
+input[readonly] {
+  background: $bg-card-hi !important;
+  color: $text-mid;
+  cursor: default;
+  border-color: $border !important;
+  &:focus { border-color: $border !important; }
+}
+.allocation-invoice-select{
+  max-width: 320px;
+}
+
+// ── Disabled select ───────────────────────────────
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form__row{
+  display: flex;
+  align-items: center;
+  align-content: space-between;
+}
+
+// ── Inline item form override (no hover bg) ───────
+.inline-item-form {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: none;
+}
+
+// ── Form actions ──────────────────────────────────
+.form__actions--payment {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid $border;
+  margin-top: 0.5rem;
+
+  @media (max-width: $bp-sm) {
+    flex-direction: column-reverse;
+    .btn-add,
+    .btn-secondary { width: 100%; justify-content: center; }
+  }
+}
+
+.panel__body{
+    padding:1rem
+}
+.panel__header{
+    padding:1rem
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid $border;
+  background: $bg-card-hi;
+
+  .modal-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: $text-hi;
+    margin: 0;
+  }
+}
+
+mat-dialog-content {
+  padding: 1.5rem !important;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem !important;
+  border-top: 1px solid $border;
+  gap: 0.75rem;
+}
+
+.modal-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.85rem;
+  animation: fadeIn 0.2s ease;
+
+  &--success {
+    background: $green-bg;
+    border-bottom: 1px solid $green-border;
+    color: $green;
+  }
+
+  &--error {
+    background: $red-bg;
+    border-bottom: 1px solid $red-border;
+    color: $red;
+  }
+
+  .alert__close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    &:hover { opacity: 1; }
+  }
+}
