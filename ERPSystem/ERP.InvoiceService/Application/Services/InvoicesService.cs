@@ -1,3 +1,4 @@
+using ERP.InvoiceService.Application.DTOs;
 using ERP.InvoiceService.Application.Interfaces;
 using ERP.InvoiceService.Domain.LocalCache.Client;
 using ERP.InvoiceService.Infrastructure.Messaging;
@@ -44,20 +45,28 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             return invoice.ToDto();
         }
-        public async Task<List<InvoiceDto>> GetAllAsync(bool includeDeleted = false)
+        public async Task<PagedResultDto<InvoiceDto>> GetAllAsync(int pageNumber, int pageSize, bool includeDeleted = false)
         {
-            IEnumerable<Invoice> invoices = await _invoiceRepository.GetAllAsync(includeDeleted);
-            return invoices.Select(i => i.ToDto()).ToList();
+            var (invoices, totalCount) = await _invoiceRepository.GetAllAsync(pageNumber, pageSize, includeDeleted);
+            var items= invoices.Select(i => i.ToDto()).ToList();
+            return new PagedResultDto<InvoiceDto>(
+                items,
+                totalCount,
+                pageNumber,
+                pageSize
+            );
         }
-        public async Task<List<InvoiceDto>> GetByClientIdAsync(Guid clientId)
+        public async Task<PagedResultDto<InvoiceDto>> GetByClientIdAsync(Guid clientId, int pageNumber, int pageSize)
         {
-            IEnumerable<Invoice> invoices = await _invoiceRepository.GetByClientIdAsync(clientId);
-            return invoices.Select(i => i.ToDto()).ToList();
+            var (invoices, totalCount) = await _invoiceRepository.GetByClientIdAsync(clientId, pageNumber, pageSize);
+            var items = invoices.Select(i => i.ToDto()).ToList();
+            return new PagedResultDto<InvoiceDto>(items, totalCount, pageNumber, pageSize);
         }
-        public async Task<List<InvoiceDto>> GetByStatusAsync(InvoiceStatus status)
+        public async Task<PagedResultDto<InvoiceDto>> GetByStatusAsync(InvoiceStatus status, int pageNumber, int pageSize)
         {
-            IEnumerable<Invoice> invoices = await _invoiceRepository.GetByStatusAsync(status);
-            return invoices.Select(i => i.ToDto()).ToList();
+            var (invoices,totalCount) = await _invoiceRepository.GetByStatusAsync(status, pageNumber, pageSize);
+            var items = invoices.Select(i => i.ToDto()).ToList();
+            return new PagedResultDto<InvoiceDto>(items, totalCount, pageNumber, pageSize);
         }
 
         // ════════════════════════════════════════════════════════════════════════════
@@ -138,12 +147,8 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.AddAsync(invoice);
 
-            InvoiceDto payload = invoice.ToDto();
 
-            if (invoice.Status == InvoiceStatus.UNPAID)
-                await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
-
-            return payload;
+            return invoice.ToDto();
         }
 
         public async Task<InvoiceDto> UpdateAsync(Guid id, UpdateInvoiceDto dto)
@@ -264,7 +269,6 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             return invoice.ToDto();
         }
 
-
         public async Task RemoveItemAsync(Guid id, Guid itemId)
         {
             Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
@@ -304,18 +308,28 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.UpdateAsync(invoice);
 
-            InvoiceDto payload = invoice.ToDto();
-
             // Draft invoices are not published when created with InvoiceStatus.DRAFT in CreateAsync (method above),
             // They are considered created once their Status is UNPAID Meaning that the stock will be effected only by the UNPAID invoices not the DRAFT ones,
             // the draft invoice is peristed in Invoice service as Draft but only sent as UNPAID to StockService so the DRAFT isn't published in CreateAsync,
             // they are published once they are UNPAID so they will be persisted in the StockService for tracking by this statement.
-            if (invoice.Status == InvoiceStatus.UNPAID)
-                await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
+            InvoiceEventDto payload = new InvoiceEventDto(
+                Id: invoice.Id,
+                InvoiceNumber: invoice.InvoiceNumber,
+                TotalTTC: invoice.TotalTTC,
+                Status: invoice.Status.ToString(),
+                ClientId: invoice.ClientId,
+                    Items: invoice.Items.Select(i => new InvoiceItemEventDto(
+                       ArticleId: i.ArticleId,
+                       Quantity: i.Quantity,
+                       UniPriceHT: i.UniPriceHT,
+                       TaxRate: i.TaxRate
+                   )).ToList()
+            );
+            await _eventPublisher.PublishAsync(InvoiceTopics.Created, payload);
 
-            return payload;
+            return invoice.ToDto();
         }
-        public async Task<InvoiceDto> MarkAsPaidAsync(Guid id)
+        public async Task<InvoiceDto> MarkAsPaidAsync(Guid id, decimal? paidAmount = null, DateTime? paidAt = null)
         {
             // ──── GET INVOICE ────
             Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
@@ -325,9 +339,6 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             invoice.MarkAsPaid();
             await _invoiceRepository.UpdateAsync(invoice);
-
-            // publish event to payment service
-            //await _eventPublisher.PublishAsync(PaymentTopics.PAID, payload);
 
             return invoice.ToDto();
         }
@@ -342,10 +353,22 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             await _invoiceRepository.UpdateAsync(invoice);
 
-            InvoiceDto payload = invoice.ToDto();
+            InvoiceEventDto payload = new InvoiceEventDto(
+                Id: invoice.Id,
+                InvoiceNumber: invoice.InvoiceNumber,
+                TotalTTC: invoice.TotalTTC,
+                Status: invoice.Status.ToString(),
+                ClientId: invoice.ClientId,
+                    Items: invoice.Items.Select(i => new InvoiceItemEventDto(
+                       ArticleId: i.ArticleId,
+                       Quantity: i.Quantity,
+                       UniPriceHT: i.UniPriceHT,
+                       TaxRate: i.TaxRate
+                   )).ToList()
+            );
             await _eventPublisher.PublishAsync(InvoiceTopics.Cancelled, payload);
 
-            return payload;
+            return invoice.ToDto();
         }
 
         // ════════════════════════════════════════════════════════════════════════════
