@@ -121,7 +121,7 @@ export class BonsComponent implements OnInit {
   clientDropdownOpen = false;
   selectedClientLabel = '';
   private clientSearchSubject$ = new Subject<string>();
-  
+
   fournisseurDropdownOpen = false;
   fournisseurs: FournisseurResponse[] = [];
   fournisseurPage = 1;
@@ -354,7 +354,7 @@ export class BonsComponent implements OnInit {
                 sourceType: RetourSourceType.BonSortie,
               })),
             ].sort((a, b) => a.numero.localeCompare(b.numero));
-            
+
             if (this.isList() && this.allSourceBons.length > 0) {
               this.headerForm.patchValue(
                 { sourceId: this.allSourceBons[0].id, sourceType: this.allSourceBons[0].sourceType },
@@ -428,7 +428,7 @@ export class BonsComponent implements OnInit {
               a => !a.isDeleted &&
                   this.masterStockMap.has(a.id) &&
                   (this.masterStockMap.get(a.id) ?? 0) > 0
-            );            
+            );
           } else {
             this.masterArticles = arts.items.filter(a => !a.isDeleted);
             this.articleDropdownItems = this.masterArticles;
@@ -1074,7 +1074,7 @@ export class BonsComponent implements OnInit {
         next: (res) => {
           const items = res.items.filter(f => !f.isDeleted && !f.isBlocked);
           this.fournisseurs = append ? [...this.fournisseurs, ...items] : items;
-          this.fournisseurTotalCount = res.totalCount;
+          this.fournisseurTotalCount = this.fournisseurs.length;
           this.fournisseurPage = page;
           this.hasMoreFournisseurs = this.fournisseurs.length < res.totalCount;
           this.fournisseursLoading = false;
