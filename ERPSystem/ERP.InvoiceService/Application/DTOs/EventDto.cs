@@ -1,4 +1,6 @@
-﻿namespace ERP.InvoiceService.Application.DTOs;
+﻿using static ERP.InvoiceService.Properties.ApiRoutes.Invoices;
+
+namespace ERP.InvoiceService.Application.DTOs;
 
 // CLient DTOs
 public sealed record ClientResponseDto(
@@ -64,3 +66,26 @@ Guid Id, string Name, string Address, string Phone,
 string? Email, string TaxNumber, string RIB,
 bool IsDeleted, bool IsBlocked,
 DateTime CreatedAt, DateTime? UpdatedAt);
+
+public sealed record InvoiceEventDto(
+    Guid Id,
+    string InvoiceNumber,
+    decimal TotalTTC,
+    string Status,
+    Guid ClientId,
+    List<InvoiceItemEventDto> Items  // ← add this
+);
+
+public record InvoiceItemEventDto(
+    Guid ArticleId,
+    decimal Quantity,
+    decimal UniPriceHT,
+    decimal TaxRate
+);
+
+public sealed record InvoicePaidEvent(
+    Guid InvoiceId,
+    Guid PaymentId,
+    decimal PaidAmount,
+    DateTime PaidAt
+);
