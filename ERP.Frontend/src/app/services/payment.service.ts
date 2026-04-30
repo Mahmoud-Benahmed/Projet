@@ -19,9 +19,9 @@ export interface PaymentDto {
   remainingAmount: number;
   method: string;
   paymentDate: string;
+  status: string;
   externalReference?: string;
   notes?: string;
-  isCancelled: boolean;
   cancelledAt?: string;
   allocations: PaymentAllocationDto[];
 }
@@ -49,6 +49,7 @@ export interface CreatePaymentDto {
 }
 
 export interface CorrectPaymentDto {
+  paymentDate: string;
   method: string;
   externalReference?: string;
   notes?: string;
@@ -62,6 +63,11 @@ export interface PagedResultDto<T> {
   totalPages: number;
 }
 
+export interface PaymentStatsDto{
+  done: number;
+  cancelled: number;
+}
+
 // ── Refund DTOs ───────────────────────────────────────────────────────────────
 
 export interface RefundLineDto {
@@ -73,7 +79,7 @@ export interface RefundLineDto {
 export interface RefundRequestDto {
   id: string;
   clientId: string;
-  invoiceId: string;
+  invoiceId: string;           // was missing
   status: string;
   lines: RefundLineDto[];
 }
@@ -87,6 +93,12 @@ export interface CompleteRefundDto {
   externalReference: string;
 }
 
+export interface RefundStatsDto{
+  totalCount: number;
+  completedCount: number;
+  pendingCount: number;
+}
+
 // ── Invoice Cache DTOs ────────────────────────────────────────────────────────
 
 export interface InvoiceCacheDto {
@@ -98,6 +110,7 @@ export interface InvoiceCacheDto {
   status: 'DRAFT' | 'UNPAID' | 'PAID' | 'CANCELLED';
 }
 
+export type PaymentStatus = 'DONE' | 'CANCELLED'
 // ── Service ───────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -132,9 +145,11 @@ export class PaymentService {
   getPaymentsPaged(
     pageNumber = 1,
     pageSize = 10,
+    status: PaymentStatus= 'DONE',
     search?: string
   ): Observable<PagedResultDto<PaymentDto>> {
     let params = new HttpParams()
+      .set('status', status)
       .set('pageNumber', pageNumber)
       .set('pageSize', pageSize);
     if (search) params = params.set('search', search);
@@ -162,26 +177,8 @@ export class PaymentService {
     return this.http.patch<void>(`${this.base}/${id}/cancel`, null);
   }
 
-  // ── Refunds ───────────────────────────────────────────────────────────────
-
-  createRefund(dto: CreateRefundDto): Observable<{ id: string }> {
-    return this.http.post<{ id: string }>(`${this.base}/refunds`, dto);
-  }
-
-  getRefundById(refundId: string): Observable<RefundRequestDto> {
-    return this.http.get<RefundRequestDto>(
-      `${this.base}/refunds/${refundId}`
-    );
-  }
-
-  completeRefund(
-    refundId: string,
-    dto: CompleteRefundDto
-  ): Observable<void> {
-    return this.http.patch<void>(
-      `${this.base}/refunds/${refundId}/complete`,
-      dto
-    );
+  getPaymentStats(): Observable<PaymentStatsDto>{
+    return this.http.get<PaymentStatsDto>(`${this.base}/stats`);
   }
 
   // ── Invoice Cache ─────────────────────────────────────────────────────────
@@ -234,4 +231,28 @@ export class PaymentService {
       { params }
     );
   }
+
+  //===== REFUND ===========================================
+
+  getRefundById(refundId: string): Observable<RefundRequestDto> {
+    return this.http.get<RefundRequestDto>(`${this.base}/refunds/${refundId}`);
+  }
+
+  getRefundsByClientId(clientId: string): Observable<RefundRequestDto[]> {
+    return this.http.get<RefundRequestDto[]>(
+      `${this.base}/refunds/client/${clientId}`
+    );
+  }
+
+  completeRefund(refundId: string, dto: CompleteRefundDto): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/refunds/${refundId}/complete`,
+      dto
+    );
+  }
+
+  getRefundStats(): Observable<RefundStatsDto>{
+    return this.http.get<RefundStatsDto>(`${this.base}/refunds/stats`);
+  }
+
 }
