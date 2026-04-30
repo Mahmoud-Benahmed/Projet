@@ -89,3 +89,10 @@ public sealed record InvoicePaidEvent(
     decimal PaidAmount,
     DateTime PaidAt
 );
+
+public record PaymentCancelledEvent(
+    Guid PaymentId,
+    Guid InvoiceId,
+    decimal ReversedAmount,
+    DateTime CancelledAt
+);
