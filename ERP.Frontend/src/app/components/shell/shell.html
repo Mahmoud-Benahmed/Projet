@@ -113,7 +113,7 @@
         </div>
 
         <!-- Stock -->
-        <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) || 
+        <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) ||
                                           authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)">
           <button class="sidebar__item sidebar__item--group"
                   (click)="toggleGroup('stock')"
@@ -123,7 +123,7 @@
             <mat-icon class="sidebar__chevron" [class.open]="openGroups['stock']">expand_more</mat-icon>
           </button>
           <div class="sidebar__sub" [class.sidebar__sub--open]="openGroups['stock']">
-            <a class="sidebar__subitem" 
+            <a class="sidebar__subitem"
               *ngIf="authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)"
               routerLink="/stock/fournisseurs"
               routerLinkActive="sidebar__subitem--active"
@@ -146,6 +146,11 @@
         <a class="sidebar__item" routerLink="/invoices" routerLinkActive="sidebar__item--active"
            *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)" (click)="closeMobileNav()">
           <mat-icon>receipt</mat-icon>{{ 'NAV.INVOICES' | translate}}
+        </a>
+
+        <a class="sidebar__item" routerLink="/payments" routerLinkActive="sidebar__item--active"
+           *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.VIEW_PAYMENTS)" (click)="closeMobileNav()">
+          <mat-icon>payments</mat-icon>{{ 'NAV.PAYMENTS' | translate}}
         </a>
 
         <!-- Audit Log -->
@@ -281,7 +286,7 @@
       </div>
 
       <!-- Stock -->
-      <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) || 
+      <div class="sidebar__group" *ngIf="authService.hasPrivilege(PRIVILEGES.STOCK.VIEW_STOCK) ||
                                           authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.VIEW_FOURNISSEURS)">
         <button class="sidebar__item sidebar__item--group"
                 (click)="toggleGroup('stock')"
@@ -312,6 +317,11 @@
       <a class="sidebar__item" routerLink="/invoices" routerLinkActive="sidebar__item--active"
          *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.VIEW_INVOICES)">
         <mat-icon>receipt</mat-icon><span>{{ 'NAV.INVOICES' | translate}}</span>
+      </a>
+
+      <a class="sidebar__item" routerLink="/payments" routerLinkActive="sidebar__item--active"
+         *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.VIEW_PAYMENTS)">
+        <mat-icon>payments</mat-icon><span>{{ 'NAV.PAYMENTS' | translate}}</span>
       </a>
 
       <!-- Audit Log -->

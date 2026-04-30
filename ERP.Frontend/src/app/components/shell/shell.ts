@@ -40,9 +40,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly PRIVILEGES= PRIVILEGES;
 
 
-  constructor(private router: Router, public authService: AuthService, 
-              private cdr: ChangeDetectorRef, 
-              public userSettings: UserSettingsService, 
+  constructor(private router: Router, public authService: AuthService,
+              private cdr: ChangeDetectorRef,
+              public userSettings: UserSettingsService,
               public translate: TranslateService
   ) {
   }
@@ -60,6 +60,8 @@ export class ShellComponent implements OnInit, OnDestroy {
         if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
         if (url.startsWith('/stock'))    this.openGroups['stock']    = true;
         if (url.startsWith('/invoices')) this.openGroups['invoices'] = true;
+        if (url.startsWith('/payments')) this.openGroups['payments'] = true;
+
       })
     );
 
@@ -81,6 +83,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/clients'))  this.openGroups['clients']  = true;
     if (url.startsWith('/stock'))    this.openGroups['stock']    = true;
     if (url.startsWith('/invoices')) this.openGroups['invoices'] = true;
+    if (url.startsWith('/payments')) this.openGroups['payments'] = true;
     window.addEventListener('resize', this.resizeListener);
   }
 
@@ -102,10 +105,15 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (url.startsWith('/clients'))               return [{ label: 'Clients' }];
 
     if (url.startsWith('/invoices'))              return [{ label: this.translate.instant('NAV.INVOICES'), link:'/invoices' }];
-    
+
     if (url.startsWith('/stock/fournisseurs'))    return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock/fournisseurs'}, {label: this.translate.instant('NAV.FOURNISSEURS')}];
     if (url.startsWith('/stock/bons'))            return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock/bons'}, {label: this.translate.instant('NAV.BONS')}];
     if (url.startsWith('/stock'))                 return [{ label: this.translate.instant('NAV.STOCK') , link:'/stock'}];
+
+    if (url.startsWith('/payments'))              return [{ label: this.translate.instant('NAV.PAYMENTS') , link:'/payments'}];
+    if (url.startsWith('/payments/refunds'))      return [{ label: this.translate.instant('NAV.REFUNDS') , link:'/payments/refunds'}];
+
+
 
 
     if (url.startsWith('/permissions'))       return [{ label: 'Permissions' }];
