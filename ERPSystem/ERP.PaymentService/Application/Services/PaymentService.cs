@@ -5,24 +5,28 @@ using ERP.PaymentService.Application.Interfaces.LocalCache;
 using ERP.PaymentService.Domain;
 using ERP.PaymentService.Infrastructure.Messaging;
 using ERP.PaymentService.Infrastructure.Persistence.Repositories;
+using System.ComponentModel.Design;
 
 namespace ERP.PaymentService.Application.Services;
 
 public class PaymentService : IPaymentService
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly IRefundService _refundService;
     private readonly IInvoiceCacheRepository _invoiceCacheRepository;
     private readonly IPaymentNumberGenerator _numberGenerator;
     private readonly ILogger<PaymentService> _logger;
     private readonly IEventPublisher _eventPublisher;
 
     public PaymentService(
+        IRefundService refundService, 
         IPaymentRepository paymentRepository,
         IInvoiceCacheRepository invoiceCacheRepository,
         IPaymentNumberGenerator numberGenerator,
         ILogger<PaymentService> logger,
         IEventPublisher eventPublisher)
     {
+        _refundService = refundService;
         _numberGenerator = numberGenerator;
         _paymentRepository = paymentRepository;
         _invoiceCacheRepository = invoiceCacheRepository;
@@ -30,6 +34,10 @@ public class PaymentService : IPaymentService
         _eventPublisher = eventPublisher;
     }
 
+    public async Task<PaymentStatsDto> GetStatsAsync()
+    {
+        return await _paymentRepository.GetStatsAsync();
+    }
     public async Task<PaymentDto> GetByIdAsync(Guid id)
     {
         var payment = await _paymentRepository.GetByIdAsync(id) ?? throw new PaymentNotFoundException(id);
@@ -53,9 +61,11 @@ public class PaymentService : IPaymentService
             pageSize);
     }
 
-    public async Task<PagedResultDto<PaymentDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null){
+    public async Task<PagedResultDto<PaymentDto>> GetPagedAsync(
+        int pageNumber, int pageSize, PaymentStatus status, string? search = null)
+    {
         var (items, totalCount) = await _paymentRepository.GetPagedAsync(
-            pageNumber, pageSize, search);
+            pageNumber, pageSize, status, search);
 
         return new PagedResultDto<PaymentDto>(
             items.Select(ToDto).ToList(),
@@ -80,25 +90,32 @@ public class PaymentService : IPaymentService
 
     public async Task<PaymentDto> CreateAsync(CreatePaymentDto dto)
     {
+        // Round all incoming amounts first
+        dto = dto with
+        {
+            TotalAmount = Math.Round(dto.TotalAmount, 2),
+            Allocations = dto.Allocations.Select(a => a with
+            {
+                AmountAllocated = Math.Round(a.AmountAllocated, 2)
+            }).ToList()
+        };
+
         var allocationsSum = dto.Allocations.Sum(a => a.AmountAllocated);
         if (Math.Abs(allocationsSum - dto.TotalAmount) > 0.01m)
             throw new PaymentDomainException(
                 $"TotalAmount ({dto.TotalAmount:F2}) must equal the sum of all allocations ({allocationsSum:F2}).");
 
-        // 1. validate all invoice ids exist in cache
         var invoiceIds = dto.Allocations.Select(a => a.InvoiceId).Distinct().ToList();
+        var cacheEntries = new List<InvoiceCache>();
 
-        var cacheEntries = new List<Domain.LocalCache.InvoiceCache>();
         foreach (var invoiceId in invoiceIds)
         {
             var cache = await _invoiceCacheRepository.GetByIdAsync(invoiceId);
             if (cache is null)
                 throw new InvoiceNotFoundException(invoiceId);
-
-            if (cache.Status == Domain.LocalCache.InvoiceStatus.CANCELLED)
+            if (cache.Status == InvoiceStatus.CANCELLED)
                 throw new InvoiceAlreadyCancelledException(invoiceId);
-
-            if (cache.Status == Domain.LocalCache.InvoiceStatus.PAID)
+            if (cache.Status == InvoiceStatus.PAID)
                 throw new InvoiceAlreadyPaidException(invoiceId);
 
             cacheEntries.Add(cache);
@@ -106,49 +123,42 @@ public class PaymentService : IPaymentService
 
         string paymentNumber = await _numberGenerator.GenerateNextPaymentNumberAsync();
 
-        // 2. build the payment aggregate
         var payment = new Payment(
             number: paymentNumber,
             clientId: dto.ClientId,
-            totalAmount: dto.TotalAmount,
+            totalAmount: Math.Round(dto.TotalAmount, 2),
             method: dto.Method,
             paymentDate: dto.PaymentDate,
             externalReference: dto.ExternalReference,
             notes: dto.Notes
         );
 
-        // 3. allocate each invoice — domain validates amounts
         foreach (var allocation in dto.Allocations)
         {
             var cache = cacheEntries.First(c => c.Id == allocation.InvoiceId);
-            payment.AllocateAmount(allocation.AmountAllocated, cache);
+            payment.AllocateAmount(Math.Round(allocation.AmountAllocated, 2), cache);
         }
 
-        // 4. persist
         await _paymentRepository.AddAsync(payment);
 
         _logger.LogInformation(
-            "Payment {Number} created. Id: {PaymentId}, " +
-            "TotalAmount: {TotalAmount}, Allocations: {Count}",
-            payment.Number, payment.Id,
-            payment.TotalAmount, payment.Allocations.Count);
+            "Payment {Number} created. Id: {PaymentId}, TotalAmount: {TotalAmount}, Allocations: {Count}",
+            payment.Number, payment.Id, payment.TotalAmount, payment.Allocations.Count);
 
-        // 5. update cache and check for fully paid invoices
         foreach (var allocation in dto.Allocations)
         {
             var cache = cacheEntries.First(c => c.Id == allocation.InvoiceId);
-            cache.ApplyPayment(allocation.AmountAllocated);
+            cache.ApplyPayment(Math.Round(allocation.AmountAllocated, 2));
             await _invoiceCacheRepository.SaveChangesAsync(cache);
 
-            // publish event if invoice is now fully paid
-            if (cache.Status == Domain.LocalCache.InvoiceStatus.PAID)
+            if (cache.Status == InvoiceStatus.PAID)
             {
                 await _eventPublisher.PublishAsync(
                     PaymentTopics.InvoicePaid,
                     new InvoicePaidEvent(
                         InvoiceId: cache.Id,
                         PaymentId: payment.Id,
-                        PaidAmount: cache.PaidAmount,
+                        PaidAmount: Math.Round(cache.PaidAmount, 2),
                         PaidAt: DateTime.UtcNow
                     ));
 
@@ -158,20 +168,15 @@ public class PaymentService : IPaymentService
             }
         }
 
-        _logger.LogInformation(
-            "Payment {Number} created. Id: {PaymentId}, " +
-            "TotalAmount: {TotalAmount}, Allocations: {Count}",
-            payment.Number, payment.Id,
-            payment.TotalAmount, payment.Allocations.Count);
-
         return ToDto(payment);
     }
+
 
     public async Task<PaymentDto> CorrectDetailsAsync(Guid id, CorrectPaymentDto dto)
     {
         var payment = await _paymentRepository.GetByIdAsync(id) ?? throw new PaymentNotFoundException(id);
 
-        payment.CorrectDetails(dto.Method, dto.ExternalReference, dto.Notes);
+        payment.CorrectDetails(dto.PaymentDate, dto.Method, dto.ExternalReference, dto.Notes);
 
         await _paymentRepository.UpdateAsync(payment);
 
@@ -180,11 +185,27 @@ public class PaymentService : IPaymentService
 
     public async Task CancelAsync(Guid id)
     {
-        var payment = await _paymentRepository.GetByIdAsync(id) ?? throw new PaymentNotFoundException(id);
+        var payment = await _paymentRepository.GetByIdAsync(id)
+            ?? throw new PaymentNotFoundException(id);
 
         payment.Cancel();
-
         await _paymentRepository.UpdateAsync(payment);
+
+        foreach (PaymentInvoice allocation in payment.Allocations)
+        {
+            var cache = await _invoiceCacheRepository.GetByIdAsync(allocation.InvoiceId);
+            if (cache is not null)
+            {
+                cache.ReversePayment(Math.Round(allocation.AmountAllocated, 2));
+                await _invoiceCacheRepository.SaveChangesAsync(cache);
+                await _eventPublisher.PublishAsync(PaymentTopics.Cancelled,
+                            new PaymentCancelledEvent(
+                                PaymentId: payment.Id,
+                                InvoiceId: allocation.InvoiceId,
+                                ReversedAmount: allocation.AmountAllocated,
+                                CancelledAt: payment.CancelledAt.Value));
+            }
+        }
 
         _logger.LogInformation(
             "Payment {PaymentId} cancelled at {CancelledAt}.",
@@ -192,22 +213,25 @@ public class PaymentService : IPaymentService
     }
 
     // ── mapping ────────────────────────────────────────────────
+
+    // ── mapping ────────────────────────────────────────────────────────────────
     private static PaymentDto ToDto(Payment p) => new(
         Id: p.Id,
         Number: p.Number,
         ClientId: p.ClientId,
-        TotalAmount: p.TotalAmount,
-        RemainingAmount: p.GetRemainingAmount(),
+        TotalAmount: Math.Round(p.TotalAmount, 2),
+        RemainingAmount: Math.Round(p.GetRemainingAmount(), 2),
         Method: p.Method.ToString(),
         PaymentDate: p.PaymentDate,
+        Status: p.Status,
         ExternalReference: p.ExternalReference,
         Notes: p.Notes,
         IsCancelled: p.CancelledAt is not null,
         CancelledAt: p.CancelledAt,
         Allocations: p.Allocations.Select(a => new PaymentAllocationDto(
-                               Id: a.Id,
-                               InvoiceId: a.InvoiceId,
-                               AmountAllocated: a.AmountAllocated
-                           )).ToList()
+            Id: a.Id,
+            InvoiceId: a.InvoiceId,
+            AmountAllocated: Math.Round(a.AmountAllocated, 2)
+        )).ToList()
     );
 }

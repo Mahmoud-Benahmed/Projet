@@ -1,5 +1,7 @@
-﻿using ERP.PaymentService.Application.Interfaces;
+﻿using ERP.PaymentService.Application.DTO;
+using ERP.PaymentService.Application.Interfaces;
 using ERP.PaymentService.Domain;
+using static ERP.PaymentService.Properties.ApiRoutes;
 
 namespace ERP.PaymentService.Application.Services;
 
@@ -16,17 +18,20 @@ public class RefundService : IRefundService
         _allocationRepo = allocationRepo;
     }
 
-    public async Task<Guid> CreateRefundAsync(Guid clientId,Guid invoiceId,CancellationToken ct = default)
+
+    public async Task<RefundStatsDto> GetStatsAsync()
     {
-        // 🔥 1. Get allocations for the invoice
+        return await _refundRepo.GetStatsAsync();
+    }
+
+    public async Task<RefundRequestDto> CreateRefundAsync(Guid clientId,
+        Guid invoiceId, CancellationToken ct = default)
+    {
         var allocations = await _allocationRepo.GetByInvoiceIdAsync(invoiceId);
 
         if (allocations == null || !allocations.Any())
             throw new InvalidOperationException("No refundable allocations found.");
 
-
-
-        // 🔥 2. Create aggregate
         var refund = new RefundRequest(clientId, invoiceId);
 
         foreach (var alloc in allocations)
@@ -34,45 +39,61 @@ public class RefundService : IRefundService
             refund.AddLine(
                 alloc.PaymentId,
                 alloc.Id,
-                alloc.AmountAllocated
+                Math.Round(alloc.AmountAllocated, 2)  // ← round on input
             );
         }
 
         if (!refund.Lines.Any())
             throw new InvalidOperationException("Refund has no valid lines.");
 
-        // 🔥 4. Persist
         await _refundRepo.AddAsync(refund, ct);
         await _refundRepo.SaveChangesAsync(ct);
 
-        return refund.Id;
+        return ToDto(refund);
     }
 
     public async Task CompleteRefundAsync(Guid refundId, string externalReference, CancellationToken ct = default)
     {
         var refund = await _refundRepo.GetByIdAsync(refundId, ct)
-            ?? throw new KeyNotFoundException("Refund not found.");
+            ?? throw new KeyNotFoundException($"Refund '{refundId}' not found.");
 
-        // 🔥 Domain transition
         refund.Complete();
 
-        // 🔥 Update allocations (critical!)
         foreach (var line in refund.Lines)
         {
-            var allocation = await _allocationRepo.GetByIdAsync(line.PaymentAllocationId);
+            var allocation = await _allocationRepo.GetByIdAsync(line.PaymentAllocationId)
+                ?? throw new InvalidOperationException($"Allocation '{line.PaymentAllocationId}' not found.");
 
-            if (allocation == null)
-                throw new InvalidOperationException("Allocation not found.");
-
-            allocation.Refund(line.Amount);
+            allocation.Refund(Math.Round(line.Amount, 2));  // ← round before domain call
         }
 
         _refundRepo.Update(refund);
         await _refundRepo.SaveChangesAsync(ct);
     }
 
-    public async Task<RefundRequest?> GetByIdAsync(Guid refundId, CancellationToken ct = default)
+    public async Task<RefundRequestDto?> GetByIdAsync(Guid refundId, CancellationToken ct = default)
     {
-        return await _refundRepo.GetByIdAsync(refundId, ct);
+        var result= await _refundRepo.GetByIdAsync(refundId, ct);
+        return result is not null ? ToDto(result) : null;
     }
+
+    public async Task<List<RefundRequestDto>> GetByClientIdAsync(Guid refundId,CancellationToken ct = default)
+    {
+        var result = await _refundRepo.GetByClientIdAsync(refundId);
+        var dtos = result.Select(ToDto).ToList();
+        return dtos;
+    }
+
+
+    private static RefundRequestDto ToDto(RefundRequest request) => new(
+        Id: request.Id,
+        ClientId: request.ClientId,
+        InvoiceId: request.InvoiceId,
+        Status: request.Status.ToString(),
+        Lines: request.Lines.Select(l => new RefundLineDto(
+            PaymentId: l.PaymentId,
+            PaymentAllocationId: l.PaymentAllocationId,
+            Amount: Math.Round(l.Amount, 2)  // ← round on output
+        )).ToList()
+    );
 }
