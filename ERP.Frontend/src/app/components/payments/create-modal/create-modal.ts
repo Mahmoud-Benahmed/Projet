@@ -1,16 +1,16 @@
-import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, Inject, inject, OnInit } from '@angular/core';
 import { InvoiceDto, InvoiceService } from '../../../services/invoice.service';
 import { debounceTime, distinctUntilChanged, forkJoin, map, of, Subject, switchMap, take } from 'rxjs';
 import { ClientResponseDto } from '../../../services/clients/clients.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MatIcon, MatIconModule } from "@angular/material/icon";
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule, Location } from '@angular/common';
-import { CreatePaymentDto, InvoiceCacheDto, PaymentService } from '../../../services/payment.service';
+import { CreatePaymentDto, InvoiceCacheDto, PaymentDto, PaymentService } from '../../../services/payment.service';
 import { Router } from '@angular/router';
 
 export enum PaymentMethod {
@@ -80,18 +80,20 @@ export class CreatePaymentModal implements OnInit{
 
   isSubmitting = false;
 
-  constructor(private invoiceService: InvoiceService, private paymentService: PaymentService    ,private fb: FormBuilder){}
+  data = inject<{ mode: 'create' | 'edit' | 'refund'; payment?: PaymentDto }>(MAT_DIALOG_DATA);
+  mode = this.data.mode;
+
+  constructor(
+    private invoiceService: InvoiceService,
+    private paymentService: PaymentService    ,
+    private fb: FormBuilder){}
 
   ngOnInit(): void {
-    this.form = this.fb.group({
-      clientId:          ['', Validators.required],
-      method:            ['', Validators.required],
-      paymentDate: [new Date().toISOString().split('T')[0], Validators.required],
-      externalReference: [null],
-      notes:             [null],
-      totalAmount:       [0, [Validators.required, Validators.min(0)]],
-      allocations:             this.fb.array([this.createLine()]) // ← FormArray
-    });
+    this.initForm();
+
+    if (this.mode !== 'create' && this.data.payment) {
+      this.patchForm(this.data.payment);
+    }
 
     this.clientSearchSubject$.pipe(
       debounceTime(300),
@@ -106,6 +108,40 @@ export class CreatePaymentModal implements OnInit{
     this.cdr.markForCheck();
   }
 
+  initForm() {
+    this.form = this.fb.group({
+      clientId:          ['', Validators.required],
+      method:            ['', Validators.required],
+      paymentDate: [new Date().toISOString().split('T')[0], Validators.required],
+      externalReference: [null],
+      notes:             [null],
+      totalAmount:       [0, [Validators.required, Validators.min(0)]],
+      allocations:             this.fb.array([this.createLine()]) // ← FormArray
+    });
+  }
+
+  patchForm(payment: PaymentDto): void {
+    // 1. Patch scalar fields
+    this.form.patchValue({
+      clientId:          payment.clientId,
+      method:            payment.method,
+      paymentDate:       new Date(payment.paymentDate).toISOString().split('T')[0],
+      externalReference: payment.externalReference ?? null,
+      notes:             payment.notes ?? null,
+      totalAmount:       payment.totalAmount,
+    });
+
+    // 2. Set the client label so the dropdown trigger shows the right text
+    this.selectedClientLabel = payment.clientId; // temporary — replaced once clients load
+    this.loadClients(1, false);                  // loads clients, then fixes label below
+
+    // 3. Load invoices for this client so the selects are populated
+    this.loadInvoices(payment.clientId);
+
+    // 4. Clear the blank line initForm added, then push real allocation lines
+    this.allocations.clear();
+    this.cdr.markForCheck();
+  }
   loadInvoices(clientId: string): void {
     this.invoicesLoading = true;
     this.invoices = [];
@@ -193,21 +229,25 @@ export class CreatePaymentModal implements OnInit{
       )
       .subscribe({
         next: ({ items, totalCount, unpaidClientIds }) => {
-          // Filter clients to only those with unpaid invoices
           const filtered = items.filter(c => unpaidClientIds.has(c.id));
-
-          this.clients = append
-            ? [...this.clients, ...filtered]
-            : filtered;
-
+          this.clients = append ? [...this.clients, ...filtered] : filtered;
           this.clientTotalCount = filtered.length;
           this.clientPage = page;
           this.hasMoreClients = this.clients.length < totalCount;
           this.clientsLoading = false;
 
-          if (!append && this.clients.length > 0 && !this.form?.get('clientId')?.value) {
+          // ── Fix edit-mode label ──────────────────────────────────────
+          if (this.mode === 'edit' && this.data.payment) {
+            const match = this.clients.find(c => c.id === this.data.payment!.clientId);
+            if (match) this.selectedClientLabel = `${match.name} - ${match.email}`;
+          }
+
+          // Auto-select first client only on create
+          if (!append && this.mode === 'create' &&
+              this.clients.length > 0 && !this.form?.get('clientId')?.value) {
             this.selectClient(this.clients[0]);
           }
+
           this.cdr.markForCheck();
         },
         error: (err) => {
@@ -327,37 +367,49 @@ export class CreatePaymentModal implements OnInit{
     }
 
     const raw = this.form.getRawValue();
-    const dto: CreatePaymentDto = {
-      clientId:          raw.clientId,
-      totalAmount:       raw.totalAmount,
-      method:            raw.method,
-      paymentDate:       raw.paymentDate,
-      externalReference: raw.externalReference ?? undefined,
-      notes:             raw.notes ?? undefined,
-      allocations:       raw.allocations.map((line: any) => ({
-        invoiceId:       line.invoiceId,
-        amountAllocated: line.allocatedAmount
-      }))
-    };
 
-    this.isSubmitting = true;
+    if(this.mode === 'create'){
+      const dto: CreatePaymentDto = {
+        clientId:          raw.clientId,
+        totalAmount:       raw.totalAmount,
+        method:            raw.method,
+        paymentDate:       raw.paymentDate,
+        externalReference: raw.externalReference ?? undefined,
+        notes:             raw.notes ?? undefined,
+        allocations:       raw.allocations.map((line: any) => ({
+          invoiceId:       line.invoiceId,
+          amountAllocated: line.allocatedAmount
+        }))
+      };
 
-    this.paymentService.createPayment(dto)
-      .pipe(take(1))
-      .subscribe({
-        next: (payment) => {
-          this.isSubmitting = false;
-          this.flash('success', this.translate.instant('PAYMENTS.SUCCESS.CREATED'));
-          setTimeout(() =>
-            this.dialogRef.close(payment), 1500
-          ); // ← let user see success
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          const msg = err?.error?.message ?? this.translate.instant('PAYMENTS.ERRORS.CREATE_FAILED');
-          this.flash('error', msg);
-        }
-      });
+      this.isSubmitting = true;
+
+      this.paymentService.createPayment(dto)
+        .pipe(take(1))
+        .subscribe({
+          next: (payment) => {
+            this.isSubmitting = false;
+            this.flash('success', this.translate.instant('PAYMENTS.SUCCESS.CREATED'));
+            setTimeout(() =>
+              this.dialogRef.close(payment), 1500
+            ); // ← let user see success
+          },
+          error: (err) => {
+            this.isSubmitting = false;
+            const msg = err?.error?.message ?? this.translate.instant('PAYMENTS.ERRORS.CREATE_FAILED');
+            this.flash('error', msg);
+          }
+        });
+    }
+
+    if(this.mode==='edit'){
+      this.paymentService.correctPaymentDetails(this.data.payment!.id, {
+        paymentDate: raw.paymentDate,
+        method: raw.method,
+        externalReference: raw.externalReference,
+        notes: raw.notes
+      }).subscribe(res => this.dialogRef.close(res));
+    }
   }
 
   cancel(): void {

@@ -33,7 +33,8 @@
                 <button type="button"
                         class="form__input client-dropdown__trigger"
                         [class.form__input--error]="form.get('clientId')?.invalid && form.get('clientId')?.touched"
-                        (click)="toggleClientDropdown()">
+                        (click)="toggleClientDropdown()"
+                        [disabled]="mode==='edit'">
                 <span [class.client-dropdown__placeholder]="!selectedClientLabel">
                     {{ selectedClientLabel || ('STOCK.BONS.FORM.SELECT_CLIENT' | translate) }}
                 </span>
@@ -99,7 +100,7 @@
                 </div>
             </div>
 
-            <input type="hidden" formControlName="clientId" required/>
+            <input readonly type="hidden" formControlName="clientId" required/>
             <div *ngIf="clientDropdownOpen"
                 class="client-dropdown__backdrop"
                 (click)="clientDropdownOpen = false">
@@ -169,18 +170,15 @@
                 <mat-icon>note</mat-icon>
             </div>
             <input type="text" class="form__input" formControlName="notes" [class.form__input--error]="form.get('notes')?.invalid && form.get('notes')?.touched">
-            <span class="form__error"
-                    *ngIf="form.get('notes')?.invalid && form.get('notes')?.touched">
-                {{ 'VALIDATION.REQUIRED' | translate }}
-            </span>
         </div>
-        <div formArrayName="allocations" class="allocation-form">
+
+        <div formArrayName="allocations" class="allocation-form" *ngIf="mode==='create'">
             <div class="panel">
                 <div class="panel__header">
                     <div class="panel__title-wrap">
                         <div class="panel__icon"><mat-icon>list_alt</mat-icon></div>
                         <div>
-                        <h2 class="panel__title">{{ 'PAYMENTS.FORM.ALLOCATE_AMOUNTS' | translate }}</h2>
+                            <h2 class="panel__title">{{ 'PAYMENTS.FORM.ALLOCATE_AMOUNTS' | translate }}</h2>
                         </div>
                     </div>
                     <button type="button" class="btn-add"
@@ -191,7 +189,6 @@
                 </div>
 
                 <div class="panel__body">
-
                     <div *ngIf="!form.get('clientId')?.value" class="allocation-empty">
                         <mat-icon>receipt_long</mat-icon>
                         <p>{{ 'PAYMENTS.FORM.SELECT_CLIENT_FIRST' | translate }}</p>
@@ -202,68 +199,66 @@
                             [formGroupName]="i"
                             class="form__row">
 
-                        <!-- Invoice select -->
-                        <div class="form__field form__field--grow">
-                            <div class="form__label">
-                            <label>{{ 'PAYMENTS.FORM.INVOICE' | translate }}</label>
-                            <mat-icon>receipt_long</mat-icon>
+                            <div class="form__field form__field--grow">
+                                <div class="form__label">
+                                    <label>{{ 'PAYMENTS.FORM.INVOICE' | translate }}</label>
+                                    <mat-icon>receipt_long</mat-icon>
+                                </div>
+                                <!-- ↓ removed [disabled]="mode==='edit'" -->
+                                <select class="form__input form__select allocation-invoice-select"
+                                        formControlName="invoiceId"
+                                        (change)="onInvoiceSelected(i)"
+                                        [class.form__input--error]="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
+                                    <option value="" disabled selected>
+                                        {{ invoicesLoading ? ('COMMON.LOADING' | translate) : ('PAYMENTS.FORM.SELECT_INVOICE' | translate) }}
+                                    </option>
+                                    <option *ngFor="let inv of availableInvoicesForLine(i)" [value]="inv.id">
+                                        #{{ inv.invoiceNumber }} — {{ 'PAYMENTS.FORM.REMAINING' | translate }}: {{ inv.remainingAmount | number:'1.2-2' }} TND
+                                    </option>
+                                </select>
+                                <span class="form__error"
+                                    *ngIf="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
+                                    {{ 'VALIDATION.REQUIRED' | translate }}
+                                </span>
                             </div>
-                            <select class="form__input form__select allocation-invoice-select"
-                                    formControlName="invoiceId"
-                                    (change)="onInvoiceSelected(i)"
-                                    [class.form__input--error]="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
-                            <option value="" disabled selected>
-                                {{ invoicesLoading ? ('COMMON.LOADING' | translate) : ('PAYMENTS.FORM.SELECT_INVOICE' | translate) }}
-                            </option>
-                            <option *ngFor="let inv of availableInvoicesForLine(i)" [value]="inv.id">
-                            #{{ inv.invoiceNumber }} — {{ 'PAYMENTS.FORM.REMAINING' | translate }}: {{ inv.remainingAmount | number:'1.2-2' }} TND
-                            </option>
-                            </select>
-                            <span class="form__error"
-                                *ngIf="getAllocationLine(i).get('invoiceId')?.invalid && getAllocationLine(i).get('invoiceId')?.touched">
-                            {{ 'VALIDATION.REQUIRED' | translate }}
-                            </span>
-                        </div>
 
-                        <!-- Allocated amount -->
-                        <div class="form__field allocation-line__amount">
-                            <div class="form__label">
-                            <label>{{ 'PAYMENTS.FORM.AMOUNT' | translate }}</label>
-                            <mat-icon>price_check</mat-icon>
+                            <div class="form__field allocation-line__amount">
+                                <div class="form__label">
+                                    <label>{{ 'PAYMENTS.FORM.AMOUNT' | translate }}</label>
+                                    <mat-icon>price_check</mat-icon>
+                                </div>
+                                <!-- ↓ removed [readOnly]="mode==='edit'" -->
+                                <input type="number"
+                                    class="form__input"
+                                    formControlName="allocatedAmount"
+                                    min="0.01"
+                                    [placeholder]="'PAYMENTS.FORM.AMOUNT' | translate"
+                                    (input)="onAllocatedAmountChange()"
+                                    [max]="getMaxForLine(i)"
+                                    [class.form__input--error]="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched" />
+                                <span class="form__error"
+                                    *ngIf="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched">
+                                    {{ 'PAYMENTS.VALIDATION.ALLOCATED_AMOUNT' | translate }}
+                                </span>
+                                <span class="form__error"
+                                    *ngIf="getAllocationLine(i).get('allocatedAmount')?.hasError('max')">
+                                    {{ 'PAYMENTS.VALIDATION.EXCEEDS_REMAINING' | translate: { max: getMaxForLine(i) | number:'1.2-2' } }}
+                                </span>
                             </div>
-                            <input type="number"
-                                class="form__input"
-                                formControlName="allocatedAmount"
-                                min="0.01"
-                                [placeholder]="'PAYMENTS.FORM.AMOUNT' | translate"
-                                (input)="onAllocatedAmountChange()"
-                                [max]="getMaxForLine(i)"
-                                [class.form__input--error]="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched" />
-                            <span class="form__error"
-                                *ngIf="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched">
-                            {{ 'PAYMENTS.VALIDATION.ALLOCATED_AMOUNT' | translate }}
-                            </span>
-                            <span class="form__error"
-                                *ngIf="getAllocationLine(i).get('allocatedAmount')?.hasError('max')">
-                            {{ 'PAYMENTS.VALIDATION.EXCEEDS_REMAINING' | translate: { max: getMaxForLine(i) | number:'1.2-2' } }}
-                            </span>
-                        </div>
 
-                        <!-- Remove -->
-                        <button type="button"
-                                class="icon-btn icon-btn--delete"
-                                (click)="removeLine(i)"
-                                [disabled]="allocations.length === 1"
-                                [matTooltip]="'COMMON.REMOVE' | translate">
-                            <mat-icon style="font-size:24px;width:24px;height:24px;">delete_outline</mat-icon>
-                        </button>
-
+                            <button type="button"
+                                    class="icon-btn icon-btn--delete"
+                                    (click)="removeLine(i)"
+                                    [disabled]="allocations.length === 1"
+                                    [matTooltip]="'COMMON.REMOVE' | translate">
+                                <mat-icon style="font-size:24px;width:24px;height:24px;">delete_outline</mat-icon>
+                            </button>
                         </div>
                     </ng-container>
-
                 </div>
             </div>
         </div>
+        
     </form>
 </mat-dialog-content>
 
