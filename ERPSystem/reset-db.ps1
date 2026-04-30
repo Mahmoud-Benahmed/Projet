@@ -27,12 +27,45 @@ if (-not $DbContext) { $DbContext = $efReset.DbContext }
 if (-not $MigrationName) { $MigrationName = $efReset.MigrationName }
 
 # =========================
-# RESOLVE PATHS
+# RESOLVE PATHS (SMART)
 # =========================
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$infraPath = Resolve-Path (Join-Path $scriptRoot $InfraProject)
-$startupPath = Resolve-Path (Join-Path $scriptRoot $StartupProject)
+function Resolve-CsprojPath {
+    param (
+        [string]$inputPath
+    )
+
+    # 1️⃣ Try direct path (relative to script root)
+    $fullPath = Join-Path $scriptRoot $inputPath
+    if (Test-Path $fullPath) {
+        if ($fullPath.EndsWith(".csproj")) {
+            return (Resolve-Path $fullPath).Path
+        }
+
+        # If it's a folder → find .csproj inside
+        $csproj = Get-ChildItem -Path $fullPath -Filter *.csproj -Recurse | Select-Object -First 1
+        if ($csproj) {
+            return $csproj.FullName
+        }
+    }
+
+    # 2️⃣ Search entire solution (fallback)
+    Write-Host "Searching for $inputPath in solution..." -ForegroundColor DarkYellow
+
+    $found = Get-ChildItem -Path $scriptRoot -Recurse -Filter *.csproj |
+        Where-Object { $_.Name -eq $inputPath } |
+        Select-Object -First 1
+
+    if ($found) {
+        return $found.FullName
+    }
+
+    throw "Could not resolve project: $inputPath"
+}
+
+$infraPath = Resolve-CsprojPath $InfraProject
+$startupPath = Resolve-CsprojPath $StartupProject
 
 Write-Host "Infra Project: $infraPath"
 Write-Host "Startup Project: $startupPath"
@@ -49,7 +82,8 @@ dotnet ef database drop --force `
 # =========================
 # DELETE MIGRATIONS
 # =========================
-$migrationsPath = Join-Path (Split-Path $infraPath) "Migrations"
+$projectDir = Split-Path $infraPath -Parent
+$migrationsPath = Join-Path $projectDir "Migrations"
 
 Write-Host "Deleting Migrations folder..." -ForegroundColor Yellow
 if (Test-Path $migrationsPath) {
