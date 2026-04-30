@@ -16,6 +16,8 @@
     "FOURNISSEURS": "Fournisseurs",
     "BONS": "Bons",
     "INVOICES": "Factures",
+    "PAYMENTS": "Paiements",
+    "REFUNDS": "Remboursements",
     "AUDIT_LOG": "Journal d'audit"
   },
   "COMMON": {
@@ -872,6 +874,10 @@
     "OVERDUE_TOOLTIP": "Cette facture est en retard"
   },
   "PAYMENTS":{
+    "BREADCRUMB":"ERP › Paiements",
+    "TITLE_LIST":"Paiements",
+    "TITLE_DETAILS": "Détails du paiement",
+    "NO_RESULTS":"Aucun résultat trouvé",
     "FORM": {
       "TITLE":"Enregistrer un paiment",
       "METHOD": "Méthode de paiement:",
@@ -903,11 +909,49 @@
       "AUTRE":          "Autre"
     },
     "SUCCESS":{
-      "CREATED":"Paiement créée avec succès."
+      "CREATED":"Paiement créée avec succès.",
+      "CANCELLED": "Paiement annulée avec succès."
     },
     "ERRORS":{
-      "CREATE_FAILED":"Échec de la création de le paiement."
-    }
+      "CREATE_FAILED":"Échec de la création de le paiement.",
+      "CANCELLED":"Echec d'annulation le paiement.",
+      "UNPAID_INVOICES_NOT_FOUND": "Toutes les factures sont payés."
+    },
+    "TABS":{
+      "DONE":"Completé",
+      "CANCELLED": "Annulé"
+    },
+    "TABLE":{
+      "NUMBER": "NUMÉRO",
+      "DATE": "DATE",
+      "METHOD": "METHODE",
+      "TOTAL_AMOUNT": "MONTANT TOTAL",
+      "ACTIONS":"ACTIONS"
+    },
+    "DETAILS":{
+      "NUMBER": "Numéro de paiment:",
+      "DATE": "Date de paiement:",
+      "METHOD": "Méthode de paiement:",
+      "TOTAL_AMOUNT": "Montant total:",
+      "STATUS": "État du paiement:",
+      "CANCELLED_AT": "Annulé le:",
+      "EXTERNAL_REF": "Référence:",
+      "ALLOCATIONS": "Répartition des paiements"
+    },
+    "STATUS":{
+      "CANCELLED":"ANNULÉE",
+      "DONE": "COMPLÉTÉ"
+    },
+    "ACTIONS":{
+      "VIEW": "Voir les détails",
+      "CANCEL": "Annuler le paiement",
+      "CORRECT": "Corriger les détails du paiement"
+    },
+    "STATS":{
+      "CANCELLED":"Annulé",
+      "DONE": "Validé"
+    },
+    "NEW_BUTTON":"+ Nouveau paiment"
   },
   "AUDIT": {
     "BREADCRUMB": "Journaux d'audit",

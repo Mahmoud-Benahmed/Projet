@@ -16,6 +16,9 @@
     "FOURNISSEURS": "Suppliers",
     "BONS": "Receipts",
     "INVOICES":"Invoices",
+    "PAYMENTS": "Payments",
+    "REFUNDS": "Refunds",
+
     "AUDIT_LOG": "Audit Log"
   },
   "COMMON": {
@@ -882,6 +885,10 @@
     "OVERDUE_TOOLTIP": "This invoice is overdue"
   },
   "PAYMENTS":{
+    "BREADCRUMB":"ERP › Payments",
+    "TITLE_LIST":"Payments",
+    "TITLE_DETAILS": "Payment details",
+    "NO_RESULTS":"No results found",
     "FORM": {
       "TITLE":"Record payment",
       "METHOD": "Payment method:",
@@ -901,7 +908,6 @@
       "TOTAL_AMOUNT": "Total amount must be strictly positive.",
       "ALLOCATED_AMOUNT": "Allocated amount must be strictly positive.",
       "EXCEEDS_REMAINING": "Amount exceeds remaining to pay."
-
     },
     "TOOLTIPS":{
       "TOTAL_AMOUNT": "This amount is the sum of the allocations from the payment done by the selected client. No need to set it since it will be calculated automatically."
@@ -915,10 +921,52 @@
       "AUTRE":          "Other"
     },
     "SUCCESS":{
-      "CREATED":"Payment created successfully."
+      "CREATED":"Payment created successfully.",
+      "CANCELLED":"Payment cancelled successfully.",
+      "CORRECTED": "Payment corrected successfully."
+
     },
     "ERRORS":{
-      "CREATE_FAILED":"Failed to create payment."
+      "CREATE_FAILED":"Failed to create payment.",
+      "CANCELLED":"Failed to cancel payment.",
+      "CORRECTED": "Failed to correct payment.",
+      "UNPAID_INVOICES_NOT_FOUND": "No unpaid invoices were found."
+    },
+    "TABS":{
+      "DONE":"Done",
+      "CANCELLED": "Cancelled"
+    },
+    "TABLE":{
+      "NUMBER": "NUMBER",
+      "DATE": "DATE",
+      "METHOD": "METHOD",
+      "TOTAL_AMOUNT": "TOTAL AMOUNT",
+      "ACTIONS":"ACTIONS"
+    },
+    "DETAILS":{
+      "NUMBER": "Payment number:",
+      "DATE": "Payment date:",
+      "METHOD": "Payment method:",
+      "TOTAL_AMOUNT": "Total amount:",
+      "STATUS": "Payment status:",
+      "NOTES": "Notes:",
+      "CANCELLED_AT": "Cancelled at:",
+      "EXTERNAL_REF": "Reference",
+      "ALLOCATIONS": "Payment allocations"
+    },
+    "STATUS":{
+      "CANCELLED":"CANCELLED",
+      "DONE": "DONE"
+    },
+    "ACTIONS":{
+      "VIEW": "View details",
+      "CANCEL": "Cancel payment",
+      "CORRECT": "Correct payment details"
+    },
+    "NEW_BUTTON":"+ New payment",
+    "STATS":{
+      "CANCELLED":"Cancelled",
+      "DONE": "Done"
     }
   },
   "AUDIT":{
