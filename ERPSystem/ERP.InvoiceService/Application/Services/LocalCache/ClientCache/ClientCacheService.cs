@@ -100,6 +100,42 @@ public class ClientCacheService : IClientCacheService
                 return;
             }
 
+            _logger.LogInformation(
+                "\n\n*> ClientCache created: Id={Id}, Name={Name}, Email={Email}, Address={Address}, Phone={Phone}, TaxNumber={TaxNumber}, CreditLimit={CreditLimit}, DelaiRetour={DelaiRetour}, DuePaymentPeriod={DuePaymentPeriod}, IsBlocked={IsBlocked}, IsDeleted={IsDeleted}, CreatedAt={CreatedAt}, UpdatedAt={UpdatedAt}",
+                dto.Id,
+                dto.Name,
+                dto.Email,
+                dto.Address,
+                dto.Phone,
+                dto.TaxNumber,
+                dto.CreditLimit,
+                dto.DelaiRetour,
+                dto.DuePaymentPeriod,
+                dto.IsBlocked,
+                dto.IsDeleted,
+                dto.CreatedAt,
+                dto.UpdatedAt
+            );
+
+            foreach (ClientCategoryResponseDto category in dto.Categories)
+            {
+                _logger.LogInformation(
+                    "\n*> Category of {ClientName}: Id={Id}, Name={Name}, Code={Code}, DelaiRetour={DelaiRetour}, DuePaymentPeriod={DuePaymentPeriod}, DiscountRate={DiscountRate}, CreditLimitMultiplier={CreditLimitMultiplier}, UseBulkPricing={UseBulkPricing}, IsActive={IsActive}, IsDeleted={IsDeleted}, CreatedAt={CreatedAt}, UpdatedAt={UpdatedAt}",
+                    dto.Name,
+                    category.Id,
+                    category.Name,
+                    category.Code,
+                    category.DelaiRetour,
+                    category.DuePaymentPeriod,
+                    category.DiscountRate,
+                    category.CreditLimitMultiplier,
+                    category.UseBulkPricing,
+                    category.IsActive,
+                    category.IsDeleted,
+                    category.CreatedAt,
+                    category.UpdatedAt
+                );
+            }
 
             // Create new client with all parameters
             Domain.LocalCache.Client.ClientCache clientCache = Domain.LocalCache.Client.ClientCache.Create(
@@ -119,14 +155,15 @@ public class ClientCacheService : IClientCacheService
             );
 
             await _clientCacheRepository.AddAsync(clientCache);
+            await _clientCacheRepository.SaveChangesAsync();
 
             // Handle categories if any
             if (dto.Categories != null && dto.Categories.Any())
             {
                 await AssignCategoriesToClientAsync(clientCache.Id, dto.Categories);
+                await _clientCacheRepository.SaveChangesAsync();
             }
 
-            await _clientCacheRepository.SaveChangesAsync();
 
             _logger.LogInformation("Client {ClientName} (Id: {ClientId}) added to cache with {CategoryCount} categories",
                 dto.Name, dto.Id, dto.Categories?.Count() ?? 0);
@@ -176,6 +213,7 @@ public class ClientCacheService : IClientCacheService
             );
 
             await _clientCacheRepository.UpdateAsync(existing);
+            await _clientCacheRepository.SaveChangesAsync();
 
             // Update categories if needed
             if (dto.Categories != null)
@@ -183,7 +221,6 @@ public class ClientCacheService : IClientCacheService
                 await UpdateClientCategoriesAsync(existing.Id, dto.Categories);
             }
 
-            await _clientCacheRepository.SaveChangesAsync();
 
             _logger.LogInformation("Client {ClientName} (Id: {ClientId}) updated in cache", existing.Name, existing.Id);
         }
@@ -241,6 +278,7 @@ public class ClientCacheService : IClientCacheService
 
             existing.Restore();
             await _clientCacheRepository.UpdateAsync(existing);
+            await _clientCacheRepository.SaveChangesAsync();
 
             // Restore category assignments if needed
             if (dto.Categories != null && dto.Categories.Any())
@@ -248,7 +286,6 @@ public class ClientCacheService : IClientCacheService
                 await AssignCategoriesToClientAsync(existing.Id, dto.Categories);
             }
 
-            await _clientCacheRepository.SaveChangesAsync();
 
             _logger.LogInformation("Client {ClientName} (Id: {ClientId}) restored in cache", existing.Name, existing.Id);
         }
@@ -288,36 +325,45 @@ public class ClientCacheService : IClientCacheService
                     isDeleted: categoryDto.IsDeleted
                 );
                 await _clientCategoryRepository.AddCategoryAsync(category);
+                await _clientCategoryRepository.SaveChangesAsync();
             }
 
-            // Assign category to client
-            await _clientCategoryRepository.AssignCategoryToClientAsync(clientId, category.Id);
+            bool alreadyAssigned = await _clientCategoryRepository.ExistsForClientAsync(clientId, categoryDto.Id);
+            if (!alreadyAssigned)
+            {
+                await _clientCategoryRepository.AssignCategoryToClientAsync(clientId, category.Id);
+                await _clientCategoryRepository.SaveChangesAsync(); // ← FK is satisfied, row persists
+            }
+            else
+            {
+                _logger.LogDebug(
+                    "Category {CategoryId} already assigned to client {ClientId}, skipping.",
+                    categoryDto.Id, clientId);
+            }
         }
     }
 
+
     private async Task UpdateClientCategoriesAsync(Guid clientId, IEnumerable<ClientCategoryResponseDto> newCategories)
     {
-        // Get existing assignments
         List<ClientCategoryCache> existingAssignments = await _clientCategoryRepository.GetClientAssignmentsAsync(clientId);
         HashSet<Guid> existingCategoryIds = existingAssignments.Select(a => a.CategoryId).ToHashSet();
         HashSet<Guid> newCategoryIds = newCategories.Select(c => c.Id).ToHashSet();
 
-        // Remove categories that are no longer assigned
-        IEnumerable<Guid> categoriesToRemove = existingCategoryIds.Except(newCategoryIds);
-        foreach (Guid categoryId in categoriesToRemove)
+        // Remove stale assignments
+        foreach (Guid categoryId in existingCategoryIds.Except(newCategoryIds))
         {
             await _clientCategoryRepository.UnassignCategoryFromClientAsync(clientId, categoryId);
         }
+        await _clientCategoryRepository.SaveChangesAsync(); // ← flush removals
 
-        // Add new categories
-        IEnumerable<Guid> categoriesToAdd = newCategoryIds.Except(existingCategoryIds);
-        foreach (Guid categoryId in categoriesToAdd)
+        // Add new assignments
+        foreach (Guid categoryId in newCategoryIds.Except(existingCategoryIds))
         {
             ClientCategoryResponseDto categoryDto = newCategories.First(c => c.Id == categoryId);
 
-            // Ensure category exists in master data
             CategoryCache? category = await _clientCategoryRepository.GetByIdAsync(categoryId);
-            if (category == null && categoryDto != null)
+            if (category == null)
             {
                 category = CategoryCache.Create(
                     id: categoryDto.Id,
@@ -334,12 +380,30 @@ public class ClientCacheService : IClientCacheService
                     isDeleted: categoryDto.IsDeleted
                 );
                 await _clientCategoryRepository.AddCategoryAsync(category);
+                await _clientCategoryRepository.SaveChangesAsync(); // ← category must exist before FK
+            }
+            else
+            {
+                // ← Update master data in case name/rules changed on the source service
+                category.Update(
+                    name: categoryDto.Name,
+                    code: categoryDto.Code,
+                    delaiRetour: categoryDto.DelaiRetour,
+                    duePaymentPeriod: categoryDto.DuePaymentPeriod,
+                    discountRate: categoryDto.DiscountRate,
+                    creditLimitMultiplier: categoryDto.CreditLimitMultiplier,
+                    useBulkPricing: categoryDto.UseBulkPricing,
+                    isActive: categoryDto.IsActive,
+                    isDeleted: categoryDto.IsDeleted,
+                    createdAt: categoryDto.CreatedAt,
+                    updatedAt: categoryDto.UpdatedAt
+                );
+                await _clientCategoryRepository.UpdateCategoryAsync(category);
+                await _clientCategoryRepository.SaveChangesAsync();
             }
 
-            if (category != null)
-            {
-                await _clientCategoryRepository.AssignCategoryToClientAsync(clientId, category.Id);
-            }
+            await _clientCategoryRepository.AssignCategoryToClientAsync(clientId, category.Id);
+            await _clientCategoryRepository.SaveChangesAsync(); // ← flush each assignment
         }
     }
 
