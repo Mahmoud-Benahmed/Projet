@@ -1,9 +1,7 @@
-﻿// Infrastructure/Messaging/ClientEvents/Category/ClientCategoryEventConsumer.cs
-using Confluent.Kafka;
+﻿using Confluent.Kafka;
 using ERP.InvoiceService.Application.DTOs;
+using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
 using System.Text.Json;
-
-namespace ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
 
 public sealed class ClientCategoryEventConsumer : BackgroundService
 {
@@ -24,11 +22,12 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        ConsumerConfig config = new ConsumerConfig
+        ConsumerConfig config = new()
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
-            GroupId = configuration["Kafka:ConsumerGroups:ClientCategory"] ?? throw new InvalidOperationException("Kafka:ConsumerGroups:ClientCategory not configured"),
+            GroupId = configuration["Kafka:ConsumerGroups:ClientCategory"]
+                ?? throw new InvalidOperationException("Kafka:ConsumerGroups:ClientCategory not configured."),
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false,
             AllowAutoCreateTopics = true,
@@ -47,14 +46,14 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("ClientCategoryEventConsumer started, topics: {Topics}",
+        _logger.LogInformation("ClientCategoryEventConsumer started. Topics: {Topics}",
             string.Join(", ", ClientCategoryTopics.Created, ClientCategoryTopics.Updated,
-                ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored));
+                              ClientCategoryTopics.Deleted, ClientCategoryTopics.Restored));
 
         await Task.Run(async () =>
         {
-            // Wait a bit for topics to be created if needed
-            await Task.Delay(5000, stoppingToken);
+            // ← removed Task.Delay(5000) — AllowAutoCreateTopics handles missing topics,
+            //   and ConsumeException below handles transient unavailability
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -62,82 +61,83 @@ public sealed class ClientCategoryEventConsumer : BackgroundService
                 {
                     ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
-                    // Log raw message for debugging
-                    _logger.LogDebug("Raw message received on {Topic}: {Message}", result.Topic, result.Message.Value);
+                    _logger.LogDebug("Message received — Topic: {Topic}, Payload: {Payload}",
+                        result.Topic, result.Message.Value);
 
-                    // Determine event type based on topic for logging purpose
-                    string eventType = result.Topic switch
-                    {
-                        ClientCategoryTopics.Created => "Created",
-                        ClientCategoryTopics.Updated => "Updated",
-                        ClientCategoryTopics.Deleted => "Deleted",
-                        ClientCategoryTopics.Restored => "Restored",
-                        _ => "Unknown"
-                    };
-
-                    // For create, update, restore events, deserialize full DTO
                     ClientCategoryResponseDto? dto = JsonSerializer.Deserialize<ClientCategoryResponseDto>(
                         result.Message.Value, _jsonOptions);
 
-                    if (dto == null)
+                    if (dto is null)
                     {
-                        _logger.LogWarning("Failed to deserialize event on {Topic}", result.Topic);
+                        _logger.LogWarning("Null payload on {Topic}, skipping.", result.Topic);
                         _consumer.Commit(result);
                         continue;
                     }
 
-                    // Validate data
                     if (string.IsNullOrWhiteSpace(dto.Name))
                     {
-                        _logger.LogError("Client category event has null or empty Name. EventType: {EventType}",
-                            eventType);
+                        _logger.LogError(
+                            "ClientCategoryEvent on {Topic} has null or empty Name. ClientCategoryId: {Id}. Skipping.",
+                            result.Topic, dto.Id);
                         _consumer.Commit(result);
                         continue;
                     }
 
-                    using (IServiceScope scope = _scopeFactory.CreateScope())
-                    {
-                        IClientCategoryEventHandler handler = scope.ServiceProvider.GetRequiredService<IClientCategoryEventHandler>();
+                    _logger.LogInformation(
+                        "Processing {Topic} — CategoryId: {Id}, Name: {Name}",
+                        result.Topic, dto.Id, dto.Name);
 
-                        switch (result.Topic)
-                        {
-                            case ClientCategoryTopics.Created:
-                                await handler.HandleCreatedAsync(dto);
-                                break;
-                            case ClientCategoryTopics.Updated:
-                                await handler.HandleUpdatedAsync(dto);
-                                break;
-                            case ClientCategoryTopics.Deleted:
-                                await handler.HandleDeletedAsync(dto);
-                                break;
-                            case ClientCategoryTopics.Restored:
-                                await handler.HandleRestoredAsync(dto);
-                                break;
-                        }
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    IClientCategoryEventHandler handler = scope.ServiceProvider
+                        .GetRequiredService<IClientCategoryEventHandler>();
+
+                    switch (result.Topic)
+                    {
+                        case ClientCategoryTopics.Created:
+                            await handler.HandleCreatedAsync(dto);
+                            break;
+                        case ClientCategoryTopics.Updated:
+                            await handler.HandleUpdatedAsync(dto);
+                            break;
+                        case ClientCategoryTopics.Deleted:
+                            await handler.HandleDeletedAsync(dto);
+                            break;
+                        case ClientCategoryTopics.Restored:
+                            await handler.HandleRestoredAsync(dto);
+                            break;
+                        default:
+                            _logger.LogWarning("Unknown topic {Topic}, skipping.", result.Topic);
+                            break;
                     }
 
+                    // Commit only after successful handling
                     _consumer.Commit(result);
-                    _logger.LogInformation("Successfully processed client category event from topic {Topic}",
-                        result.Topic);
+
+                    _logger.LogInformation(
+                        "Processed {Topic} — CategoryId: {Id}",
+                        result.Topic, dto.Id);
                 }
                 catch (OperationCanceledException)
                 {
                     break;
                 }
-                catch (ConsumeException ex)
+                catch (ConsumeException ex) when (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogWarning("Topic not available yet: {Error}. Waiting 10 seconds...", ex.Error.Reason);
-                    await Task.Delay(10000, stoppingToken);
+                    // Transient broker issue — log and wait before retrying
+                    _logger.LogWarning(
+                        "ConsumeException on topic — Reason: {Reason}. Retrying in 5s.",
+                        ex.Error.Reason);
+                    await Task.Delay(5000, stoppingToken);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing client category event");
-                    // Don't commit the offset on error - will retry
-                    await Task.Delay(1000, stoppingToken);
+                    // Don't commit — message will be redelivered
+                    _logger.LogError(ex, "Error processing client category event. Offset not committed.");
                 }
             }
 
             _consumer.Close();
+
         }, stoppingToken);
     }
 

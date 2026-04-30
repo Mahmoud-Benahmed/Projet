@@ -1,16 +1,14 @@
 ﻿using Confluent.Kafka;
 using ERP.InvoiceService.Application.DTOs;
-using ERP.InvoiceService.Application.Interfaces;
-using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Category;
+using ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
 using System.Text.Json;
-
-namespace ERP.InvoiceService.Infrastructure.Messaging.Events.ClientEvents.Client;
 
 public sealed class ClientEventConsumer : BackgroundService
 {
     private readonly IConsumer<string, string> _consumer;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ClientEventConsumer> _logger;
+
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -24,24 +22,31 @@ public sealed class ClientEventConsumer : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
 
-        ConsumerConfig config = new ConsumerConfig
+        ConsumerConfig config = new()
         {
             BootstrapServers = configuration["Kafka:BootstrapServers"]
                 ?? throw new InvalidOperationException("Kafka:BootstrapServers not configured."),
-            GroupId = configuration["Kafka:ConsumerGroups:Client"] ?? throw new InvalidOperationException("Kafka:ConsumerGroups:Client not configured"),
+            GroupId = configuration["Kafka:ConsumerGroups:Client"]
+                ?? throw new InvalidOperationException("Kafka:ConsumerGroups:Client not configured."),
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false,
-            AllowAutoCreateTopics = true  // Add this
+            AllowAutoCreateTopics = true
         };
 
         _consumer = new ConsumerBuilder<string, string>(config).Build();
-        _consumer.Subscribe([ClientTopics.Created, ClientTopics.Updated, ClientTopics.Deleted, ClientTopics.Restored]);
+        _consumer.Subscribe([
+            ClientTopics.Created,
+            ClientTopics.Updated,
+            ClientTopics.Deleted,
+            ClientTopics.Restored
+        ]);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("ClientEventConsumer started, topics: {Topics}",
-            string.Join(", ", ClientTopics.Created, ClientTopics.Updated, ClientTopics.Deleted, ClientTopics.Restored));
+        _logger.LogInformation("ClientEventConsumer started. Topics: {Topics}",
+            string.Join(", ", ClientTopics.Created, ClientTopics.Updated,
+                              ClientTopics.Deleted, ClientTopics.Restored));
 
         await Task.Run(async () =>
         {
@@ -51,8 +56,7 @@ public sealed class ClientEventConsumer : BackgroundService
                 {
                     ConsumeResult<string, string> result = _consumer.Consume(stoppingToken);
 
-                    // Log raw message for debugging
-                    _logger.LogDebug("Raw message received on {Topic}: {Message}",
+                    _logger.LogDebug("Message received — Topic: {Topic}, Payload: {Payload}",
                         result.Topic, result.Message.Value);
 
                     ClientResponseDto? dto = JsonSerializer.Deserialize<ClientResponseDto>(
@@ -60,52 +64,53 @@ public sealed class ClientEventConsumer : BackgroundService
 
                     if (dto is null)
                     {
-                        _logger.LogWarning("Null payload on {Topic}, skipping", result.Topic);
+                        _logger.LogWarning("Null payload on {Topic}, skipping.", result.Topic);
                         _consumer.Commit(result);
                         continue;
                     }
 
-                    // FIXED: Log client data, not article data
-                    _logger.LogInformation("Processing client: Id={Id}, Name={Name}, Email={Email}",
-                        dto.Id, dto.Name, dto.Email);
-
-                    // FIXED: Client doesn't have Category - remove category validation
-                    // Just validate basic client data
                     if (string.IsNullOrWhiteSpace(dto.Name))
                     {
-                        _logger.LogError("Client {ClientId} has null or empty Name", dto.Id);
+                        _logger.LogError(
+                            "Client {ClientId} has null or empty Name on topic {Topic}. Skipping.",
+                            dto.Id, result.Topic);
                         _consumer.Commit(result);
                         continue;
                     }
 
-                    // Create a new scope for each message
-                    using (IServiceScope scope = _scopeFactory.CreateScope())
+                    _logger.LogInformation(
+                        "Processing {Topic} — ClientId: {ClientId}, Name: {Name}, Email: {Email}",
+                        result.Topic, dto.Id, dto.Name, dto.Email);
+
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    IClientEventHandler handler = scope.ServiceProvider
+                        .GetRequiredService<IClientEventHandler>(); // ← removed unused IClientCacheService
+
+                    switch (result.Topic)
                     {
-                        // FIXED: Use IClientCacheService instead of IArticleCacheService
-                        IClientCacheService clientCacheService = scope.ServiceProvider.GetRequiredService<IClientCacheService>();
-
-                        IClientEventHandler handler = scope.ServiceProvider.GetRequiredService<IClientEventHandler>();
-
-                        switch (result.Topic)
-                        {
-                            case ClientTopics.Created:
-                                await handler.HandleCreatedAsync(dto);
-                                break;
-                            case ClientTopics.Updated:
-                                await handler.HandleUpdatedAsync(dto);
-                                break;
-                            case ClientTopics.Deleted:
-                                await handler.HandleDeletedAsync(dto);
-                                break;
-                            case ClientTopics.Restored:
-                                await handler.HandleRestoredAsync(dto);
-                                break;
-                        }
+                        case ClientTopics.Created:
+                            await handler.HandleCreatedAsync(dto);
+                            break;
+                        case ClientTopics.Updated:
+                            await handler.HandleUpdatedAsync(dto);
+                            break;
+                        case ClientTopics.Deleted:
+                            await handler.HandleDeletedAsync(dto);
+                            break;
+                        case ClientTopics.Restored:
+                            await handler.HandleRestoredAsync(dto);
+                            break;
+                        default:
+                            _logger.LogWarning("Unknown topic {Topic}, skipping.", result.Topic);
+                            break;
                     }
 
+                    // Commit only after successful handling
                     _consumer.Commit(result);
-                    _logger.LogInformation("Successfully processed client {ClientId} from topic {Topic}",
-                        dto.Id, result.Topic);
+
+                    _logger.LogInformation(
+                        "Processed {Topic} — ClientId: {ClientId}",
+                        result.Topic, dto.Id);
                 }
                 catch (OperationCanceledException)
                 {
@@ -113,12 +118,13 @@ public sealed class ClientEventConsumer : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing client event");
-                    // Don't commit the offset on error - will retry
+                    // Don't commit — message will be redelivered
+                    _logger.LogError(ex, "Error processing client event. Offset not committed.");
                 }
             }
 
             _consumer.Close();
+
         }, stoppingToken);
     }
 
