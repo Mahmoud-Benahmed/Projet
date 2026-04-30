@@ -142,6 +142,16 @@ namespace InvoiceService.Domain
             UpdatedAt = DateTime.UtcNow;
         }
 
+        public void MarkAsUnpaid()
+        {
+            if (Status != InvoiceStatus.PAID)
+                return;
+
+            Status = InvoiceStatus.UNPAID;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+
         /// <exception cref="InvoiceDomainException">Thrown if PAID or already CANCELLED</exception>
         public void CancelInvoice()
         {
