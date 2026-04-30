@@ -1,5 +1,4 @@
 ﻿using ERP.PaymentService.Application.Interfaces.LocalCache;
-using ERP.PaymentService.Domain.LocalCache;
 using Microsoft.EntityFrameworkCore;
 
 namespace ERP.PaymentService.Infrastructure.Persistence.Repositories.LocalCache;

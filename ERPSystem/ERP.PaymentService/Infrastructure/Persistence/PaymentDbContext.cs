@@ -1,5 +1,4 @@
 ﻿using ERP.PaymentService.Domain;
-using ERP.PaymentService.Domain.LocalCache;
 using ERP.PaymentService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -45,6 +44,11 @@ internal class PaymentConfiguration : IEntityTypeConfiguration<Payment>
                .HasConversion<string>()
                .HasMaxLength(20);
 
+        builder.Property(p => p.Status)
+               .IsRequired()
+               .HasConversion<string>()
+               .HasMaxLength(20);
+
         builder.Property(p => p.PaymentDate)
                .IsRequired();
 
@@ -83,7 +87,14 @@ internal class PaymentInvoiceConfiguration : IEntityTypeConfiguration<PaymentInv
         builder.Property(pi => pi.RefundedAmount).HasPrecision(18, 2);
 
         builder.Property(pi => pi.InvoiceId).IsRequired();
+        builder.Property(pi => pi.PaymentId).IsRequired();
+
         builder.HasIndex(pi => pi.InvoiceId);
+        builder.HasIndex(pi => pi.PaymentId);
+
+        // one allocation per invoice per payment
+        builder.HasIndex(pi => new { pi.PaymentId, pi.InvoiceId })
+               .IsUnique();
     }
 }
 
@@ -116,6 +127,8 @@ internal class InvoiceCacheConfiguration : IEntityTypeConfiguration<InvoiceCache
 
         builder.Property(c => c.LastUpdated)
                .IsRequired();
+        
+        builder.Ignore(c => c.RemainingAmount);
 
         // speeds up lookups when validating allocations by client
         builder.HasIndex(c => c.ClientId);
@@ -183,7 +196,7 @@ internal class RefundRequestConfiguration : IEntityTypeConfiguration<RefundReque
             lines.Property(l => l.PaymentAllocationId).IsRequired();
 
             lines.Property(l => l.Amount)
-                 .HasColumnType("decimal(18,2)")
+                 .HasPrecision(18, 2)
                  .IsRequired();
         });
     }

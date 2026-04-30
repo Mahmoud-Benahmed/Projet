@@ -14,6 +14,18 @@ public class PaymentRepository : IPaymentRepository
         _context = context;
     }
 
+    public async Task<PaymentStatsDto> GetStatsAsync()
+    {
+        var stats = await _context.Payments
+            .GroupBy(_ => 1)
+            .Select(g => new PaymentStatsDto(
+                g.Count(p => p.Status == PaymentStatus.DONE),
+                g.Count(p => p.Status == PaymentStatus.CANCELLED)
+            ))
+            .FirstOrDefaultAsync();
+
+        return stats ?? new PaymentStatsDto(0, 0);
+    }
     public async Task<Payment?> GetByIdAsync(Guid id)
     {
         return await _context.Payments
@@ -37,7 +49,7 @@ public class PaymentRepository : IPaymentRepository
     }
 
     public async Task<(List<Payment> Items, int TotalCount)> GetPagedAsync(
-        int pageNumber, int pageSize, string? search = null)
+        int pageNumber, int pageSize, PaymentStatus status,string? search = null)
     {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 10;
@@ -45,6 +57,7 @@ public class PaymentRepository : IPaymentRepository
 
         IQueryable<Payment> query = _context.Payments
             .Include(p => p.Allocations)
+            .Where(p=> p.Status == status)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
