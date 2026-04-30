@@ -51,6 +51,9 @@ public sealed record CreatePaymentAllocationDto(
 );
 
 public sealed record CorrectPaymentDto(
+    [Required] 
+    DateTime PaymentDate,
+
     [Required]
     [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method.")]
     PaymentMethod Method,
@@ -71,6 +74,7 @@ public sealed record PaymentDto(
     decimal RemainingAmount,
     string Method,
     DateTime PaymentDate,
+    PaymentStatus Status,
     string? ExternalReference,
     string? Notes,
     bool IsCancelled,
@@ -84,8 +88,6 @@ public sealed record PaymentAllocationDto(
     decimal AmountAllocated
 );
 
-
-public record CreateRefundDto(Guid ClientId, Guid InvoiceId);
 public record CompleteRefundDto(string ExternalReference);
 
 public record RefundRequestDto(
@@ -96,3 +98,15 @@ public record RefundRequestDto(
     List<RefundLineDto> Lines
 );
 public record RefundLineDto(Guid PaymentId, Guid PaymentAllocationId, decimal Amount);
+
+
+public record RefundStatsDto(
+    int TotalCount,
+    int PendingCount,
+    int CompletedCount
+);
+
+public record PaymentStatsDto(
+    int Done,
+    int Cancelled
+);
