@@ -1,7 +1,6 @@
 ﻿using ERP.PaymentService.Application.DTO;
 using ERP.PaymentService.Application.Interfaces;
 using ERP.PaymentService.Application.Interfaces.LocalCache;
-using ERP.PaymentService.Domain.LocalCache;
 using ERP.PaymentService.Infrastructure.Persistence.Repositories;
 using static ERP.PaymentService.Properties.ApiRoutes;
 
