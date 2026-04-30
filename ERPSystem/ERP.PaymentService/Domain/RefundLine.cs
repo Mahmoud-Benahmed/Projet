@@ -12,6 +12,6 @@ public class RefundLine
     {
         PaymentId = paymentId;
         PaymentAllocationId = allocationId;
-        Amount = amount;
+        Amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 }

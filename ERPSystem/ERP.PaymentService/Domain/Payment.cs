@@ -1,7 +1,5 @@
 ﻿using ERP.PaymentService.Application.Exceptions;
-using ERP.PaymentService.Domain.LocalCache;
-
-namespace ERP.PaymentService.Domain;
+using ERP.PaymentService.Domain;
 public class Payment
 {
     public Guid Id { get; private set; }
@@ -9,71 +7,80 @@ public class Payment
     public Guid ClientId { get; private set; }
     public decimal TotalAmount { get; private set; }
     public PaymentMethod Method { get; private set; }
+    public PaymentStatus Status { get; private set; }
     public DateTime PaymentDate { get; private set; }
-    public string? ExternalReference { get; private set; } = null;
+    public string? ExternalReference { get; private set; }
     public string? Notes { get; private set; }
     public DateTime? CancelledAt { get; private set; }
-
-
 
     private readonly List<PaymentInvoice> _allocations = new();
     public IReadOnlyCollection<PaymentInvoice> Allocations => _allocations;
 
-    public decimal GetRemainingAmount() => TotalAmount - _allocations.Sum(a => a.AmountAllocated);
-
+    public decimal GetRemainingAmount() =>
+        Math.Round(TotalAmount - _allocations.Sum(a => a.AmountAllocated), 2, MidpointRounding.AwayFromZero);
 
     private Payment() { }
-    public Payment(string number, Guid clientId, decimal totalAmount, 
-                    PaymentMethod method, DateTime paymentDate, 
-                    string? externalReference = null, 
-                    string? notes = null)
+
+    public Payment(
+        string number, Guid clientId, decimal totalAmount,
+        PaymentMethod method, DateTime paymentDate,
+        string? externalReference = null,
+        string? notes = null)
     {
-        Id= Guid.NewGuid();
+        Id = Guid.NewGuid();
         Number = number;
         ClientId = clientId;
-        TotalAmount = totalAmount;
+        TotalAmount = Math.Round(totalAmount, 2, MidpointRounding.AwayFromZero); // ← round on creation
         Method = method;
         PaymentDate = paymentDate;
         ExternalReference = externalReference;
         Notes = notes;
+        Status = PaymentStatus.DONE;
+    }
+
+    public void AllocateAmount(decimal amount, InvoiceCache cache)
+    {
+        amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero); // ← round input first
+
+        if (amount <= 0)
+            throw new PaymentDomainException("Le montant affecté doit être positif.");
+
+        var remaining = GetRemainingAmount();
+        if (amount > remaining + 0.01m)  // ← tolerance for floating-point edge cases
+            throw new PaymentDomainException(
+                $"Le montant affecté ({amount:F2}) dépasse le restant du règlement ({remaining:F2}).");
+
+        var invoiceRemaining = Math.Round(cache.TotalTTC - cache.PaidAmount, 2, MidpointRounding.AwayFromZero);
+        if (amount > invoiceRemaining + 0.01m)  // ← same tolerance
+            throw new PaymentDomainException(
+                $"Le montant affecté ({amount:F2}) dépasse le restant de la facture ({invoiceRemaining:F2}).");
+
+        _allocations.Add(new PaymentInvoice(Id, cache.Id, amount));
     }
 
     public void CorrectDetails(
+        DateTime paymentDate,
         PaymentMethod method,
         string? externalReference,
         string? notes)
     {
-        if (CancelledAt is not null)
+        if (Status == PaymentStatus.CANCELLED)
             throw new PaymentAlreadyCancelledException(Id);
 
+        PaymentDate = paymentDate;
         Method = method;
         ExternalReference = externalReference;
         Notes = notes;
     }
 
-    public void AllocateAmount(decimal amount, InvoiceCache cache)
-    {
-        if (amount <= 0)
-            throw new PaymentDomainException("Le montant affecté doit être positif.");
-
-        if (amount> GetRemainingAmount())
-            throw new PaymentDomainException($"Le montant affecté ({amount}) dépasse le restant du règlement ({GetRemainingAmount()}).");
-
-        var remaining = cache.TotalTTC - cache.PaidAmount;
-        if (amount > remaining)
-            throw new PaymentDomainException(
-                            $"Le montant affecté ({amount}) dépasse le restant de la facture ({remaining}).");
-
-        _allocations.Add(new PaymentInvoice(Id, cache.Id, amount));
-    }
-
     public void Cancel()
     {
-        if (CancelledAt != null)
+        if (Status == PaymentStatus.CANCELLED)
             throw new PaymentAlreadyCancelledException(Id);
+
+        Status = PaymentStatus.CANCELLED;
         CancelledAt = DateTime.UtcNow;
     }
-
 }
 
 public enum PaymentMethod
@@ -84,4 +91,10 @@ public enum PaymentMethod
     CARTE_BANCAIRE,
     MOBILE_PAYMENT,
     AUTRE
+}
+
+public enum PaymentStatus
+{
+    DONE,
+    CANCELLED
 }

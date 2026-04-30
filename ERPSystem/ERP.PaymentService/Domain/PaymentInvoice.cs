@@ -13,7 +13,7 @@ public class  PaymentInvoice
         Id = Guid.NewGuid();
         PaymentId = paymentId;
         InvoiceId = invoiceId;
-        AmountAllocated = amountAllocated;
+        AmountAllocated = Math.Round(amountAllocated, 2, MidpointRounding.AwayFromZero);
         RefundedAmount = 0;
     }
 
@@ -25,6 +25,6 @@ public class  PaymentInvoice
         if (RefundedAmount + amount > AmountAllocated)
             throw new InvalidOperationException("Refund exceeds allocation");
 
-        RefundedAmount += amount;
+        RefundedAmount += Math.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 }

@@ -35,7 +35,7 @@ public class RefundRequest
         if (_lines.Any(x => x.PaymentId == paymentId))
             throw new InvalidOperationException("Duplicate allocation.");
 
-        _lines.Add(new RefundLine(paymentId, allocationId, amount));
+        _lines.Add(new RefundLine(paymentId, allocationId, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
     }
 
     public void Complete() 
