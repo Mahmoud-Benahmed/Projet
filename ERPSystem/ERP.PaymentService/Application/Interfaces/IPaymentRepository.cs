@@ -5,10 +5,11 @@ namespace ERP.PaymentService.Application.Interfaces;
 
 public interface IPaymentRepository
 {
+    Task<PaymentStatsDto> GetStatsAsync();
     Task<Payment?> GetByIdAsync(Guid id);
     Task<Payment?> GetByNumberAsync(string number);
     Task<List<Payment>> GetByClientIdAsync(Guid clientId);
-    Task<(List<Payment> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
+    Task<(List<Payment> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, PaymentStatus status, string? search = null);
     Task<List<PaymentSummaryDto>> GetSummaryByInvoiceIdAsync(Guid invoiceId);
     Task AddAsync(Payment payment);
     Task UpdateAsync(Payment payment);
@@ -26,9 +27,10 @@ public interface IPaymentInvoiceRepository
 
 public interface IRefundRequestRepository
 {
+    Task<RefundStatsDto> GetStatsAsync();
     Task<RefundRequest?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<RefundRequest?> GetByInvoiceIdAsync(Guid invoiceId, CancellationToken ct = default);
-    Task<List<RefundRequest>> GetPendingByClientAsync(Guid clientId);
+    Task<List<RefundRequest>> GetByClientIdAsync(Guid clientId);
     Task AddAsync(RefundRequest refund, CancellationToken ct = default);
     void Update(RefundRequest refund);
     Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);

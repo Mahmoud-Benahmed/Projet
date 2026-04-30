@@ -1,6 +1,4 @@
-﻿using ERP.PaymentService.Domain.LocalCache;
-
-namespace ERP.PaymentService.Application.Interfaces.LocalCache;
+﻿namespace ERP.PaymentService.Application.Interfaces.LocalCache;
 
 public interface IInvoiceCacheRepository
 {

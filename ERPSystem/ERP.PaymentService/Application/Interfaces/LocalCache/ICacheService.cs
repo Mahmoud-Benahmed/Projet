@@ -1,5 +1,4 @@
 ﻿using ERP.PaymentService.Application.DTO;
-using ERP.PaymentService.Domain.LocalCache;
 
 namespace ERP.PaymentService.Application.Interfaces.LocalCache;
 

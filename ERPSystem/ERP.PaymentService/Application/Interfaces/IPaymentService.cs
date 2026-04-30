@@ -5,10 +5,11 @@ namespace ERP.PaymentService.Application.Interfaces;
 
 public interface IPaymentService
 {
-    Task<PaymentDto?> GetByIdAsync(Guid id);
-    Task<PaymentDto?> GetByNumberAsync(string number);
+    Task<PaymentStatsDto> GetStatsAsync();
+    Task<PaymentDto> GetByIdAsync(Guid id);
+    Task<PaymentDto> GetByNumberAsync(string number);
     Task<PagedResultDto<PaymentDto>> GetByClientIdAsync(Guid clientId, int pageNumber, int pageSize);
-    Task<PagedResultDto<PaymentDto>> GetPagedAsync(int pageNumber, int pageSize, string? search = null);
+    Task<PagedResultDto<PaymentDto>> GetPagedAsync(int pageNumber, int pageSize, PaymentStatus status, string? search = null);
     Task<List<PaymentSummaryDto>> GetSummaryByInvoiceIdAsync(Guid invoiceId);
     Task<PaymentDto> CreateAsync(CreatePaymentDto dto);
     Task<PaymentDto> CorrectDetailsAsync(Guid id, CorrectPaymentDto dto);
@@ -21,7 +22,7 @@ public interface IPaymentNumberGenerator
 
 public interface IRefundService
 {
-    Task<Guid> CreateRefundAsync(
+    Task<RefundRequestDto> CreateRefundAsync(
         Guid clientId,
         Guid invoiceId,
         CancellationToken ct = default);
@@ -31,7 +32,13 @@ public interface IRefundService
         string externalReference,
         CancellationToken ct = default);
 
-    Task<RefundRequest?> GetByIdAsync(
+    Task<RefundRequestDto?> GetByIdAsync(
         Guid refundId,
         CancellationToken ct = default);
+
+    Task<List<RefundRequestDto>> GetByClientIdAsync(
+    Guid refundId,
+    CancellationToken ct = default);
+
+    Task<RefundStatsDto> GetStatsAsync();
 }
