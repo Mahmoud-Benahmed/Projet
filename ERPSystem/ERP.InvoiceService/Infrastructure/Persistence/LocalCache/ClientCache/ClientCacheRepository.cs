@@ -106,5 +106,6 @@ public class ClientCacheRepository : IClientCacheRepository
     public async Task SaveChangesAsync()
     {
         await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear(); // ← stops phantom re-inserts on subsequent operations
     }
 }

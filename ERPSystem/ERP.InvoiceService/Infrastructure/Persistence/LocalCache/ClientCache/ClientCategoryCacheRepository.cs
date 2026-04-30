@@ -335,7 +335,7 @@ public class ClientCategoryCacheRepository : IClientCategoryCacheRepository
         try
         {
             await _dbContext.SaveChangesAsync();
-            _logger.LogDebug("Client category changes saved to database");
+            _dbContext.ChangeTracker.Clear(); // ← add this
         }
         catch (DbUpdateException ex)
         {
