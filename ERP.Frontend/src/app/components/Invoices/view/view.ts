@@ -239,18 +239,16 @@ export class ViewInvoiceComponent implements OnInit, OnDestroy {
   }
 
   markAsPaid(invoice: InvoiceDto){
-    this.cdr.markForCheck();
     const ref = this.dialog.open(CreatePaymentModal, {
       width: '640px',
       maxWidth: '72vw',
       disableClose: true,   // ← requires explicit cancel/submit
+      data: { mode: 'create' }
     });
     this.cdr.markForCheck();
 
-    ref.afterClosed().subscribe(payment => {
-        if (payment) {
-          this.reload();
-        }
+    ref.afterClosed().subscribe(() => {
+        this.reload();
     });
   }
 
