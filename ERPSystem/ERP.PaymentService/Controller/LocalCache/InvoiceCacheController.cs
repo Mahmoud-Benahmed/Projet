@@ -1,6 +1,5 @@
 ﻿using ERP.PaymentService.Application.DTO;
 using ERP.PaymentService.Application.Interfaces.LocalCache;
-using ERP.PaymentService.Domain.LocalCache;
 using ERP.PaymentService.Properties;
 using Microsoft.AspNetCore.Mvc;
 

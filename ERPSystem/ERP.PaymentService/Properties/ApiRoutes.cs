@@ -17,6 +17,8 @@ public class ApiRoutes
         public const string GetById = $"{Base}/{{id}}";
         public const string GetByNumber = $"{Base}/number/{{number}}";
         public const string GetByClientId = $"{Base}/client/{{clientId}}";
+        public const string GetStats = $"{Base}/stats";
+
         public const string GetPaged = $"{Base}";
         public const string GetByInvoiceId = $"{Base}/invoice/{{invoiceId}}";
         public const string Create = $"{Base}";
@@ -28,6 +30,8 @@ public class ApiRoutes
     {
         private const string Base = $"{ApiRoutes.Base}/refunds";
         public const string GetById = Base + "/{refundId:guid}";
+        public const string GetByClientId = Base + "/client/{clientId:guid}";
         public const string Complete = Base + "/{refundId:guid}/complete";
+        public const string GetStats = $"{Base}/stats";
     }
 }

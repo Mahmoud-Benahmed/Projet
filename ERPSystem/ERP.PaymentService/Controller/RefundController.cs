@@ -1,7 +1,9 @@
 ﻿// API/Controllers/RefundController.cs
 using ERP.PaymentService.Application.DTO;
 using ERP.PaymentService.Application.Interfaces;
+using ERP.PaymentService.Domain;
 using ERP.PaymentService.Properties;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.PaymentService.API.Controllers;
@@ -18,6 +20,16 @@ public class RefundController : ControllerBase
         _logger = logger;
     }
 
+    // GET /payment/refunds/stats
+    [HttpGet(ApiRoutes.Refunds.GetStats)]
+    [ProducesResponseType(typeof(RefundStatsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStats()
+    {
+        var stats= await _refundService.GetStatsAsync();
+        return Ok(stats);
+    }
+
+
     // GET /payment/refunds/{refundId}
     [HttpGet(ApiRoutes.Refunds.GetById)]
     [ProducesResponseType(typeof(RefundRequestDto), StatusCodes.Status200OK)]
@@ -26,6 +38,16 @@ public class RefundController : ControllerBase
     {
         var refund = await _refundService.GetByIdAsync(refundId, ct);
         return refund is null ? NotFound($"Refund '{refundId}' not found.") : Ok(refund);
+    }
+
+    // GET /payment/refunds/client/{clientId}
+    [HttpGet(ApiRoutes.Refunds.GetByClientId)]
+    [ProducesResponseType(typeof(RefundRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetByClientId([FromRoute] Guid clientId,CancellationToken ct)
+    {
+        var refund = await _refundService.GetByClientIdAsync(clientId, ct);
+        return Ok(refund);
     }
 
     // PATCH /payment/refunds/{refundId}/complete

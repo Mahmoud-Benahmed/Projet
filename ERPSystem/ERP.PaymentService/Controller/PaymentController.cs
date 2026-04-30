@@ -1,6 +1,7 @@
 ﻿// API/Controllers/PaymentsController.cs
 using ERP.PaymentService.Application.DTO;
 using ERP.PaymentService.Application.Interfaces;
+using ERP.PaymentService.Domain;
 using ERP.PaymentService.Properties;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public class PaymentsController : ControllerBase
         _logger = logger;
     }
 
-    // GET api/payment/{id}
+    // GET payment/{id}
     [HttpGet(ApiRoutes.Payments.GetById)]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -30,7 +31,7 @@ public class PaymentsController : ControllerBase
         return payment is null ? NotFound() : Ok(payment);
     }
 
-    // GET api/payment/number/{number}
+    // GET payment/number/{number}
     [HttpGet(ApiRoutes.Payments.GetByNumber)]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,7 +41,7 @@ public class PaymentsController : ControllerBase
         return payment is null ? NotFound() : Ok(payment);
     }
 
-    // GET api/payment/client/{clientId}?pageNumber=1&pageSize=10
+    // GET payment/client/{clientId}?pageNumber=1&pageSize=10
     [HttpGet(ApiRoutes.Payments.GetByClientId)]
     [ProducesResponseType(typeof(PagedResultDto<PaymentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByClientId(
@@ -52,19 +53,20 @@ public class PaymentsController : ControllerBase
         return Ok(result);
     }
 
-    // GET api/payment?pageNumber=1&pageSize=10&search=PAY
+    // GET payment?pageNumber=1&pageSize=10&search=PAY
     [HttpGet(ApiRoutes.Payments.GetPaged)]
     [ProducesResponseType(typeof(PagedResultDto<PaymentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPaged(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] PaymentStatus status= PaymentStatus.DONE,
         [FromQuery] string? search = null)
     {
-        var result = await _paymentService.GetPagedAsync(pageNumber, pageSize, search);
+        var result = await _paymentService.GetPagedAsync(pageNumber, pageSize, status, search);
         return Ok(result);
     }
 
-    // GET api/payment/invoice/{invoiceId}
+    // GET payment/invoice/{invoiceId}
     [HttpGet(ApiRoutes.Payments.GetByInvoiceId)]
     [ProducesResponseType(typeof(List<PaymentSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,7 +80,7 @@ public class PaymentsController : ControllerBase
         return Ok(result);
     }
 
-    // POST api/payment
+    // POST /payment
     [HttpPost(ApiRoutes.Payments.Create)]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -113,5 +115,16 @@ public class PaymentsController : ControllerBase
     {
         await _paymentService.CancelAsync(id);
         return NoContent();
+    }
+
+
+    // GET payment/stats
+    [HttpGet(ApiRoutes.Payments.GetStats)]
+    [ProducesResponseType(typeof(List<PaymentStatsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStats()
+    {
+        var result = await _paymentService.GetStatsAsync();
+
+        return Ok(result);
     }
 }
