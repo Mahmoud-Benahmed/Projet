@@ -90,10 +90,6 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             _logger.LogDebug("\n\nInvoice details: {@InvoiceDto}\n\n", dto);
 
             decimal discountRate = GetClientDiscountRate(client);
-            decimal discountMultiplier = 1 - (discountRate / 100m);
-
-            _logger.LogInformation("\n\nClient {ClientId} has discount rate of {DiscountRate}%, applying multiplier of {DiscountMultiplier}\n\n", dto.ClientId, discountRate, discountMultiplier);
-
 
 
             string invoiceNumber = await _invoiceNumberGenerator.GenerateNextInvoiceNumberAsync();
@@ -120,19 +116,21 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             Dictionary<Guid, Domain.LocalCache.Article.ArticleCache> articleDictionary = articles.ToDictionary(a => a.Id, a => a);
 
             // Now loop through items - no database calls here!
+            
+
             foreach (CreateInvoiceItemDto itemDto in dto.Items)
             {
                 if (articleDictionary.TryGetValue(itemDto.ArticleId, out Domain.LocalCache.Article.ArticleCache? article))
                 {
-                    invoice.AddItem(new InvoiceItem(
-                        invoice.Id,
-                        itemDto.ArticleId,
-                        article.Libelle,
-                        article.BarCode,
-                        itemDto.Quantity,
-                        itemDto.UniPriceHT,
-                        itemDto.TaxRate));
-                }
+                invoice.AddItem(new InvoiceItem(
+                    invoice.Id,
+                    itemDto.ArticleId,
+                    article.Libelle,
+                    article.BarCode,
+                    itemDto.Quantity,
+                    itemDto.UniPriceHT,
+                    itemDto.TaxRate));
+            }
                 else
                 {
                     throw new InvalidOperationException($"Article with ID {itemDto.ArticleId} not found");
@@ -342,6 +340,19 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
 
             return invoice.ToDto();
         }
+
+        public async Task MarkAsUnpaidAsync(Guid id)
+        {
+            // ──── GET INVOICE ────
+            Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice is null || invoice.IsDeleted)
+                throw new InvoiceNotFoundException(id);
+
+            invoice.MarkAsUnpaid();
+            await _invoiceRepository.UpdateAsync(invoice);
+        }
+
         public async Task<InvoiceDto> CancelAsync(Guid id)
         {
             Invoice? invoice = await _invoiceRepository.GetByIdAsync(id);
@@ -491,21 +502,22 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 DeletedCount: deletedCount,
                 OverdueCount: overdue.Count,
 
-                TotalRevenueHT: revenueHT,
-                TotalRevenueTTC: revenueTTC,
-                TotalTVACollected: tvaColl,
+                TotalRevenueHT: Math.Round(revenueHT, 2),
+                TotalRevenueTTC: Math.Round(revenueTTC, 2),
+                TotalTVACollected: Math.Round(tvaColl, 2),
+                OutstandingHT: Math.Round(outstandingHT, 2),
+                OutstandingTTC: Math.Round(outstandingTTC, 2),
+                OverdueHT: Math.Round(overdueHT, 2),
+                OverdueTTC: Math.Round(overdueTTC, 2),
+                AverageInvoiceValueHT: Math.Round(avgValueHT, 2),
+                AveragePaymentDays: Math.Round(avgPaymentDays, 1),
 
-                OutstandingHT: outstandingHT,
-                OutstandingTTC: outstandingTTC,
-
-                OverdueHT: overdueHT,
-                OverdueTTC: overdueTTC,
-
-                AverageInvoiceValueHT: avgValueHT,
-                AveragePaymentDays: avgPaymentDays,
-
-                TopClients: topClients,
-                MonthlyBreakdown: monthlyBreakdown
+                TopClients: topClients.Select(c => c with { RevenueTTC = Math.Round(c.RevenueTTC, 2) }).ToList(),
+                MonthlyBreakdown: monthlyBreakdown.Select(m => m with
+                {
+                    IssuedTTC = Math.Round(m.IssuedTTC, 2),
+                    PaidTTC = Math.Round(m.PaidTTC, 2)
+                }).ToList()
             );
         }
 
@@ -514,19 +526,23 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
             Domain.LocalCache.Client.ClientCache client = await _clientCacheRepository.GetByIdAsync(clientId)
                 ?? throw new KeyNotFoundException($"Client with Id: {clientId} not found.");
 
+            // No credit limit set → allow unconditionally
+            decimal? effectiveLimit = client.GetEffectiveCreditLimit();
+            if (effectiveLimit is null) return;
+
             IEnumerable<Invoice> invoices = await _invoiceRepository.GetByClientIdAsNoTrackingAsync(clientId);
 
-            // Exclude current invoice if updating
             decimal clientCurrentCredit = invoices
                 .Where(i => i.Status == InvoiceStatus.UNPAID
                             && (excludeInvoiceId == null || i.Id != excludeInvoiceId))
                 .Sum(i => i.TotalTTC);
 
-            if (client.GetEffectiveCreditLimit() < invoiceTotalTTC + clientCurrentCredit)
+            if (clientCurrentCredit + invoiceTotalTTC > effectiveLimit.Value)
                 throw new InvoiceDomainException(
                     $"Cannot create invoice. Client '{client.Name}' exceeds credit limit." +
-                    $" Current used: {clientCurrentCredit:C}, Attempted invoice: {invoiceTotalTTC:C}, Limit: {client.GetEffectiveCreditLimit():C}"
-                );
+                    $" Current used: {clientCurrentCredit:F2}, " +
+                    $"Attempted: {invoiceTotalTTC:F2}, " +
+                    $"Limit: {effectiveLimit.Value:F2}");
         }
 
         private void ValidateStockAvailability(List<CreateInvoiceItemDto> items, StockStatusResponse stockStatus)
@@ -587,13 +603,15 @@ namespace ERP.InvoiceService.Application.Services.LocalCache.ArticleCache
                 return 0m;
 
             List<ClientCategoryCache> bulkCategories = client.ClientCategories
-                .Where(cc => cc.Category?.UseBulkPricing == true)
+                .Where(cc => cc.Category?.UseBulkPricing == true && cc.Category.DiscountRate.HasValue)
                 .ToList();
 
             if (!bulkCategories.Any()) return 0m;
 
-            decimal highest = bulkCategories.Max(cc => cc.Category!.DiscountRate) ?? 0m;
-            return highest <= 1 ? highest * 100 : highest;
+            decimal highest = bulkCategories.Max(cc => cc.Category!.DiscountRate!.Value);
+
+            // DiscountRate is stored as 0.00–1.00 (e.g. 0.15 = 15%) → convert to percentage
+            return highest <= 1m ? Math.Round(highest * 100m, 2) : Math.Round(highest, 2);
         }
     }
 }
