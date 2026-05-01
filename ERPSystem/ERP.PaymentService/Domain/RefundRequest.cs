@@ -38,11 +38,12 @@ public class RefundRequest
         _lines.Add(new RefundLine(paymentId, allocationId, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
     }
 
-    public void Complete() 
+    public void Complete(string reason) 
     {
         if (Status == RefundStatus.COMPLETED)
             throw new InvalidOperationException("Cannot process a COMPLETED refund. This refund has been processed and sent to client.");
         Status = RefundStatus.COMPLETED;
+        RefundReason = reason.Trim();
         CompletedAt = DateTime.UtcNow;
     }
 
