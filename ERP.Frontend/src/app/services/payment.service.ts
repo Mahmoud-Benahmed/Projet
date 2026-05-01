@@ -90,7 +90,7 @@ export interface CreateRefundDto {
 }
 
 export interface CompleteRefundDto {
-  externalReference: string;
+  refundReason: string;
 }
 
 export interface RefundStatsDto{
