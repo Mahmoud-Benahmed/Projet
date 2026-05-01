@@ -21,6 +21,7 @@
     "AUDIT_LOG": "Journal d'audit"
   },
   "COMMON": {
+    "MARK_COMPLETED": "Valider",
     "LOAD_MORE": "Charger plus",
     "LEAVE": "Quitter",
     "STAY": "Rester",
@@ -952,6 +953,88 @@
       "DONE": "Validé"
     },
     "NEW_BUTTON":"+ Nouveau paiment"
+  },
+  "REFUNDS": {
+    "BREADCRUMB": "Remboursements",
+    "TITLE_LIST": "Demandes de remboursement",
+    "SEARCH_PLACEHOLDER": "Rechercher par client ou ID…",
+    "NO_RESULTS": "Aucun remboursement trouvé.",
+
+    "STATS": {
+      "TOTAL": "Total",
+      "PENDING": "En attente",
+      "COMPLETED": "Complétés"
+    },
+
+    "TABS": {
+      "ALL": "Tous",
+      "PENDING": "En attente",
+      "COMPLETED": "Complétés"
+    },
+
+    "TABLE": {
+      "ID": "ID remboursement",
+      "CLIENT": "Client",
+      "INVOICE": "Facture",
+      "STATUS": "Statut",
+      "LINES": "Lignes",
+      "TOTAL_AMOUNT": "Montant total",
+      "ACTIONS": "Actions"
+    },
+
+    "STATUS": {
+      "PENDING": "En attente",
+      "COMPLETED": "Complété"
+    },
+
+    "ACTIONS": {
+      "VIEW": "Voir les détails",
+      "COMPLETE": "Marquer comme complété"
+    },
+
+    "COMPLETE": {
+      "TITLE": "Compléter le remboursement",
+      "DESC": "Saisissez la raison de remboursement afin de confirmer qu'il a été traité.",
+      "EXTERNAL_REF": "Raison",
+      "EXTERNAL_REF_PLACEHOLDER": "Raison de remboursement..",
+      "CONFIRM": "Confirmer"
+    },
+
+    "SUCCESS": {
+      "COMPLETED": "Remboursement marqué comme complété avec succès."
+    },
+
+    "ERRORS": {
+      "LOAD_FAILED": "Échec du chargement des remboursements. Veuillez réessayer.",
+      "COMPLETE_FAILED": "Échec de la complétion du remboursement. Veuillez réessayer."
+    },
+    "VIEW": {
+      "TITLE": "Détails du remboursement",
+      "REFUND_INFO": "Informations du remboursement",
+      "REFUND_ID": "ID remboursement",
+      "STATUS": "Statut",
+      "TOTAL_AMOUNT": "Montant total remboursé",
+      "LINE_COUNT": "Nombre de lignes",
+      "CLIENT_INFO": "Informations client",
+      "CLIENT_NOT_FOUND": "Informations client indisponibles.",
+      "INVOICE_INFO": "Informations facture",
+      "INVOICE_NOT_FOUND": "Informations facture indisponibles.",
+      "LINES": "Lignes de remboursement",
+      "LINES_SUBTITLE": "ligne(s)",
+      "TOTAL": "Total",
+      "NO_LINES": "Aucune ligne de remboursement trouvée.",
+      "TABLE": {
+        "PAYMENT_NUMBER": "Numéro de règlement",
+        "PAYMENT_DATE": "Date de règlement",
+        "METHOD": "Méthode",
+        "AMOUNT": "Montant remboursé",
+        "PAYMENT_LINK": "Règlement",
+        "VIEW_PAYMENT": "Voir le règlement"
+      }
+    },
+    "FORM":{
+      "TITLE": "Compléter le remboursement"
+    }
   },
   "AUDIT": {
     "BREADCRUMB": "Journaux d'audit",
