@@ -52,20 +52,12 @@ public class RefundService : IRefundService
         return ToDto(refund);
     }
 
-    public async Task CompleteRefundAsync(Guid refundId, string externalReference, CancellationToken ct = default)
+    public async Task CompleteRefundAsync(Guid refundId, string refundReason, CancellationToken ct = default)
     {
         var refund = await _refundRepo.GetByIdAsync(refundId, ct)
             ?? throw new KeyNotFoundException($"Refund '{refundId}' not found.");
 
-        refund.Complete();
-
-        foreach (var line in refund.Lines)
-        {
-            var allocation = await _allocationRepo.GetByIdAsync(line.PaymentAllocationId)
-                ?? throw new InvalidOperationException($"Allocation '{line.PaymentAllocationId}' not found.");
-
-            allocation.Refund(Math.Round(line.Amount, 2));  // ← round before domain call
-        }
+        refund.Complete(refundReason);
 
         _refundRepo.Update(refund);
         await _refundRepo.SaveChangesAsync(ct);
