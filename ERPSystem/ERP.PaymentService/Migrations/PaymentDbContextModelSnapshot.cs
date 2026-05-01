@@ -100,9 +100,13 @@ namespace ERP.PaymentService.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique();
 
                     b.ToTable("Refunds", (string)null);
                 });
@@ -251,6 +255,8 @@ namespace ERP.PaymentService.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.HasKey("RefundRequestId", "PaymentAllocationId");
+
+                            b1.HasIndex("PaymentAllocationId");
 
                             b1.ToTable("RefundLines", (string)null);
 
