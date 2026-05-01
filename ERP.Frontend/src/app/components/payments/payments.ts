@@ -21,7 +21,7 @@ type InvoiceWithPayment = InvoiceDto & {
   remainingAmount: number;
 };
 
-export type PaymentFormMode = 'create' | 'edit' | 'refund';
+export type PaymentFormMode = 'create' | 'edit';
 
 export interface PaymentFormData {
   payment?: PaymentDto;
@@ -151,11 +151,11 @@ export class PaymentComponent implements OnInit {
   cancel(payment: PaymentDto){
     this.paymentService.cancelPayment(payment.id).subscribe({
       next:()=>{
-        this.flash('success', this.translate.instant('PAYMENTS.SUCCESS.CANCEL'));
+        this.flash('success', this.translate.instant('PAYMENTS.SUCCESS.CANCELLED'));
         this.reload();
       },
       error:()=>{
-        this.flash('error', this.translate.instant('PAYMENTS.SUCCESS.ERROR'));
+        this.flash('error', this.translate.instant('PAYMENTS.ERRORS.CANCELLED'));
       }
     })
   }
