@@ -108,51 +108,23 @@ public class InvoiceCacheService : IInvoiceCacheService
 
     public async Task SyncCancelledAsync(InvoiceEventDto dto)
     {
-        if (dto is null)
-            throw new ArgumentNullException(nameof(dto));
+        if (dto is null) throw new ArgumentNullException(nameof(dto));
 
-        if (string.IsNullOrWhiteSpace(dto.InvoiceNumber))
+        // Don't check status string here — the topic itself is the authority
+        var existing = await _invoiceCacheRepository.GetByIdAsync(dto.Id);
+
+        if (existing is null)
         {
             _logger.LogWarning(
-                "Invoice event has null or empty InvoiceNumber. Id: {InvoiceId}", dto.Id);
+                "Invoice {InvoiceId} not found in cache. Cannot cancel.", dto.Id);
             return;
         }
 
-        if (dto.Status != InvoiceStatus.CANCELLED.ToString())
-        {
-            _logger.LogWarning(
-                "Invoice {InvoiceId} has unexpected status {Status} on cancelled topic.",
-                dto.Id, dto.Status);
-            return;
-        }
+        existing.MarkCancelled();
+        await _invoiceCacheRepository.SaveChangesAsync(existing);  // ← let it throw on failure
 
-        try
-        {
-            // ✅ fix 3: only pass invoiceId
-            var existing = await _invoiceCacheRepository.GetByIdAsync(dto.Id);
-
-            if (existing is null)
-            {
-                _logger.LogWarning(
-                    "No invoice cache found for Id: {InvoiceId}, " +
-                    "InvoiceNumber: {InvoiceNumber}. Cannot cancel.",
-                    dto.Id, dto.InvoiceNumber);
-                return;
-            }
-
-            existing.MarkCancelled();
-            await _invoiceCacheRepository.SaveChangesAsync(existing);
-
-            _logger.LogInformation(
-                "Marked invoice cache as cancelled for Id: {InvoiceId}, " +
-                "InvoiceNumber: {InvoiceNumber}.",
-                dto.Id, dto.InvoiceNumber);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error syncing cancelled invoice. Id: {InvoiceId}", dto.Id);
-        }
+        _logger.LogInformation(
+            "Invoice {InvoiceId} marked CANCELLED in cache.", dto.Id);
     }
 
     private static InvoiceEventDto ToDto(InvoiceCache cache) => new(
