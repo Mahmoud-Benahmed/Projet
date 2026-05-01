@@ -1640,3 +1640,59 @@ $bp-xl:  1200px;
     }
   }
 }
+
+
+
+.action-bar {
+  margin-bottom: 1.25rem;
+
+  &__btns {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    row-gap: 1rem;
+    column-gap: 0.5rem;
+    flex-wrap: wrap;  // ← allows buttons to wrap on smaller screens
+
+    // shrink button padding slightly so more fit per row
+    .btn-primary,
+    .btn-secondary,
+    .btn-success,
+    .btn-warning,
+    .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    @media (max-width: $bp-md) {
+      gap: 0.4rem;
+
+      .btn-primary,
+      .btn-secondary,
+      .btn-success,
+      .btn-warning,
+      .btn-danger {
+        padding: 0.45rem 0.7rem;
+        font-size: 0.78rem;
+      }
+    }
+
+    @media (max-width: $bp-sm) {
+      flex-direction: column;
+      align-items: stretch;
+
+      .btn-primary,
+      .btn-secondary,
+      .btn-success,
+      .btn-warning,
+      .btn-danger {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
