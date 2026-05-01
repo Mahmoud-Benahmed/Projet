@@ -22,6 +22,7 @@
     "AUDIT_LOG": "Audit Log"
   },
   "COMMON": {
+    "MARK_COMPLETED": "Mark as completed",
     "LOAD_MORE": "Load more",
     "LEAVE": "Leave",
     "STAY": "Stay",
@@ -884,7 +885,7 @@
     },
     "OVERDUE_TOOLTIP": "This invoice is overdue"
   },
-  "PAYMENTS":{
+  "PAYMENTS": {
     "BREADCRUMB":"ERP › Payments",
     "TITLE_LIST":"Payments",
     "TITLE_DETAILS": "Payment details",
@@ -1027,6 +1028,88 @@
       "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
       "CONFIRMATION.CLEAR_AUDIT_LOGS": "Are you sure you want to clear all audit logs? This action cannot be undone.",
       "SUCCESS.AUDIT_LOG_CLEARED": "Audit logs have been cleared successfully."
+    }
+  },
+  "REFUNDS": {
+    "BREADCRUMB": "Refunds",
+    "TITLE_LIST": "Refund Requests",
+    "SEARCH_PLACEHOLDER": "Search by client or ID…",
+    "NO_RESULTS": "No refunds found.",
+
+    "STATS": {
+      "TOTAL": "Total",
+      "PENDING": "Pending",
+      "COMPLETED": "Completed"
+    },
+
+    "TABS": {
+      "ALL": "All",
+      "PENDING": "Pending",
+      "COMPLETED": "Completed"
+    },
+
+    "TABLE": {
+      "ID": "Refund ID",
+      "CLIENT": "Client",
+      "INVOICE": "Invoice",
+      "STATUS": "Status",
+      "LINES": "Lines",
+      "TOTAL_AMOUNT": "Total Amount",
+      "ACTIONS": "Actions"
+    },
+
+    "STATUS": {
+      "PENDING": "Pending",
+      "COMPLETED": "Completed"
+    },
+
+    "ACTIONS": {
+      "VIEW": "View details",
+      "COMPLETE": "Mark as completed"
+    },
+
+    "COMPLETE": {
+      "TITLE": "Complete Refund",
+      "DESC": "Enter the reason for the refund to confirm it has been processed.",
+      "REASON_LABEL": "Reason",
+      "REASON_PLACEHOLDER": "Reason of the refund..",
+      "CONFIRM": "Confirm"
+    },
+
+    "SUCCESS": {
+      "COMPLETED": "Refund marked as completed successfully."
+    },
+
+    "ERRORS": {
+      "LOAD_FAILED": "Failed to load refunds. Please try again.",
+      "COMPLETE_FAILED": "Failed to complete refund. Please try again."
+    },
+    "VIEW": {
+      "TITLE": "Refund Details",
+      "REFUND_INFO": "Refund Information",
+      "REFUND_ID": "Refund ID",
+      "STATUS": "Status",
+      "TOTAL_AMOUNT": "Total Refund Amount",
+      "LINE_COUNT": "Number of Lines",
+      "CLIENT_INFO": "Client Information",
+      "CLIENT_NOT_FOUND": "Client information unavailable.",
+      "INVOICE_INFO": "Invoice Information",
+      "INVOICE_NOT_FOUND": "Invoice information unavailable.",
+      "LINES": "Refund Lines",
+      "LINES_SUBTITLE": "line(s)",
+      "TOTAL": "Total",
+      "NO_LINES": "No refund lines found.",
+      "TABLE": {
+        "PAYMENT_NUMBER": "Payment Number",
+        "PAYMENT_DATE": "Payment Date",
+        "METHOD": "Method",
+        "AMOUNT": "Refunded Amount",
+        "PAYMENT_LINK": "Payment",
+        "VIEW_PAYMENT": "View payment"
+      }
+    },
+    "FORM":{
+      "TITLE": "Complete Refund"
     }
   },
   "CONTROLES": {
