@@ -234,6 +234,7 @@
                                     min="0.01"
                                     [placeholder]="'PAYMENTS.FORM.AMOUNT' | translate"
                                     (input)="onAllocatedAmountChange()"
+                                    (change)="onAllocatedAmountChange()"
                                     [max]="getMaxForLine(i)"
                                     [class.form__input--error]="getAllocationLine(i).get('allocatedAmount')?.invalid && getAllocationLine(i).get('allocatedAmount')?.touched" />
                                 <span class="form__error"
@@ -258,7 +259,7 @@
                 </div>
             </div>
         </div>
-        
+
     </form>
 </mat-dialog-content>
 
