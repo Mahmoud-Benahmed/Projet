@@ -173,24 +173,26 @@ internal class RefundRequestConfiguration : IEntityTypeConfiguration<RefundReque
 
         builder.Property(e => e.ClientId).IsRequired();
         builder.Property(e => e.InvoiceId).IsRequired();
+        builder.HasIndex(e => e.InvoiceId).IsUnique();
 
         builder.Property(e => e.Status)
                .HasConversion<string>()
+               .HasMaxLength(50)
                .IsRequired();
 
-        builder.Property(e => e.CompletedAt);
+        builder.Property(e => e.CompletedAt).IsRequired(false);
 
         builder.Property(e => e.RefundReason)
                .HasMaxLength(500);
+
 
         // 🔥 THIS IS THE IMPORTANT PART
         builder.OwnsMany(e => e.Lines, lines =>
         {
             lines.ToTable("RefundLines");
 
-            lines.WithOwner().HasForeignKey("RefundRequestId");
-
-            lines.HasKey("RefundRequestId", "PaymentAllocationId");
+            lines.WithOwner().HasForeignKey(l => l.RefundRequestId);
+            lines.HasKey(l => new { l.RefundRequestId, l.PaymentAllocationId });
 
             lines.Property(l => l.PaymentId).IsRequired();
             lines.Property(l => l.PaymentAllocationId).IsRequired();
@@ -198,6 +200,8 @@ internal class RefundRequestConfiguration : IEntityTypeConfiguration<RefundReque
             lines.Property(l => l.Amount)
                  .HasPrecision(18, 2)
                  .IsRequired();
+
+            lines.HasIndex(l => l.PaymentAllocationId);
         });
     }
 }
