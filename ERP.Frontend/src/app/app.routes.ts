@@ -29,6 +29,8 @@ import { ViewInvoiceComponent } from './components/invoices/view/view';
 import { CreatePaymentModal } from './components/payments/create-modal/create-modal';
 import { PaymentComponent } from './components/payments/payments';
 import { ViewPaymentComponent } from './components/payments/view/view';
+import { RefundsComponent } from './components/payments/refund/refund';
+import { RefundViewComponent } from './components/payments/refund/view/view';
 
 // helper function to pick multiple privileges from a category
 function pickPrivileges(category: keyof typeof PRIVILEGES, keys: string[]) {
@@ -76,6 +78,8 @@ export const routes: Routes = [
       { path: 'stock/fournisseurs', component: FournisseurComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK','UPDATE_STOCK','ADD_ENTRY']) } },
       { path: 'stock/bons', component: BonsComponent, data: { privileges: pickPrivileges('STOCK', ['VIEW_STOCK', 'UPDATE_STOCK', 'ADD_ENTRY']) } },
 
+      { path: 'payments/refunds/:id', component: RefundViewComponent, data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS', "'MANAGE_PAYMENTS'"]) } },
+      { path: 'payments/refunds', component: RefundsComponent, data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS', "'MANAGE_PAYMENTS'"]) } },
       { path: 'payments/:id', component: ViewPaymentComponent, data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS']) } },
       { path: 'payments', component: PaymentComponent, data: { privileges: pickPrivileges('PAYMENTS', ['VIEW_PAYMENTS', 'RECORD_PAYMENT', 'CANCEL_PAYMENT']) } },
 
