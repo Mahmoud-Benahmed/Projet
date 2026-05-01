@@ -12,6 +12,8 @@ namespace ERP.PaymentService.Application.Services;
 public class PaymentService : IPaymentService
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly IPaymentInvoiceRepository _paymentInvoiceRepo;
+
     private readonly IRefundService _refundService;
     private readonly IInvoiceCacheRepository _invoiceCacheRepository;
     private readonly IPaymentNumberGenerator _numberGenerator;
@@ -19,6 +21,7 @@ public class PaymentService : IPaymentService
     private readonly IEventPublisher _eventPublisher;
 
     public PaymentService(
+        IPaymentInvoiceRepository paymentInvoiceRepo,
         IRefundService refundService, 
         IPaymentRepository paymentRepository,
         IInvoiceCacheRepository invoiceCacheRepository,
@@ -32,6 +35,7 @@ public class PaymentService : IPaymentService
         _invoiceCacheRepository = invoiceCacheRepository;
         _logger = logger;
         _eventPublisher = eventPublisher;
+        _paymentInvoiceRepo = paymentInvoiceRepo;
     }
 
     public async Task<PaymentStatsDto> GetStatsAsync()
@@ -196,16 +200,26 @@ public class PaymentService : IPaymentService
             var cache = await _invoiceCacheRepository.GetByIdAsync(allocation.InvoiceId);
             if (cache is not null)
             {
-                cache.ReversePayment(Math.Round(allocation.AmountAllocated, 2));
+                var remaining = Math.Round(
+                    Math.Max(0m, allocation.AmountAllocated - allocation.RefundedAmount),
+                    2,
+                    MidpointRounding.AwayFromZero
+                );
+
+                cache.ReversePayment(remaining);
+
                 await _invoiceCacheRepository.SaveChangesAsync(cache);
+
                 await _eventPublisher.PublishAsync(PaymentTopics.Cancelled,
-                            new PaymentCancelledEvent(
-                                PaymentId: payment.Id,
-                                InvoiceId: allocation.InvoiceId,
-                                ReversedAmount: allocation.AmountAllocated,
-                                CancelledAt: payment.CancelledAt.Value));
+                new PaymentCancelledEvent(
+                    PaymentId: payment.Id,
+                    InvoiceId: allocation.InvoiceId,
+                    ReversedAmount: allocation.AmountAllocated,
+                    CancelledAt: payment.CancelledAt.Value));
             }
         }
+
+        await _paymentInvoiceRepo.SaveChangesAsync();
 
         _logger.LogInformation(
             "Payment {PaymentId} cancelled at {CancelledAt}.",
