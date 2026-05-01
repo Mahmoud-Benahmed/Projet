@@ -49,7 +49,7 @@
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">{{ 'PAYMENTS.DETAILS.METHOD' | translate }}</span>
-                        <span class="detail-value">{{ selectedPayment.method }} </span>
+                        <span class="detail-value detail-value--large">{{ selectedPayment.method }} </span>
                     </div>
 
                     <div class="detail-item detail-item--full" *ngIf="selectedPayment.externalReference">
@@ -58,7 +58,7 @@
                     </div>
                     <div class="detail-item detail-item--full">
                         <span class="detail-label">{{ 'PAYMENTS.DETAILS.NOTES' | translate }}</span>
-                        <span class="detail-value detail-value--large">{{ selectedPayment.notes ?? '-' }}</span>
+                        <span class="detail-value">{{ selectedPayment.notes ?? '-' }}</span>
                     </div>
                 </div>
               </div>
