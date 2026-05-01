@@ -112,7 +112,7 @@ export class CreatePaymentModal implements OnInit{
     this.form = this.fb.group({
       clientId:          ['', Validators.required],
       method:            ['', Validators.required],
-      paymentDate: [new Date().toISOString().split('T')[0], Validators.required],
+      paymentDate:        [this.toLocalDateString(null), Validators.required],
       externalReference: [null],
       notes:             [null],
       totalAmount:       [0, [Validators.required, Validators.min(0)]],
@@ -121,27 +121,50 @@ export class CreatePaymentModal implements OnInit{
   }
 
   patchForm(payment: PaymentDto): void {
-    // 1. Patch scalar fields
     this.form.patchValue({
       clientId:          payment.clientId,
       method:            payment.method,
-      paymentDate:       new Date(payment.paymentDate).toISOString().split('T')[0],
+      paymentDate:       this.toLocalDateString(payment.paymentDate),
       externalReference: payment.externalReference ?? null,
       notes:             payment.notes ?? null,
       totalAmount:       payment.totalAmount,
     });
 
-    // 2. Set the client label so the dropdown trigger shows the right text
-    this.selectedClientLabel = payment.clientId; // temporary — replaced once clients load
-    this.loadClients(1, false);                  // loads clients, then fixes label below
+    // Fetch the client directly — don't depend on the filtered unpaid-clients list
+    this.invoiceService.getClientById(payment.clientId).pipe(take(1)).subscribe({
+      next: (client) => {
+        if (client) {
+          this.selectedClientLabel = `${client.name} - ${client.email}`;
+          this.cdr.markForCheck();
+        }
+      },
+      error: () => {
+        // Fallback — at least show something readable
+        this.selectedClientLabel = payment.clientId;
+      }
+    });
 
-    // 3. Load invoices for this client so the selects are populated
     this.loadInvoices(payment.clientId);
 
-    // 4. Clear the blank line initForm added, then push real allocation lines
     this.allocations.clear();
+    payment.allocations.forEach(a => {
+      this.allocations.push(
+        this.fb.group({
+          invoiceId:       [a.invoiceId,       Validators.required],
+          allocatedAmount: [a.amountAllocated, [Validators.required, Validators.min(0.01)]]
+        })
+      );
+    });
+
+    if (this.mode === 'edit') {
+      this.allocations.controls.forEach(ctrl => ctrl.disable());
+      this.form.get('clientId')?.disable();
+      this.form.get('totalAmount')?.disable();
+    }
+
     this.cdr.markForCheck();
   }
+
   loadInvoices(clientId: string): void {
     this.invoicesLoading = true;
     this.invoices = [];
@@ -235,12 +258,6 @@ export class CreatePaymentModal implements OnInit{
           this.clientPage = page;
           this.hasMoreClients = this.clients.length < totalCount;
           this.clientsLoading = false;
-
-          // ── Fix edit-mode label ──────────────────────────────────────
-          if (this.mode === 'edit' && this.data.payment) {
-            const match = this.clients.find(c => c.id === this.data.payment!.clientId);
-            if (match) this.selectedClientLabel = `${match.name} - ${match.email}`;
-          }
 
           // Auto-select first client only on create
           if (!append && this.mode === 'create' &&
@@ -350,13 +367,22 @@ export class CreatePaymentModal implements OnInit{
   }
 
   removeLine(index: number): void {
-    if (this.allocations.length > 1) this.allocations.removeAt(index);
+    if (this.allocations.length > 1) {
+      this.allocations.removeAt(index);
+      this.onAllocatedAmountChange(); // ← recalculate total after removal
+    }
   }
 
   onAllocatedAmountChange(): void {
-    const total = this.allocations.controls
-      .reduce((sum, line) => sum + (line.get('allocatedAmount')?.value ?? 0), 0);
-    this.form.get('totalAmount')?.setValue(total);
+    const total = this.allocations.controls.reduce((sum, line) => {
+      const val = parseFloat(line.get('allocatedAmount')?.value ?? 0);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    // Round to 2 decimals to kill floating-point drift
+    this.form.get('totalAmount')?.setValue(
+      Math.round(total * 100) / 100
+    );
   }
 
 
@@ -430,5 +456,16 @@ export class CreatePaymentModal implements OnInit{
       }, 0);
       setTimeout(() => { this.errorMessage = null; }, 4000);
     }
+  }
+
+  private toLocalDateString(dateStr: string | null | undefined): string {
+    if (!dateStr) return new Date().toISOString().split('T')[0];
+    // Append local midnight to prevent UTC parsing
+    const raw = dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00`;
+    const d   = new Date(raw);
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
 }
