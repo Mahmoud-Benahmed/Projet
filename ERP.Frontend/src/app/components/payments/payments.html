@@ -90,7 +90,7 @@
                [(ngModel)]="searchQuery" />
       </div>
       <button
-        *ngIf="authService.hasPrivilege(PRIVILEGES.INVOICES.CREATE_INVOICE)"
+        *ngIf="authService.hasPrivilege(PRIVILEGES.PAYMENTS.RECORD_PAYMENT)"
         [disabled]="getUnpaidInvoices().length< 1"
         [matTooltip]="getAddButtonTooltip()"
         class="btn-add"
