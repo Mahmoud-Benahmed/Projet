@@ -43,14 +43,22 @@ public class InvoiceCache
 
     public void ReversePayment(decimal amount)
     {
+
         if (amount <= 0)
             throw new ArgumentException("Reversal amount must be positive.");
 
-        PaidAmount = Math.Round(Math.Max(0, PaidAmount - amount), 2);
+        if (amount > PaidAmount)
+            throw new InvalidOperationException("Cannot reverse more than paid amount.");
+        
+        var newAmount = PaidAmount - amount;
 
-        Status = PaidAmount <= 0
-            ? InvoiceStatus.UNPAID
-            : InvoiceStatus.UNPAID; // partially paid is still UNPAID
+        PaidAmount = Math.Round(
+            Math.Max(0m, newAmount),
+            2,
+            MidpointRounding.AwayFromZero
+        );
+
+        Status = InvoiceStatus.UNPAID; // partially paid is still UNPAID
 
         LastUpdated = DateTimeOffset.UtcNow;  // ← was missing
     }
