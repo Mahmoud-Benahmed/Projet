@@ -1,0 +1,54 @@
+<div class="modal-header" id="top">
+  <h2 class="modal-title">{{ 'REFUNDS.FORM.TITLE' | translate }}</h2>
+  <button type="button" class="shell-icon-btn" (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<!-- Alerts — sit between header and content -->
+<div *ngIf="successMessage" class="modal-alert modal-alert--success" id="success">
+  <mat-icon style="font-size:16px;width:16px;height:16px;">check_circle_outline</mat-icon>
+  {{ successMessage }}
+</div>
+<div *ngIf="errorMessage" class="modal-alert modal-alert--error" id="error">
+  <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+  {{ errorMessage }}
+  <button class="alert__close" (click)="errorMessage = null">
+    <mat-icon style="font-size:16px;width:16px;height:16px;">close</mat-icon>
+  </button>
+</div>
+
+
+<mat-dialog-content>
+    <form [formGroup]="form" class="form">
+      <div class="form__field">
+        <div class="form__label">
+          <label>{{ 'REFUNDS.COMPLETE.REASON_LABEL' | translate }}</label>
+          <mat-icon>checkbook</mat-icon>
+        </div>
+        <input type="text"
+              class="form__input"
+              formControlName="refundReason"
+              [placeholder]="'REFUNDS.COMPLETE.REASON_PLACEHOLDER' | translate"
+              [class.form__input--error]="form.get('refundReason')?.invalid
+                                        && form.get('refundReason')?.touched">
+        <span class="form__error"
+              *ngIf="form.get('refundReason')?.invalid && form.get('refundReason')?.touched">
+          {{ 'VALIDATION.REQUIRED' | translate }}
+        </span>
+      </div>
+    </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="btn-secondary" (click)="cancel()">
+    {{ 'COMMON.CANCEL' | translate }}
+  </button>
+  <button type="button"
+          class="btn-add"
+          [class.disabled]="form.invalid || isSubmitting"
+          (click)="onSubmit()">
+    <span *ngIf="!isSubmitting">{{ 'COMMON.SAVE' | translate }}</span>
+    <span *ngIf="isSubmitting">{{ 'COMMON.SAVING' | translate }}...</span>
+  </button>
+</mat-dialog-actions>
