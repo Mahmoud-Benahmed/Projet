@@ -84,10 +84,10 @@ export class ClientsComponent implements OnInit {
   readonly PRIVILEGES = PRIVILEGES;
   clientForm: FormGroup;
 
-  readonly namePattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
-  readonly addressPattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
-  readonly taxNumberPattern= /^[A-Za-z0-9]+$/.source
-  readonly phonePattern= /^\+?\d{8,15}$/.source;
+  readonly namePattern    = /^[\p{L}0-9\s,.'\-]+$/u;
+  readonly addressPattern = /^[\p{L}0-9\s,.'\-]+$/u;
+  readonly taxNumberPattern= /^[A-Za-z0-9]+$/;
+  readonly phonePattern= /^\+?\d{8,15}$/;
 
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';

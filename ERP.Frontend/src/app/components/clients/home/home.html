@@ -388,8 +388,13 @@
             <input class="form__input" type="text" formControlName="name" [placeholder]="'CLIENTS.FORM.NAME_PLACEHOLDER' | translate"
               [pattern]="namePattern"
             [class.form__input--error]="clientForm.get('name')?.invalid && clientForm.get('name')?.touched"/>
-            <span class="form__error" *ngIf="clientForm.get('name')?.invalid && clientForm.get('name')?.touched">
-              {{ 'VALIDATION.NAME_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="clientForm.get('name') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.NAME_MIN' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.NAME_MAX' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.NAME_PATTERN' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -401,8 +406,11 @@
             <input class="form__input" type="email"
                     formControlName="email" [placeholder]="'CLIENTS.FORM.EMAIL_PLACEHOLDER' | translate"
                     [class.form__input--error]="clientForm.get('email')?.invalid && clientForm.get('email')?.touched"/>
-            <span class="form__error" *ngIf="clientForm.get('email')?.invalid && clientForm.get('email')?.touched">
-              {{ 'VALIDATION.INVALID_EMAIL' | translate }}
+            <span class="field__error" *ngIf="clientForm.get('email') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['email']">{{ 'VALIDATION.EMAIL_INVALID' | translate }}</span>
+              </ng-container>
             </span>
           </div>
         </div>
@@ -415,9 +423,13 @@
           <input class="form__input" type="text" formControlName="address" [placeholder]="'CLIENTS.FORM.ADDRESS_PLACEHOLDER' | translate"
                   [pattern]="addressPattern"
                   [class.form__input--error]="clientForm.get('address')?.invalid && clientForm.get('address')?.touched"/>
-          <span class="form__error" *ngIf="clientForm.get('address')?.invalid && clientForm.get('address')?.touched">
-            {{ 'VALIDATION.ADDRESS_REQUIRED' | translate }}
-          </span>
+            <span class="field__error" *ngIf="clientForm.get('address') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.ADDRESS_MIN' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.ADDRESS_PATTERN' | translate }}</span>
+              </ng-container>
+            </span>
         </div>
 
         <div class="form__row">
@@ -429,8 +441,11 @@
             <input class="form__input" type="text"
                   [pattern]="phonePattern"
                   formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate" [pattern]="phonePattern" />
-            <span class="form__error" *ngIf="clientForm.get('phone')?.invalid && clientForm.get('phone')?.touched">
-              {{ 'VALIDATION.PHONE_INVALID' | translate }}
+            <span class="field__error" *ngIf="clientForm.get('phone') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.PHONE_INVALID' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.PHONE_MAX' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -442,6 +457,12 @@
             <input class="form__input" type="text"
                   [pattern]="taxNumberPattern"
                   formControlName="taxNumber" [placeholder]="'CLIENTS.FORM.TAX_NUMBER_PLACEHOLDER' | translate"/>
+            <span class="field__error" *ngIf="clientForm.get('taxNumber') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.TAX_NUMBER_INVALID' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.TAX_NUMBER_MAX' | translate }}</span>
+              </ng-container>
+            </span>
           </div>
         </div>
 
