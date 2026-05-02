@@ -27,7 +27,10 @@ namespace ERP.ArticleService.Infrastructure.Persistence
             try
             {
                 ArticleCode? articleCode = await _context.ArticleCodes
-                    .FromSqlRaw("SELECT TOP 1 * FROM ArticleCodes WITH (UPDLOCK, ROWLOCK)")
+                    .FromSqlRaw(@"
+                        SELECT TOP 1 *
+                        FROM ArticleCodes WITH (UPDLOCK, ROWLOCK)
+                        ORDER BY Id")
                     .FirstOrDefaultAsync();
 
                 if (articleCode is null)
