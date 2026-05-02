@@ -1,4 +1,6 @@
+using ERP.InvoiceService.Application.DTOs;
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace InvoiceService.Application.DTOs;
 
@@ -48,7 +50,7 @@ public record CreateInvoiceDto(
     [Required] DateTime DueDate,
     [Required(ErrorMessage = "Tax calculation mode is required.")] TaxCalculationMode TaxMode,
     [Required] Guid ClientId,
-    [MaxLength(1000)] string? AdditionalNotes,
+    [MaxLength(1000)][RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters")] string? AdditionalNotes,
     [Required][MinLength(1)] List<CreateInvoiceItemDto> Items
 );
 
@@ -59,13 +61,12 @@ public record CreateInvoiceItemDto(
     [Required][Range(0, 1)] decimal TaxRate
 );
 
-// ✅ FIXED: Move validation attributes to constructor parameters
 public record UpdateInvoiceDto(
     [Required] DateTime InvoiceDate,
     [Required] DateTime DueDate,
     [Required(ErrorMessage = "Tax calculation mode is required.")] TaxCalculationMode TaxMode,
     [Required] Guid ClientId,
-    [MaxLength(1000)] string? AdditionalNotes,
+    [MaxLength(1000)][RegularExpression(RegexPatterns.SafeText, ErrorMessage ="Invalid characters")] string? AdditionalNotes,
     [Required][MinLength(1)] List<UpdateInvoiceItemDto> Items
 );
 
@@ -123,8 +124,6 @@ public record MonthlyStatsDto(
     [Range(0, double.MaxValue)] decimal IssuedTTC,
     [Range(0, double.MaxValue)] decimal PaidTTC
 );
-
-
 
 public sealed class PagedResultDto<T>
 {
