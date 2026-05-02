@@ -68,12 +68,12 @@ export class FournisseurComponent implements OnInit {
 
   readonly PRIVILEGES = PRIVILEGES
   fournisseurForm: FormGroup;
-  readonly namePattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
-  readonly addressPattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
-  readonly taxNumberPattern= /^[A-Za-z0-9]+$/.source
-  readonly ribPattern= /^[A-Za-z0-9]+$/.source;
-  readonly phonePattern= /^\+?\d{8,15}$/.source;
-  
+  readonly namePattern = /^[\p{L}0-9\s,.'\-]+$/u;
+  readonly addressPattern = /^[\p{L}0-9\s,.'\-]+$/u;
+  readonly taxNumberPattern= /^[A-Za-z0-9]+$/;
+  readonly ribPattern= /^[A-Za-z0-9]+$/;
+  readonly phonePattern= /^\+?\d{8,15}$/;
+
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -87,14 +87,14 @@ export class FournisseurComponent implements OnInit {
     private dialog: MatDialog,
     private route: ActivatedRoute
   ) {
-    this.fournisseurForm = this.fb.group({
-      name:       ['', [Validators.required, Validators.pattern(this.namePattern), Validators.minLength(2), Validators.maxLength(200)]],
-      address:    ['', [Validators.required, Validators.pattern(this.addressPattern), Validators.minLength(5)]],
-      phone:      ['', [Validators.required, Validators.pattern(this.phonePattern)]],
-      taxNumber:  ['', [Validators.required, Validators.pattern(this.taxNumberPattern)]],
-      rib: ['', [Validators.required, Validators.pattern(this.ribPattern)]],
-      email:      ['', [Validators.email]],
-    });
+      this.fournisseurForm = this.fb.group({
+        name:      ['', [Validators.required, Validators.pattern(this.namePattern), Validators.minLength(2), Validators.maxLength(200)]],
+        address:   ['', [Validators.required, Validators.pattern(this.addressPattern), Validators.minLength(5), Validators.maxLength(500)]],
+        phone:     ['', [Validators.required, Validators.pattern(this.phonePattern), Validators.maxLength(20)]],
+        taxNumber: ['', [Validators.required, Validators.pattern(this.taxNumberPattern), Validators.maxLength(50)]],
+        rib:       ['', [Validators.required, Validators.pattern(this.ribPattern), Validators.minLength(10), Validators.maxLength(34)]],
+        email:     ['', [Validators.email, Validators.maxLength(200)]],
+      });
   }
 
   ngOnInit(): void {
