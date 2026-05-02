@@ -427,4 +427,6 @@ export class InvoicesComponent implements OnInit, OnDestroy {
       attributes: true, attributeFilter: ['class', 'data-theme'],
     });
   }
+
+
 }
