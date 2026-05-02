@@ -290,26 +290,12 @@
   &:hover { color: $text-hi; background: $blue-bg; }
 }
 
-.save-btn {
-  background: $blue; color: $blue;
-  border: none; border-radius: 8px; cursor: pointer;
-  font-weight: 600; font-size: 13px;
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 16px; height: 36px;
-  box-shadow: 0 4px 16px $blue-border;
-  transition: box-shadow 0.2s, opacity 0.2s;
-  &:hover   { box-shadow: 0 6px 24px rgba(78,124,255,0.5); }
-  &:disabled { cursor: not-allowed; color:$blue}
-  mat-icon { font-size: 17px; }
-  ::ng-deep circle { stroke: #fff !important; }
-}
-
 // ── SECTION HEADER ────────────────────────────────
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px; cursor: pointer;
   border-top: 1px solid $border;
-  transition: background 0.15s; user-select: none;
+  transition: background ease 1; user-select: none;
   &:hover { background: rgba(255,255,255,0.03); }
 
   &__title {
