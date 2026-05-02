@@ -48,7 +48,7 @@ export class RegisterComponent implements OnDestroy {
 
   readonly emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.source;
   readonly fullnamePattern = /^\p{L}+(\s\p{L}+)*$/u;
-  readonly loginPattern = /^[a-zA-Z0-9_\s]+$/.source;
+  readonly loginPattern = /^[a-zA-Z0-9_\s]+$/;
 
   credentials: RegisterRequestDto = { login: '', email: '', fullName: '', password: '', roleId: null };
   showPassword = false;
@@ -208,7 +208,7 @@ export class RegisterComponent implements OnDestroy {
           setTimeout(() => {
             this.cancel();
             this.isLoading = false;
-          }, 2000);  
+          }, 2000);
         } else {
           this.flash('error', err.message ?? this.translate.instant('USERS.ERRORS.REGISTER_FAILED'));
         }
