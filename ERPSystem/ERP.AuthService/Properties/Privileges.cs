@@ -92,30 +92,6 @@
         public const string UNBLOCK_FOURNISSEUR = "UNBLOCK_FOURNISSEUR";
     }
 
-    public static class BonsEntree
-    {
-        public const string MANAGE_BONS_ENTREE = "MANAGE_BONS_ENTREE";
-        public const string VIEW_BONS_ENTREE = "VIEW_BONS_ENTREE";
-        public const string CREATE_BON_ENTREE = "CREATE_BON_ENTREE";
-        public const string UPDATE_BON_ENTREE = "UPDATE_BON_ENTREE";
-    }
-
-    public static class BonsSortie
-    {
-        public const string MANAGE_BONS_SORTIE = "MANAGE_BONS_SORTIE";
-        public const string VIEW_BONS_SORTIE = "VIEW_BONS_SORTIE";
-        public const string CREATE_BON_SORTIE = "CREATE_BON_SORTIE";
-        public const string UPDATE_BON_SORTIE = "UPDATE_BON_SORTIE";
-    }
-
-    public static class BonsRetour
-    {
-        public const string MANAGE_BONS_RETOUR = "MANAGE_BONS_RETOUR";
-        public const string VIEW_BONS_RETOUR = "VIEW_BONS_RETOUR";
-        public const string CREATE_BON_RETOUR = "CREATE_BON_RETOUR";
-        public const string UPDATE_BON_RETOUR = "UPDATE_BON_RETOUR";
-    }
-
     public static class Reports
     {
         public const string MANAGE_REPORTS = "MANAGE_REPORTS";

@@ -82,24 +82,6 @@ public static class PrivilegeRegistry
         new(Privileges.Fournisseurs.BLOCK_FOURNISSEUR,    "FOURNISSEURS", "Block fournisseur"),
         new(Privileges.Fournisseurs.UNBLOCK_FOURNISSEUR,  "FOURNISSEURS", "Unblock fournisseur"),
 
-        // ── Bons d'Entrée
-        new(Privileges.BonsEntree.MANAGE_BONS_ENTREE, "BON_ENTREES", "Manage bons entrée"),
-        new(Privileges.BonsEntree.VIEW_BONS_ENTREE,   "BON_ENTREES", "View bons entrée"),
-        new(Privileges.BonsEntree.CREATE_BON_ENTREE,  "BON_ENTREES", "Create bon entrée"),
-        new(Privileges.BonsEntree.UPDATE_BON_ENTREE,  "BON_ENTREES", "Update bon entrée"),
-
-        // ── Bons de Sortie
-        new(Privileges.BonsSortie.MANAGE_BONS_SORTIE, "BON_SORTIES", "Manage bons sortie"),
-        new(Privileges.BonsSortie.VIEW_BONS_SORTIE,   "BON_SORTIES", "View bons sortie"),
-        new(Privileges.BonsSortie.CREATE_BON_SORTIE,  "BON_SORTIES", "Create bon sortie"),
-        new(Privileges.BonsSortie.UPDATE_BON_SORTIE,  "BON_SORTIES", "Update bon sortie"),
-
-        // ── Bons de Retour
-        new(Privileges.BonsRetour.MANAGE_BONS_RETOUR, "BON_RETOURS", "Manage bons retour"),
-        new(Privileges.BonsRetour.VIEW_BONS_RETOUR,   "BON_RETOURS", "View bons retour"),
-        new(Privileges.BonsRetour.CREATE_BON_RETOUR,  "BON_RETOURS", "Create bon retour"),
-        new(Privileges.BonsRetour.UPDATE_BON_RETOUR,  "BON_RETOURS", "Update bon retour"),
-
         // ── Reports
         new(Privileges.Reports.MANAGE_REPORTS,  "REPORTING", "Manage reports"),
         new(Privileges.Reports.VIEW_REPORTS,    "REPORTING", "View reports"),
