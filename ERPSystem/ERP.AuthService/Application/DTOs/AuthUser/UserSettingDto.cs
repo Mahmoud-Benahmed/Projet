@@ -7,7 +7,7 @@ public record UserSettingsRequestDto(
     [Required] string Language
 );
 
-public class UserSettingsResponseDto(
+public record UserSettingsResponseDto(
     string Theme,
     string Language
 );

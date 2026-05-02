@@ -10,6 +10,7 @@
         string RoleName,
         bool MustChangePassword,
         bool IsActive,
+        UserSettingsResponseDto Settings,
         DateTime CreatedAt,
         DateTime? UpdatedAt,
         DateTime? LastLoginAt

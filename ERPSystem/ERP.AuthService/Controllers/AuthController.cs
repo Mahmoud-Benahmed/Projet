@@ -39,22 +39,21 @@ namespace ERP.AuthService.Controllers
         [ProducesResponseType(typeof(AuthUserGetResponseDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            string? role = User.FindFirstValue("role");
-
             if (!TryGetRequesterId(out Guid requesterId))
                 return Unauthorized();
 
             AuthUserGetResponseDto? user = await _authService.GetByIdAsync(id);
-            if (user is null) return NotFound();
+            if (user is null) 
+                return NotFound();
 
             bool isSelf = requesterId == id;
             if (isSelf && !user.IsActive)
-                return Unauthorized();
+                return Forbid();
 
             bool hasAccess = User.HasClaim("privilege", Privileges.Users.VIEW_USERS);
 
             if (!isSelf && !hasAccess)
-                throw new UnauthorizedAccessException("You are not authorized to access this resource.");
+                return Forbid();
 
             return Ok(user);
         }

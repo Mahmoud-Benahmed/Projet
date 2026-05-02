@@ -21,7 +21,12 @@ public class AuthUser
 
     public bool MustChangePassword { get; set; } = true;
 
-    public UserSettings Settings { get; set; }
+    [BsonElement("Settings")]
+    public UserSettings Settings { get; set; } = new UserSettings
+    {
+        Theme = Theme.light,
+        Language = Language.en
+    };
 
     public bool IsActive { get; private set; } = true; // Login control
     public bool IsDeleted { get; private set; } = false; // alternative to hard delete: in case the instance has related records
@@ -151,8 +156,13 @@ public class AuthUser
 
 public class UserSettings
 {
-    public Theme Theme { get; set; }
-    public Language Language { get; set; }
+    [BsonElement("Theme")]
+    [BsonRepresentation(BsonType.String)] // store as string, not int
+    public Theme Theme { get; set; } = Theme.light;
+
+    [BsonElement("Language")]
+    [BsonRepresentation(BsonType.String)] // store as string, not int
+    public Language Language { get; set; } = Language.en;
 }
 
 

@@ -10,8 +10,7 @@ namespace ERP.AuthService.Application.Interfaces
             Guid userId,
             string login,
             string role,
-            IEnumerable<string> privileges,
-            UserSettings settings);
+            IEnumerable<string> privileges);
 
         string GenerateRefreshToken();
 

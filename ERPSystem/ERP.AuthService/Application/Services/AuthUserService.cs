@@ -341,8 +341,7 @@ namespace ERP.AuthService.Application.Services
                 user.Id,
                 user.Login,
                 role.Libelle,
-                privilegeNames,
-                user.Settings
+                privilegeNames
             );
 
             string refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
@@ -731,6 +730,7 @@ namespace ERP.AuthService.Application.Services
                 RoleName: role.Libelle.ToString(),
                 MustChangePassword: user.MustChangePassword,
                 IsActive: user.IsActive,
+                Settings: MapUserSettingsToDto(user.Settings),
                 CreatedAt: user.CreatedAt,
                 UpdatedAt: user.UpdatedAt,
                 LastLoginAt: user.LastLoginAt

@@ -26,8 +26,7 @@ namespace ERP.AuthService.Infrastructure.Security
                 Guid userId,
                 string login,
                 string role,
-                IEnumerable<string> privileges,
-                UserSettings settings)
+                IEnumerable<string> privileges)
         {
             SymmetricSecurityKey key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Secret));
@@ -40,8 +39,6 @@ namespace ERP.AuthService.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(CLAIM_LOGIN, login),
                 new Claim(CLAIM_ROLE, role),
-                new Claim("theme", settings.Theme.ToString()),
-                new Claim("language", settings.Language.ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat,
                     new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(),
                     ClaimValueTypes.Integer64)
