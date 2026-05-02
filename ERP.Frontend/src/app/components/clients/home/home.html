@@ -423,7 +423,7 @@
               <label>{{ 'CLIENTS.FORM.PHONE' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>phone</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate"/>
+            <input class="form__input" type="text" formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate" [pattern]="phonePattern" />
             <span class="form__error" *ngIf="clientForm.get('phone')?.invalid && clientForm.get('phone')?.touched">
               {{ 'VALIDATION.PHONE_INVALID' | translate }}
             </span>
@@ -444,7 +444,7 @@
               <label>{{ 'CLIENTS.FORM.CREDIT_LIMIT' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>account_balance_wallet</mat-icon>
             </div>
-            <input class="form__input" type="number" formControlName="creditLimit" [placeholder]="'CLIENTS.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate" 
+            <input class="form__input" type="number" formControlName="creditLimit" [placeholder]="'CLIENTS.FORM.CREDIT_LIMIT_PLACEHOLDER' | translate"
                           step="0.01" min="1000"
                           [class.form__input--error]="clientForm.get('creditLimit')?.invalid && clientForm.get('creditLimit')?.touched"/>
             <span class="form__error" *ngIf="clientForm.get('creditLimit')?.invalid && clientForm.get('creditLimit')?.touched">

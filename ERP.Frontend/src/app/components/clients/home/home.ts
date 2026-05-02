@@ -84,6 +84,8 @@ export class ClientsComponent implements OnInit {
   readonly PRIVILEGES = PRIVILEGES;
   clientForm: FormGroup;
 
+  readonly phonePattern= /^\+?\d{8,15}$/.source;
+
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -104,7 +106,7 @@ export class ClientsComponent implements OnInit {
       name:             ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
       email:            ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
       address:          ['', [Validators.required, Validators.minLength(5), Validators.maxLength(500)]],
-      phone:            ['', [Validators.maxLength(20), Validators.pattern(/^[\d\s]+$/)]],
+      phone:            ['', [Validators.maxLength(20), Validators.pattern(this.phonePattern)]],
       taxNumber:        ['', [Validators.maxLength(50)]],
       creditLimit:      [null, this.optionalMin(1000)],
       duePaymentPeriod: [null, this.optionalRange(7, 180)],  // backend: Range(7, 180)
@@ -126,10 +128,10 @@ export class ClientsComponent implements OnInit {
           this.selectedClient = client;
           this.loadCreditLimitInfo();
           this.setViewMode('view');
-  
+
           this.loadCategories();
           this.loadStats();
-  
+
           this.cdr.markForCheck();
         },
         error: () => {
@@ -139,7 +141,7 @@ export class ClientsComponent implements OnInit {
         }
       });
     }
-    
+
 
   }
 

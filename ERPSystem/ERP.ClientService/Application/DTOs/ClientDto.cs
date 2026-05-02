@@ -23,13 +23,13 @@ public record CreateClientRequestDto(
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
     string Address,
 
-    [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 day and not exceed 180 days")]
+    [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 days and not exceed 180 days")]
     int? DuePaymentPeriod = null,
 
-    [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+    [Range(7, 270, ErrorMessage = "Return delay must be at least 7 days and not exceed 270 days.")]
     int? DelaiRetour = null,
 
-    [RegularExpression(@"^[\d\s]+$", ErrorMessage = "Phone must contain digits and spaces only.")]
+    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and spaces only.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
