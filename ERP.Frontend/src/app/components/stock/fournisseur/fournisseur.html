@@ -184,8 +184,8 @@
                         (click)="toggleBlock(f)"
                         [title]="f.isBlocked ? ('COMMON.UNBLOCK' | translate) : ('COMMON.BLOCK' | translate)"
                         *ngIf="(
-                                (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !f.isBlocked) 
-                            ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && f.isBlocked) 
+                                (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !f.isBlocked)
+                            ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && f.isBlocked)
                               ) && !f.isDeleted">
                   <svg *ngIf="!f.isBlocked" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -298,8 +298,8 @@
         </button>
         <button class="btn-warning" (click)="toggleBlock(selectedFournisseur)"
                 *ngIf="(
-                          (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !selectedFournisseur.isBlocked) 
-                      ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && selectedFournisseur.isBlocked) 
+                          (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.BLOCK_FOURNISSEUR) && !selectedFournisseur.isBlocked)
+                      ||  (authService.hasPrivilege(PRIVILEGES.FOURNISSEURS.UNBLOCK_FOURNISSEUR) && selectedFournisseur.isBlocked)
                         )  && !selectedFournisseur.isDeleted">
           {{ selectedFournisseur.isBlocked ? ('COMMON.UNBLOCK' | translate) : ('COMMON.BLOCK' | translate) }} {{ 'STOCK.FOURNISSEURS.TITLE' | translate }}
         </button>
@@ -333,8 +333,11 @@
               <label>{{ 'STOCK.FOURNISSEURS.FORM.FULL_NAME' | translate }}</label>
               <mat-icon>business</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="name" [placeholder]="'STOCK.FOURNISSEURS.FORM.NAME_PLACEHOLDER' | translate"
-                   [class.form__input--error]="fournisseurForm.get('name')?.invalid && fournisseurForm.get('name')?.touched"/>
+            <input class="form__input" type="text" formControlName="name"
+                  [pattern]="namePattern"
+                  [placeholder]="'STOCK.FOURNISSEURS.FORM.NAME_PLACEHOLDER' | translate"
+                  [class.form__input--error]="fournisseurForm.get('name')?.invalid && fournisseurForm.get('name')?.touched"
+                  />
             <span class="form__error" *ngIf="fournisseurForm.get('name')?.invalid && fournisseurForm.get('name')?.touched">
               {{ 'VALIDATION.NAME_REQUIRED' | translate }}
             </span>
@@ -345,8 +348,10 @@
               <label>{{ 'STOCK.FOURNISSEURS.FORM.PHONE' | translate }}</label>
               <mat-icon>phone</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="phone" [placeholder]="'STOCK.FOURNISSEURS.FORM.PHONE_PLACEHOLDER' | translate"
-                   [class.form__input--error]="fournisseurForm.get('phone')?.invalid && fournisseurForm.get('phone')?.touched"/>
+            <input class="form__input" type="text" formControlName="phone"
+                  [pattern]="phonePattern"
+                  [placeholder]="'STOCK.FOURNISSEURS.FORM.PHONE_PLACEHOLDER' | translate" [pattern]="phonePattern"
+                  [class.form__input--error]="fournisseurForm.get('phone')?.invalid && fournisseurForm.get('phone')?.touched"/>
             <span class="form__error" *ngIf="fournisseurForm.get('phone')?.invalid && fournisseurForm.get('phone')?.touched">
               {{ 'VALIDATION.INVALID_PHONE' | translate }}
             </span>
@@ -359,7 +364,8 @@
             <mat-icon>location_on</mat-icon>
           </div>
           <input class="form__input" type="text" formControlName="address" [placeholder]="'STOCK.FOURNISSEURS.FORM.ADDRESS_PLACEHOLDER' | translate"
-                 [class.form__input--error]="fournisseurForm.get('address')?.invalid && fournisseurForm.get('address')?.touched"/>
+                [pattern]="addressPattern"
+                [class.form__input--error]="fournisseurForm.get('address')?.invalid && fournisseurForm.get('address')?.touched"/>
           <span class="form__error" *ngIf="fournisseurForm.get('address')?.invalid && fournisseurForm.get('address')?.touched">
             {{ 'VALIDATION.ADDRESS_REQUIRED' | translate }}
           </span>
@@ -372,7 +378,8 @@
               <mat-icon>receipt_long</mat-icon>
             </div>
             <input class="form__input" type="text" formControlName="taxNumber" [placeholder]="'STOCK.FOURNISSEURS.FORM.TAX_NUMBER_PLACEHOLDER' | translate"
-                   [class.form__input--error]="fournisseurForm.get('taxNumber')?.invalid && fournisseurForm.get('taxNumber')?.touched"/>
+                  [pattern]="taxNumberPattern"
+                  [class.form__input--error]="fournisseurForm.get('taxNumber')?.invalid && fournisseurForm.get('taxNumber')?.touched"/>
             <span class="form__error" *ngIf="fournisseurForm.get('taxNumber')?.invalid && fournisseurForm.get('taxNumber')?.touched">
               {{ 'VALIDATION.INVALID_TAX_NUMBER' | translate }}
             </span>
@@ -384,7 +391,8 @@
               <mat-icon>account_balance</mat-icon>
             </div>
             <input class="form__input" type="text" formControlName="rib" [placeholder]="'STOCK.FOURNISSEURS.FORM.RIB_PLACEHOLDER' | translate"
-                   [class.form__input--error]="fournisseurForm.get('rib')?.invalid && fournisseurForm.get('rib')?.touched"/>
+                    [pattern]="ribPattern"
+                    [class.form__input--error]="fournisseurForm.get('rib')?.invalid && fournisseurForm.get('rib')?.touched"/>
             <span class="form__info"
                   *ngIf="fournisseurForm.get('rib')?.value?.length > 0"
                   [class.text-red]="fournisseurForm.get('rib')?.value?.length > 34">

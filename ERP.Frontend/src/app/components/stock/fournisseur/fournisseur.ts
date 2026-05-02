@@ -68,7 +68,12 @@ export class FournisseurComponent implements OnInit {
 
   readonly PRIVILEGES = PRIVILEGES
   fournisseurForm: FormGroup;
-
+  readonly namePattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
+  readonly addressPattern = /^[\p{L}0-9\s,.'\-]+$/u.source;
+  readonly taxNumberPattern= /^[A-Za-z0-9]+$/.source
+  readonly ribPattern= /^[A-Za-z0-9]+$/.source;
+  readonly phonePattern= /^\+?\d{8,15}$/.source;
+  
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -83,11 +88,11 @@ export class FournisseurComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.fournisseurForm = this.fb.group({
-      name:       ['', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]],
-      address:    ['', [Validators.required, Validators.minLength(5)]],
-      phone:      ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-()]{8,50}$/)]],
-      taxNumber:  ['', [Validators.required]],
-      rib: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9\-]{10,50}$/)]],
+      name:       ['', [Validators.required, Validators.pattern(this.namePattern), Validators.minLength(2), Validators.maxLength(200)]],
+      address:    ['', [Validators.required, Validators.pattern(this.addressPattern), Validators.minLength(5)]],
+      phone:      ['', [Validators.required, Validators.pattern(this.phonePattern)]],
+      taxNumber:  ['', [Validators.required, Validators.pattern(this.taxNumberPattern)]],
+      rib: ['', [Validators.required, Validators.pattern(this.ribPattern)]],
       email:      ['', [Validators.email]],
     });
   }
