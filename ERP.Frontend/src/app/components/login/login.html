@@ -60,7 +60,7 @@
   <div class="login-card">
     <h1 class="login-card__title">{{ 'LOGIN.TITLE' | translate }}</h1>
 
-    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+    <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
 
       <!-- Login -->
       <div class="field">
@@ -72,14 +72,15 @@
           <input
             id="login"
             type="text"
-            name="login"
             placeholder="{{ 'LOGIN.LOGIN_PLACEHOLDER' | translate }}"
-            [(ngModel)]="credentials.login"
             required
+            [pattern]="loginPattern"
+            formControlName="login"
             autocomplete="username"
-            #loginInput="ngModel" />
+            [class.form__input--error]="loginForm.get('login')?.invalid && loginForm.get('login')?.touched"
+            />
         </div>
-        <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
+        <span class="field__error" *ngIf="loginForm.get('login')?.invalid && loginForm.get('login')?.touched">
           {{ 'LOGIN.LOGIN_REQUIRED' | translate }}
         </span>
       </div>
@@ -94,17 +95,16 @@
           <input
             id="password"
             [type]="showPassword ? 'text' : 'password'"
-            name="password"
             placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | translate }}"
-            [(ngModel)]="credentials.password"
+            formControlName="password"
             required
             autocomplete="current-password"
-            #passwordInput="ngModel" />
+          />
           <button class="field__toggle" type="button" (click)="togglePasswordVisibility()">
             <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
-        <span class="field__error" *ngIf="passwordInput.errors?.['required'] && passwordInput.touched">
+        <span class="field__error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           {{ 'LOGIN.PASSWORD_REQUIRED' | translate }}
         </span>
       </div>
@@ -113,7 +113,7 @@
       <button
         class="btn-submit"
         type="submit"
-        [disabled]="!loginForm.valid || isLoading">
+        [disabled]="loginForm.invalid || isLoading">
 
         @if (isLoading) {
           <div class="btn-loading">

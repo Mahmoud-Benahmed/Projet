@@ -1,7 +1,7 @@
 import { AuthService } from '../../services/auth/auth.service';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,10 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthUserGetResponseDto } from '../../interfaces/AuthDto';
 import { ModalComponent } from '../modal/modal';
-import { HttpError } from '../../interfaces/ErrorDto';
 import { environment } from '../../environment';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -23,7 +21,6 @@ import { map, Subscription, switchMap, tap } from 'rxjs';
   selector: 'app-login',
   imports: [
     CommonModule,
-    FormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -31,8 +28,9 @@ import { map, Subscription, switchMap, tap } from 'rxjs';
     MatIconModule,
     MatProgressSpinnerModule,
     MatDialogModule,
-    TranslatePipe
-  ],
+    TranslatePipe,
+    ReactiveFormsModule
+],
   templateUrl: './login.html',
   styleUrl: './login.scss',
   encapsulation: ViewEncapsulation.None
@@ -43,10 +41,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   readonly year: number = new Date().getFullYear();
   userProfile: AuthUserGetResponseDto | null = null;
 
-  credentials = { login: '', password: '' };
+  readonly loginPattern = /^[a-z0-9_]+$/;
   showPassword = false;
   isLoading = false;
   errorMessage: string | null = null;
+
+  loginForm!: FormGroup;
 
   constructor(
     private router: Router,
@@ -54,8 +54,14 @@ export class LoginComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
     public userSettings: UserSettingsService,
-    public translate: TranslateService
-  ) {}
+    public translate: TranslateService,
+    private fb: FormBuilder
+  ) {
+    this.loginForm = this.fb.group({
+      login:       ['', [Validators.required, Validators.pattern(this.loginPattern)]],
+      password:    ['', [Validators.required, Validators.minLength(8)]],
+    });
+  }
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {
@@ -78,10 +84,14 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
+    if (this.loginForm.invalid) return;
+
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.authService.login(this.credentials).pipe(
+    const {login, password}= this.loginForm.value;
+
+    this.authService.login({login, password}).pipe(
       switchMap((response) =>
         this.authService.getMe().pipe(
           tap(user => {
