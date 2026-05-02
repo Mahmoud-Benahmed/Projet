@@ -386,7 +386,8 @@
               <mat-icon>person</mat-icon>
             </div>
             <input class="form__input" type="text" formControlName="name" [placeholder]="'CLIENTS.FORM.NAME_PLACEHOLDER' | translate"
-              [class.form__input--error]="clientForm.get('name')?.invalid && clientForm.get('name')?.touched"/>
+              [pattern]="namePattern"
+            [class.form__input--error]="clientForm.get('name')?.invalid && clientForm.get('name')?.touched"/>
             <span class="form__error" *ngIf="clientForm.get('name')?.invalid && clientForm.get('name')?.touched">
               {{ 'VALIDATION.NAME_REQUIRED' | translate }}
             </span>
@@ -397,8 +398,9 @@
               <label>{{ 'CLIENTS.FORM.EMAIL' | translate }}</label>
               <mat-icon>email</mat-icon>
             </div>
-            <input class="form__input" type="email" formControlName="email" [placeholder]="'CLIENTS.FORM.EMAIL_PLACEHOLDER' | translate"
-              [class.form__input--error]="clientForm.get('email')?.invalid && clientForm.get('email')?.touched"/>
+            <input class="form__input" type="email"
+                    formControlName="email" [placeholder]="'CLIENTS.FORM.EMAIL_PLACEHOLDER' | translate"
+                    [class.form__input--error]="clientForm.get('email')?.invalid && clientForm.get('email')?.touched"/>
             <span class="form__error" *ngIf="clientForm.get('email')?.invalid && clientForm.get('email')?.touched">
               {{ 'VALIDATION.INVALID_EMAIL' | translate }}
             </span>
@@ -411,7 +413,8 @@
             <mat-icon>location_on</mat-icon>
           </div>
           <input class="form__input" type="text" formControlName="address" [placeholder]="'CLIENTS.FORM.ADDRESS_PLACEHOLDER' | translate"
-            [class.form__input--error]="clientForm.get('address')?.invalid && clientForm.get('address')?.touched"/>
+                  [pattern]="addressPattern"
+                  [class.form__input--error]="clientForm.get('address')?.invalid && clientForm.get('address')?.touched"/>
           <span class="form__error" *ngIf="clientForm.get('address')?.invalid && clientForm.get('address')?.touched">
             {{ 'VALIDATION.ADDRESS_REQUIRED' | translate }}
           </span>
@@ -423,7 +426,9 @@
               <label>{{ 'CLIENTS.FORM.PHONE' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>phone</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate" [pattern]="phonePattern" />
+            <input class="form__input" type="text"
+                  [pattern]="phonePattern"
+                  formControlName="phone" [placeholder]="'CLIENTS.FORM.PHONE_PLACEHOLDER' | translate" [pattern]="phonePattern" />
             <span class="form__error" *ngIf="clientForm.get('phone')?.invalid && clientForm.get('phone')?.touched">
               {{ 'VALIDATION.PHONE_INVALID' | translate }}
             </span>
@@ -434,7 +439,9 @@
               <label>{{ 'CLIENTS.FORM.TAX_NUMBER' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>receipt_long</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="taxNumber" [placeholder]="'CLIENTS.FORM.TAX_NUMBER_PLACEHOLDER' | translate"/>
+            <input class="form__input" type="text"
+                  [pattern]="taxNumberPattern"
+                  formControlName="taxNumber" [placeholder]="'CLIENTS.FORM.TAX_NUMBER_PLACEHOLDER' | translate"/>
           </div>
         </div>
 

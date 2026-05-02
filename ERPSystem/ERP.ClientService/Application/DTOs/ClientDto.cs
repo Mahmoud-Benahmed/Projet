@@ -11,6 +11,7 @@ public sealed record ClientStatsDto(
 
 public record CreateClientRequestDto(
     [Required(ErrorMessage = "Name is required.")]
+    [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
     [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
     string Name,
 
@@ -21,6 +22,7 @@ public record CreateClientRequestDto(
 
     [Required(ErrorMessage = "Address is required.")]
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
+    [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
     string Address,
 
     [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 days and not exceed 180 days")]
@@ -29,10 +31,11 @@ public record CreateClientRequestDto(
     [Range(7, 270, ErrorMessage = "Return delay must be at least 7 days and not exceed 270 days.")]
     int? DelaiRetour = null,
 
-    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and may start with +.")]
+    [RegularExpression(RegexPatterns.Phone, ErrorMessage = "Phone must contain digits and may start with +.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
+    [RegularExpression(RegexPatterns.AlphaNumeric, ErrorMessage = "Invalid tax number.")]
     [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
     string? TaxNumber = null,
 
@@ -43,6 +46,7 @@ public record CreateClientRequestDto(
 public record UpdateClientRequestDto(
     [Required(ErrorMessage = "Name is required.")]
     [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+    [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
     string Name,
 
     [Required(ErrorMessage = "Email is required.")]
@@ -52,6 +56,7 @@ public record UpdateClientRequestDto(
 
     [Required(ErrorMessage = "Address is required.")]
     [MaxLength(500, ErrorMessage = "Address cannot exceed 500 characters.")]
+    [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
     string Address,
 
     [Range(7, 180 , ErrorMessage = "Due payment period must be at least 7 day and not exceed 180 days")]
@@ -60,10 +65,11 @@ public record UpdateClientRequestDto(
     [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
     int? DelaiRetour = null,
 
-    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and may start with +.")]
+    [RegularExpression(RegexPatterns.Phone, ErrorMessage = "Phone must contain digits and may start with +.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
+    [RegularExpression(RegexPatterns.AlphaNumeric, ErrorMessage = "Invalid tax number.")]
     [MaxLength(50, ErrorMessage = "Tax number cannot exceed 50 characters.")]
     string? TaxNumber = null,
 
