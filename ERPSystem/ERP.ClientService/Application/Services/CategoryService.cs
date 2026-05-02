@@ -26,6 +26,9 @@ public class CategoryService : ICategoryService
         if (existing is not null)
             throw new CategoryAlreadyExistsException(request.Code);
 
+        if (!request.UseBulkPricing && request.DiscountRate != null)
+            throw new ArgumentException("Discount not allowed without bulk pricing");
+
         Category category = Category.Create(
             request.Name, request.Code, request.DelaiRetour, request.DuePaymentPeriod,
             request.UseBulkPricing, request.DiscountRate, request.CreditLimitMultiplier);
