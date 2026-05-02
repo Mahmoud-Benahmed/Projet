@@ -17,11 +17,12 @@ namespace ERP.ClientService.Application.DTOs
     public record CreateCategoryRequestDto(
         [Required(ErrorMessage = "Name is required.")]
         [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+        [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
         string Name,
 
         [Required(ErrorMessage = "Code is required.")]
         [MaxLength(50, ErrorMessage = "Code cannot exceed 50 characters.")]
-        [RegularExpression(@"^[A-Za-z0-9_\-]+$",
+        [RegularExpression(RegexPatterns.CategoryCode,
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
@@ -43,18 +44,19 @@ namespace ERP.ClientService.Application.DTOs
     public record UpdateCategoryRequestDto(
         [Required(ErrorMessage = "Name is required.")]
         [MaxLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+        [RegularExpression(RegexPatterns.SafeText, ErrorMessage = "Invalid characters.")]
         string Name,
 
         [Required(ErrorMessage = "Code is required.")]
         [MaxLength(50, ErrorMessage = "Code cannot exceed 50 characters.")]
-        [RegularExpression(@"^[A-Za-z0-9_\-]+$",
+        [RegularExpression(RegexPatterns.CategoryCode,
         ErrorMessage = "Code can only contain letters, digits, hyphens and underscores.")]
         string Code,
 
-        [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
+        [Range(7, 270, ErrorMessage = "Return delay must be at least 7 days and not exceed 270 days.")]
         int DelaiRetour,
 
-        [Range(7, 180, ErrorMessage = "Due payment period must be at least 1 day and not exceed 180 days.")]
+        [Range(7, 180, ErrorMessage = "Due payment period must be at least 7 days and not exceed 180 days.")]
         int DuePaymentPeriod,
 
         bool UseBulkPricing = false,
