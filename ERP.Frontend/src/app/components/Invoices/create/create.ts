@@ -271,6 +271,7 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   getSelectedArticle(): StockItem | null {
     return this._selectedArticle;
   }
+
     getStockStatusClass(availableStock: number): string {
     if (availableStock === 0) return 'stock-out';
     if (availableStock <= 5) return 'stock-critical';
@@ -289,18 +290,6 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   checkArticleStock(articleId: string, _requestedQuantity: number): void {
     const article = this.articles.find(a => a.id === articleId);
     this.updateQuantityValidator(article?.quantity ?? 0);
-  }
-
-  getQuantityStep(unit?: string): number {
-    if (!unit) return 1;
-    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
-    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.1;
-  }
-
-  getQuantityMin(unit?: string): number {
-    if (!unit) return 1;
-    const integerUnits = [UnitEnum.Piece, UnitEnum.Hour, UnitEnum.Day];
-    return integerUnits.includes(unit as UnitEnum) ? 1 : 0.001;
   }
 
   getQuantityMax(): number {
@@ -870,6 +859,41 @@ export class CreateInvoiceComponent implements OnInit, OnDestroy{
   getArticleMaxQty(articleId: string): number {
     const a = this.articles.find(x => x.id === articleId);
     return (a as any)?._maxQty ?? Infinity;
+  }
+
+  getArticleQtyStep(): number {
+      const articleId= this._selectedArticle?.id;
+      const unit = this.masterArticles.find(a => a.id === articleId)?.unit as UnitEnum;
+      if (!unit) return 1;
+
+      switch (unit) {
+        // High precision decimals
+        case UnitEnum.Gram:
+        case UnitEnum.Milligram:
+        case UnitEnum.Milliliter:
+        case UnitEnum.Millimeter:
+          return 0.001;
+
+        // Standard decimals
+        case UnitEnum.Kilogram:
+        case UnitEnum.Liter:
+        case UnitEnum.Meter:
+        case UnitEnum.Centimeter:
+        case UnitEnum.CubicMeter:
+          return 0.01;
+
+        // Large units — whole or decimal
+        case UnitEnum.Ton:
+        case UnitEnum.Kilometer:
+          return 0.001;
+
+        // Whole numbers only
+        case UnitEnum.Piece:
+        case UnitEnum.Hour:
+        case UnitEnum.Day:
+        default:
+          return 1;
+      }
   }
 
   loadMoreArticles(): void {
