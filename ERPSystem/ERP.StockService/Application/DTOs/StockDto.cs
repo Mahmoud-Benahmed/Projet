@@ -20,12 +20,13 @@ public sealed record LigneResponseDto(
 // ── BonEntre ──────────────────────────────────────────────────────────────────
 public record CreateBonEntreRequestDto(
     [Required] Guid FournisseurId,
-    string? Observation = null,
-    List<LigneRequestDto>? Lignes = null);
+    [MinLength(1, ErrorMessage = "At least one ligne is required.")] List<LigneRequestDto> Lignes,
+    [MaxLength(500)] string? Observation = null
+    );
 
 public record UpdateBonEntreRequestDto(
     [Required] Guid FournisseurId,
-    string? Observation = null,
+    [MaxLength(500)] string? Observation = null,
     List<LigneRequestDto>? Lignes = null);
 
 public sealed record BonEntreResponseDto(
@@ -37,13 +38,15 @@ public sealed record BonEntreResponseDto(
 // ── BonSortie ─────────────────────────────────────────────────────────────────
 public record CreateBonSortieRequestDto(
     [Required] Guid ClientId,
-    string? Observation = null,
-    List<LigneRequestDto>? Lignes = null);
+    [MinLength(1, ErrorMessage = "At least one ligne is required.")] List<LigneRequestDto> Lignes,
+    [MaxLength(500)] string? Observation = null
+    );
 
 public record UpdateBonSortieRequestDto(
     [Required] Guid ClientId,
-    string? Observation = null,
-    List<LigneRequestDto>? Lignes = null);
+    List<LigneRequestDto>? Lignes = null,
+    [MaxLength(500)] string? Observation = null
+    );
 
 public sealed record BonSortieResponseDto(
     Guid Id, Guid ClientId,
@@ -57,8 +60,9 @@ public record CreateBonRetourRequestDto(
     [Required] Guid SourceId,
     [Required] RetourSourceType SourceType,
     [Required] string Motif,
-    string? Observation = null,
-    List<LigneRequestDto>? Lignes = null);
+    [MinLength(1, ErrorMessage = "At least one ligne is required.")] List<LigneRequestDto> Lignes,
+    [MaxLength(500)] string? Observation = null
+    );
 
 public record UpdateBonRetourRequestDto(
     [Required][MaxLength(500)] string Motif,
