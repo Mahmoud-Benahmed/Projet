@@ -24,6 +24,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg-page:    #0d0f14;
   --bg-card:    #161922;
   --bg-card-hi: #1c2030;
@@ -40,6 +41,7 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
   --bg-page:    #f0f2f7;
   --bg-card:    #ffffff;
   --bg-card-hi: #f5f7fb;
@@ -75,7 +77,6 @@ body {
 }
 
 html {
-  color-scheme: dark;
   height: 100%;
   @include mat.theme((
     color: (
