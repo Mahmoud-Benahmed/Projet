@@ -6,7 +6,7 @@ namespace ERP.AuthService.Application.DTOs.AuthUser
         [Required]
         [MinLength(3)]
         [MaxLength(50)]
-        [RegularExpression("^[a-z0-9_]+$", ErrorMessage = "Login must contain only lowercase letters, digits, and underscores.")]
+        [RegularExpression(RegexPatterns.UserLogin, ErrorMessage = "Login must contain only lowercase letters, digits, and underscores.")]
         string Login,
 
         [Required]
