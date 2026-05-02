@@ -321,9 +321,12 @@
             [placeholder]="'ARTICLES.FORM.NAME_PLACEHOLDER' | translate"
             [class.form__input--error]="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched"
           />
-          <span class="form__error"
-                *ngIf="articleForm.get('libelle')?.invalid && articleForm.get('libelle')?.touched">
-            {{ 'VALIDATION.NAME_REQUIRED' | translate }}
+          <span class="field__error" *ngIf="articleForm.get('libelle') as ctrl">
+            <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+              <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+              <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.NAME_MIN' | translate }}</span>
+              <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.NAME_MAX' | translate }}</span>
+            </ng-container>
           </span>
         </div>
 
@@ -344,9 +347,11 @@
               min="0.01"
               [class.form__input--error]="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched"
             />
-            <span class="form__error"
-                  *ngIf="articleForm.get('prix')?.invalid && articleForm.get('prix')?.touched">
-              {{ 'VALIDATION.PRICE_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="articleForm.get('prix') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['min']">{{ 'VALIDATION.PRICE_INVALID' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -366,9 +371,10 @@
                 {{ `ARTICLES.UNIT.${unit.label.toUpperCase()}` | translate}}
               </option>
             </select>
-            <span class="form__error"
-                  *ngIf="articleForm.get('unit')?.invalid && articleForm.get('unit')?.touched">
-              {{ 'VALIDATION.UNIT_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="articleForm.get('unit') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -392,9 +398,10 @@
               max="100"
               [class.form__input--error]="articleForm.get('tva')?.invalid && articleForm.get('tva')?.touched"
             />
-            <span class="form__error"
-                  *ngIf="articleForm.get('tva')?.invalid && articleForm.get('tva')?.touched">
-              {{ 'VALIDATION.TVA_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="articleForm.get('tva') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['min'] || ctrl.errors?.['max']">{{ 'VALIDATION.TVA_INVALID' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -412,14 +419,12 @@
               [pattern]="barCodePattern"
               [class.form__input--error]="articleForm.get('barCode')?.invalid && articleForm.get('barCode')?.touched"
             />
-            <span class="form__error"
-                  *ngIf="articleForm.get('barCode')?.invalid && articleForm.get('barCode')?.touched">
-              {{ 'VALIDATION.BARCODE_REQUIRED' | translate }}
-            </span>
-            <span class="form__info"
-                  *ngIf="articleForm.get('barCode')?.value?.length > 0"
-                  [class.text-red]="articleForm.get('barCode')?.value?.length > 13">
-              {{ articleForm.get('barCode')?.value?.length || 0 }} / {{ articleForm.get('barCode')?.value?.length <= 8 ? 8 : 13 }}
+            <span class="field__error" *ngIf="articleForm.get('barCode') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.BARCODE_INVALID' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.BARCODE_INVALID' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -437,9 +442,10 @@
               <option value="" disabled selected>{{ 'ARTICLES.FORM.SELECT_CATEGORY' | translate }}</option>
               <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
             </select>
-            <span class="form__error"
-                  *ngIf="articleForm.get('categoryId')?.invalid && articleForm.get('categoryId')?.touched">
-              {{ 'VALIDATION.CATEGORY_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="articleForm.get('categoryId') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 

@@ -434,7 +434,7 @@
 
   <!-- ===================== FORM PANEL (create / edit) ===================== -->
   <div class="panel" *ngIf="(isCreate() && authService.hasPrivilege(PRIVILEGES.STOCK.ADD_ENTRY))
-                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">    
+                         || (isEdit()   && authService.hasPrivilege(PRIVILEGES.STOCK.UPDATE_STOCK))">
     <div class="panel__header">
       <h2 class="panel__title">
         {{ isCreate() ? ('STOCK.BONS.NEW_BON' | translate) : ('STOCK.BONS.EDIT_BON' | translate) }}
@@ -656,8 +656,11 @@
                 <label>{{ 'STOCK.BONS.FORM.MOTIF' | translate }}</label>
                 <mat-icon>comment</mat-icon>
               </div>
-              <input class="form__input" type="text" formControlName="motif" [placeholder]="'STOCK.BONS.FORM.MOTIF_PLACEHOLDER' | translate"
-                     [class.form__input--error]="headerForm.get('motif')?.invalid && headerForm.get('motif')?.touched"/>
+             <textarea class="form__input form__textarea" formControlName="motif"
+                      [placeholder]="'STOCK.BONS.FORM.MOTIF_PLACEHOLDER' | translate"
+                      [class.form__input--error]="headerForm.get('motif')?.invalid && headerForm.get('motif')?.touched"
+                      rows="3">
+            </textarea>
               <span class="form__error" *ngIf="headerForm.get('motif')?.invalid && headerForm.get('motif')?.touched">
                 {{ 'VALIDATION.REQUIRED' | translate }}
               </span>
@@ -670,7 +673,11 @@
               <label>{{ 'STOCK.BONS.FORM.OBSERVATION' | translate }} <span class="form__optional">({{ 'COMMON.OPTIONAL' | translate }})</span></label>
               <mat-icon>notes</mat-icon>
             </div>
-            <input class="form__input" type="text" formControlName="observation" [placeholder]="'STOCK.BONS.FORM.OBSERVATION_PLACEHOLDER' | translate" />
+            <textarea class="form__input form__textarea" formControlName="observation"
+                      [placeholder]="'STOCK.BONS.FORM.OBSERVATION_PLACEHOLDER' | translate"
+                      rows="2"
+            >
+          </textarea>
           </div>
         </div>
       </form>
@@ -904,17 +911,19 @@
           <!-- Qty -->
           <div class="form__field">
             <label class="form__label">{{ 'STOCK.BONS.FORM.QUANTITY' | translate }}</label>
-            <input class="form__input" formControlName="quantity" type="number" min="1" step="1"
-                   [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"
-                   [max]="getArticleMaxQty(ligneForm.get('articleId')?.value)"
+            <input class="form__input" formControlName="quantity"
+            [class.form__input--error]="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched"
+            type="number"
+            [min]="getArticleQtyStep(ligneForm.get('articleId')?.value)"
+            [max]="getArticleMaxQty(ligneForm.get('articleId')?.value)"
+            [step]="getArticleQtyStep(ligneForm.get('articleId')?.value)"
             />
-            <span class="form__error" *ngIf="ligneForm.get('quantity')?.invalid && ligneForm.get('quantity')?.touched">
-              {{ 'VALIDATION.INVALID_QUANTITY' | translate }}
-            </span>
-
-            <span class="form__error"
-                  *ngIf="ligneForm.get('quantity')?.errors?.['max'] && ligneForm.get('quantity')?.touched">
-              {{ 'VALIDATION.MAX_QUANTITY' | translate : { max: getArticleMaxQty(ligneForm.get('articleId')?.value) } }}
+            <span class="field__error" *ngIf="ligneForm.get('quantity') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['min']">{{ 'VALIDATION.MIN_VALUE' | translate: { min: 0.001 } }}</span>
+                <span *ngIf="ctrl.errors?.['max']">{{ 'VALIDATION.MAX_QUANTITY' | translate: { max: getArticleMaxQty(ligneForm.get('articleId')?.value) } }}</span>
+              </ng-container>
             </span>
           </div>
 

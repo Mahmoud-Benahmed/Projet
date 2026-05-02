@@ -234,9 +234,12 @@
               [placeholder]="'ARTICLES_CATEGORIES.FORM.NAME_PLACEHOLDER' | translate"
               [class.form__input--error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
             />
-            <span class="form__error"
-                  *ngIf="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
-              {{ 'VALIDATION.NAME_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="categoryForm.get('name') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.NAME_MIN' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.NAME_MAX' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 
@@ -256,9 +259,11 @@
               max="100"
               [class.form__input--error]="categoryForm.get('tva')?.invalid && categoryForm.get('tva')?.touched"
             />
-            <span class="form__error"
-                  *ngIf="categoryForm.get('tva')?.invalid && categoryForm.get('tva')?.touched">
-              {{ 'VALIDATION.TVA_REQUIRED' | translate }}
+            <span class="field__error" *ngIf="categoryForm.get('tva') as ctrl">
+              <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                <span *ngIf="ctrl.errors?.['min'] || ctrl.errors?.['max']">{{ 'VALIDATION.TVA_INVALID' | translate }}</span>
+              </ng-container>
             </span>
           </div>
 

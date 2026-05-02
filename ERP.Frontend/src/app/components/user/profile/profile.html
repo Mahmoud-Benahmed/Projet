@@ -43,8 +43,8 @@
           <div class="hero-actions">
             <button mat-stroked-button
                     class="edit-btn"
-                    (click)="startEditing()"
-                    *ngIf="!isEditing && canEditProfile">
+                    (click)="toggleEditing()"
+                    *ngIf="canEditProfile">
               <mat-icon>edit</mat-icon>
               {{ 'USERS.PROFILE.EDIT_PROFILE' | translate }}
             </button>
@@ -141,53 +141,62 @@
                 }
 
                 <!-- EDIT MODE -->
-                <form class="edit-form" *ngIf="isEditing"  #editFormRef="ngForm">
+                <form class="edit-form" [formGroup]="editForm" *ngIf="isEditing">
 
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>{{ 'USERS.PROFILE.FULL_NAME' | translate }}</mat-label>
-                  <input matInput
-                        [(ngModel)]="editForm.fullName"
-                        name="fullName"
-                        required
-                        [pattern]="fullNamePattern"
-                        #fullNameInput="ngModel"
-                        (ngModelChange)="checkChanges()"/>
-                  <mat-icon matPrefix>badge</mat-icon>
-                  <mat-error *ngIf="fullNameInput.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
-                  <mat-error *ngIf="fullNameInput.errors?.['pattern']">{{ 'VALIDATION.NAME_REQUIRED' | translate }}</mat-error>
-                  <mat-hint *ngIf="noDataChange" class="warning-hint">
-                    <mat-icon>warning</mat-icon> {{ 'USERS.PROFILE.NO_CHANGES' | translate }}
-                  </mat-hint>
-                </mat-form-field>
+                  <div class="form__field">
+                    <div class="form__label">
+                      <label>{{ 'USERS.PROFILE.FULL_NAME' | translate }}</label>
+                      <mat-icon>badge</mat-icon>
+                    </div>
+                    <input class="form__input"
+                          type="text"
+                          formControlName="fullName"
+                          [placeholder]="'USERS.PROFILE.FULL_NAME' | translate"
+                          [class.form__input--error]="editForm.get('fullName')?.invalid && editForm.get('fullName')?.touched"/>
+                    <span class="field__error" *ngIf="editForm.get('fullName') as ctrl">
+                      <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                        <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.NAME_MAX' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.NAME_PATTERN' | translate }}</span>
+                      </ng-container>
+                    </span>
+                    <span class="warning-hint" *ngIf="noDataChange && !editForm.get('fullName')?.touched">
+                      <mat-icon>warning</mat-icon> {{ 'USERS.PROFILE.NO_CHANGES' | translate }}
+                    </span>
+                  </div>
 
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>{{ 'USERS.PROFILE.EMAIL' | translate }}</mat-label>
-                    <input matInput
+                  <div class="form__field">
+                    <div class="form__label">
+                      <label>{{ 'USERS.PROFILE.EMAIL' | translate }}</label>
+                      <mat-icon>email</mat-icon>
+                    </div>
+                    <input class="form__input"
                           type="email"
-                          name="email"
-                          [(ngModel)]="editForm.email"
-                          required
-                          [pattern]="emailPattern"
-                          email
-                          #emailInput="ngModel"
-                          (ngModelChange)="checkChanges()"/>
-                    <mat-icon matPrefix>email</mat-icon>
-                    <mat-error *ngIf="emailInput.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
-                    <mat-error *ngIf="emailInput.errors?.['pattern']">{{ 'VALIDATION.INVALID_EMAIL' | translate }}</mat-error>
-                  </mat-form-field>
+                          formControlName="email"
+                          [placeholder]="'USERS.PROFILE.EMAIL' | translate"
+                          [class.form__input--error]="editForm.get('email')?.invalid && editForm.get('email')?.touched"/>
+                    <span class="field__error" *ngIf="editForm.get('email') as ctrl">
+                      <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                        <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['email']">{{ 'VALIDATION.EMAIL_INVALID' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.EMAIL_MAX' | translate }}</span>
+                      </ng-container>
+                    </span>
+                  </div>
 
                   <div class="edit-form__actions">
-                    <button mat-button class="cancel-btn" (click)="cancelEditing()" [disabled]="isSaving">
+                    <button class="btn-secondary" (click)="cancelEditing()" [disabled]="isSaving">
                       {{ 'COMMON.CANCEL' | translate }}
                     </button>
-                    <button mat-flat-button class="save-btn" (click)="saveProfile()" [disabled]="isSaving || editFormRef.invalid || noDataChange">
-                        <mat-spinner diameter="16" *ngIf="isSaving"/>
+                    <button class="btn-add save-btn"
+                            (click)="saveProfile()"
+                            [disabled]="isSaving || editForm.invalid || noDataChange">
+                      <mat-spinner diameter="16" *ngIf="isSaving"/>
                       {{ isSaving ? ('COMMON.SAVING' | translate) : ('COMMON.SAVE' | translate) }}
                     </button>
                   </div>
 
                 </form>
-
               </mat-card-content>
           </div>
         </mat-card>

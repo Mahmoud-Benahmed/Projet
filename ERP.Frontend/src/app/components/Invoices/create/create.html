@@ -216,9 +216,10 @@
                   </div>
                 </div>
 
-                <span class="form__error"
-                      *ngIf="invoiceForm.get('clientId')?.invalid && invoiceForm.get('clientId')?.touched">
-                  {{ 'VALIDATION.REQUIRED' | translate }}
+                <span class="field__error" *ngIf="invoiceForm.get('clientId') as ctrl">
+                  <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                    <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                  </ng-container>
                 </span>
               </div>
 
@@ -227,7 +228,11 @@
                   <label class="form__label">{{ 'INVOICES.FORM.INVOICE_DATE' | translate }}</label>
                   <input class="form__input" type="date" formControlName="invoiceDate"
                          [class.form__input--error]="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched" />
-                  <span class="form__error" *ngIf="invoiceForm.get('invoiceDate')?.invalid && invoiceForm.get('invoiceDate')?.touched">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                  <span class="field__error" *ngIf="invoiceForm.get('invoiceDate') as ctrl">
+                    <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                      <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                    </ng-container>
+                  </span>
                 </div>
                 <div class="form__field">
                   <label class="form__label">{{ 'INVOICES.FORM.DUE_DATE' | translate }}</label>
@@ -235,7 +240,11 @@
                         [class.form__input--error]="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched"
                         readonly
                         [matTooltip]="'INVOICES.FORM.DUE_DATE_AUTO_TOOLTIP' | translate" />
-                  <span class="form__error" *ngIf="invoiceForm.get('dueDate')?.invalid && invoiceForm.get('dueDate')?.touched">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                  <span class="field__error" *ngIf="invoiceForm.get('dueDate') as ctrl">
+                    <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                      <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                    </ng-container>
+                  </span>
                   <small class="form__hint" *ngIf="selectedClientForValidation?.duePaymentPeriod">{{ duePaymentPeriodHint }}</small>
                 </div>
               </div>
@@ -246,12 +255,23 @@
                   <input class="form__input" formControlName="clientAddress"
                          [placeholder]="'INVOICES.FORM.CLIENT_ADDRESS_PLACEHOLDER' | translate"
                          [class.form__input--error]="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched" />
-                  <span class="form__error" *ngIf="invoiceForm.get('clientAddress')?.invalid && invoiceForm.get('clientAddress')?.touched">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                  <span class="field__error" *ngIf="invoiceForm.get('clientAddress') as ctrl">
+                    <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                      <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                      <span *ngIf="ctrl.errors?.['minlength']">{{ 'VALIDATION.ADDRESS_MIN' | translate }}</span>
+                      <span *ngIf="ctrl.errors?.['pattern']">{{ 'VALIDATION.ADDRESS_PATTERN' | translate }}</span>
+                    </ng-container>
+                  </span>
                 </div>
                 <div class="form__field">
                   <label class="form__label">{{ 'INVOICES.FORM.ADDITIONAL_NOTES' | translate }}</label>
                   <input class="form__input" formControlName="additionalNotes"
                          [placeholder]="'INVOICES.FORM.ADDITIONAL_NOTES_PLACEHOLDER' | translate" />
+                  <span class="field__error" *ngIf="invoiceForm.get('additionalNotes') as ctrl">
+                    <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                      <span *ngIf="ctrl.errors?.['maxlength']">{{ 'VALIDATION.NOTES_MAX' | translate }}</span>
+                    </ng-container>
+                  </span>
                 </div>
               </div>
 
@@ -357,9 +377,10 @@
                         <input type="hidden" formControlName="articleId" />
                         <div *ngIf="articleDropdownOpen" class="client-dropdown__backdrop" (click)="articleDropdownOpen = false"></div>
 
-                        <span class="form__error"
-                              *ngIf="itemForm.get('articleId')?.invalid && itemForm.get('articleId')?.touched">
-                          {{ 'VALIDATION.REQUIRED' | translate }}
+                        <span class="field__error" *ngIf="itemForm.get('articleId') as ctrl">
+                          <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                            <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                          </ng-container>
                         </span>
                       </div>
                     </div>
@@ -382,20 +403,18 @@
                       formControlName="quantity"
                       class="form__input"
                       [class.form__input--error]="itemForm.get('quantity')?.invalid && itemForm.get('quantity')?.touched"
-                      [min]="getQuantityMin(getSelectedArticle()?.unit)"
+                      [min]="getArticleQtyStep()"
                       [max]="getQuantityMax()"
-                      [step]="getQuantityStep(getSelectedArticle()?.unit)"
+                      [step]="getArticleQtyStep()"
                     />
 
-                    <div *ngIf="itemForm.get('quantity')?.hasError('required') && itemForm.get('quantity')?.touched" class="form__error">
-                      {{ 'VALIDATION.REQUIRED' | translate }}
-                    </div>
-                    <div *ngIf="itemForm.get('quantity')?.hasError('min') && itemForm.get('quantity')?.touched" class="form__error">
-                      {{ 'VALIDATION.MIN_VALUE' | translate: { min: getQuantityMin(getSelectedArticle()?.unit) } }}
-                    </div>
-                    <div *ngIf="itemForm.get('quantity')?.hasError('max') && itemForm.get('quantity')?.touched" class="form__error form__error--stock">
-                      <mat-icon>error</mat-icon>
-    {{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: (getSelectedArticle()?.quantity ?? 0) | number:'1.2-2' } }}                </div>
+                    <span class="field__error" *ngIf="itemForm.get('quantity') as ctrl">
+                      <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                        <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['min']">{{ 'VALIDATION.MIN_VALUE' | translate: { min: getArticleQtyStep() } }}</span>
+                        <span *ngIf="ctrl.errors?.['max']">{{ 'STOCK.ERRORS.QUANTITY_EXCEEDS_STOCK' | translate: { stock: (getSelectedArticle()?.quantity ?? 0) | number:'1.2-2' } }}</span>
+                      </ng-container>
+                    </span>
                   </div>
                 </div>
 
@@ -406,15 +425,28 @@
                     <!-- Unit hint -->
                     <small class="form__hint" *ngIf="getSelectedArticle()">
                       {{ getUnitTranslation() }}
-                      <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 1">— {{ 'INVOICES.FORM.WHOLE_NUMBERS_ONLY' | translate }}</span>
-                      <span *ngIf="getQuantityStep(getSelectedArticle()?.unit) === 0.1">— {{ 'INVOICES.FORM.DECIMALS_ALLOWED' | translate }}</span>
+                      <span *ngIf="getArticleQtyStep() === 1">— {{ 'INVOICES.FORM.WHOLE_NUMBERS_ONLY' | translate }}</span>
+                      <span *ngIf="getArticleQtyStep() === 0.1">— {{ 'INVOICES.FORM.DECIMALS_ALLOWED' | translate }}</span>
                     </small>
+                    <span class="field__error" *ngIf="itemForm.get('uniPriceHT') as ctrl">
+                      <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                        <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['min']">{{ 'VALIDATION.PRICE_INVALID' | translate }}</span>
+                      </ng-container>
+                    </span>
                   </div>
 
                   <div class="form__field">
                     <label class="form__label">{{ 'INVOICES.FORM.TAX_RATE' | translate }} (%)</label>
                     <input type="number" class="form__input" formControlName="taxRate" min="0" max="100" step="1" />
+                    <span class="field__error" *ngIf="itemForm.get('taxRate') as ctrl">
+                      <ng-container *ngIf="ctrl.invalid && ctrl.touched">
+                        <span *ngIf="ctrl.errors?.['required']">{{ 'VALIDATION.REQUIRED' | translate }}</span>
+                        <span *ngIf="ctrl.errors?.['min'] || ctrl.errors?.['max']">{{ 'VALIDATION.TVA_INVALID' | translate }}</span>
+                      </ng-container>
+                    </span>
                   </div>
+
                   <div class="form__field item-calc-preview"
                       *ngIf="itemForm.get('quantity')?.value && itemForm.get('uniPriceHT')?.value">
                     <label class="form__label">{{ 'INVOICES.FORM.PREVIEW' | translate }}</label>
