@@ -64,7 +64,8 @@
             if (resolvedTVA <= 0)
                 throw new ArgumentException("TVA must be greater than zero.");
 
-            bool hasChanged = !string.Equals(libelle, Libelle, StringComparison.OrdinalIgnoreCase)
+            bool hasChanged = unit != Unit
+                            || !string.Equals(libelle, Libelle, StringComparison.OrdinalIgnoreCase)
                             || prix != Prix
                             || category.Id != CategoryId
                             || !string.Equals(barCode, BarCode, StringComparison.OrdinalIgnoreCase)

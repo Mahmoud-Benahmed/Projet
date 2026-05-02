@@ -48,7 +48,7 @@ export class ArticleComponent implements OnInit {
   successMessage: string | null = null;
   searchQuery = '';
 
-  readonly barCodePattern = /^\d{8,13}$/.source;
+  readonly barCodePattern = /^\d{8,13}$/;
   readonly PRIVILEGES = PRIVILEGES;
   articleForm: FormGroup;
 
@@ -93,7 +93,7 @@ export class ArticleComponent implements OnInit {
     this.dataSource.filterPredicate = (data, filter) => {
       return this.flattenObject(data).includes(filter);
     };
-    
+
     this.articleIdFromRoute = this.route.snapshot.paramMap.get('id');
     if(this.articleIdFromRoute == null){
       this.reload();
