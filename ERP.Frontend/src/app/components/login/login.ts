@@ -17,7 +17,7 @@ import { HttpError } from '../../interfaces/ErrorDto';
 import { environment } from '../../environment';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { Subscription } from 'rxjs';
+import { map, Subscription, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -81,27 +81,26 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.authService.login(this.credentials).subscribe({
+    this.authService.login(this.credentials).pipe(
+      switchMap((response) =>
+        this.authService.getMe().pipe(
+          tap(user => {
+            this.authService.setUserProfile(user);
+            this.userProfile = user;
+          }),
+          map(() => response) // keep login response for later use
+        )
+      )
+    ).subscribe({
       next: (response) => {
-        this.authService.getMe().subscribe({
-          next: (authUser) => {
-            this.isLoading = false;
-            this.userProfile = authUser;
-            this.authService.setUserProfile(this.userProfile);
-            this.userSettings.persistToServer();
+        this.isLoading = false;
 
-            if (response.mustChangePassword && environment.production) {
-              this.stopLoading();
-              this.router.navigate(['/must-change-password']);
-              return;
-            }
-            this.router.navigate(['/home']);
-          },
-          error: () => {
-            this.stopLoading();
-            this.authService.logout();
-          }
-        });
+        if (response.mustChangePassword && environment.production) {
+          this.router.navigate(['/must-change-password']);
+          return;
+        }
+
+        this.router.navigate(['/home']);
       },
       error: (error) => {
         this.stopLoading();

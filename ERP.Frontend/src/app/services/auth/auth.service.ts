@@ -3,7 +3,10 @@ import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { environment } from "../../environment";
-import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto, ControleResponseDto, LoginRequestDto, PagedResultDto, PrivilegeResponseDto, RefreshTokenRequestDto, RegisterRequestDto, RoleResponseDto, UpdateProfileDto, UserStatsDto } from "../../interfaces/AuthDto";
+import { AdminChangeProfileRequest, AuthResponseDto, AuthUserGetResponseDto, ChangeProfilePasswordRequestDto,
+        LanguageType, LoginRequestDto, PagedResultDto, RefreshTokenRequestDto, RegisterRequestDto,
+        ThemeType, UpdateProfileDto, UserStatsDto
+} from "../../interfaces/AuthDto";
 import { BehaviorSubject, catchError, Observable, Subject, take, tap, throwError } from 'rxjs';
 
 interface JwtPayload {
@@ -210,12 +213,12 @@ export class AuthService {
     return this.JwtPayload?.role ?? null;
   }
 
-  get Theme(): 'light' | 'dark' {
-    return this.JwtPayload?.theme ?? 'light';
+  get Theme(): ThemeType {
+    return this._userProfile$.value?.settings?.theme ?? 'light';
   }
 
-  get Language(): 'fr' | 'en' {
-    return this.JwtPayload?.language ?? 'en';
+  get Language(): LanguageType {
+    return this._userProfile$.value?.settings?.language ?? 'en';
   }
   // =========================
   // PRIVILEGES

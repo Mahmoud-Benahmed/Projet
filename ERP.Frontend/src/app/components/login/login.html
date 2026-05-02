@@ -76,6 +76,7 @@
             placeholder="{{ 'LOGIN.LOGIN_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.login"
             required
+            autocomplete="username"
             #loginInput="ngModel" />
         </div>
         <span class="field__error" *ngIf="loginInput.errors?.['required'] && loginInput.touched">
@@ -97,6 +98,7 @@
             placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | translate }}"
             [(ngModel)]="credentials.password"
             required
+            autocomplete="current-password"
             #passwordInput="ngModel" />
           <button class="field__toggle" type="button" (click)="togglePasswordVisibility()">
             <mat-icon>{{ showPassword ? 'visibility' : 'visibility_off' }}</mat-icon>

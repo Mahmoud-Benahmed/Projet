@@ -2,6 +2,8 @@ import { Injectable, signal, inject, effect, untracked } from '@angular/core';
 import { Subject, take, takeUntil } from 'rxjs';
 import { AuthService } from './auth/auth.service';
 import { TranslateService } from '@ngx-translate/core';
+import { LanguageType, ThemeType } from '../interfaces/AuthDto';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 
 @Injectable({ providedIn: 'root' })
@@ -11,42 +13,41 @@ export class UserSettingsService {
   private readonly authService  = inject(AuthService);
   private destroy$              = new Subject<void>();
 
-  private _theme    = signal<'light' | 'dark'>('light');
-  private _language = signal<'en' | 'fr'>('en');
+  private _theme    = signal<ThemeType>('light');
+  private _language = signal<LanguageType>('en');
 
   readonly theme    = this._theme.asReadonly();
   readonly language = this._language.asReadonly();
 
-  private _initialized = false;
+ private readonly userProfile = toSignal(this.authService.userProfile$, { initialValue: null });
 
   constructor() {
+    const cached = this.loadCachedSettings();
+
+    const theme = cached?.theme ?? 'light';
+    const language = cached?.language ?? 'en';
+
+    if (cached) {
+      this._theme.set(cached.theme);
+      this._language.set(cached.language);
+      this.translate.use(cached.language); // ← add this
+      document.documentElement.setAttribute('data-theme', cached.theme); // ← and this
+    }
+
     effect(() => {
-      const lang = this._language();
+      const settings = this.userProfile()?.settings;
+      if (!settings) return;
+
       untracked(() => {
-        this.translate.use(lang).pipe(take(1)).subscribe();
+        this._theme.set(settings.theme);
+        this._language.set(settings.language);
+        document.documentElement.setAttribute('data-theme', settings.theme);
+        this.translate.use(settings.language);
+        this.cacheSettings(); // sync localStorage with server truth
       });
     });
-
-    this.authService.onLogout$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      localStorage.removeItem(this.SETTINGS_KEY);  // ← clear on logout
-    });
   }
 
-  init() {
-    if (this._initialized) return;
-    this._initialized = true;
-
-    // Priority: localStorage cache → JWT claims → defaults
-    // localStorage is updated on every toggle so it always reflects the latest choice,
-    // even though the JWT still carries the old values until the next login.
-    const cached = this.loadCachedSettings();
-    const theme    = cached?.theme    ?? this.authService.Theme    ?? 'light';
-    const language = cached?.language ?? this.authService.Language ?? 'en';
-
-    this._theme.set(theme);
-    this._language.set(language);
-    document.documentElement.setAttribute('data-theme', theme);
-  }
 
   toggleTheme() {
     const next = this._theme() === 'dark' ? 'light' : 'dark';
@@ -59,6 +60,7 @@ export class UserSettingsService {
   toggleLanguage() {
     const next = this._language() === 'en' ? 'fr' : 'en';
     this._language.set(next);
+    this.translate.use(next);
     this.cacheSettings();
     this.persistToServer();
   }

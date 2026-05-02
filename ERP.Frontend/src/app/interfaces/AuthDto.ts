@@ -8,10 +8,17 @@ export interface AuthUserGetResponseDto {
   roleId: string;
   roleName: string;
   mustChangePassword: boolean;
+  settings: UserSettings
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
+}
+export type ThemeType= 'light' | 'dark';
+export type LanguageType= 'fr' | 'en';
+export interface UserSettings{
+  theme: ThemeType,
+  language: LanguageType
 }
 
 export interface PagedResultDto<T> {

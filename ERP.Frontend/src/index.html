@@ -13,6 +13,19 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=barcode" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <script>
+    (function () {
+      const saved = localStorage.getItem('userSettings');
+      if (!saved) return;
+
+      try {
+        const { theme } = JSON.parse(saved);
+        if (theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      } catch {}
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

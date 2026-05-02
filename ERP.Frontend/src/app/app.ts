@@ -18,8 +18,6 @@ export class App {
 
   constructor() {
 
-    this.translate.reloadLang('en').pipe(take(1)).subscribe(() => {
-      this.userSettings.init();
-    });
+    this.translate.reloadLang('en').pipe(take(1)).subscribe();
   }
 }
