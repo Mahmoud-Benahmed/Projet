@@ -68,6 +68,15 @@
     "SELECT": "Veuillez sélectionner un élément de la liste"
   },
   "VALIDATION": {
+    "PHONE_MAX": "Le téléphone ne peut pas dépasser 20 caractères.",
+    "TAX_NUMBER_INVALID": "Le numéro fiscal ne peut contenir que des lettres et des chiffres.",
+    "TAX_NUMBER_MAX": "Le numéro fiscal ne peut pas dépasser 50 caractères.",
+    "NAME_MIN": "Le nom doit contenir au moins 2 caractères.",
+    "NAME_MAX": "Le nom ne peut pas dépasser 200 caractères.",
+    "NAME_PATTERN": "Le nom contient des caractères invalides.",
+    "EMAIL_INVALID": "Veuillez saisir une adresse e-mail valide.",
+    "ADDRESS_MIN": "L'adresse doit contenir au moins 5 caractères.",
+    "ADDRESS_PATTERN": "L'adresse contient des caractères invalides.",
     "REQUIRED": "Ce champ est obligatoire",
     "MIN_LENGTH": "Minimum {{min}} caractères requis",
     "MAX_LENGTH": "Maximum {{max}} caractères autorisés",
@@ -90,9 +99,7 @@
     "CODE_REQUIRED": "Le code est requis (min 2, max 20 caractères)",
     "DELAI_RETOUR_REQUIRED": "Le délai de retour est requis",
     "DELAI_RETOUR_INVALID": "Le délai de retour doit être d'au moins 7 jours et ne dépasse pas 270 jours",
-    "DISCOUNT_RATE_INVALID": "Le taux de remise doit être compris entre 0 et 100",
     "CREDIT_LIMIT_INVALID": "La limite de crédit doit être ≥ 1000",
-    "MULTIPLIER_INVALID": "Le multiplicateur doit être ≥ 1",
     "PASSWORD_REQUIRED": "Le mot de passe est requis",
     "PASSWORD_WEAK": "Faible",
     "PASSWORD_FAIR": "Moyen",
@@ -101,7 +108,19 @@
     "PHONE_INVALID": "Numéro de téléphone invalide",
     "MAX_QUANTITY": "La quantité maximale autorisée est {{max}}",
     "DUE_PAYMENT_PERIOD_INVALID": "Le délai de paiement doit être d'au moins 7 jours et ne dépasse pas 180 jours",
-    "DUE_PAYMENT_PERIOD_REQUIRED": "Le délai de paiement est requis"
+    "DUE_PAYMENT_PERIOD_REQUIRED": "Le délai de paiement est requis",
+      "CODE_MIN": "Le code doit contenir au moins 2 caractères.",
+    "CODE_MAX": "Le code ne peut pas dépasser 50 caractères.",
+    "DISCOUNT_RATE_INVALID": "Le taux de remise doit être compris entre 0 et 100.",
+    "MULTIPLIER_INVALID": "Le multiplicateur de crédit doit être compris entre 1 et 2.",
+    "TVA_INVALID": "La TVA doit être comprise entre 0 et 100.",
+    "PRICE_INVALID": "Le prix doit être supérieur à 0.",
+    "BARCODE_INVALID": "Le code-barres doit contenir entre 8 et 13 caractères.",
+    "RIB_INVALID": "Le RIB doit contenir entre 10 et 34 caractères alphanumériques.",
+    "PASSWORD_MIN": "Le mot de passe doit contenir au moins 8 caractères.",
+  "PASSWORD_MAX": "Le mot de passe ne peut pas dépasser 128 caractères.",
+  "PASSWORD_SAME": "Le nouveau mot de passe doit être différent de l'actuel.",
+  "EMAIL_MAX": "L'email ne peut pas dépasser 255 caractères."
   },
   "ERRORS": {
     "AUTH_001": "Cet email est déjà utilisé.",
@@ -1250,7 +1269,8 @@
       "PASSWORD_CHANGE_SUCCESS_TITLE": "Mot de passe changé",
       "PASSWORD_CHANGE_SUCCESS_MESSAGE": "Le mot de passe a été changé avec succès. Vous l'utiliserez lors de votre prochaine connexion.",
       "PASSWORD_CHANGE_FAILED": "Échec du changement de mot de passe.",
-      "UNDERSTOOD": "Compris"
+      "UNDERSTOOD": "Compris",
+      "GENERATE_PASSWORD": "Générer un mot de passe"
     },
     "ERRORS": {
       "LOAD_DEACTIVATED_FAILED": "Échec du chargement des utilisateurs désactivés.",
