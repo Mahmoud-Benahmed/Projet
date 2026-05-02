@@ -15,7 +15,7 @@ import {
   LigneResponseDto, LigneRequestDto, RetourSourceType, BonStatsDto,
   PagedResult,
 } from '../../../services/stock.service';
-
+import { UnitEnum } from '../../../services/articles/articles.service';
 export type BonRecord = BonEntreResponse | BonSortieResponse | BonRetourResponse;
 import { MatTableDataSource } from '@angular/material/table';
 import { HttpError } from '../../../interfaces/ErrorDto';
@@ -177,20 +177,44 @@ export class BonsComponent implements OnInit {
   }
 
   private buildHeaderForm(): FormGroup {
-    return this.fb.group({
-      observation:   [''],
+    const form = this.fb.group({
+      observation:   ['', Validators.maxLength(500)],
       fournisseurId: [''],
       clientId:      [''],
       sourceId:      [''],
       sourceType:    [RetourSourceType.BonEntre],
-      motif:         [''],
+      motif:         ['', Validators.maxLength(500)],
     });
+
+    // Apply conditional validators based on bon type
+    this.applyHeaderValidators(form);
+    return form;
+  }
+
+  private applyHeaderValidators(form: FormGroup): void {
+    const { fournisseurId, clientId, sourceId, motif } = form.controls;
+
+    fournisseurId.clearValidators();
+    clientId.clearValidators();
+    sourceId.clearValidators();
+    motif.clearValidators();
+
+    if (this.activeBonType === 'entre') {
+      fournisseurId.setValidators(Validators.required);
+    } else if (this.activeBonType === 'sortie') {
+      clientId.setValidators(Validators.required);
+    } else if (this.activeBonType === 'retour') {
+      sourceId.setValidators(Validators.required);
+      motif.setValidators([Validators.required, Validators.maxLength(500)]);
+    }
+
+    Object.values(form.controls).forEach(c => c.updateValueAndValidity());
   }
 
   private buildLigneForm(): FormGroup {
     return this.fb.group({
       articleId: ['', Validators.required],
-      quantity:  [1,  [Validators.required, Validators.min(0.001)]],
+      quantity:  [1,  [Validators.required, Validators.min(1)]],
       price:     [0,  [Validators.required, Validators.min(0)]],
       remarque:  [''],
     });
@@ -1150,7 +1174,16 @@ export class BonsComponent implements OnInit {
     this.ligneForm.patchValue({ articleId: article.id, price: article.prix });
     this.selectedArticleLabel = `${article.codeRef} — ${article.libelle}`;
     this.articleDropdownOpen = false;
+
+    const step = this.getArticleQtyStep(article.id);
     const max = this.getArticleMaxQty(article.id);
+
+    this.ligneForm.setValidators([
+      Validators.required,
+      Validators.min(step),  // ← min matches step
+      ...(max === Infinity ? [] : [Validators.max(max)]),
+    ]);
+
     this.updateQuantityValidator(max === Infinity ? null : max);
     this.cdr.markForCheck();
   }
@@ -1165,5 +1198,39 @@ export class BonsComponent implements OnInit {
 
   onArticleSearch(query: string): void {
     this.articleSearchSubject$.next(query);
+  }
+
+  getArticleQtyStep(articleId: string): number {
+    const unit = this.masterArticles.find(a => a.id === articleId)?.unit as UnitEnum;
+    if (!unit) return 1;
+
+    switch (unit) {
+      // High precision decimals
+      case UnitEnum.Gram:
+      case UnitEnum.Milligram:
+      case UnitEnum.Milliliter:
+      case UnitEnum.Millimeter:
+        return 0.001;
+
+      // Standard decimals
+      case UnitEnum.Kilogram:
+      case UnitEnum.Liter:
+      case UnitEnum.Meter:
+      case UnitEnum.Centimeter:
+      case UnitEnum.CubicMeter:
+        return 0.01;
+
+      // Large units — whole or decimal
+      case UnitEnum.Ton:
+      case UnitEnum.Kilometer:
+        return 0.001;
+
+      // Whole numbers only
+      case UnitEnum.Piece:
+      case UnitEnum.Hour:
+      case UnitEnum.Day:
+      default:
+        return 1;
+    }
   }
 }
