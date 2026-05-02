@@ -29,7 +29,7 @@ public record CreateClientRequestDto(
     [Range(7, 270, ErrorMessage = "Return delay must be at least 7 days and not exceed 270 days.")]
     int? DelaiRetour = null,
 
-    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and spaces only.")]
+    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and may start with +.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
@@ -60,7 +60,7 @@ public record UpdateClientRequestDto(
     [Range(7, 270, ErrorMessage = "Return delay must be at least 1 day and not exceed 270 days.")]
     int? DelaiRetour = null,
 
-    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and spaces only.")]
+    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Phone must contain digits and may start with +.")]
     [MaxLength(20, ErrorMessage = "Phone cannot exceed 20 characters.")]
     string? Phone = null,
 
