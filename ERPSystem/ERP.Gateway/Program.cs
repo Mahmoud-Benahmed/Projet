@@ -1,9 +1,11 @@
 using ERP.Gateway.AuthServiceClient;
+using ERP.Gateway.Middleware;
 using ERP.Gateway.Properties;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
 using Yarp.ReverseProxy.Transforms;
@@ -256,9 +258,23 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("LoginPolicy", context =>
     {
-        context.Items["RateLimitPolicyName"] = "LoginPolicy";
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        var userId = context.User?.FindFirst("sub")?.Value;
+
+        var login = context.Request.Headers["X-Login"].FirstOrDefault();
+
+        var identity = userId ?? login ?? ip;
+
+        var userAgent = context.Request.Headers.UserAgent.ToString();
+        var userAgentHash = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(userAgent))
+        );
+
+        var key = $"rl:{identity}:{userAgentHash}";
+
         return RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            key,
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
@@ -378,6 +394,14 @@ builder.Services.AddReverseProxy()
 WebApplication app = builder.Build();
 
 app.UseCors("AllowFrontend");
+
+app.UseSecurityHeaders();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
