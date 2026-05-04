@@ -11,7 +11,8 @@ namespace ERP.AuthService.Application.Interfaces
             string login,
             string role,
             IEnumerable<string> privileges,
-            UserSettings settings);
+            UserSettings settings,
+            Guid? tenantId = null);   // 👈 added
 
         string GenerateRefreshToken();
 
