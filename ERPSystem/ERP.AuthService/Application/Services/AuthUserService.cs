@@ -342,7 +342,8 @@ namespace ERP.AuthService.Application.Services
                 user.Login,
                 role.Libelle,
                 privilegeNames,
-                user.Settings
+                user.Settings,
+                user.TenantId   // 👈 only change in this file
             );
 
             string refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
@@ -377,8 +378,7 @@ namespace ERP.AuthService.Application.Services
                 throw new ArgumentException("The new password cannot be the same as the current password.");
 
             PasswordVerificationResult result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
+            if (result == PasswordVerificationResult.Failed) throw new InvalidCredentialsException();
 
             string newHashedPassword = _passwordHasher.HashPassword(user, request.NewPassword);
             user.ChangePassword(newHashedPassword);
@@ -711,6 +711,26 @@ namespace ERP.AuthService.Application.Services
                     ["validation_type"] = "access_token"
                 }
             );
+        }
+
+        // ======================
+        // TENANT ASSIGNMENT
+        // ======================
+        public async Task AssignTenantAsync(Guid userId, Guid tenantId, Guid performedById)
+        {
+            AuthUser user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new UserNotFoundException(userId);
+
+            user.SetTenant(tenantId);
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                AuditAction.TenantAssigned,
+                success: true,
+                performedBy: performedById,
+                targetUserId: userId,
+                metadata: new Dictionary<string, string> { ["tenantId"] = tenantId.ToString(), ["login"] = user.Login },
+                ipAddress: GetIp());
         }
 
         // ======================
