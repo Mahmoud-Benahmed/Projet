@@ -290,12 +290,6 @@ namespace ERP.AuthService.Controllers
             await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
             return NoContent();
         }
-        private bool TryGetRequesterId(out Guid requesterId)
-        {
-            requesterId = Guid.Empty;
-            string? raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
-            return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
-        }
 
         [HttpGet("validate-token")]
         public async Task<IActionResult> ValidateToken([FromHeader(Name = "Authorization")] string authorization)
@@ -321,6 +315,20 @@ namespace ERP.AuthService.Controllers
                     result.IsActive
                 }
             });
+        }
+
+        [HttpPut("{id:guid}/assign-tenant/{tenantId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> AssignTenant(Guid id, Guid tenantId)
+        {
+            await _authService.AssignTenantAsync(id, tenantId, Guid.Empty);
+            return NoContent();
+        }
+        private bool TryGetRequesterId(out Guid requesterId)
+        {
+            requesterId = Guid.Empty;
+            string? raw = HttpContext.Request.Headers["X-User-Id"].FirstOrDefault();
+            return !string.IsNullOrWhiteSpace(raw) && Guid.TryParse(raw, out requesterId);
         }
     }
 }
