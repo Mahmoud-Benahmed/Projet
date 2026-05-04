@@ -30,6 +30,10 @@ public class AuthUser
     [BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid RoleId { get; private set; }
 
+    // null = super admin / platform user, non-null = belongs to a specific tenant
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    public Guid? TenantId { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -57,6 +61,12 @@ public class AuthUser
         RoleId = roleId;
         Settings = settings ?? new UserSettings { Theme = Theme.light, Language = Language.en };
         CreatedAt = DateTime.UtcNow;
+    }
+
+    public void SetTenant(Guid tenantId)
+    {
+        TenantId = tenantId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void UpdateSettings(string theme, string language)
