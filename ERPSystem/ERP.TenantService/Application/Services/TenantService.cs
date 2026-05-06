@@ -4,7 +4,8 @@ using ERP.TenantService.Application.DTOs.TenantSubscription;
 using ERP.TenantService.Application.Interfaces;
 using ERP.TenantService.Domain;
 using ERP.TenantService.Infrastructure.Messaging;
-
+using ERP.TenantService.Application.Events;
+using ERP.TenantService.Infrastructure.Messaging;
 namespace ERP.TenantService.Application.Services;
 
 public class TenantService : ITenantService
@@ -118,6 +119,12 @@ public class TenantService : ITenantService
         tenant.Activate();
         await _tenantRepository.UpdateAsync(tenant);
         await _tenantRepository.SaveChangesAsync();
+
+        await _eventPublisher.PublishAsync(TenantTopics.TenantActivated, new TenantActivatedEvent(
+            TenantId: tenant.Id,
+            TenantName: tenant.Name,
+            SubdomainSlug: tenant.SubdomainSlug
+        ));
     }
 
     public async Task DeactivateAsync(Guid id)
