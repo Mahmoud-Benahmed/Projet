@@ -19,9 +19,8 @@ builder.Services.AddScoped<ITenantSubscriptionRepository, TenantSubscriptionRepo
 
 builder.Services.AddScoped<ITenantService, ERP.TenantService.Application.Services.TenantService>();
 builder.Services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
-
 builder.Services.AddScoped<IEventPublisher, KafkaEventPublisher>();
-
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
