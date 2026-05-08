@@ -27,7 +27,7 @@ namespace ERP.AuthService.Application.Services
         private readonly IControleRepository _controleRepository;
         private readonly IPrivilegeRepository _privilegeRepository;
         //private readonly IEventPublisher _eventPublisher;
-
+        private readonly ITenantServiceClient _tenantClient;
         public AuthUserService(
             IAuditLogger auditLogger,
             IHttpContextAccessor httpContextAccessor,
@@ -37,8 +37,8 @@ namespace ERP.AuthService.Application.Services
             IJwtTokenGenerator jwtGenerator,
             IPasswordHasher<AuthUser> passwordHasher,
             IControleRepository controleRepository,
-            IPrivilegeRepository privilegeRepository
-
+            IPrivilegeRepository privilegeRepository,
+            ITenantServiceClient tenantClient
             )
         //,IEventPublisher eventPublisher
         {
@@ -52,6 +52,7 @@ namespace ERP.AuthService.Application.Services
             _auditLogger = auditLogger;
             _httpContext = httpContextAccessor;
             //_eventPublisher = eventPublisher;
+            _tenantClient = tenantClient;
         }
 
         // ============================================
@@ -341,7 +342,9 @@ namespace ERP.AuthService.Application.Services
                 user.Id,
                 user.Login,
                 role.Libelle,
-                privilegeNames
+                privilegeNames,
+                user.Settings,
+                user.TenantId   
             );
 
             string refreshTokenValue = _jwtGenerator.GenerateRefreshToken();
@@ -353,11 +356,16 @@ namespace ERP.AuthService.Application.Services
 
             await _refreshTokenRepository.AddAsync(refreshToken);
 
+            string? tenantSlug = null;
+            if (user.TenantId.HasValue)
+                tenantSlug = await _tenantClient.GetSlugByIdAsync(user.TenantId.Value);
+
             return new AuthResponseDto(
                 accessToken,
                 refreshTokenValue,
                 user.MustChangePassword,
-                expiresAt
+                expiresAt,
+                tenantSlug
             );
         }
 
@@ -376,8 +384,7 @@ namespace ERP.AuthService.Application.Services
                 throw new ArgumentException("The new password cannot be the same as the current password.");
 
             PasswordVerificationResult result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
-            if (result == PasswordVerificationResult.Failed)
-                throw new InvalidCredentialsException();
+            if (result == PasswordVerificationResult.Failed) throw new InvalidCredentialsException();
 
             string newHashedPassword = _passwordHasher.HashPassword(user, request.NewPassword);
             user.ChangePassword(newHashedPassword);
@@ -713,6 +720,26 @@ namespace ERP.AuthService.Application.Services
         }
 
         // ======================
+        // TENANT ASSIGNMENT
+        // ======================
+        public async Task AssignTenantAsync(Guid userId, Guid tenantId, Guid performedById)
+        {
+            AuthUser user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new UserNotFoundException(userId);
+
+            user.SetTenant(tenantId);
+            await _userRepository.UpdateAsync(user);
+
+            await _auditLogger.LogAsync(
+                AuditAction.TenantAssigned,
+                success: true,
+                performedBy: performedById,
+                targetUserId: userId,
+                metadata: new Dictionary<string, string> { ["tenantId"] = tenantId.ToString(), ["login"] = user.Login },
+                ipAddress: GetIp());
+        }
+
+        // ======================
         // DTO MAPPING HELPER
         // ======================
 
@@ -733,7 +760,8 @@ namespace ERP.AuthService.Application.Services
                 Settings: MapUserSettingsToDto(user.Settings),
                 CreatedAt: user.CreatedAt,
                 UpdatedAt: user.UpdatedAt,
-                LastLoginAt: user.LastLoginAt
+                LastLoginAt: user.LastLoginAt,
+                TenantId: user.TenantId
             );
         }
 
