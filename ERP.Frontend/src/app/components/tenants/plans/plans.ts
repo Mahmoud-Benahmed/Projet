@@ -5,6 +5,7 @@ import { TenantService } from '../../../services/tenant.service';
 import { SubscriptionPlanDto } from '../../../interfaces/TenantDto';
 import { TranslateModule } from '@ngx-translate/core';
 import { UserSettingsService } from '../../../services/user-settings.service';
+
 @Component({
   selector: 'app-plans',
   standalone: true,
@@ -17,9 +18,11 @@ export class PlansComponent implements OnInit {
   selectedPlan: SubscriptionPlanDto | null = null;
   billingYearly = false;
   error = '';
-
-  constructor(private tenantService: TenantService, private router: Router, public userSettings: UserSettingsService) {}
-
+  constructor(
+    private tenantService: TenantService,
+    private router: Router,
+    public userSettings: UserSettingsService
+  ) {}
   ngOnInit() {
     this.tenantService.getPlans().subscribe({
       next: (plans) => {
@@ -30,31 +33,19 @@ export class PlansComponent implements OnInit {
       }
     });
   }
-
   selectPlan(plan: SubscriptionPlanDto) {
     this.selectedPlan = plan;
   }
-
   getPrice(plan: SubscriptionPlanDto): number {
     return this.billingYearly ? plan.yearlyPrice / 12 : plan.monthlyPrice;
   }
-
   getSavings(plan: SubscriptionPlanDto): number {
     return Math.round((1 - plan.yearlyPrice / (plan.monthlyPrice * 12)) * 100);
   }
-
   proceed() {
     if (!this.selectedPlan) return;
     this.router.navigate(['/onboarding'], {
       queryParams: { planId: this.selectedPlan.id, planName: this.selectedPlan.name }
     });
   }
-  onMouseMove(event: MouseEvent): void {
-  const el = event.currentTarget as HTMLElement;
-  const rect = el.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
-  el.style.setProperty('--mx', `${x}%`);
-  el.style.setProperty('--my', `${y}%`);
-}
 }
