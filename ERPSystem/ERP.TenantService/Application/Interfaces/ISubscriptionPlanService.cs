@@ -10,4 +10,5 @@ public interface ISubscriptionPlanService
     Task<SubscriptionPlanResponseDto> UpdateAsync(Guid id, UpdateSubscriptionPlanRequestDto dto);
     Task ActivateAsync(Guid id);
     Task DeactivateAsync(Guid id);
+    Task DeleteAsync(Guid id);
 }
