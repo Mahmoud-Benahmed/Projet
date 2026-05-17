@@ -45,6 +45,17 @@ public class TenantService : ITenantService
         var tenant = await _tenantRepository.GetBySubdomainSlugAsync(slug);
         return tenant is null ? null : MapToDto(tenant);
     }
+    public async Task DeleteAsync(Guid id)
+    {
+        var tenant = await _tenantRepository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"Tenant with id '{id}' not found.");
+
+        tenant.SoftDelete();  // was tenant.Deactivate() — wrong
+        await _tenantRepository.UpdateAsync(tenant);
+        await _tenantRepository.SaveChangesAsync();
+
+        await _eventPublisher.PublishAsync("tenant.deleted", new { tenant.Id });
+    }
 
     public async Task<TenantResponseDto> CreateAsync(CreateTenantRequestDto dto)
     {
@@ -99,18 +110,6 @@ public class TenantService : ITenantService
         return MapToDto(tenant);
     }
 
-    public async Task DeleteAsync(Guid id)
-    {
-        var tenant = await _tenantRepository.GetByIdAsync(id)
-            ?? throw new KeyNotFoundException($"Tenant with id '{id}' not found.");
-
-        tenant.Deactivate();
-        await _tenantRepository.UpdateAsync(tenant);
-        await _tenantRepository.SaveChangesAsync();
-
-        await _eventPublisher.PublishAsync("tenant.deactivated", new { tenant.Id });
-    }
-
     public async Task ActivateAsync(Guid id)
     {
         var tenant = await _tenantRepository.GetByIdAsync(id)
@@ -133,6 +132,22 @@ public class TenantService : ITenantService
             ?? throw new KeyNotFoundException($"Tenant with id '{id}' not found.");
 
         tenant.Deactivate();
+        await _tenantRepository.UpdateAsync(tenant);
+        await _tenantRepository.SaveChangesAsync();
+    }
+    public async Task<(IEnumerable<TenantResponseDto> Items, int Total)> GetDeletedAsync(int page, int pageSize)
+    {
+        var tenants = await _tenantRepository.GetDeletedAsync(page, pageSize);
+        var total = await _tenantRepository.CountDeletedAsync();
+        return (tenants.Select(MapToDto), total);
+    }
+
+    public async Task RestoreAsync(Guid id)
+    {
+        var tenant = await _tenantRepository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"Tenant with id '{id}' not found.");
+
+        tenant.Restore();
         await _tenantRepository.UpdateAsync(tenant);
         await _tenantRepository.SaveChangesAsync();
     }
