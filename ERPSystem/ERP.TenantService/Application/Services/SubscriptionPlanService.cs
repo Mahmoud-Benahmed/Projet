@@ -24,6 +24,14 @@ public class SubscriptionPlanService : ISubscriptionPlanService
         var plan = await _repository.GetByIdAsync(id);
         return plan is null ? null : MapToDto(plan);
     }
+    public async Task DeleteAsync(Guid id)
+    {
+        var plan = await _repository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException($"SubscriptionPlan with id '{id}' not found.");
+
+        await _repository.DeleteAsync(plan);
+        await _repository.SaveChangesAsync();
+    }
 
     public async Task<SubscriptionPlanResponseDto> CreateAsync(CreateSubscriptionPlanRequestDto dto)
     {
