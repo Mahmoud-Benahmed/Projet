@@ -9,5 +9,6 @@ public interface ISubscriptionPlanRepository
     Task<bool> CodeExistsAsync(string code, Guid? excludeId = null);
     Task AddAsync(SubscriptionPlan plan);
     Task UpdateAsync(SubscriptionPlan plan);
+    Task DeleteAsync(SubscriptionPlan plan);
     Task SaveChangesAsync();
 }
