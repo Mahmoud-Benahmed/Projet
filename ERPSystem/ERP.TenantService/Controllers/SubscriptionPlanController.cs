@@ -61,6 +61,13 @@ public class SubscriptionPlanController : ControllerBase
         return Ok(result);
     }
 
+    [HttpDelete(ApiRoutes.Plans.Delete)]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _planService.DeleteAsync(id);
+        return NoContent();
+    }
+
     [HttpPatch(ApiRoutes.Plans.Activate)]
     public async Task<IActionResult> Activate(Guid id)
     {
@@ -74,4 +81,5 @@ public class SubscriptionPlanController : ControllerBase
         await _planService.DeactivateAsync(id);
         return NoContent();
     }
+
 }
