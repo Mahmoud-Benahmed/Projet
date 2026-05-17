@@ -15,4 +15,6 @@ public interface ITenantService
     Task DeactivateAsync(Guid id);
     Task<TenantSubscriptionResponseDto> AssignSubscriptionAsync(Guid tenantId, AssignSubscriptionRequestDto dto);
     Task<TenantSubscriptionResponseDto?> GetSubscriptionAsync(Guid tenantId);
+    Task<(IEnumerable<TenantResponseDto> Items, int Total)> GetDeletedAsync(int page, int pageSize);
+    Task RestoreAsync(Guid id);
 }
