@@ -14,8 +14,8 @@ public class Tenant
     public string Locale { get; private set; } = "fr-TN";
     public string Timezone { get; private set; } = "Africa/Tunisia";
     public bool IsActive { get; private set; } = true;
+    public bool IsDeleted { get; private set; }
     public DateTime CreatedAt { get; private set; }
-
     public TenantSubscription? Subscription { get; private set; }
 
     private Tenant() { }
@@ -73,13 +73,22 @@ public class Tenant
         Locale = locale;
         Timezone = timezone;
     }
-
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;
+
+    public void Restore()
+    {
+        IsDeleted = false;
+    }
+    public void SoftDelete()
+    {
+        IsDeleted = true;
+    }
 
     public void AssignSubscription(Guid subscriptionPlanId, DateTime startDate, DateTime endDate)
     {
         Subscription = TenantSubscription.Create(Id, subscriptionPlanId, startDate, endDate);
     }
+ 
 }
