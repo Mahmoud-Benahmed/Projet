@@ -12,5 +12,8 @@ public interface ITenantRepository
     Task<bool> SubdomainSlugExistsAsync(string slug, Guid? excludeId = null);
     Task AddAsync(Tenant tenant);
     Task UpdateAsync(Tenant tenant);
+    Task<IEnumerable<Tenant>> GetDeletedAsync(int page, int pageSize);
+    Task<int> CountDeletedAsync();
     Task SaveChangesAsync();
+
 }
