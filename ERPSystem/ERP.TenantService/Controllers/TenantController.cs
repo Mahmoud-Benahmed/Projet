@@ -2,11 +2,13 @@ using ERP.TenantService.Application.DTOs.Tenant;
 using ERP.TenantService.Application.DTOs.TenantSubscription;
 using ERP.TenantService.Application.Interfaces;
 using ERP.TenantService.Properties;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ERP.TenantService.Controllers;
 
 [ApiController]
+[Authorize(Policy = "ApiKeyPolicy")]
 public class TenantController : ControllerBase
 {
     private readonly ITenantService _tenantService;
@@ -57,8 +59,10 @@ public class TenantController : ControllerBase
             ? NotFound(new { statusCode = 404, code = "NOT_FOUND", message = $"Tenant with subdomain '{slug}' not found." })
             : Ok(tenant);
     }
-
+    //Rate limit for endpoint create
     [HttpPost(ApiRoutes.Tenants.Create)]
+    [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("OnboardingLimit")]
     public async Task<IActionResult> Create([FromBody] CreateTenantRequestDto dto)
     {
         if (!ModelState.IsValid)
@@ -91,7 +95,7 @@ public class TenantController : ControllerBase
     [HttpDelete(ApiRoutes.Tenants.Delete)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _tenantService.DeleteAsync(id);   
+        await _tenantService.DeleteAsync(id);
         return NoContent();
     }
 
